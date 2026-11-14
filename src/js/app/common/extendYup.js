@@ -42,15 +42,15 @@ function extendYup() {
         key: ${keySchema.describe().type}
         value: ${valueSchema.describe().type}`,
       function(potentialMap) {
-        // Copy the nullable check implemented in yup.mixed.isType
-        // https://github.com/jquense/yup/blob/master/src/mixed.js#L166
+        // Copy the nullable check implemented in yup's Schema.isType
+        // (spec.nullable in yup >= 1)
         //
         // Calling isType directly does not work because it doesn't resepect
         // this custom test we've added.
         //
         // There is a chance that this will break if the implementation of this
         // feature in yup changes.
-        if (this.schema._nullable && potentialMap === null) {
+        if (this.schema.spec.nullable && potentialMap === null) {
           return true;
         }
 

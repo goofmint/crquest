@@ -23,7 +23,8 @@ import merge from 'lodash.merge';
 import isEqual from 'lodash.isequal';
 // esprima is flagged __esModule without a default export: use the namespace.
 import * as esprima from 'esprima';
-import uuid from 'uuid';
+// uuid >= 7 has named exports only (no default export): use the namespace.
+import * as uuid from 'uuid';
 import compareVersions from 'compare-versions';
 
 const BUILT_IN_MODULES = Object.freeze({
