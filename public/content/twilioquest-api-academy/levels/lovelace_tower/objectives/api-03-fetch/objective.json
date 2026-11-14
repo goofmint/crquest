@@ -1,0 +1,15 @@
+{
+  "title": "API Academy: Fetch Request",
+  "description": "Write an async function that fetches a magical phrase from an API.",
+  "show_ide": true,
+  "validation_fields": [
+    {
+      "name": "magicalPhrase",
+      "type": "text",
+      "label": "Paste in the magical phrase you got back from the API."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

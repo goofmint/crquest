@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example 
+  response#example.
+    Can you give me an example of an API?
+
+conversation(display_name="Portrait of a Lonely Lady")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        Every SMS must go to someone... could it really be that you're messaging me? It's been so long since anyone has sent a missive my way...
+
+    statement#example
+      text.
+        <a href="https://www.boredapi.com/">The Bored API</a> lets you send a request and returns a fun activity for you to do. “Go to a museum with some friends,” “Go to a karaoke bar with some friends,” “Send a text message to some friends”... Now all I need are the friends.
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

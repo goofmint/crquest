@@ -1,0 +1,44 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;   
+
+mixin gauntlet
+  response#gauntlet.
+    What's the House Gauntlet like?
+
+conversation(display_name="Arcane Academy Groundskeeper")
+  case lastResponse
+    
+    when "gauntlet"
+      statement#gauntlet
+    
+    default
+      statement#default
+      responses
+        +gauntlet
+
+  statements
+
+    statement#default
+      if allComplete
+        text.
+          Well, this is exciting! You're just in time for the House Gauntlet, which is set to start in no time! 
+          Head straight on to the Main Hall, where you will find the House Fire being prepared for the House Ceremony. 
+          I hope you've been thinking about which house you'd like to join!
+
+      else
+        text.
+          Hello again, Operator! The House Gauntlet is set to start soon, but it looks like you haven't completed 
+          all the objectives in the Catacombs yet. Once you do, you'll be able to head down this path to the Main Hall
+          and select your house.
+
+    statement#gauntlet
+      text.
+        The House Gauntlet is a series of advanced API challenges set within each of the four house areas: 
+        Lovelace Tower, Hopper Greenhouse, Neumann Labs, and Turing Fields. 
+        You can get to them all from the Main Hall straight past the courtyard... 
+        though some areas might be out of bounds because of the Gauntlet. 
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

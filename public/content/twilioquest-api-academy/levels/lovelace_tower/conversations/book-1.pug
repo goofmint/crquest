@@ -1,0 +1,38 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin excerpt 
+  response#excerpt.
+    Excerpt from the Tome
+    
+conversation(display_name="Lovelace Tomes v. 1")
+  case lastResponse
+    
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">
+        <span class="highlight">
+        <a href="https://sci-hub.ru/https://journals.sagepub.com/doi/abs/10.1177/0047281617721853">Application Programming Interface Documentation:<br><br>
+        What Do Software Developers Want?</a>
+        </span>
+        <br><br>
+        by Michael Meng, Stephanie Steinhardt, and Andreas Schubert</p>
+
+    statement#excerpt 
+      text.
+        “Besides aspects of API design, the growing interest in API usability has also generated growing interest in API documentation 
+        which reflects the fact that <span class="highlight">documentation has critical impact on usability</span> 
+        by enabling users to solve tasks effectively and efficiently...” (p. 2)
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

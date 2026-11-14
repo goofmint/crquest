@@ -1,0 +1,13 @@
+{
+  "title": "API Academy: House Ceremony",
+  "description": "You've made it to the House Ceremony. Choose your house by delivering your pledge scroll to the House Fire!",
+  "questTitle": "House Ceremony",
+  "questDescription": "Deliver your pledge scroll to the House Fire in the Main Hall to choose your house.",
+  "is_mission": false,
+  "priority": 3,
+  "backgroundMusic": "fascinatingarea_108253b",
+  "flavorTextOverrides": {
+    "lockedDoor": "This door won't budge!"
+  },
+  "objectives": []
+}

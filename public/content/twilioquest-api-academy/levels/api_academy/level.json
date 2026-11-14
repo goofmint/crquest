@@ -1,0 +1,21 @@
+{
+  "title": "API Academy",
+  "description": "The prestigious Arcane Academy of API Arts is the premier institution of higher learning in The Cloud. Here, students learn to control the magical incantations that are APIs. Visit the school, and see if you have what it takes to join the Academy!",
+  "questTitle": "Joining the Academy",
+  "questDescription": "Make your way to the Academy and prove you have what it takes to join!",
+  "navMap": {
+    "x": 70,
+    "y": 45,
+    "sprite": "nav_map/example_planet.png"
+  },
+  "is_mission": false,
+  "priority": 3,
+  "backgroundMusic": "fascinatingarea_108253b",
+  "flavorTextOverrides": {},
+  "objectives": [
+    "hopper_initiation",
+    "lovelace_initiation",
+    "neumann_initiation",
+    "turing_initiation"
+  ]
+}

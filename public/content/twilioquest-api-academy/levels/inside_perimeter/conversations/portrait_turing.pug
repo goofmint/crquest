@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example 
+  response#example.
+    Can you give me an example of an API?
+
+conversation(display_name="Portrait of Surprised Sorceress Susan")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        Those lucky JavaScript students... Twilio gives them server-side helper libraries and browser SDKs too?
+
+    statement#example
+      text.
+        <a href="https://api.nasa.gov/index.html">NASA Open APIs</a> let you explore NASA… and therefore the entire universe. Want a new picture from space each day? Weather from Mars? Mars Rover photos? It seems the power of API Libraries will never cease to surprise me.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

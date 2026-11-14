@@ -1,0 +1,17 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="House Turing Poster")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">Attention, fellow Arcanians: House Turing requests your 
+        input for our upcoming <span class="highlight">API Career Fair!</span><BR><BR>
+        Which APIs do you use and love most? Which spells have proven the most challenging to master? Which API Arts career paths are most intriguing to you?</p>
+      
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

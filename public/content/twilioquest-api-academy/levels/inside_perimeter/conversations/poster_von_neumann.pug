@@ -1,0 +1,20 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="House von Neumann Poster")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">API, SDK, HTTP, REST: Looking for a way to distill those concepts down to their core features? 
+        In need of some sweet API concentration to get you through finals?
+        Potions Club, sponsored by House von Neumann, is running an <span class="highlight">API Arts “Science Fair”</span> this year, 
+        where we’ll be showcasing our new API potions.<BR><BR>
+        Come for the cold brews and stay for the workshops on boiling out API inefficiencies. 
+        The best API mashup will win a brand new cauldron!</p>
+      
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,31 @@
+{
+  "title": "API Academy: Making an API Request",
+  "description": "Your next challenge is to obtain the Lovelace Key Spell Component. To do so, you must make a successful API request.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "True or false",
+      "label": "True or false: To make a request to Twilio Programmable SMS you must provide your Account SID and an Auth Token in the request."
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "What's the third required parameter?",
+      "label": "When creating a message with the Twilio Programmable SMS API, there are three required parameters. One, either `From` or `MessagingServiceSid`; Two, either `Body` or `MediaUrl`. The third is:"
+    },
+    {
+      "name": "answer3",
+      "type": "text",
+      "placeholder": "`What's the SID of your new message?",
+      "label": "From your command line, use cURL to create a message with the Twilio Programmable SMS API. Find the `SID` of the message in the server's response and submit it here to earn the House Lovelace Key Spell Component. The SID is only checked for its format (`SM` or `MM` followed by 32 hexadecimal characters)."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}
+
+
+

@@ -1,0 +1,28 @@
+{
+  "title": "API Academy: HTTP Methods",
+  "description": "To win over the Neumann mascot and obtain the key spell component, you must demonstrate knowledge of HTTP methods.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "Ex. A, B, C or D",
+      "label": "Which of the following is not an HTTP method?<br>A: GET<br>B: POST<br>C: UPDATE<br>D: DELETE"
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "",
+      "label": "If you were using an API to look up, or read, information from a remote server, which HTTP method would you use?"
+    },
+    {
+      "name": "answer3",
+      "type": "text",
+      "placeholder": "",
+      "label": "Finally, to truly prove your worthiness to the House Neumann mascot, answer this question successfully: To create (and thereby send) a message using the Twilio Programmable SMS API, which HTTP method would you use?"
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

@@ -1,0 +1,95 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin unique
+  response#unique.
+    Could you remind me what makes House Lovelace unique?
+
+mixin join  
+  response#join.
+    I would like to join House Lovelace!
+
+mixin deciding 
+  response#deciding.
+    I’m still deciding which house to join.
+
+mixin getting_started 
+  response#getting_started.
+    I’ll see you there!
+
+conversation(display_name="Professor Clay, Head of House Lovelace")
+  case lastResponse
+    
+    when "unique"
+      statement#unique
+      responses 
+        +join 
+        +deciding
+
+    when "join"
+      statement#join
+
+    when "deciding"
+      statement#deciding
+
+    when "getting_started"
+      statement#getting_started
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique 
+          +join 
+          +deciding 
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        Welcome to the House Ceremony, Operator. 
+        Have you decided to join House Lovelace?
+
+    statement#unique
+        text.
+          House Lovelace is known as the house of artists, 
+          where we explore the beauty and art of code, as well as the art of documentation.
+
+    statement#join
+        text.
+          We’re so glad to hear this. To confirm your choice, 
+          please proceed to the #[span.highlight House Fire] with your pledge scroll.
+
+    statement#deciding
+        text.
+          Completely understandable, Operator. It’s an important decision to make!
+
+    statement#history
+        text.
+          Excellent choice of #[span.highlight House #{worldState.displayNames[worldState.playerHouse]}], Operator.<br><br>
+          Any moment now, we shall know which house will start the House Gauntlet. Though the houses 
+          are selected in random order, fortune seems to always favor House Lovelace. 
+          Who knows if yet again, Lovelace Tower will launch the Gauntlet!
+
+    statement#gauntlet_default 
+      text.
+        Thank you, dear Operator, for agreeing to complete the House Gauntlet as we begin searching for the missing Gauntleter.
+        Not to worry though, you've got some exciting challenges ahead of you.
+        House Lovelace is an exciting place to begin the Gauntlet, if I do say so myself.<br><br> 
+        I hope you enjoy exploring Lovelace Tower! I’ll meet you up there whenever 
+        you are ready for further instructions.
+
+    statement#getting_started 
+      text.
+        You have my full support!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

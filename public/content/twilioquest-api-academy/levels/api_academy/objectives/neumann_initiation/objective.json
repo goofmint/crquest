@@ -1,0 +1,22 @@
+{
+  "title": "API Academy Admission: RESTful APIs",
+  "description": "To unlock the chest of knowledge for <strong>House von Neumann</strong>, you must learn about RESTful APIs.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "",
+      "label": "What is the abstract name for a chunk of data that can be addressed by a URI and potentially transferred using a RESTful API?"
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "",
+      "label": "Which HTTP method/verb is most commonly used to create new data on a server in a RESTful API?"
+    }
+  ],
+  "rewards": {
+    "xp": 200
+  }
+}

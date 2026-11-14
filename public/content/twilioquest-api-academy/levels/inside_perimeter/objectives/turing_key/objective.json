@@ -1,0 +1,28 @@
+{
+  "title": "API Academy: SDKs and Libraries",
+  "description": "The House Turing Key Spell Component will be granted when the operator demonstrates their knowledge of SDKs and Libraries",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "",
+      "label": "What does SDK stand for?"
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "A, B, C, D, or E",
+      "label": "Which of the following programming languages does Twilio not provide a server-side helper library for? A: Node.js, B: C++, C: PHP, D: Ruby, E: Python"
+    },
+    {
+      "name": "answer3",
+      "type": "text",
+      "placeholder": "true or false",
+      "label": "True or false: One way that libraries can make working with APIs easier is by handling and abstracting away some of the more low level interactions with the server, like authentication."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

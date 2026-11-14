@@ -1,0 +1,20 @@
+{
+  "title": "API Academy: Inside the Gates",
+  "description": "The Academy has accepted you - now it's time to learn your first spell and get sorted into your house!",
+  "questTitle": "Getting Sorted",
+  "questDescription": "Make your way through the catacombs to find the house where you belong!",
+  "is_mission": false,
+  "priority": 3,
+  "backgroundMusic": "fascinatingarea_108253b",
+  "flavorTextOverrides": {
+    "lockedDoor": "This door won't budge!"
+  },
+  "objectives": [
+    "obtain_wand",
+    "hopper_key",
+    "lovelace_key",
+    "neumann_key",
+    "turing_key",
+    "twilio_api_setup"
+  ]
+}

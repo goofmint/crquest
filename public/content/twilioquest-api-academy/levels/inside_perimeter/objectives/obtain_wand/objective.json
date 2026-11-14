@@ -1,0 +1,23 @@
+{
+  "title": "API Academy: Learn How to Learn About APIs",
+  "description": "To unlock the storage chest and obtain your wand, you must learn how to learn about APIs. This is achieved through <span class=\"highlight\">documentation</span>.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "",
+      "label": "Visit the documentation for the [Twilio Programmable SMS API](https://www.twilio.com/docs/sms). In the left hand menu, look for a heading called *API Reference*. Under this heading there are three subheadings, one for each `Resource` object. List one of the types of `Resource` objects."
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "",
+      "label": "Look at the documentation for the `Message Resource`. Type the first property listed for the `Message Resource`?"
+    }
+  ],
+  "rewards": {
+    "xp": 100,
+    "items": ["wand"]
+  }
+}

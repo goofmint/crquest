@@ -1,0 +1,79 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin busy
+  response#busy.
+    I wish I could help, but I’ve got to concentrate on the next objective.
+
+mixin wrong_1
+  response#wrong_1.
+    There is no difference between resources and representations.
+
+mixin wrong_2
+  response#wrong_2.
+    Resources are unnamed things on the web, and representations are groups of resources.
+
+mixin right
+  response#right.
+    A resource is anything with a URL, and a representation is an explanation of the state of a resource.
+
+conversation(display_name="House Lovelace Student")
+  case lastResponse
+    
+    when "busy"
+      statement#busy
+    
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +wrong_1
+        +right
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_1 
+        +wrong_2 
+        +right
+
+  statements
+    statement#default
+      text.
+        I know you’re really busy, but would you mind helping me figure out this homework problem?<br><br>
+        What is the difference between #[span.highlight resources] and #[span.highlight representations] when it comes to APIs?
+
+    statement#busy
+      text.
+        I understand. Good luck, Operator!
+
+    statement#wrong_1
+      text.
+        Hmm, I don’t think that’s it. Resources and representations are related, but they are definitely different... if I remember correctly...
+
+    statement#wrong_2
+      text.
+        Hmm... I tried that one already, but the professor said it’s not quite right. 
+        Resources need to be named, I know that much! And representations are related to resources, but in a different way...<br><br>
+        Hmm... What could be the difference?
+
+    statement#right
+      text.
+        Yes, that's got to be it! Anything can be a resource as long as it has a Uniform Resource Locator (URL), 
+        and a representation can be any machine-readable document, 
+        like JSON, containing any information about a resource. I knew you’d have the answer! Thank you so much!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

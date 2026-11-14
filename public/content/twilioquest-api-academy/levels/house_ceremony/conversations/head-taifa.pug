@@ -1,0 +1,98 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin unique
+  response#unique.
+    Could you remind me what makes House Turing unique?
+
+mixin join  
+  response#join.
+    I would like to join House Turing!
+
+mixin deciding 
+  response#deciding.
+    I’m still deciding which house to join.
+
+mixin getting_started 
+  response#getting_started.
+    I’m looking forward to exploring Turing Fields too, when the time comes!
+
+conversation(display_name="Professor Taifa, Head of House Turing")
+  case lastResponse
+    
+    when "unique"
+      statement#unique_resp
+      responses 
+        +join 
+        +deciding
+
+    when "join"
+      statement#join_resp
+
+    when "deciding"
+      statement#deciding_resp
+
+    when "getting_started"
+      statement#getting_started_resp
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique 
+          +join 
+          +deciding 
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        A House Ceremony and the House Gauntlet taking place in the same week! 
+        It is certainly an exciting time to be at Arcane Academy.
+
+    statement#unique_resp
+        text.
+          House Turing prides itself on its commitment to problem-solving and innovation. 
+          Students in House Turing enjoy participating in activities across the Academy, 
+          from codeball to extracurriculars to career events.
+
+    statement#join_resp
+        text.
+          House Turing is lucky to have you! The last step in the House Ceremony 
+          involves confirming your choice by taking your pledge scroll to the 
+          #[span.highlight House Fire] at the center of the Hall.
+
+    statement#deciding_resp
+        text.
+          By all means! As soon as you choose, you’ll be able to attend the House Gauntlet, 
+          which is one of Arcane’s most exciting annual events.
+
+    statement#history
+      text.
+        House Turing was the first house to start the Gauntlet 
+        last year and the year before. In fact, we launch the Gauntlet almost as much as House Lovelace does. 
+        We're all waiting on the edge of our seats, metaphorically speaking,
+        to see which house is selected first this year.<br><br>
+        Oh, and great choice of #[span.highlight House #{worldState.displayNames[worldState.playerHouse]}]!
+
+    statement#gauntlet_default 
+      text.
+        So, you're not only watching the House Gauntlet, Operator, but competing in it too! 
+        How are you feeling? House Lovelace continues to hold their record as the most likely house to (by random selection) launch 
+        the Gauntlet. Lovelace Tower is filled with excellent challenges!<br><br>
+        I wish you luck as you begin!
+
+    statement#getting_started_resp 
+      text.
+        Good luck in Lovelace Tower for now.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

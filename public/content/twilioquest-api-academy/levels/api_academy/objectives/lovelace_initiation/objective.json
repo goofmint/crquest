@@ -1,0 +1,22 @@
+{
+  "title": "API Academy Admission: How the Web Works",
+  "description": "To unlock the chest of knowledge for <strong>House Lovelace</strong>, you must learn some basics about the worldwide web.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "",
+      "label": "What four letter acronym describes the most common protocol used by web clients (like your browser) and web servers to transfer data on the web, like HTML or images?"
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "",
+      "label": "Sometimes a client computer needs to send additional information when it requests a web page or other resource from a server (like state that needs to persist across requests, such as \"cookies\"). What are these extra bits of information called?"
+    }
+  ],
+  "rewards": {
+    "xp": 200
+  }
+}

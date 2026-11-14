@@ -1,0 +1,18 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);   
+
+conversation(display_name="Secret Lovelace Library Door")
+  case lastResponse
+
+    default
+      if !worldState.obj4Complete
+        statement#default
+
+  statements
+    statement#default
+      text.
+        You must retrieve the #[span.highlight Divination Spell] in order to enter this secret area.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);
