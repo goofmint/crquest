@@ -77,7 +77,7 @@ git grep -n -E "loadMusic|loadSfx|loadItemsFromDisk|InteractionTextService|sfExi
 変換時に注意すべき差異は次の 2 点である。
 
 1. 引数検証は非同期版でも同期的に throw される。`jetpack.js` は `exists.validateInput("existsAsync", path)` を Promise を返す前に呼ぶ。パスが文字列でない場合 (`exists` / `read`)、Promise の reject ではなく同期例外になる。`await` を `try` の中に置けば両方とも捕捉できる。
-2. 同期版はイベントループをブロックし、非同期版はブロックしない。このため、呼び出し側が「呼び出し直後に結果が揃っている」ことを暗黙に前提にしている場合に、実行順序が変わる (4 章の各行を参照)。
+2. 同期版はファイル読み込みと解析の全体でイベントループをブロックする。非同期版はファイルの読み込みはブロックしないが、`readAsync(path, 'json')` は読み込み後の `JSON.parse` を同期的に実行するため、大きな JSON では解析の間だけイベントループが止まり得る (fs-jetpack 2.2.2 `lib/read.js`)。ここで扱う設定ファイルは小さいので実害は小さい見込みだが、「非同期版は一切ブロックしない」とは言えない。この違いにより、呼び出し側が「呼び出し直後に結果が揃っている」ことを暗黙に前提にしている場合に、実行順序が変わる (4 章の各行を参照)。
 
 `platform/fs.js` の `exists` / `list` / `read` / `…Async` は、jetpack の関数をそのまま再エクスポートしているだけである (`src/js/app/platform/fs.js:60-65`)。ラップはないため、上の意味論がそのまま適用される。
 
@@ -152,6 +152,15 @@ git grep -n -E "loadMusic|loadSfx|loadItemsFromDisk|InteractionTextService|sfExi
 ### 4.5 参考: 非同期版の呼び出し (23 件、変換不要)
 
 `src/js/app/common/extensions.js:45, 58, 136, 144`、`src/js/app/components/QuestIDE.jsx:74, 76`、`public/levels/common/dev_skills/objectives/terminal_cd/validator.js:14`、`.../terminal_pwd/validator.js:13`、`src/test/app/platform/fs.test.js:17, 18, 19, 30, 33, 48, 49`、`tasks/generate_warp_points/readLevels.js:61, 82, 90, 111`、`tasks/utils/readLevels.js:55, 94, 102, 144`。
+
+### 4.1 `Game.jsx` の `loadLevel` に既に存在する競合と、移行による影響
+
+`loadLevel` (`Game.jsx:91`) の呼び出し元 (`Game.jsx:39`, `:62`) は完了を待たない。`loadLevel` の `setTimeout` コールバックは、すでに複数の `await` (オブジェクトの読み込み、タイルセットの読み込み、`audioManager.loadLevelAudio` など) を挟んだあとに `this.level` を更新するか、新しい `DynamicLevel` を生成する。世代番号や取り消しの仕組みはない。
+
+- 現行コードでも、先に始まった読み込みが後から完了すると、古いレベルの値で `this.level` を上書きし得る。両方の読み込みが `this.level` 未設定のまま完了すると、同じ `game` コンテナに `DynamicLevel` が 2 つ生成され得る
+- この競合は移行前から存在する。このドキュメントはドキュメントのみの変更で、アプリのコードは変更しない
+- #14 などで `list` / `exists` / `read` を非同期版に変えると、`await` の地点が増えるため、この競合が起きる時間窓が広がり得る。「呼び出し元の変更は不要」は、型や呼び出し連鎖の話であり、タイミングの安全性を保証するものではない
+- 対応が必要になった場合は、世代番号によるキャンセルなどを別チケットで検討する (#14 では、同期のときと同じ処理順序を保つために、エンティティを 1 件ずつ `await` する形にしている)
 
 ## 5. 対象外とする同期利用とその理由
 
