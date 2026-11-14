@@ -695,6 +695,23 @@ describe('moduleLoader', () => {
       ).toEqual(['t2', 't3', 'real']);
     });
 
+    it('treats a slash after postfix ++/-- as division', () => {
+      expect(
+        scanRequires("i++ / 2; require('./a'); n-- / 2 / 3; require('./b');")
+      ).toEqual(['./a', './b']);
+    });
+
+    it('keeps a regex literal after a prefix or binary + / -', () => {
+      expect(
+        scanRequires(
+          "const v = a + +/x/.lastIndex; const w = a - -/y/.lastIndex; require('./c');"
+        )
+      ).toEqual(['./c']);
+      expect(
+        scanRequires("x = a + /require('no')/.test(s); require('./d');")
+      ).toEqual(['./d']);
+    });
+
     it('scans sources newer than esprima 4 can parse', () => {
       expect(
         scanRequires(

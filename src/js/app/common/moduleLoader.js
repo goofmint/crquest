@@ -233,7 +233,9 @@ function tokenize(source) {
       return REGEX_PRECEDING_KEYWORDS.has(last.value);
     }
     if (last.type === 'punct') {
-      return ![')', ']'].includes(last.value);
+      // `++`/`--` before a `/` is postfix (a prefix one cannot precede a
+      // regex literal), so the slash is a division.
+      return ![')', ']', '++', '--'].includes(last.value);
     }
 
     return false;
@@ -333,6 +335,9 @@ function tokenize(source) {
       }
       index = end;
       tokens.push({ type: 'other', value: null });
+    } else if (rest === '++' || rest === '--') {
+      tokens.push({ type: 'punct', value: rest });
+      index += 2;
     } else if (source.startsWith('...', index)) {
       tokens.push({ type: 'punct', value: '...' });
       index += 3;
