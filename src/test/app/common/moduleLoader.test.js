@@ -3,6 +3,7 @@ import * as fsPlatform from '../../../js/app/platform/fs';
 import {
   createModuleLoader,
   scanRequires,
+  scanNonLiteralRequires,
   loadModule,
   invalidateModule,
   invalidateAllModules,
@@ -777,5 +778,98 @@ describe('modulePath', () => {
     );
     expect(() => modulePath.normalize('C:foo')).toThrow(/Drive-relative/);
     expect(() => modulePath.normalize('/a/../../b')).toThrow(/above its root/);
+  });
+});
+
+describe('scanNonLiteralRequires', () => {
+  const texts = source => scanNonLiteralRequires(source).map(c => c.text);
+
+  it('reports calls whose argument is not a single constant string', () => {
+    expect(
+      texts(
+        [
+          'require(name);',
+          "require('f' + 's');",
+          'require(a.b.c);',
+          'require(...args);',
+          'require(`./x/${name}`);',
+          'require();',
+          "require('a\\xZZ');",
+        ].join('\n')
+      )
+    ).toEqual([
+      'require(name)',
+      "require('f' + 's')",
+      'require(a.b.c)',
+      'require(...args)',
+      'require(`./x/${name}`)',
+      'require()',
+      "require('a\\xZZ')",
+    ]);
+  });
+
+  it('does not report constant string arguments (also what scanRequires registers)', () => {
+    const source = [
+      "require('a');",
+      'require("b",);',
+      'require(`c`);',
+      "require /* x */ ( // y\n 'd' );",
+      "require('e', extra);",
+    ].join('\n');
+
+    expect(scanNonLiteralRequires(source)).toEqual([]);
+    expect(scanRequires(source)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('finds calls with whitespace or comments between require and the parenthesis', () => {
+    expect(
+      scanNonLiteralRequires("require /*c*/ (name);\nrequire\n(\n'f' + 's')")
+    ).toEqual([
+      { line: 1, text: 'require /*c*/ (name)' },
+      { line: 2, text: "require\n(\n'f' + 's')" },
+    ]);
+  });
+
+  it('reports the 1-based line of the require token, hashbang included', () => {
+    expect(
+      scanNonLiteralRequires('#!/usr/bin/env node\n\nconst x = 1;\nrequire(x);')
+    ).toEqual([{ line: 4, text: 'require(x)' }]);
+  });
+
+  it('cuts a long call text', () => {
+    const [call] = scanNonLiteralRequires(`require(${'a'.repeat(200)})`);
+
+    expect(call.text).toHaveLength(80);
+  });
+
+  it('ignores calls in comments, strings, regex literals and template text', () => {
+    const source = [
+      '// require(name)',
+      '/* require(name) */',
+      'const s = "require(name)"; const t = \'require(name)\';',
+      'const u = `require(name) ${1}`;',
+      'const r = /require(name)/g;',
+      'obj.require(name); a?.require(name); this.x.require(name);',
+    ].join('\n');
+
+    expect(scanNonLiteralRequires(source)).toEqual([]);
+  });
+
+  it('still finds a call inside a template substitution and after a regex', () => {
+    expect(
+      texts('const t = `a ${require(name)} b`; /x/.test(y); require(z)')
+    ).toEqual(['require(name)', 'require(z)']);
+  });
+
+  it('does not treat require without a call as a call', () => {
+    expect(
+      scanNonLiteralRequires('require.resolve(x); typeof require;')
+    ).toEqual([]);
+  });
+
+  it('registers a no-substitution template literal like a string', () => {
+    expect(scanRequires('require(`./a`); require(`./b/${x}`);')).toEqual([
+      './a',
+    ]);
   });
 });

@@ -107,6 +107,7 @@ const SIMPLE_ESCAPES = {
 };
 const LINE_TERMINATORS = ['\n', '\r', '\u2028', '\u2029'];
 const BOM = '﻿';
+const TEXT_LIMIT = 80;
 
 function createError(code, message) {
   const error = new Error(message);
@@ -249,15 +250,35 @@ function tokenize(source) {
     return !endsOperand(last);
   };
 
+  // Every token records the offset where its lexing started (for line numbers).
+  let lastStart = 0;
+  const markStart = () => {
+    tokens.forEach(token => {
+      if (token.start === undefined) {
+        token.start = lastStart;
+      }
+    });
+    lastStart = index;
+  };
+
   // Consumes template text from `index` up to the closing backtick or `${`.
-  const lexTemplateBody = () => {
+  // A template that starts fresh (right after a backtick) and closes without
+  // any `${}` has a constant value, decoded like a string literal; a template
+  // piece that resumes after a `}` has none (value null).
+  const lexTemplateBody = fresh => {
+    const bodyStart = index;
     while (index < source.length) {
       const char = source[index];
       if (char === '\\') {
         index += 2;
       } else if (char === '`') {
         index += 1;
-        tokens.push({ type: 'template', value: null });
+        tokens.push({
+          type: 'template',
+          value: fresh
+            ? decodeStringLiteral(source.slice(bodyStart, index - 1))
+            : null,
+        });
         return;
       } else if (char === '$' && source[index + 1] === '{') {
         index += 2;
@@ -271,6 +292,7 @@ function tokenize(source) {
   };
 
   while (index < source.length) {
+    markStart();
     const char = source[index];
     const rest = source.slice(index, index + 2);
 
@@ -307,7 +329,7 @@ function tokenize(source) {
       index = end + 1;
     } else if (char === '`') {
       index += 1;
-      lexTemplateBody();
+      lexTemplateBody(true);
     } else if (IDENTIFIER_START.test(char)) {
       let end = index + 1;
       while (end < source.length && IDENTIFIER_PART.test(source[end])) {
@@ -352,7 +374,7 @@ function tokenize(source) {
     } else if (char === '}' && stack[stack.length - 1] === 'template') {
       stack.pop();
       index += 1;
-      lexTemplateBody();
+      lexTemplateBody(false);
     } else {
       if (char === '{') {
         stack.push('brace');
@@ -364,21 +386,89 @@ function tokenize(source) {
     }
   }
 
+  markStart();
+
   return tokens;
 }
 
 /**
  * Finds `require('literal')` calls: the identifier `require` (not a property
- * access such as `foo.require`), `(`, a string literal, then `)` or `,`
- * (comments/whitespace between tokens and a trailing comma are fine).
- * Non-literal arguments are not reported.
+ * access such as `foo.require`), `(`, a string literal (or a backtick
+ * template literal without `${}`), then `)` or `,` (comments/whitespace
+ * between tokens and a trailing comma are fine).
+ * Non-literal arguments are not reported (see `scanNonLiteralRequires`).
  *
  * @param {string} source
  * @returns {string[]} distinct decoded specifiers passed to `require('...')`
  */
 function scanRequires(source) {
-  const tokens = tokenize(source);
   const specifiers = new Set();
+
+  findRequireCalls(tokenize(source)).forEach(({ specifier }) => {
+    if (specifier !== null) {
+      specifiers.add(specifier);
+    }
+  });
+
+  return Array.from(specifiers);
+}
+
+/**
+ * Reports every `require(...)` call whose argument is NOT a single constant
+ * string, i.e. exactly what `scanRequires` does not register and the loader
+ * therefore cannot preload (it throws ERR_MODULE_NOT_PRELOADED at run time).
+ * Uses the same tokenizer as `scanRequires`, so comments, strings, template
+ * text, regex literals and a hashbang line are skipped identically, and
+ * `obj.require(x)` is not a call of the module `require`.
+ *
+ * Literal means: one quote-delimited string literal, or a backtick template
+ * literal WITHOUT `${}` (both are registered by `scanRequires`), optionally
+ * followed by a trailing comma or further arguments. Non-literal examples:
+ * `require(name)`, `require('f' + 's')`, `require(a.b)`, `require(...args)`,
+ * `require(`./x/${name}`)`, `require()`, and a literal with an invalid escape.
+ *
+ * @param {string} source
+ * @returns {{line: number, text: string}[]} 1-based line of the `require`
+ *   token and the call text up to its closing parenthesis (at most 80
+ *   characters, then cut), in source order
+ */
+function scanNonLiteralRequires(source) {
+  const tokens = tokenize(source);
+
+  return findRequireCalls(tokens)
+    .filter(({ specifier }) => specifier === null)
+    .map(({ position }) => {
+      const { start } = tokens[position];
+      let depth = 0;
+      let end = source.length;
+      for (let i = position + 1; i < tokens.length; i += 1) {
+        const token = tokens[i];
+        if (token.type === 'punct' && token.value === '(') {
+          depth += 1;
+        } else if (token.type === 'punct' && token.value === ')') {
+          depth -= 1;
+          if (depth === 0) {
+            end = token.start + 1;
+            break;
+          }
+        }
+      }
+
+      return {
+        line: source.slice(0, start).split('\n').length,
+        text: source.slice(start, end).slice(0, TEXT_LIMIT),
+      };
+    });
+}
+
+/**
+ * @param {{type: string, value: string | null}[]} tokens
+ * @returns {{position: number, specifier: string | null}[]} every call of the
+ *   module `require` (identifier not preceded by `.`, followed by `(`); the
+ *   specifier is the registered constant string, or null for a non-literal call
+ */
+function findRequireCalls(tokens) {
+  const calls = [];
 
   tokens.forEach((token, position) => {
     if (token.type !== 'name' || token.value !== 'require') {
@@ -389,24 +479,23 @@ function scanRequires(source) {
       return;
     }
     const open = tokens[position + 1];
+    if (!open || open.type !== 'punct' || open.value !== '(') {
+      return;
+    }
     const literal = tokens[position + 2];
     const after = tokens[position + 3];
-    if (
-      open &&
-      open.type === 'punct' &&
-      open.value === '(' &&
+    const isConstant =
       literal &&
-      literal.type === 'string' &&
+      (literal.type === 'string' || literal.type === 'template') &&
       literal.value !== null &&
       after &&
       after.type === 'punct' &&
-      (after.value === ')' || after.value === ',')
-    ) {
-      specifiers.add(literal.value);
-    }
+      (after.value === ')' || after.value === ',');
+
+    calls.push({ position, specifier: isConstant ? literal.value : null });
   });
 
-  return Array.from(specifiers);
+  return calls;
 }
 
 /**
@@ -937,6 +1026,7 @@ const isModuleCached = defaultLoader.isCached;
 export {
   createModuleLoader,
   scanRequires,
+  scanNonLiteralRequires,
   loadModule,
   invalidateModule,
   invalidateAllModules,
