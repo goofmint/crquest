@@ -7,30 +7,16 @@ import { syncBundledAssets } from './app/common/assetLoader';
 import extendYup from './app/common/extendYup';
 const { shell, remote } = require('electron');
 import config from './app/config/config';
+import { showConfirmSync, showAlertSync } from './app/platform/dialog';
 
 extendYup();
 
 window.confirm = function(message) {
-  const buttonIdx = remote.dialog.showMessageBoxSync(null, {
-    type: 'question',
-    buttons: ['OK', 'Cancel'],
-    defaultId: 0,
-    cancelId: 1,
-    detail: message,
-    message: '',
-  });
-  return buttonIdx === 0;
+  return showConfirmSync(message);
 };
 
 window.alert = function(message) {
-  const buttonIdx = remote.dialog.showMessageBoxSync(null, {
-    type: 'warning',
-    buttons: ['OK'],
-    defaultId: 0,
-    cancelId: 0,
-    detail: message,
-    message: '',
-  });
+  showAlertSync(message);
 };
 
 const DEVTOOLS_WARNING = `
