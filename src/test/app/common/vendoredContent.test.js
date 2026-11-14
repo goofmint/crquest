@@ -123,7 +123,7 @@ describe('moduleLoader with the vendored twilioquest-base', () => {
         await loader.load(normalize(entry));
       } catch (error) {
         failures.push(
-          `${path.relative(BASE_PATH, entry)}: ${error.code} ${error.message}`
+          `${path.relative(BASE_PATH, entry).split(path.sep).join('/')}: ${error.code} ${error.message}`
         );
       }
     }
