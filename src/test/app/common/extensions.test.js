@@ -28,7 +28,8 @@ const mockExtensionsContext = mockContextFactory('extensions', {
 });
 
 const mockConfig = mockConfigFactory({ 
-  bundledExtensionModules: ['twilioquest-base', 'owls-nest-extension'] 
+  bundledExtensionModules: ['twilioquest-base', 'owls-nest-extension'],
+  vendoredExtensionModules: ['twilioquest-base']
 });
 
 beforeAll(() => {
@@ -195,17 +196,42 @@ describe('getBundledExtensionDirectories', () => {
     const bundledExtensions = getBundledExtensionDirectories();
 
     expect(bundledExtensions.length).toBe(1);
-    expect(bundledExtensions[0].absolutePath).toBe(path.join(PUBLIC_PATH, 'node_modules', 'twilioquest-base'));
+    expect(bundledExtensions[0].absolutePath).toBe(path.join(PUBLIC_PATH, 'content', 'twilioquest-base'));
     expect(bundledExtensions[0].name).toBe('twilioquest-base');
     expect(bundledExtensions[0].isValid).toBe(true);
   });
 
   test('should return no bundled extensions if config does NOT list any', () => {
-    mockConfig({ bundledExtensionModules: [] });
+    mockConfig({ bundledExtensionModules: [], vendoredExtensionModules: [] });
 
     const bundledExtensions = getBundledExtensionDirectories();
     
     expect(bundledExtensions.length).toBe(0);
+  });
+
+  test('should look up vendored extensions in content and all others in node_modules', () => {
+    mockConfig({
+      bundledExtensionModules: ['twilioquest-base', 'twilioquest-aaa-bundled-two'],
+      vendoredExtensionModules: ['twilioquest-base']
+    });
+
+    const bundledExtensions = getBundledExtensionDirectories();
+
+    expect(bundledExtensions.map(({ name, absolutePath }) => [name, absolutePath])).toEqual([
+      ['twilioquest-aaa-bundled-two', path.join(PUBLIC_PATH, 'node_modules', 'twilioquest-aaa-bundled-two')],
+      ['twilioquest-base', path.join(PUBLIC_PATH, 'content', 'twilioquest-base')]
+    ]);
+  });
+
+  test('should throw if a vendored extension is not a bundled extension', () => {
+    mockConfig({
+      bundledExtensionModules: ['twilioquest-aaa-bundled-two'],
+      vendoredExtensionModules: ['twilioquest-base']
+    });
+
+    expect(() => getBundledExtensionDirectories()).toThrow(
+      '"twilioquest-base" is listed in vendoredExtensionModules but not in bundledExtensionModules.'
+    );
   });
 });
 

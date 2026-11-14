@@ -1,6 +1,7 @@
 import path from 'path';
 import { isDev } from '../platform/env';
 import bundledExtensionModules from './bundledExtensionModules.json';
+import vendoredExtensionModules from './vendoredExtensionModules.json';
 import { getAppDataPath, getUserDataPath } from '../platform/paths';
 
 const appDataPath = path.resolve(getAppDataPath(), 'TerminalQuest');
@@ -24,6 +25,7 @@ let config = {
   codeStorageFileName: 'user_code.js',
   apiBaseUrl: PRODUCTION_API_BASE_URL,
   bundledExtensionModules,
+  vendoredExtensionModules,
   userDataPath,
   saveFileName,
   saveFilePath: path.join(userDataPath, saveFileName),
