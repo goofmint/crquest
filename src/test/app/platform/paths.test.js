@@ -4,14 +4,13 @@ const FIXTURES = path.resolve(__dirname, '..', '..', 'fixtures', 'platform');
 
 function loadPaths({ remote, fixtureDir }) {
   let mod;
+  const staticFilePath = jest.fn(() => path.join(FIXTURES, `${fixtureDir}.json`));
   jest.isolateModules(() => {
     jest.doMock('electron', () => ({ remote }));
-    jest.doMock('../../../js/app/common/fs_utils', () => ({
-      staticFilePath: jest.fn(() => path.join(FIXTURES, `${fixtureDir}.json`)),
-    }));
+    jest.doMock('../../../js/app/common/fs_utils', () => ({ staticFilePath }));
     mod = require('../../../js/app/platform/paths');
   });
-  return mod;
+  return Object.assign({ staticFilePath }, mod);
 }
 
 function makeRemote(values) {
@@ -64,18 +63,38 @@ describe('platform paths', () => {
     });
   });
 
-  it('reads the game version from package.json', () => {
+  it('reads the game version from package.json', async () => {
     const paths = loadPaths({ remote: makeRemote({}), fixtureDir: 'with-version' });
-    expect(paths.getGamePackageVersion()).toBe('1.2.3');
+    await expect(paths.getGamePackageVersion()).resolves.toBe('1.2.3');
   });
 
-  it('throws when package.json has no version', () => {
+  it('reads the package.json at staticFilePath("package.json")', async () => {
+    const paths = loadPaths({ remote: makeRemote({}), fixtureDir: 'with-version' });
+    await paths.getGamePackageVersion();
+    expect(paths.staticFilePath).toHaveBeenCalledWith('package.json');
+  });
+
+  it('rejects when package.json has no version', async () => {
     const paths = loadPaths({ remote: makeRemote({}), fixtureDir: 'no-version' });
-    expect(() => paths.getGamePackageVersion()).toThrow('non-empty string');
+    await expect(paths.getGamePackageVersion()).rejects.toThrow('non-empty string');
   });
 
-  it('propagates JSON parse errors', () => {
+  it('rejects when version is an empty string or a number', async () => {
+    await expect(
+      loadPaths({ remote: makeRemote({}), fixtureDir: 'empty-version' }).getGamePackageVersion()
+    ).rejects.toThrow('non-empty string');
+    await expect(
+      loadPaths({ remote: makeRemote({}), fixtureDir: 'number-version' }).getGamePackageVersion()
+    ).rejects.toThrow('non-empty string');
+  });
+
+  it('rejects on JSON parse errors', async () => {
     const paths = loadPaths({ remote: makeRemote({}), fixtureDir: 'invalid-json' });
-    expect(() => paths.getGamePackageVersion()).toThrow();
+    await expect(paths.getGamePackageVersion()).rejects.toThrow();
+  });
+
+  it('rejects with ENOENT when package.json is missing', async () => {
+    const paths = loadPaths({ remote: makeRemote({}), fixtureDir: 'does-not-exist' });
+    await expect(paths.getGamePackageVersion()).rejects.toMatchObject({ code: 'ENOENT' });
   });
 });

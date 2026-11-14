@@ -3,12 +3,10 @@ import config from '../config/config';
 import ga from './analytics';
 import { getGamePackageVersion } from '../platform/paths';
 
-const GAME_VERSION = getGamePackageVersion();
-
 async function logMissionObjectiveCompletion(context, liveEvent) {
   /*
   // Get app version - will be electron version in dev, actual app version in prod
-  const appVersion = GAME_VERSION;
+  const appVersion = await getGamePackageVersion();
   const userAgent = `${window.navigator.userAgent} // ${appVersion}`;
 
   const eventData = {

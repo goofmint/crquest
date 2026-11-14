@@ -18,7 +18,6 @@ import Credits from './Credits';
 import Extensions from './Extensions';
 import { getGamePackageVersion } from '../../../platform/paths';
 
-const GAME_VERSION = getGamePackageVersion();
 const SUBNAV_SECTIONS = [
   'Audio',
   'User',
@@ -46,10 +45,30 @@ export default class Settings extends React.Component {
     saved: false,
     inputFocused: false,
     showGuid: false,
+    gameVersion: undefined,
+    gameVersionError: undefined,
   };
 
   componentDidMount() {
+    this.isComponentMounted = true;
+    getGamePackageVersion().then(
+      (gameVersion) => {
+        if (this.isComponentMounted) {
+          this.setState({ gameVersion });
+        }
+      },
+      (error) => {
+        console.error('Failed to load game version', error);
+        if (this.isComponentMounted) {
+          this.setState({ gameVersionError: error.message });
+        }
+      }
+    );
     ga.pageview(`/menu/settings/${this.props.subnav}`, `Settings: ${this.props.subnav}`);
+  }
+
+  componentWillUnmount() {
+    this.isComponentMounted = false;
   }
 
   componentDidUpdate(prevProps) {
@@ -103,7 +122,11 @@ export default class Settings extends React.Component {
         <ClearDataButton />
         <h2 className="mb1">Settings</h2>
         <p className="game-version gray">
-          TerminalQuest v{GAME_VERSION} |&nbsp;
+          TerminalQuest
+          {this.state.gameVersion !== undefined && ` v${this.state.gameVersion}`}
+          {this.state.gameVersionError !== undefined &&
+            ` (failed to load version: ${this.state.gameVersionError})`}
+          {' '}|&nbsp;
           {
             (this.state.showGuid) ? 
               <span>
