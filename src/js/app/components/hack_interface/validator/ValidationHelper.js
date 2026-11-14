@@ -96,11 +96,15 @@ export default class ValidationHelper {
    *
    * @param {String} program
    * @param {String[]} [args]
-   * @param {{cwd?: String}} [options]
+   * @param {{cwd?: String, timeout?: Number}} [options] timeout in ms: the process is
+   *   killed and the promise rejects (error.killed) when it runs longer
    * @returns {Promise<{code: Number, stdout: String, stderr: String}>}
    */
-  exec(program, args = [], { cwd } = {}) {
-    return platformExec.run(program, args, cwd === undefined ? {} : { cwd });
+  exec(program, args = [], { cwd, timeout } = {}) {
+    const options = {};
+    if (cwd !== undefined) options.cwd = cwd;
+    if (timeout !== undefined) options.timeout = timeout;
+    return platformExec.run(program, args, options);
   }
 
   /**

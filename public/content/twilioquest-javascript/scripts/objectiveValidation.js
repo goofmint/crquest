@@ -18,35 +18,25 @@ const EXECUTION_TIMEOUT_MS = 5000;
 const SCRIPT_PATH_PLACEHOLDER = "validate.js";
 
 async function executeCodeString(helper, node, code, args = []) {
-  const execution = helper
-    .exec(node, ["-e", code, SCRIPT_PATH_PLACEHOLDER].concat(args.map(String)))
-    .then(
-      ({ code: exitCode, stdout, stderr }) => ({ exitCode, stdout, stderr }),
-      () => {
-        throw new NiceError(`
-        There was a problem validating your JavaScript code. Please try again.
-      `);
-      }
-    );
-
-  let timer;
-  const timeout = new Promise((resolve, reject) => {
-    timer = setTimeout(() => {
-      console.warn("Node.js validation code timed out.");
-      reject(
-        new NiceError(`
-          There was a problem validating your Node.js code - please try again.
-        `)
-      );
-    }, EXECUTION_TIMEOUT_MS);
-  });
-
   try {
     // We don't care about success or failure - let the validation code sort
-    // that out
-    return await Promise.race([execution, timeout]);
-  } finally {
-    clearTimeout(timer);
+    // that out. A program that runs longer than the timeout is killed.
+    const { code: exitCode, stdout, stderr } = await helper.exec(
+      node,
+      ["-e", code, SCRIPT_PATH_PLACEHOLDER].concat(args.map(String)),
+      { timeout: EXECUTION_TIMEOUT_MS }
+    );
+    return { exitCode, stdout, stderr };
+  } catch (e) {
+    if (e && e.killed) {
+      console.warn("Node.js validation code timed out.");
+      throw new NiceError(`
+          There was a problem validating your Node.js code - please try again.
+        `);
+    }
+    throw new NiceError(`
+        There was a problem validating your JavaScript code. Please try again.
+      `);
   }
 }
 

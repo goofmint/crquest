@@ -114,6 +114,15 @@ describe('helper.exec / helper.commandExists', () => {
     expect(platformExec.run).toHaveBeenCalledWith('git', [], {});
   });
 
+  test('exec forwards timeout', async () => {
+    platformExec.run.mockResolvedValue({ code: 0, stdout: '', stderr: '' });
+    await makeHelper().exec('node', ['-v'], { cwd: '/w', timeout: 5000 });
+    expect(platformExec.run).toHaveBeenCalledWith('node', ['-v'], {
+      cwd: '/w',
+      timeout: 5000,
+    });
+  });
+
   test('exec rejects on spawn failure', async () => {
     const err = new Error('ENOENT');
     platformExec.run.mockRejectedValue(err);

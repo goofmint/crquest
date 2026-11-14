@@ -56,7 +56,7 @@ Issue #32。`twilioquest-javascript@1.1.7` (`public/package-lock.json` が解決
 | `require("electron").remote.app.getPath("appData")` 配下に `javascript_validator/` を作り、検証コードを `validate.js` に書き出し、`spawn(node, [validate.js, ...args])` で実行 | 検証コードを一時ファイルに書かず `helper.exec(node, ["-e", code, "validate.js", ...args])` で実行。`-e` の場合 `process.argv` に実行ファイルのパスが入らないため、ダミーの引数 `validate.js` を 1 つ挟んで、`process.argv[2]` が最初の引数になる従来の並びを保つ。モジュール読み込み時の `jetpack.dir(...)` による副作用 (appData への `javascript_validator` ディレクトリ作成) は無くなった |
 | `executeCodeString(node, code, args)` | `executeCodeString(helper, node, code, args)` (第 1 引数に `helper` を追加。呼び出し側 8 件と `evaluteAssertions` を更新) |
 | `spawn` の `error` イベントで `NiceError` | `helper.exec` の reject で同じ文言の `NiceError` |
-| 5 秒でタイムアウト (`NiceError`。子プロセスは止めない) | 同じ (`Promise.race` + `setTimeout`。子プロセスを止めない点も同じ) |
+| 5 秒でタイムアウト (`NiceError`。子プロセスは止めない) | `helper.exec(..., { timeout: 5000 })` に渡し、超過した子プロセスは kill される (`error.killed` を従来と同じタイムアウトの `NiceError` に写す)。従来は放置されていた暴走プロセスが残らなくなる |
 | 戻り値 `{ exitCode, stdout, stderr }` | 同じ (`helper.exec` の `code` を `exitCode` に写す) |
 | `jetpack.existsAsync` / `readAsync` | `helper.fs.existsAsync` / `readAsync` |
 | `uuid` の `v4`、`path` | 変更なし |
@@ -92,6 +92,7 @@ Issue #32。`twilioquest-javascript@1.1.7` (`public/package-lock.json` が解決
 - メッセージ、判定、報酬、ミッションの流れは同じ。学習者が見る違いは、`js_node_env_setup` で起動に失敗した場合のメッセージ (従来は応答なし) だけ。
 - 本パッケージの課題は、学習者が自分のエディタでワークスペースにファイルを作り、自分の Node.js で動かす形式で、QuestIDE (`show_ide`) には依存しない。`objective.json` の `show_ide` は `false` の目標があり、QuestIDE で動かす課題は見つからなかった。したがって `code-runner-behavior.md` の Worker 版で提供できない API を要求する、QuestIDE 上の課題は無い。
 - **前提**: validator はユーザーのマシンの Node.js (`TQ_NODE_EXE`、`git`) を `helper.exec` で起動し、学習者のワークスペースのファイルを `helper.fs` で読む。Tauri 版でもこの 2 つの API (子プロセス起動とユーザー指定パスの読み取り) が使えることが前提になる。
+- `vm` で評価する学習者のコード (3.1 節の 15 件) には実行時間の制限が無い (従来と同じ。無限ループを書くと UI が固まる)。Worker ベースの runner (#26 / #39) で解決する。
 - `pullVarsFromUserCodeLocalScope` は内部で `vm` を使う。Web Worker 化 (#26) の際に `pullVarsFromQuestIdeUserCodeLocalScope` と同時に置き換える。
 - 取り込んだ `README.md`、`package.json` の `dependencies` (`command-exists`、`esprima`、`fs-jetpack`) は原文のまま (出所の記録)。実行時にはもう使わない。
 

@@ -433,26 +433,43 @@ describe('executeCodeString', () => {
     await expect(executeCodeString(helper, 'x', 'code')).rejects.toBeInstanceOf(
       NiceError
     );
-    expect(helper.exec).toHaveBeenCalledWith('x', ['-e', 'code', 'validate.js']);
+    expect(helper.exec).toHaveBeenCalledWith('x', ['-e', 'code', 'validate.js'], {
+      timeout: 5000,
+    });
   });
 
-  test('rejects with a NiceError after five seconds without a result', async () => {
-    // jest fake timers are not available in the Electron runner.
+  test('asks helper.exec to kill the program after five seconds and reports a timeout', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    const timeout = jest.spyOn(global, 'setTimeout').mockImplementation(fn => {
-      fn();
-      return 0;
-    });
     try {
-      const helper = { exec: jest.fn(() => new Promise(() => {})) };
-      await expect(executeCodeString(helper, 'x', 'code')).rejects.toBeInstanceOf(
-        NiceError
+      const killed = Object.assign(new Error('timed out'), { killed: true });
+      const helper = { exec: jest.fn().mockRejectedValue(killed) };
+      const error = await executeCodeString(helper, 'x', 'code').catch(e => e);
+      expect(error).toBeInstanceOf(NiceError);
+      expect(error.message).toContain('validating your Node.js code');
+      expect(helper.exec).toHaveBeenCalledWith(
+        'x',
+        ['-e', 'code', 'validate.js'],
+        { timeout: 5000 }
       );
-      expect(timeout).toHaveBeenCalledWith(expect.any(Function), 5000);
     } finally {
-      timeout.mockRestore();
       warn.mockRestore();
     }
+  });
+
+  test('really kills a script that never ends', async () => {
+    const { helper } = makeHelper();
+    const slow = Object.assign(helper, {
+      exec: (program, args, options) =>
+        helper.constructor.prototype.exec.call(helper, program, args, {
+          ...options,
+          timeout: 300,
+        }),
+    });
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(
+      executeCodeString(slow, NODE_EXE, 'while (true) {}')
+    ).rejects.toBeInstanceOf(NiceError);
+    console.warn.mockRestore();
   });
 });
 
