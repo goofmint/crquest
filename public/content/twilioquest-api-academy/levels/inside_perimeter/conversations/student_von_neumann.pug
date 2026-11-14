@@ -1,0 +1,71 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    I’ve been exploring and meeting other Arcanians. Can you tell me more about House von Neumann?
+
+mixin more_info
+  response#more_info.
+    Tell me more about the Potions Club!
+
+mixin one_sentence
+  response#one_sentence.
+    If you had to say in one sentence what’s so great about APIs, what would you say?
+
+conversation(display_name="Gene, House von Neumann Student Rep")
+  case lastResponse 
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        Hello Operator. How are you enjoying Arcane Academy so far?
+
+    statement#one_sentence 
+      text.
+        APIs let developers use existing functionality rather than needing to build it from scratch.<br><br>
+        Those solutions are especially effective when they come neatly bundled in a Library or SDK... 
+        or when imbibed through a House von Neumann tincture. APIs don’t just make it easier for developers to gain these new powers; 
+        they also lower the barrier to entry so that a greater number of developers can do a greater number of amazing things with a lower learning curve. 
+        If that’s not the definition of efficiency and productivity, I solemnly swear to support House Hopper in the House Gauntlet!
+
+    statement#more_info 
+      text.
+        Potions Club is actually putting on an API Arts “Science Fair” this year, where we plan to showcase the various API solutions we’ve been developing.<br><br>
+        As we’re driven by efficiency and productivity, we’re always exploring how APIs could be combined to produce new API solutions. It’s all about finding the right formula, brewing the right ingredients, adding in a dash of an API tonic to make your API elixir… 
+  
+    statement#house 
+      text.
+        In <span class="highlight">House von Neumann</span> we work between theory and application. 
+        We believe in efficiency, in using APIs to create solutions of scale, designing systems that are long-lasting.
+        But that doesn’t mean we don’t also explore the practical side of theory. In fact, you can usually find even 
+        the most theoretical House von Neumann students in the chemistry labs, 
+        distilling API solutions down to their most valuable features. We also run Arcane’s Potions Club.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

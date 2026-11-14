@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example 
+  response#example.
+    Can you give me an example of an API?
+
+conversation(display_name="Portrait of a Whispering Windy Wall")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        A whisper in the wind said that students who use GET requests to send messages with the Twilio Programmable SMS API aren't getting the results they want.
+
+    statement#example
+      text.
+        <a href="https://openweathermap.org/api">Open Weather API</a> lets you incorporate weather from over 200,000 cities into your app or access historical weather data. Who knows, perhaps I was not always so windy?
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,34 @@
+{
+  "title": "API Academy: Making Requests with Postman",
+  "description": "Test your knowledge of the different features of Postman. When you're successful you'll receive the House Hopper Key Spell Component",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "text",
+      "placeholder": "confirm",
+      "label": "Create a Postman account and login to Postman's web interface. Confirm you've successfully done so by typing `confirm`."
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "true or false",
+      "label": "True or false: A 'collection' in Postman refers to a group of related workspaces."
+    },
+    {
+      "name": "answer3",
+      "type": "text",
+      "placeholder": "",
+      "label": "Which tab do you use to set credentials for authenticated API requests in Postman?"
+    },
+    {
+      "name": "answer4",
+      "type": "text",
+      "placeholder": "A, B, C, D, or E",
+      "label": "When using Postman to make a POST request to the Twilio Programmable SMS API to send a message, what data format option should you select under the Body tab? A: form-data; B: x-www-form-urlencoded; C: raw, D: binary, or E: GraphQL."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

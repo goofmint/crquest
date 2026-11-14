@@ -1,0 +1,34 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin anything_else
+  response#anything_else.
+    Great! Is there anything else I should know?
+
+conversation(display_name="Professor Clay, Head of House Lovelace")
+  case lastResponse
+    
+    when "anything_else"
+      statement#anything_else
+
+    default
+      statement#default
+      responses
+        +anything_else
+
+  statements
+    statement#default
+      text.
+        Welcome to Lovelace Tower, Operator! We can’t thank you enough for jumping right into the House Gauntlet.<br><br>
+        The challenges ahead will test you on your skills in the practical application of your API knowledge, 
+        resulting in your own #[span.highlight Divination Spell] that will allow you to access the next house in the Gauntlet.
+
+    statement#anything_else
+      text.
+        In Lovelace Tower you will find books and resources filled with documentation – 
+        as befits House Lovelace, of course. You‘ll also find some eager Lovelace students here to cheer you on... 
+        though they may also just want help with their homework.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

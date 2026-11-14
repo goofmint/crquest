@@ -1,0 +1,72 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    Can you tell me more about House Turing?
+
+mixin more_info
+  response#more_info.
+    Could you tell me more about Libraries and SDKs?
+
+mixin one_sentence
+  response#one_sentence.
+    If you had to say in one sentence what’s so great about APIs, what would you say?
+
+conversation(display_name="Jaya, House Turing Student Rep")
+  case lastResponse 
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">Welcome, Operator! You must be off to retrieve your pledge scroll.</p>
+
+    statement#one_sentence 
+      text.
+       APIs and their libraries let us share knowledge. We’re putting on a Career Fair for current students, 
+       using SDKs and Libraries to set up events, create databases of alumni, and 
+       inspire current students with practical applications of APIs after graduation. 
+       We truly want to inspire our fellow students to do great things with their skills and knowledge!<BR><BR>
+       Oh, sorry, that wasn’t one sentence… it’s not like I’m in efficiency-loving House von Neumann, though!
+
+    statement#more_info 
+      text.
+        Every house at the Academy has their own unique traits, and House Turing’s traits are innovation and problem-solving. 
+        One way we use those traits is in building a software library, a suite of data and programming code, for our fellow students. 
+        We want everyone at Arcane to have access to as many APIs and development kits as possible.   
+
+    statement#house 
+      text.
+        You can find the students of <span class="highlight">House Turing</span> in the labs and garages of the main floor, 
+        where we experiment with unsolved API problems. You can also find us training on the field in preparation for codeball season – 
+        our mascot is, after all, the tiger! Or you can find us… Well, honestly, you can find us most places at Arcane. 
+        We’re involved with practically every club on offer. And if a club - or group or library - doesn’t exist yet, 
+        we create them, to solve new problems and bring people together.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

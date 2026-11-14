@@ -1,0 +1,120 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin personal_intro
+  response#personal_intro.
+    What do you do at the Academy?
+
+mixin inside_introduction
+  response#inside_introduction.
+    I'm excited to join the Academy, but I'm not sure what to do next.
+
+mixin get_started
+  response#get_started.
+    I'm off to get my wand!
+
+mixin wand
+  response#wand.
+    I got my wand, but how do I use it? What should I do next?
+
+conversation(display_name="Arcane Academy Groundskeeper")
+  case lastResponse
+    when "personal_intro"
+      statement#personal_intro
+      responses
+        +get_started
+        +inside_introduction
+
+    when "inside_introduction"
+      statement#inside_introduction
+      responses
+        +get_started
+        +personal_intro
+
+    when "help"
+      statement#help
+
+    when "wand"
+      statement#congratulations
+
+    when "get_started"
+      statement#get_started
+
+    default
+      if !worldState.insidePerimeter.groundskeeper_introduction
+        - worldState.insidePerimeter.groundskeeper_introduction = true;
+        statement#default
+        responses
+          +get_started
+          +personal_intro
+
+      else
+        statement#follow_up_greeting
+        responses
+            +wand
+            +get_started
+            response#help.
+              I need help finding the wand. 
+            +personal_intro
+
+  statements
+    statement#default
+      text.
+        Ahoy, a midterm student! The Arcane Academy of API Arts is thrilled to have you. 
+        I am the Groundskeeper at the Academy. I keep things running here. 
+        The Academy building is up and over that way, but you'll need a few things before you can begin your studies. 
+        First, you'll need a wand. I'm out of the regularly issued wands, but I think there's an extra over in the toolshed. 
+
+    statement#inside_introduction
+      text.
+        Wands are used to perform spells and practice the arts of APIs. 
+        You'll need one before you can proceed. Take a look around the grounds to see if you can find one. 
+        Feel free to stop by my toolshed too. <br><br>
+        Once you’ve found the wand, bring it back to me, and I’ll show you how to use it.
+
+
+    statement#get_started 
+      text.
+        Bring the wand back when you've found it, and I'll teach you a spell.
+
+    statement#follow_up_greeting
+      text.
+        Welcome back, Student. Have you found the old wand in the toolshed? 
+        If so, head to the Catacombs to obtain your pledge scroll.
+
+    statement#congratulations
+      if worldState.insidePerimeter.hasWand
+        if !worldState.spellsEarned.includes('disappear')
+          - worldState.spellsEarned.push('disappear')
+        text.
+          Well done! Now that you have your wand, you are ready to learn your first spell. 
+          A simple but powerful incantation, the #[span.highlight Vanishing Spell] will allow you to clear objects from your path. 
+          You may find it useful as you explore the secrets around the grounds. <br><br>
+          In fact, your next task is to retrieve a pledge scroll so that you may join a house. 
+          Every student of the Academy must retrieve their scroll from the depths of the Catacombs in order to reveal their truest nature. 
+          ood luck!
+
+      else 
+        text.
+          It seems you don't actually have a wand yet. Check the toolshed!
+
+    statement#ack
+      text.
+        Visit the ultimate API spellbook: the <a href="https://twilio.com/console">Twilio Console</a>. 
+        From there you'll be able to find the credentials the Statue needs.
+
+    statement#help
+      text.
+        The toolshed is over to the right. I think I stored the wand in an old chest or box; 
+        you'll have to look around inside. Once you find it, you might need to answer a question to prove ownership: 
+        wands are tricky like that! <br><br>
+        If you need help answering the question, 
+        you’re welcome to this <a ref="https://www.twilio.com/docs/api">first-year API textbook</a> as a reference.
+
+    statement#personal_intro
+      text.
+        I am the Groundskeeper for the Academy. I keep things operating smoothly and help out lost or new students like yourself!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

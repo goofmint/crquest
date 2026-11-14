@@ -1,0 +1,18 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="House Hopper Poster")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">Calling all Arcanians to House Hopper’s new beta test-off! 
+        Now’s your chance to test the newest tools before they go live. Give your candid feedback! Experience the thrill of debugging!<BR><BR>
+        <span class="highlight">Hopper Test Club</span> meets every second Tuesday in the greenhouse. 
+        No testing or quality assurance experience necessary!</p>
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,19 @@
+{
+  "title": "API Academy: House Gauntlet in Lovelace Tower",
+  "description": "The House Gauntlet has begun in Lovelace Tower. Make your way through the Tower to retrieve the spell that will open the next house!",
+  "questTitle": "Completing Lovelace Tower",
+  "questDescription": "Complete the Lovelace Tower House Gauntlet challenges!",
+  "is_mission": false,
+  "priority": 3,
+  "backgroundMusic": "fascinatingarea_108253b",
+  "flavorTextOverrides": {
+    "lockedDoor": "This door won't budge!"
+  },
+  "objectives": [
+    "api-01-local-function",
+    "api-02-async-await",
+    "api-03-fetch",
+    "api-04-remote-and-local",
+    "api-05-get-patch"
+  ]
+}

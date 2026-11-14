@@ -1,0 +1,39 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin excerpt 
+  response#excerpt.
+    Excerpt from the Tome
+    
+conversation(display_name="Lovelace Tomes v. 2")
+  case lastResponse
+    
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">
+        <span class="highlight">
+        <a href="https://sci-hub.ru/https://dl.acm.org/doi/fullHtml/10.1145/2896587">Improving API Usability</a>
+        </span>
+        <br><br>
+        by Brad A. Myers and Jeffrey Stylos</p>
+
+    statement#excerpt 
+      text.
+        “When a usability problem cannot be removed from the API itself, 
+        many mitigations can be applied to help its users. The most obvious is to improve the documentation and example code, 
+        which are the subjects of frequent complaints from API users in general. 
+        <span class="highlight">API designers can be careful to explicitly direct users to the solutions to the known problems...</span>” (68).
+        
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

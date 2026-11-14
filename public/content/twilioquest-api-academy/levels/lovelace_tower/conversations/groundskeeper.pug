@@ -1,0 +1,59 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);   
+  
+
+mixin secret
+  response#secret.
+    The secret what?
+
+mixin library
+  response#library.
+    What’s in the secret Lovelace Library?
+
+conversation(display_name="Arcane Academy Groundskeeper")
+  case lastResponse
+    
+    when "secret"
+      statement#secret
+
+    when "library"
+      statement#library
+
+    default
+      if !worldState.obj4Complete
+        statement#default
+        responses
+          +secret
+
+      else if worldState.obj4Complete
+        statement#secret_default
+        responses
+          +library
+
+
+  statements
+    statement#default
+      text.
+        You’ve almost completed Lovelace Tower! Just one more objective to go...<br><br> 
+        Behind me is the door to the secret... Oh, actually, you should probably finish the last objective first.
+
+    statement#secret
+      text.
+        You’ll need the #[span.highlight Divination Spell] to get through there... that’s all I’ll say for now.
+
+    statement#secret_default
+      text.
+        You earned the Divination Spell! Great work, Operator. Behind me is the door to the secret Lovelace Library. 
+        You can use the Divination Spell to access the library. This spell will also help you get through to the next part of the House Gauntlet 
+        once you make your way back to the Main Hall. Just look for the sparkling blue marker for places you can use this spell, like the one on the door behind me.
+
+    statement#library
+      text.
+        Arcane Academy is full of secret doors and rooms and other hidden areas... 
+        Each house has their own special area that can be accessed only by achieving the corresponding house spells. I shouldn’t say more...<br><br> 
+        Good luck on the rest of the House Gauntlet, Operator!
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

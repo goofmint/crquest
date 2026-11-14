@@ -1,0 +1,16 @@
+{
+  "title": "API Academy: Remote and Local",
+  "description": "Write an async function that fetches data from a API, processes it locally, and returns the result.",
+  "show_ide": true,
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "type": "prompt",
+      "label": "Write a function called \"getFilteredAuthors\" that makes a fetch request to the \"divination\" API, processes the response locally, and returns the result."
+    }
+  ],
+  "rewards": {
+    "xp": 100,
+    "items": ["spell_lovelace_divination"]
+  }
+}

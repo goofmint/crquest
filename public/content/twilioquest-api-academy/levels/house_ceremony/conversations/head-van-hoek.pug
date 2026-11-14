@@ -1,0 +1,95 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin unique
+  response#unique.
+    Could you remind me what makes House von Neumann unique?
+
+mixin join  
+  response#join.
+    I would like to join House von Neumann!
+
+mixin deciding 
+  response#deciding.
+    I’m still deciding which house to join.
+
+mixin getting_started 
+  response#getting_started.
+    I’m excited to explore the von Neumann Labs when it's House von Neumann's turn. 
+
+conversation(display_name="Professor van Hoek, Head of House von Neumann")
+  case lastResponse
+    
+    when "unique"
+      statement#unique
+      responses 
+        +join 
+        +deciding
+
+    when "join"
+      statement#join
+
+    when "deciding"
+      statement#deciding
+
+    when "getting_started"
+      statement#getting_started
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique 
+          +join 
+          +deciding 
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        Welcome to Arcane, Operator! Will you be joining House von Neumann?
+
+    statement#unique
+        text.
+          House von Neumann is characterized by our attention to productivity 
+          and efficiency. By which I mean, potions! House von Neumann students 
+          are particularly strong at discovering effective solutions to 
+          productivity and efficiency problems down in the chemistry labs. 
+
+    statement#join
+        text.
+          That’s excellent news! Now that you’ve decided, 
+          take your pledge scroll to the #[span.highlight House Fire] to confirm your choice.
+
+    statement#deciding
+        text.
+          That’s no problem. Whenever you decide, 
+          just take your pledge scroll to the #[span.highlight House Fire].
+
+    statement#history
+      text.
+        Fun fact: while House Lovelace typically starts the Gauntlet, House von Neumann usually ends it, all by chance, of course. 
+        It’s always fun to see the order in which the houses are 
+        randomly selected. Maybe the von Neumann labs will host the Gauntlet first this year. One never knows...<br><br>
+        Also, great choice on your house: #[span.highlight House #{worldState.displayNames[worldState.playerHouse]}] is lucky to have you!
+        
+    statement#gauntlet_default 
+      text.
+        A missing student on the morning of the House Gauntlet! And not just any student, but a Gauntleter herself...
+        Arcane Academy is lucky to have you step in and take her place, while we search for her...<br><br>
+        Anyway, Lovelace Tower is an excellent place to begin the House Gauntlet.
+
+    statement#getting_started 
+      text.
+        Yes, yes, we’ll get down there at some point during the Gauntlet, that’s for sure. Good luck, Operator!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

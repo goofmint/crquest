@@ -1,0 +1,31 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin documentation 
+  response#documentation.
+    What’s the best way to go from reading API documentation to implementing its concepts in practice?
+
+conversation(display_name="Dusty Statue of Ada Lovelace")
+  case lastResponse
+    when "documentation"
+      statement#documentation
+
+    default
+      statement#default
+      responses
+        +documentation
+        
+  statements
+    statement#default
+      text.
+        In House Lovelace, you will learn that understanding is key to expression. 
+        To enhance the power of House Lovelace, explore an API's documentation to find the answers you seek.
+
+    statement#documentation 
+      text.
+        One needs reasoning and comprehension to read documentation, but imagination and creativity to apply it. 
+        Wouldn't you agree, Operator?
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

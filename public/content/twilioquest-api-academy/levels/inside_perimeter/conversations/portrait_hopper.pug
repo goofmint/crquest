@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example 
+  response#example.
+    Can you give me an example of an API?
+
+conversation(display_name="Portrait of a Pretentious Princess's Palace")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        I heard that some sneaky students make use of Postman variables to keep track of their credentials across requests. Can you believe it?
+
+    statement#example
+      text.
+        <a href="https://www.mapbox.com/">MapBox APIs</a> lets you explore maps, navigation routes, searches by place, and more… not that I would ever require walking directions!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

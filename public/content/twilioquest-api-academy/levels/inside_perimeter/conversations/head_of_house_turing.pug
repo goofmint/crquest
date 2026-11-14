@@ -1,0 +1,52 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;
+
+mixin join_house
+  response#join_house.
+    How do I join a house?
+
+mixin pledge_scroll
+  response#pledge_scroll.
+    I’ve retrieved my pledge scroll from the Catacombs. What should I do next?
+
+conversation(display_name="Head of House Turing")
+  case lastResponse
+    when "join_house"
+      statement#join_house
+      responses 
+        if allComplete 
+          +pledge_scroll
+
+    when "pledge_scroll"
+      statement#pledge_scroll
+      responses 
+        +join_house
+
+    default
+      statement#default
+      responses
+        if allComplete
+          +join_house
+          +pledge_scroll 
+        else  
+          +join_house
+
+  statements
+    statement#default
+      text.
+        Welcome to Arcane Academy, Operator! We are very excited for the House Gauntlet, which is starting shortly.
+
+    statement#join_house
+      text.
+        As you explore the grounds of the Academy, you’ll meet Arcane students from the different houses. 
+        You must retrieve your pledge scroll to join a house. See the Groundskeeper if you need help with this.
+
+    statement#pledge_scroll
+      text.
+        I commend you on your accomplishments in the Catacombs. Now that you’ve retrieved your pledge scroll, you may join one of Arcane’s four houses. 
+        Just head straight past the courtyard and into the Main Hall. I'll meet you there with the other Heads of Houses to oversee the House Ceremony!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

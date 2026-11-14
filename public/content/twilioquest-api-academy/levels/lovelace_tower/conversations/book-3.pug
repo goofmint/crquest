@@ -1,0 +1,38 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin excerpt 
+  response#excerpt.
+    Excerpt from the Tome
+    
+conversation(display_name="Lovelace Tomes v. 3")
+  case lastResponse
+    
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">
+        <span class="highlight">
+        <a href="https://sci-hub.ru/https://ieeexplore.ieee.org/abstract/document/7739689/">Perceived Obstacles by Novice Developers Adopting User Interface APIs and Tools</a>
+        </span>
+        <br><br>
+        by Irum Rauf, et al.</p>
+
+    statement#excerpt 
+      text.
+        “API developers may use different design guidelines and heuristics to develop usable APIs, however, 
+        the usability of <span class="highlight">an API cannot be improved in isolation without considering its development environment.</span>  
+        APIs are used in some specific system environment that needs to be configured rightly before an API can be used properly” (p. 226).
+       
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

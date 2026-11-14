@@ -1,0 +1,70 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    Can you tell me more about House Lovelace?
+
+mixin more_info
+  response#more_info.
+    Does House Lovelace run activities like the other houses?
+
+mixin one_sentence
+  response#one_sentence.
+    If you had to say in one sentence what’s so great about API documentation, what would you say?
+
+conversation(display_name="Articia, House Lovelace Student Rep")
+  case lastResponse 
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        Welcome, Operator! You must be off to retrieve your pledge scroll.
+
+    statement#one_sentence 
+      text.
+        APIs let you work across mediums to create art, generate beauty, and put good out into the world. Even a simple SMS could be a work of art. Did you know that entire stories have been written in SMS form?
+
+    statement#more_info 
+      text.
+       Of course! This year House Lovelace is putting on an art show entitled, “Interface Abstractions // Abstract Interfaces” 
+       that explores both how API interfaces and abstractions work and how they make us feel. Good APIs are seamless and intuitive, 
+       just like a work of art! 
+       In fact, you’ll find that many House Lovelace graduates go on to become UX designers and developers. 
+       I mean, UX is also an art, don’t you agree?
+      
+    statement#house 
+      text.
+        Ah, <span class="highlight">House Lovelace</span>, house of artists... Here at Arcane Academy we work between expression and technical rigor, 
+        where code is functionality but also communication, truth, and expression. 
+        Have you ever sat back to observe the elegance of a beautifully executed piece of code?<BR><BR>
+        There’s also an artistry to documentation too, which is our other speciality. 
+        In House Lovelace we like to think of API documentation as its own artistic process.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

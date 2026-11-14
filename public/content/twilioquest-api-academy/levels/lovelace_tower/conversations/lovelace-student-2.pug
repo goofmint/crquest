@@ -1,0 +1,84 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin busy
+  response#busy.
+    I’d love to help but I’m only halfway through my own objectives!
+
+mixin wrong_1
+  response#wrong_1.
+    PUT isn’t actually an HTTP verb.
+
+mixin wrong_2
+  response#wrong_2.
+    PUT allows you to delete resources.
+
+mixin right
+  response#right.
+    PUT is a request to modify a resource state.
+
+conversation(display_name="House Lovelace Student")
+  case lastResponse
+    
+    when "busy"
+      statement#busy
+    
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +right
+        +wrong_2
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +right
+        +wrong_1
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_2
+        +right
+        +wrong_1 
+
+  statements
+    statement#default
+      text.
+        Thank goodness you made it through the second door. 
+        This API problem set is due in an hour, and I’m barely through the first question.<br><br>
+        “What is the definition of #[span.highlight PUT] in HTTP Protocol Semantics?” I'm not even sure what the question is asking!
+       
+    statement#busy
+      text.
+        Ah, that’s too bad. I wanted to be able to say that a real, 
+        live Operator helped me with my homework problems. Maybe next time!
+
+    statement#wrong_1
+      text.
+        Hmm, I could have sworn my professor said PUT is an HTTP... like GET and POST – those are also HTTP verbs, right?<br><br>
+        Hmm... what could PUT be used for?
+
+
+    statement#wrong_2
+      text.
+        I’m pretty sure DELETE is its own HTTP verb that allows you to... delete resources. Haha, right?<br><br>
+        PUT, instead, let’s you...? Hmm...
+
+
+    statement#right
+      text.
+        Yes, that’s right, I remember now! When you make a PUT request, the client takes the representation then modifies the resource. 
+        PUT requests update a resource by replacing the entire entity, 
+        whereas PATCH only updates a portion of the resource without changing other fields.<br><br>
+        Thank you so much for helping!
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);
