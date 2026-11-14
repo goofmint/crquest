@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Transition } from 'react-transition-group';
 import useAssetLoader, {
   AssetLoaderProvider,
@@ -38,6 +38,8 @@ const TqWindowChrome = ({
   height,
 }) => {
   const { isLoaded: areAssetsLoaded, assets } = useAssetLoader();
+  const outerNodeRef = useRef(null);
+  const innerNodeRef = useRef(null);
 
   useEffect(() => {
     if (displayFsmState === 'showing') {
@@ -71,6 +73,7 @@ const TqWindowChrome = ({
 
   return (
     <Transition
+      nodeRef={outerNodeRef}
       in={isShowing}
       timeout={{
         enter: 1000,
@@ -80,6 +83,7 @@ const TqWindowChrome = ({
     >
       {state => (
         <div
+          ref={outerNodeRef}
           className={`dev-fundamentals-elevator  animate__animated ${getAnimationClass(
             state
           )}`}
@@ -97,12 +101,14 @@ const TqWindowChrome = ({
           }}
         >
           <Transition
+            nodeRef={innerNodeRef}
             in={isShowing}
             timeout={1000} // this is default value for animate__animated
             onExited={hide}
           >
             {state => (
               <div
+                ref={innerNodeRef}
                 className={`animate__animated ${
                   state === 'entering' || state === 'entered'
                     ? 'animate__bounceInUp'

@@ -36,7 +36,9 @@ export default class NameStep extends React.Component {
           className="white bw0 outline-0"
           disabled={!this.props.isActive}
           onChange={evt => this.updateName(evt.target.value)}
-          ref={node => this.inputRef = node}
+          ref={node => {
+            this.inputRef = node;
+          }}
           type="text"
           value={this.context.settings.name}
         />

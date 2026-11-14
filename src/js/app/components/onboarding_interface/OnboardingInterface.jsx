@@ -63,9 +63,15 @@ export default class OnboardingInterface extends React.Component {
         <MenuContainer title="Operator Login" showCloseButton={false}>
           <div
             className="pa2 h-100 overflow-y-scroll"
-            ref={node => (this.scrollableRef = node)}
+            ref={node => {
+              this.scrollableRef = node;
+            }}
           >
-            <div ref={node => (this.containerRef = node)}>
+            <div
+              ref={node => {
+                this.containerRef = node;
+              }}
+            >
               <NameStep
                 isActive={this.state.step === 1}
                 onClick={() => this.setState({ step: 1 })}

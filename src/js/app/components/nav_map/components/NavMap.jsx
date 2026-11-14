@@ -49,6 +49,9 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
 
   const [selectedPlanetNode, setSelectedPlanetNode] = useState();
   const descriptionRef = useRef();
+  const rootNodeRef = useRef(null);
+  const infoNodeRef = useRef(null);
+  const barNodeRef = useRef(null);
 
   useEffect(() => {
     ga.pageview('/nav-map', 'Navigation Map');
@@ -210,11 +213,13 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
 
   return (
     <Transition
+      nodeRef={rootNodeRef}
       in={showing}
       timeout={showing ? 500 : 1000} // fadeIn is using animate__faster
     >
       {state => (
         <div
+          ref={rootNodeRef}
           className={`animate__animated ${
             state === 'entering' || state === 'entered'
               ? 'animate__faster animate__fadeIn'
@@ -310,12 +315,14 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
                 />
               </div>
               <Transition
+                nodeRef={infoNodeRef}
                 in={showing}
                 timeout={1000} // this is default value for animate__animated
                 onExited={hide}
               >
                 {state => (
                   <div
+                    ref={infoNodeRef}
                     className={`animate__animated ${
                       state === 'entering' || state === 'entered'
                         ? 'animate__bounceInRight'
@@ -365,11 +372,13 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
                 )}
               </Transition>
               <Transition
+                nodeRef={barNodeRef}
                 in={showing}
                 timeout={1000} // this is default value for animate__animated
               >
                 {state => (
                   <div
+                    ref={barNodeRef}
                     className={`animate__animated ${
                       state === 'entering' || state === 'entered'
                         ? 'animate__bounceInUp'
