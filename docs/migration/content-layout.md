@@ -7,7 +7,7 @@ Issue #28 (5-0: 取り込み方式の確定) と #29 (5a: twilioquest-base の�
 同梱コンテンツのパッケージは `public/content/<パッケージ名>/` に置く。
 
 - `public/` は Electron でもTauri のバンドルでも「アプリのリソースルート」であり、`staticFilePath(...)` / `staticFileUrl(...)` が解決する基準である。`public/` 直下に置けば、静的パスの組み立て方 (`staticFilePath('content')`) は両方で変わらない。
-- リポジトリルートや `src/` 配下には置かない。`src/` は babel で `public/` へ出力されるビルド入力であり、ビルド対象でないコンテンツ (画像 829 枚、JSON 262 件) を混ぜると `build:js` の対象と混同する。
+- リポジトリルートや `src/` 配下には置かない。`src/` は Vite で `public/` へ出力されるビルド入力であり、ビルド対象でないコンテンツ (画像 829 枚、JSON 262 件) を混ぜると `build:js` の対象と混同する。
 - 名前は `content` とした。`node_modules` と違い、`.gitignore` の既存ルール (`node_modules`) に掛からず、npm が管理するディレクトリではないことが名前から分かる。`public/.gitignore` や `.gitignore` の追加は不要だった (取り込んだ 1309 ファイルすべてが追跡対象になることを確認済み)。
 - 反対する具体的な理由は見つからなかった。`public/content` に置いても、Electron の `file://` 読み込み、`create_release.js` の `tar` (`public` 全体を固めるだけ) とも整合する。
 

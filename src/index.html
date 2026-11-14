@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>TerminalQuest</title>
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="lib/loading.css" />
+    <link rel="stylesheet" type="text/css" href="lib/tachyons.min.css" />
+    <link rel="stylesheet" type="text/css" href="lib/highlight.css" />
+    <link rel="stylesheet" type="text/css" href="lib/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" type="text/css" href="node_modules/animate.css/animate.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="stars"></div>
+      <div class="__loading">
+        <!-- Cheat and preload the giant logo image so it doesn't blink in later -->
+        <img style="display:none;" src="images/app/logo.png" />
+        <img src="images/app/fog_owl.gif" />
+        <h2>Loading</h2>
+        <p>
+          Interact with <strong>spacebar</strong>. <br /> Move with <strong>arrow keys</strong> or <strong>WASD</strong>.
+        </p>
+      </div>
+    </div>
+    <script src="lib/firebase/firebase-app.js"></script>
+    <script src="lib/firebase/firebase-firestore.js"></script>
+    <script src="lib/ace/ace.js"></script>
+    <script src="lib/phaser-2.13.2.min.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>

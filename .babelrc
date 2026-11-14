@@ -1,3 +1,7 @@
+// Used only by Jest (babel-jest, see jest.config.js). The app itself is built
+// with Vite (vite.config.mjs) and does not read this file. It applies to the
+// files of this package only (src/), not to public/, which has its own
+// package.json.
 {
   "presets": ["@babel/preset-env", "@babel/react"],
   "plugins": [
@@ -5,25 +9,8 @@
     [
       "@babel/plugin-transform-runtime",
       {
-        "corejs": 2,
         "regenerator": true
       }
-    ],
-    ["inline-json-import", {}]
-  ],
-  "env": {
-    "test": {
-      "presets": ["@babel/preset-env", "@babel/react"],
-      "plugins": [
-        "@babel/plugin-proposal-class-properties",
-        [
-          "@babel/plugin-transform-runtime",
-          {
-            "corejs": 2,
-            "regenerator": true
-          }
-        ]
-      ]
-    }
-  }
+    ]
+  ]
 }

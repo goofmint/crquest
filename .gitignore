@@ -18,7 +18,9 @@ vendor/
 # Do not ignore test fixtures mocking node_modules
 !src/test/fixtures/public/node_modules
 
-# Ignore generated artifacts in the public folder
+# Ignore generated artifacts in the public folder (see tasks/clean_build_output.js)
+# index.html, index.js(.map): vite build; index.css(.map): sass
+# app/, test/: output of the former Babel build (stale on old checkouts)
 public/index.html
 public/index.js
 public/index.js.map
