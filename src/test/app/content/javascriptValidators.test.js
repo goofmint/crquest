@@ -1,9 +1,3 @@
-jest.mock('../../../js/app/common/fs_utils', () => ({
-  staticFileUrl: relativePath =>
-    require('url').pathToFileURL(
-      require('path').resolve(__dirname, '..', '..', '..', '..', 'public', relativePath)
-    ).href,
-}));
 jest.mock('../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
@@ -218,49 +212,22 @@ const VARIABLE_OBJECTIVES = [
   },
 ];
 
-// pullVarsFromUserCodeLocalScope runs the code in a Web Worker and can only
-// return structured-cloneable data (docs/migration/validation-helper-worker.md).
-// These validators ask for a function or a class and call it themselves, which
-// is not possible across the Worker boundary until Phase 5 moves the checks
-// into the Worker: they fail with an explicit error instead of validating.
-const CALLABLE_OBJECTIVES = new Set([
-  'forEach',
-  'js_declare_function',
-  'js_function_arguments',
-  'loopFilter',
-  'loopGetIndexes',
-  'loopMap',
-  'loopReduce',
-  'js_split_east_laser',
-  'js_split_north_laser',
-  'classes',
-]);
-
 describe.each(VARIABLE_OBJECTIVES)(
   '$objective (learner code evaluated through the helper)',
   ({ objective, file, good, wrong, wrongMessage }) => {
-    if (CALLABLE_OBJECTIVES.has(objective)) {
-      test('fails with an explicit error: functions and classes cannot leave the Worker', async () => {
-        writeScript(file, good);
-        const result = await run(objective);
-        expect(result.ok).toBe(false);
-        expect(result.message).toContain('cannot be returned from the code runner worker');
-      });
-    } else {
-      test('succeeds with a correct solution', async () => {
-        writeScript(file, good);
-        const result = await run(objective);
-        expect(result.message).not.toMatch(/error|problem/i);
-        expect(result.ok).toBe(true);
-      });
+    test('succeeds with a correct solution', async () => {
+      writeScript(file, good);
+      const result = await run(objective);
+      expect(result.message).not.toMatch(/error|problem/i);
+      expect(result.ok).toBe(true);
+    });
 
-      test('fails with a wrong solution', async () => {
-        writeScript(file, wrong);
-        const result = await run(objective);
-        expect(result.ok).toBe(false);
-        expect(result.message).toMatch(wrongMessage);
-      });
-    }
+    test('fails with a wrong solution', async () => {
+      writeScript(file, wrong);
+      const result = await run(objective);
+      expect(result.ok).toBe(false);
+      expect(result.message).toMatch(wrongMessage);
+    });
 
     test('tells the learner when the file is missing', async () => {
       const result = await run(objective);
