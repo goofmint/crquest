@@ -1,19 +1,18 @@
 import React from 'react';
 import * as jetpack from 'fs-jetpack';
 import db from '../common/database';
-import Store from 'electron-store';
+import { hasValue, deleteValue } from '../platform/store';
 import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
 
 function clearStoreValues() {
   const schemaDescription = describeSchema();
-  const store = new Store();
 
   Object.entries(schemaDescription.fields).forEach(([fieldKey, field]) => {
-    if (store.has(fieldKey)) {
+    if (hasValue(fieldKey)) {
       if (!field.meta || (field.meta && !field.meta.persistOnClearProgess)) {
-        store.delete(fieldKey);
+        deleteValue(fieldKey);
       }
     }
   })

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import path from 'path';
 import * as jetpack from 'fs-jetpack';
-import Store from 'electron-store';
+import { getValue, setValue } from '../../platform/store';
 import { staticFilePath, staticFileUrl } from '../fs_utils';
 import TrackPlayer from './TrackPlayer';
 import { readDirectory, resolveAbsolutePath } from '../assetLoader';
@@ -53,7 +53,6 @@ class MusicPlayer extends TrackPlayer {
 class AudioManager {
   muted = false;
   loaded = false;
-  store = new Store();
 
   constructor() {
     this.vo = new VoiceOverPlayer(this);
@@ -109,7 +108,7 @@ class AudioManager {
   }
 
   loadState() {
-    let audioState = this.store.get('audio');
+    let audioState = getValue('audio');
 
     if (!audioState) {
       audioState = DEFAULT_AUDIO_STATE;
@@ -129,7 +128,7 @@ class AudioManager {
   }
 
   saveState() {
-    this.store.set('audio', this.getState());
+    setValue('audio', this.getState());
   }
 
   getState() {
