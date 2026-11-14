@@ -13,10 +13,10 @@ Phase 1 task 1-7。`src/js/app/platform/` 以外のレンダラーコードが `
 npm run check:platform        # node tasks/check_platform_boundary.js
 ```
 
-内部では次の `git grep -E` を `child_process.spawnSync` で実行する。
+内部では次の `git grep -E` を `child_process.spawnSync` で実行する（Bash / zsh にそのまま貼れるよう、シェル側は `$'...'` で引用符を書いている。スクリプト内の正規表現そのものは同じ）。
 
 ```
-git grep -n -E -e '['"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^'"`]*)?['"`]' -- src/js ':(exclude)src/js/app/platform'
+git grep -n -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'"`]*)?[\'"`]' -- src/js ':(exclude)src/js/app/platform'
 ```
 
 - import 文ではなく引用符付きのモジュール指定子を検索するため、複数行 import、`require(...)`、リテラルの動的 `import(...)`、`node:fs`、`fs/promises` などのサブパスも検出する。`electron-store` には一致しない。
