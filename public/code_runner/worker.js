@@ -440,7 +440,9 @@
     installEnv(env);
     installReplaceAllPolyfill();
 
-    const holder = {};
+    // No prototype: a requested `__proto__` is then an ordinary own property
+    // and is reported like any other variable.
+    const holder = Object.create(null);
     Object.defineProperty(scope, PULL_HOLDER, {
       value: holder,
       writable: true,
