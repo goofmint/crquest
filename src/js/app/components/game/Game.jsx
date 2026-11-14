@@ -2,7 +2,7 @@ import React from 'react';
 import cx from 'classnames';
 import path from 'path';
 import config from '../../config/config';
-import { list, exists, read } from '../../platform/fs';
+import { list, existsAsync, readAsync } from '../../platform/fs';
 import ga from '../../common/analytics';
 import { getContext, setContext, emitter } from '../../common/context';
 import LevelLifecycleManager from '../../common/levelLifecycleManager';
@@ -216,40 +216,40 @@ export default class Game extends React.Component {
         // all old entities have been migrated to the new Object
         // config format.
         const commonEntitiesDir = staticFilePath('levels/common/entities');
-        const legacyEntityConfigs = list(commonEntitiesDir)
-          .map(entityKey => {
-            const entityDirPath = `${commonEntitiesDir}/${entityKey}`;
-            if (exists(entityDirPath) !== 'dir') {
-              console.error(
-                `Entity key must be a directory. Skipping: ${entityKey}.`
-              );
-              return null;
-            }
+        // Process entities one at a time, in directory order, so registration
+        // and logging order match the previous synchronous implementation.
+        const legacyEntityConfigs = [];
+        for (const entityKey of list(commonEntitiesDir)) {
+          const entityDirPath = `${commonEntitiesDir}/${entityKey}`;
+          if ((await existsAsync(entityDirPath)) !== 'dir') {
+            console.error(
+              `Entity key must be a directory. Skipping: ${entityKey}.`
+            );
+            continue;
+          }
 
-            const configPath = staticFilePath(`${entityDirPath}/config.json`);
-            if (exists(configPath) !== 'file') {
-              console.error(
-                `Entity must contain a 'config.json' file. Skipping: ${entityKey}.`
-              );
-              return null;
-            }
+          const configPath = staticFilePath(`${entityDirPath}/config.json`);
+          if ((await existsAsync(configPath)) !== 'file') {
+            console.error(
+              `Entity must contain a 'config.json' file. Skipping: ${entityKey}.`
+            );
+            continue;
+          }
 
-            try {
-              const config = read(configPath, 'json');
-              EntityConfigService.register(entityKey, config);
+          try {
+            const config = await readAsync(configPath, 'json');
+            EntityConfigService.register(entityKey, config);
 
-              return {
-                key: entityKey,
-                dirPath: entityDirPath,
-              };
-            } catch (error) {
-              console.error(
-                `Entity 'config.json' cannot be read. Skipping: ${entityKey}.`
-              );
-              return null;
-            }
-          })
-          .filter(config => config !== null); // filter out null, errored objects
+            legacyEntityConfigs.push({
+              key: entityKey,
+              dirPath: entityDirPath,
+            });
+          } catch (error) {
+            console.error(
+              `Entity 'config.json' cannot be read. Skipping: ${entityKey}.`
+            );
+          }
+        }
 
         // load entity configs and spritesheet references
         const objectFiles = await readDirectory('objects');
