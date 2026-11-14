@@ -13,6 +13,7 @@
     "install:app": "cd ./public && npm install",
     "postinstall": "patch-package --error-on-fail && npm run install:app",
     "release": "node tasks/create_release.js",
+    "check:platform": "node tasks/check_platform_boundary.js",
     "audit-items": "node tasks/audit_items.js",
     "generateVoiceOvers": "node tasks/generate_voice_overs/index.js",
     "scaffold:mission": "node tasks/scaffold/index.js",
