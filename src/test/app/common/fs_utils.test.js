@@ -1,4 +1,5 @@
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { existsAsync } from '../../../js/app/platform/fs';
 import {
   sfExists,
@@ -31,6 +32,9 @@ describe('sfExists', () => {
 });
 
 describe('staticFilePath / staticFileUrl', () => {
+  const pageUrl = (dir, file = 'index.html') =>
+    pathToFileURL(path.resolve(dir, file)).href;
+
   const setBase = href => {
     document.head.querySelectorAll('base').forEach(el => el.remove());
     const base = document.createElement('base');
@@ -43,7 +47,7 @@ describe('staticFilePath / staticFileUrl', () => {
   });
 
   it('resolves relative paths against the directory of the loaded page', () => {
-    setBase('file:///opt/game/public/index.html');
+    setBase(pageUrl('/opt/game/public'));
 
     expect(staticFilePath('levels/common')).toBe(
       path.resolve('/opt/game/public', 'levels/common')
@@ -51,7 +55,7 @@ describe('staticFilePath / staticFileUrl', () => {
   });
 
   it('does not depend on the location of the source file', () => {
-    setBase('file:///elsewhere/public/index.html');
+    setBase(pageUrl('/elsewhere/public'));
 
     expect(staticFilePath('package.json')).toBe(
       path.resolve('/elsewhere/public', 'package.json')
@@ -59,7 +63,7 @@ describe('staticFilePath / staticFileUrl', () => {
   });
 
   it('keeps absolute paths as they are', () => {
-    setBase('file:///opt/game/public/index.html');
+    setBase(pageUrl('/opt/game/public'));
 
     expect(staticFilePath('/abs/dir/file.mp3')).toBe(
       path.resolve('/abs/dir/file.mp3')
@@ -67,7 +71,7 @@ describe('staticFilePath / staticFileUrl', () => {
   });
 
   it('decodes percent-encoded page directories', () => {
-    setBase('file:///opt/my%20game/public/index.html');
+    setBase(pageUrl('/opt/my game/public'));
 
     expect(staticFilePath('x.png')).toBe(
       path.resolve('/opt/my game/public', 'x.png')
@@ -75,10 +79,10 @@ describe('staticFilePath / staticFileUrl', () => {
   });
 
   it('builds file URLs from the same base', () => {
-    setBase('file:///opt/game/public/index.html');
+    setBase(pageUrl('/opt/game/public'));
 
     expect(staticFileUrl('avatars/a.png')).toBe(
-      'file:///opt/game/public/avatars/a.png'
+      pathToFileURL(path.resolve('/opt/game/public', 'avatars/a.png')).href
     );
   });
 
