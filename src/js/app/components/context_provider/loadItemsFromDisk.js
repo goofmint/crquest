@@ -1,5 +1,5 @@
 import path from 'path';
-import { exists } from '../../platform/fs';
+import { existsAsync } from '../../platform/fs';
 import {
   readDirectory,
   readFile,
@@ -16,7 +16,7 @@ export default async function loadItemsFromDisk() {
     const itemPath = path.join(ITEMS_DIR, dirName);
     const fullItemPath = await resolveAbsolutePath(itemPath);
 
-    if (exists(fullItemPath) !== 'dir') {
+    if ((await existsAsync(fullItemPath)) !== 'dir') {
       // Items need to be directories
       return;
     }

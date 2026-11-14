@@ -82,8 +82,9 @@ export default class DynamicLevel extends EventEmitter {
       this.tilesetImages.push(tileset.baseName);
     });
 
-    // Load Object Interaction Text
-    InteractionTextService.load('levels/common');
+    // Object Interaction Text defaults are loaded asynchronously in
+    // Game.loadLevel (before this level is created); only the level-specific
+    // overrides are applied here.
     InteractionTextService.loadLevelOverrides(this.levelName);
 
     // Load level-specific spritesheets (if any)
