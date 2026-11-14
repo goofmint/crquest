@@ -6,6 +6,7 @@ import config from '../../../config/config';
 import { getContext } from '../../../common/context';
 import * as platformFs from '../../../platform/fs';
 import * as platformExec from '../../../platform/exec';
+import * as platformPaths from '../../../platform/paths';
 const fetch = window.fetch;
 
 /**
@@ -121,6 +122,17 @@ export default class ValidationHelper {
    */
   commandExists(name) {
     return platformExec.commandExists(name);
+  }
+
+  /**
+   * The operating system's per-user application data directory
+   * (Electron `app.getPath('appData')`, e.g. `~/Library/Application Support`
+   * on macOS), unmodified. Throws if it is unavailable.
+   *
+   * @returns {String}
+   */
+  getAppDataPath() {
+    return platformPaths.getAppDataPath();
   }
 
   /**

@@ -1,0 +1,20 @@
+- 
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['seven'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="Sage of the Package Index")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        No Pythonista is an island, my friend. Know that you are not the first 
+        to walk this path, and if the Fullstack is kind, you won't be the last.
+        <br/><br/>
+        In my time, initiates learned from me that the 
+        <a href="https://pypi.org/">package index</a> could be a source of
+        comfort and strength, drawing upon the wisdom of the ages. May it serve 
+        you as it has those who came before. 
