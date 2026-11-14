@@ -93,7 +93,7 @@ git grep -n -E "loadMusic|loadSfx|loadItemsFromDisk|InteractionTextService|sfExi
 | `src/js/app/common/audio/index.js:180` | `list` (platform/fs 経由) | `AudioManager.loadMusic()` (177 行)。呼び出し元は `src/js/index.js:196` のモジュールトップレベル。構造は `loadSfx` と同じ | `loadSfx` と同様。`loadMusic` / `loadSfx` の両方が完了して初めて `audio.loaded` が立ち、`attemptAppRender()` が `ReactDOM.render` を呼ぶ (`index.js:177-202`) | 高 |
 | `src/js/app/common/fs_utils.js:25` | `exists` (platform/fs 経由) | `sfExists(relativePath)` (23 行)。`git grep sfExists` の結果は定義 1 件のみで、呼び出し元は 0 件 | 呼び出し元がないため、変換の影響はない。削除するか非同期化するかは別途判断する (本チケットの範囲外) | 低 |
 | `src/js/app/components/context_provider/loadItemsFromDisk.js:19` | `exists` (platform/fs 経由) | `async` の `itemDirs.map(async dirName => ...)` コールバック内 (15 行)。`loadItemsFromDisk` は `ContextProvider.jsx:99` の `pipeAsync` 内で `await` される | `exists` を `await existsAsync` に置き換えるだけ。呼び出し連鎖の変更は不要 | 低 |
-| `src/js/app/components/game/Game.jsx:219` | `list` (platform/fs 経由) | `loadLevel(level)` (91 行) 内の `setTimeout(async () => {...})` コールバック (110 行) の中。式は 219-220 行にまたがる (`list(commonEntitiesDir)` の次の行が `.map(`)。`loadLevel` の呼び出し元 (`Game.jsx:39`, `:62`) は結果を待たないため、呼び出し元の変更は不要 | `await listAsync(...)` にし、`.map` を `Promise.all(... .map(async ...))` に変える。`list` が `undefined` を返す場合の `.map` の TypeError は現行と同じ | 中 |
+| `src/js/app/components/game/Game.jsx:219` | `list` (platform/fs 経由) | `loadLevel(level)` (91 行) 内の `setTimeout(async () => {...})` コールバック (110 行) の中。式は 219-220 行にまたがる (`list(commonEntitiesDir)` の次の行が `.map(`)。`loadLevel` の呼び出し元 (`Game.jsx:39`, `:62`) は結果を待たないため、呼び出し元の変更は不要 | `list` の結果を `for...of` で走査し、エンティティを一覧順に 1 件ずつ `await existsAsync` / `await readAsync` する (`Promise.all` による並行処理は、登録順とログ順が fs の完了順に変わるため避ける。#14 で実装済み)。既存の例外の扱い (`try/catch` でスキップ) は変えない。`list` が `undefined` を返す場合の TypeError は現行と同じ | 中 |
 | `src/js/app/components/game/Game.jsx:222` | `exists` (platform/fs 経由) | 同コールバック内の `.map` コールバック (220 行) の中 | `await existsAsync(...)`。`.map` コールバックを `async` にする必要がある | 中 |
 | `src/js/app/components/game/Game.jsx:230` | `exists` (platform/fs 経由) | 同上 | 同上 | 中 |
 | `src/js/app/components/game/Game.jsx:238` | `read` (platform/fs 経由) | 同上。237-250 行の `try` / `catch` の内側で、`EntityConfigService.register` (239 行) と同じ `try` に入っている | `await readAsync(configPath, 'json')` にする。`await` を `try` の内側に置けば、JSON パース失敗の `catch` (245 行) は維持される | 中 |
@@ -160,6 +160,7 @@ git grep -n -E "loadMusic|loadSfx|loadItemsFromDisk|InteractionTextService|sfExi
 - 現行コードでも、先に始まった読み込みが後から完了すると、古いレベルの値で `this.level` を上書きし得る。両方の読み込みが `this.level` 未設定のまま完了すると、同じ `game` コンテナに `DynamicLevel` が 2 つ生成され得る
 - この競合は移行前から存在する。このドキュメントはドキュメントのみの変更で、アプリのコードは変更しない
 - #14 などで `list` / `exists` / `read` を非同期版に変えると、`await` の地点が増えるため、この競合が起きる時間窓が広がり得る。「呼び出し元の変更は不要」は、型や呼び出し連鎖の話であり、タイミングの安全性を保証するものではない
+- 共有状態の上書き: `TiledService` はシングルトンで、`registerMapFile` (`Game.jsx:151`、`tiled.js:46`) が `mapPath`、`mapData`、`externalTilesets` (`tiled.js:41-43`) を書き換える。`loadLevel` が重複して実行されると、一方の読み込みが他方の `mapPath` / `mapData` / `externalTilesets` を上書きし、レベル名と異なるマップやタイルセットを読み込み得る (`tiled.js:112` は `this.mapPath` を `await` の後で参照する)。この競合は `registerMapFile` より後で起きるので、`this.level` の更新だけを世代番号で制御しても防げない。キャンセルや直列化は、`TiledService` の状態の持ち方を含めて検討が必要
 - 対応が必要になった場合は、世代番号によるキャンセルなどを別チケットで検討する (#14 では、同期のときと同じ処理順序を保つために、エンティティを 1 件ずつ `await` する形にしている)
 
 ## 5. 対象外とする同期利用とその理由
