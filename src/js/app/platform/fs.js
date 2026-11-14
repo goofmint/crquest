@@ -5,7 +5,10 @@
  * difference in how a missing path is reported:
  *
  * 1. Node `fs` family: a missing path is a failure (`ENOENT`), except
- *    `existsSync`, which never throws and returns `false` for a missing path.
+ *    `existsSync`, which never throws. It returns `false` for a missing path
+ *    and also for any other access failure (for example insufficient
+ *    permissions), so a missing path and an inaccessible path cannot be told
+ *    apart.
  * 2. fs-jetpack 2.2.2 family: for the read / exists / list style methods
  *    (`read`, `readAsync`, `exists`, `existsAsync`, `list`, `listAsync`) a
  *    missing path is a normal value (`undefined` / `false`). This is decided
@@ -13,8 +16,8 @@
  *    with `code: 'ENOENT'` (fs-jetpack 2.2.2, lib/copy.js), and `remove` /
  *    `removeAsync` of a missing path is a no-op.
  *
- * Any I/O failure other than a "missing path" normal value above is a throw
- * (sync) or a rejection (async), unchanged. Synchronous methods block the
+ * Apart from the `existsSync` exception and the "missing path" normal values
+ * above, any I/O failure is a throw (sync) or a rejection (async), unchanged. Synchronous methods block the
  * event loop.
  *
  * Out of scope: how assetLoader.js resolves extension-relative paths and how
