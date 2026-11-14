@@ -2,6 +2,11 @@
 .DS_Store
 dist/
 node_modules
+!/src/test/fixtures/extensions/aaa-exhaustive-config-extension/node_modules/
+/src/test/fixtures/extensions/aaa-exhaustive-config-extension/node_modules/*
+!/src/test/fixtures/extensions/aaa-exhaustive-config-extension/node_modules/foo/
+/src/test/fixtures/extensions/aaa-exhaustive-config-extension/node_modules/foo/*
+!/src/test/fixtures/extensions/aaa-exhaustive-config-extension/node_modules/foo/index.js
 thumbs.db
 QuestIDE
 src/js/app/config/local_config.js

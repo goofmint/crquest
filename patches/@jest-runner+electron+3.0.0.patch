@@ -1,0 +1,13 @@
+diff --git a/node_modules/@jest-runner/electron/build/rpc/JestWorkerRPC.js b/node_modules/@jest-runner/electron/build/rpc/JestWorkerRPC.js
+index f763e53..9de1d91 100644
+--- a/node_modules/@jest-runner/electron/build/rpc/JestWorkerRPC.js
++++ b/node_modules/@jest-runner/electron/build/rpc/JestWorkerRPC.js
+@@ -46,7 +46,7 @@ const _runInBrowserWindow = testData => {
+     const workerID = (0, _utils.makeUniqWorkerId)();
+     const win = new _electron.BrowserWindow({
+       show: false,
+-      webPreferences: {nodeIntegration: true}
++      webPreferences: {nodeIntegration: true, enableRemoteModule: true}
+     });
+ 
+     win.loadURL(`file://${require.resolve('../index.html')}`);

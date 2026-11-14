@@ -21,6 +21,8 @@ After cloning this repository, install dependencies with:
 npm install
 ```
 
+A plain `npm install` (including dev dependencies) is required. Installs that skip dev dependencies (`--omit=dev`, `--production`) are not supported: the `postinstall` script runs `patch-package`, a dev dependency, to patch the test runner.
+
 Fair warning - during this transitional period, this process may not happen without error. After dependencies are successfully installed, you can run the game in development mode with:
 
 ```
