@@ -1,0 +1,75 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    Can you tell me more about House Hopper?
+
+mixin more_info
+  response#more_info.
+    What does that mean? What kinds of things do you beta test?
+
+mixin one_sentence
+  response#one_sentence.
+    If you had to say in one sentence what’s so great about API tools, what would you say?
+
+conversation(display_name="Bugs, House Hopper Student Rep")
+  case lastResponse 
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        On behalf of House Hopper, welcome to Arcane Academy!
+
+    statement#one_sentence 
+      text.
+        The amazing thing about APIs is that they’re all about sharing resources and tools. <BR><BR>
+        If code is everywhere, that means that anyone can code. And if anyone can code, that means you can unlock the power of really amazing people – oh, now you’ve got me sounding like I’m in House Turing!
+
+
+    statement#more_info 
+      text.
+        We like to test real-life tools, but we’re not just testing; we’re also applying those tools to our API studies. 
+        We want to push the bounds of how we wield tools and what they let us do.<BR><BR>
+        To give you a more concrete example, just the other day, I was exploring how to store data with Postman, 
+        playing around with Postman parameters that let you create, share, test and document APIs. 
+        It blew my mind how helpful the tool was… it also blew a hole through the roof of the greenhouse. 
+        But don’t tell my Head of House I said that!
+
+
+    statement#house 
+      text.
+        <span class="highlight">House Hopper</span> students are known for their boldness and willingness to try new things. 
+        We’re the designated beta testers. We’re not afraid of an API spell still in beta crashing or breaking on us... 
+        In fact, the other houses often come to us asking us to break their spells... for R&D purposes, of course.<BR><BR>
+        But seriously, at House Hopper we believe that code is everywhere, 
+        and we take it upon ourselves to test out the practical implications of what that means.
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

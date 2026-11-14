@@ -1,0 +1,22 @@
+{
+  "title": "API Academy Admission: Remote APIs",
+  "description": "To unlock the chest of knowledge for <strong>House Hopper</strong>, you must understand that some APIs are <strong>remote</strong>, executing on another computer.",
+  "show_ide": false,
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "boolean",
+      "placeholder": "",
+      "label": "The code and computational resources required to fulfill an API call must be physically located on the computer where the API is called from."
+    },
+    {
+      "name": "answer2",
+      "type": "text",
+      "placeholder": "",
+      "label": "What four-letter acronym describes a type of remote API that has become a standard way in which remote APIs are exposed to developers?"
+    }
+  ],
+  "rewards": {
+    "xp": 200
+  }
+}

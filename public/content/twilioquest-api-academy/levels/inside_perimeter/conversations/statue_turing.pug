@@ -1,0 +1,34 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin apis 
+  response#apis.
+    What else makes APIs so powerful?
+
+conversation(display_name="Dusty Statue of Alan Turing")
+  case lastResponse
+    when "apis"
+      statement#apis
+
+    default
+      statement#default
+      responses
+        +apis
+        
+  statements
+    statement#default
+      text.
+        In House Turing, you will find that humans are at the core of all code. 
+        Humans of House Turing specialize in creating Software Development Kits and Libraries to make working with APIs easier for 
+        students of every programming language.
+
+    statement#apis 
+      text.
+        The arts of APIs are an ancient discipline, whose powers we’ve only recently begun to unlock. 
+        Though I may be but a representation within a representation of the human I once embodied, 
+        I have watched how APIs have developed and what powers have been uncovered, 
+        here at Arcane Academy and around the world.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,15 @@
+{
+  "title": "API Academy: Local Function",
+  "description": "Write a function that turns all instances of a word in a string into something else.",
+  "show_ide": true,
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "type": "prompt",
+      "label": "Write a function called \"swapStrings\" that replaces all instances of \"targetWord\" in \"sourceString\" with \"replacementWord\"."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

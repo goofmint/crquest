@@ -1,0 +1,27 @@
+mixin fragment
+    response#read.
+        Read the scroll.
+
+conversation(display_name="Inscription Fragment")
+    case lastResponse
+        when "read"
+            statement#fragment
+
+        default
+            statement#default
+            responses
+                +fragment
+
+    statements
+        statement#default
+            text.
+                It looks like this scroll contains an undamaged inscription passage!
+        statement#fragment
+            text.
+                <p>The Inscription Fragment reads:<br><br>
+
+                <em><span class="highlight">Oh, great creators of The Cloud, let me apply
+                This divination spell, newly formed through a simple phrase,
+                Strung together thanks to a most helpful API,</span></em><br><br>
+
+                <span style="text-align:center"><em>*You'll want to copy this to the QuestIDE*</em></span></p>

@@ -1,0 +1,183 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;
+    
+
+mixin personal_intro
+  response#personal_intro.
+    Ahhh, a ghost! Who are you again?
+
+mixin catacombs_introduction
+  response#catacombs_introduction.
+    What should I do inside the Catacombs?
+
+mixin get_started
+  response#get_started.
+    I'm ready to face the challenges ahead and find my place at the Academy.
+
+mixin proceed
+  response#proceed.
+    Here I go!
+
+mixin pledge_scroll
+  response#pledge_scroll.
+    I've received my pledge scroll, what do I do now?
+
+mixin houses
+  response#houses.
+    Can you tell me more about Arcane’s houses?
+
+conversation(display_name="Ghost of the Catacombs")
+  case lastResponse
+    when "houses"
+      statement#houses
+      responses
+        +get_started
+        +catacombs_introduction
+      
+    when "personal_intro"
+      statement#personal_intro
+      responses
+        +get_started
+        +catacombs_introduction
+        +houses 
+
+    when "catacombs_introduction"
+      statement#catacombs_introduction
+      responses
+        +get_started
+        +personal_intro
+        +houses
+
+    when "proceed"
+      statement#proceed
+
+    when "ack"
+      statement#ack
+      responses
+        +catacombs_introduction
+        +personal_intro
+        +houses
+
+    when "help"
+      statement#help
+      responses
+        +catacombs_introduction
+        +houses
+
+    when "pledge_scroll"
+      statement#congratulations
+
+    when "get_started"
+      statement#get_started
+      responses
+        if worldState.insideCatacombs.hasCredentials
+          +proceed
+          +catacombs_introduction
+          +personal_intro
+          +houses
+        else
+          response#ack.
+            Understood. I must give my Twilio Credentials to the statue before continuing on into the Catacombs.
+
+    default
+      if !worldState.insidePerimeter.ghost_introduction
+        - worldState.insidePerimeter.ghost_introduction = true;
+        statement#default
+        responses
+          +catacombs_introduction
+          +get_started
+          +houses 
+
+      else
+        statement#follow_up_greeting
+        responses
+          if allComplete
+            +pledge_scroll
+            +personal_intro
+            +houses 
+          else 
+            +catacombs_introduction
+            response#help.
+              I need help completing the challenges. 
+
+  statements
+    statement#default
+      text.
+        Oh my, we haven't had a visitor to the Catacombs in quite a long while! I am Professor Hattip Restapi, but you can call me Professor Hattie. 
+        I'm here to guide you through these Catacombs and help you face the challenges ahead. <br><br>
+        The challenges you'll face inside these Catacombs will not only test your ability to wield the power of APIs, 
+        but help you discover where your magic aligns. Is it in using code to express yourself? Solving problems with code? 
+        Harnessing the theory and science underneath the code? Or using code to push the boundaries of everyday life?  
+
+    statement#houses 
+      text.
+        Each house specializes in unique strengths and subject matters. 
+        To be honest, it's hard for me to keep up with all their activities.
+        You're better off asking them directly.
+        
+    statement#catacombs_introduction
+      text.
+       The Catacomb chambers belong to the mascots of Arcane’s four houses. 
+       In each chamber, you will face new challenges to prove your abilities. 
+       In turn, each mascot will grant you a portion of an Unlocking Spell that will 
+       summon the key needed to enter the Sacred Scroll Room in the Catacombs’ center.<BR><BR>
+       Enter this room with this key to retrieve your pledge scroll infused with the magic you have mastered.
+
+    statement#get_started
+      if worldState.insideCatacombs.hasCredentials
+        text.
+          You've come to the Academy well prepared, with your Twilio account credentials in tow. 
+          You may proceed into the Catacombs. Good luck, dear Operator!
+      else
+        text.
+          Before you begin, you must prove to the Knight you're ready for the trials ahead. 
+          Find your Twilio credentials and give them to the Knight in order to proceed. 
+
+    statement#proceed 
+      text.
+        Good luck! Come back and see me if you need help.
+
+    statement#follow_up_greeting
+      if allComplete
+        text.
+          Operator, hello again! How are you faring on your journey through the Catacombs?
+
+      else if worldState.insideCatacombs.keySpellsObtained.length === 0
+        text.
+          Operator, hello again! How are you faring on your journey through the Catacombs? 
+          It looks like you haven't pieced together any of the spell you must use to get the key to the Sacred Scroll Room.
+      
+      else 
+        text.
+          Operator, hello again! How are you faring on your journey through the Catacombs? 
+          It looks like you have only pieced together #{worldState.insideCatacombs.keySpellsObtained.length} of the four parts of the spell 
+          you must use to get the key to the Sacred Scroll Room.
+
+
+    statement#congratulations
+      text.
+        Well done! Now you must take your pledge scroll to 
+        the Head of House up on the Academy’s grounds to officially join a house. <br><br> 
+        I hear that the House Gauntlet is happening soon. 
+        The House Gauntlet is a riveting competition of code between each house. Now that you have proven your skill as a true Arcanian, 
+        you should consider entering!
+
+    statement#ack
+      text.
+        Visit the ultimate API spellbook: the <a href="https://twilio.com/console">Twilio Console</a>. 
+        From there you'll be able to find the credentials the Knight requires.
+
+    statement#help
+      text.
+        Check out the <a href="https://www.youtube.com/watch?v=GZvSYJDk-us">APIs for Beginners</a> course on YouTube!
+
+    statement#personal_intro
+      text.
+        I am <span class="highlight">Professor Hattip Restapi</span>, but you can call me Professor Hattie. 
+        I'm here to guide you through these Catacombs and help you face the challenges ahead.
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

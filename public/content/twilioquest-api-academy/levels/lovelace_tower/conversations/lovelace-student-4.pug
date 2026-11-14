@@ -1,0 +1,85 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin busy
+  response#busy.
+    I can’t stop right now. I’m on a roll!
+
+mixin wrong_1
+  response#wrong_1.
+    A local API is one that’s in the same area code, whereas remotes work from anywhere in The Cloud.
+
+mixin wrong_2
+  response#wrong_2.
+    There’s no difference. Local and remote mean the same thing when it comes to APIs.
+
+mixin right
+  response#right.
+    Local APIs execute directly on your machine or device, whereas remote APIs run on a server that you (likely) don’t own.
+
+conversation(display_name="House Lovelace Student")
+  case lastResponse
+    
+    when "busy"
+      statement#busy
+    
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +wrong_1
+        +right
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_1 
+        +wrong_2 
+        +right
+
+  statements
+    statement#default
+      text.
+        Wow, you only have one more room in Lovelace Tower. You are just racing through the House Gauntlet!<br><br>
+        Do you think you’d have time to help me with an assignment? It’s due in like an hour...<br><br>
+        What is the difference between a #[span.highlight local] and #[span.highlight remote] API?
+        
+    statement#busy
+      text.
+        That’s alright. You can always come back into Lovelace Tower once you’ve finished all the Gauntlet challenges. 
+        I’ll be here, just trying to crack this problem... Please come back and find me!
+
+    statement#wrong_1
+      text.
+        Hmm... something tells me it’s a bit different than that. You’re right that remote APIs will work from anywhere, 
+        but that’s because they don’t need to be on your local machine. But don't local APIs work in another way?<br><br>
+        What could the difference be?
+
+    statement#wrong_2
+      text.
+        That’s the first answer I tried, but it’s not right! I think the difference depends on where the code is actually running, right?<br><br>
+        And the difference is...? If only I had paid attention during my classes...
+
+    statement#right
+      text.
+        Ah, yes! The implementation of remote APIs never executes on your machine, 
+        but elsewhere, which gives you computing power and scale that you might not have locally. 
+        Instead, local APIs might be in your programming language or in a package that you can 
+        download from the internet, but they run locally on your machine or device.<br><br>
+        See, all I needed was to stand next to you for everything to come back to me! Thanks, Operator!
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

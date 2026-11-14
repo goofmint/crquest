@@ -1,0 +1,21 @@
+{
+  "title": "API Academy: Account Credentials",
+  "description": "Allow the Statue of Truth to validate your progress through the Catacombs by providing it your Twilio account credentials.",
+  "validation_fields": [
+    {
+      "name": "accountSid",
+      "type": "text",
+      "placeholder": "ACxxx",
+      "label": "Your Twilio Account SID:"
+    },
+    {
+      "name": "authToken",
+      "type": "password",
+      "placeholder": "",
+      "label": "Your Twilio Auth Token:"
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

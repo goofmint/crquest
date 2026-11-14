@@ -1,0 +1,39 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin excerpt 
+  response#excerpt.
+    Excerpt from the Tome
+    
+conversation(display_name="Lovelace Tomes v. 4")
+  case lastResponse
+    
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">
+        <span class="highlight">
+        <a href="https://sci-hub.ru/https://journals.sagepub.com/doi/abs/10.1177/0047281617721853">What Makes APIs Hard to Learn?<br><br>
+        Answers from Developers</a>
+        </span>
+        <br><br>
+        by Martin P. Robillard</p>
+
+    statement#excerpt 
+      text.
+        “But why do users need to know about an API’s high-level design and the intent behind it?... 
+        As it turns out, <span class="highlight">moving beyond trivial usage involves many types of 
+        decisions that can be informed by high-level design</span>” (p. 31).
+
+        
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

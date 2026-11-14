@@ -1,0 +1,55 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin page_2
+  response#page_2.
+    Page 2
+
+mixin page_3
+  response#page_3.
+    Page 3
+
+conversation(display_name="Fredric’s Threatening Letter")
+  case lastResponse
+    
+    when "page_2"
+      statement#page_2
+      responses
+        +page_3
+
+    when "page_3"
+      statement#page_3
+
+    default
+      statement#default
+      responses
+        +page_2
+
+  statements
+    statement#default
+      text.
+        Well, well, well. I didn’t think you’d make it this far, Operator.
+        And you've even found a way to repair the Lovelace inscription I corrupted, it seems.<br><br>
+        I may have underestimated your skill... but not by much! By the time you find this letter, 
+        I’ll have already unlocked the second house, and I’ll be way ahead of you. 
+        See, I too have entered the House Gauntlet, and no one can stop me!
+
+    statement#page_2
+      text.
+        You might be wondering what an Interstellar Supervillain like myself is doing at a place 
+        like Arcane Academy when I despise all things related to “learning” and “knowledge.” Bleh.<br><br> 
+        Well, who would have thought that the House Gauntlet would actually be the source of an all-powerful...
+
+    statement#page_3
+      text.
+        ...collection of spells. I shall unlock them all. Then I shall wield them all. 
+        And neither you, Operator, nor your precious Academy will be able to stop me!<br><br>
+        <p style="text-align:right">
+        Notoriously,<br><br>
+        Fredric (of the Legacy Systems)
+        </p>
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

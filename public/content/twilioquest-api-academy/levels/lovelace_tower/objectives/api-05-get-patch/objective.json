@@ -1,0 +1,15 @@
+{
+  "title": "API Academy: Get and Patch",
+  "description": "Write an async function that \"GET\"s data from an API, and \"PATCHES\"s using data from the response.",
+  "show_ide": true,
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "type": "prompt",
+      "label": "Write a function called \"getAndPatchCorruptedInscription\" that makes a \"GET\" request to the \"divination\" API, repairs the inscription, and sends a patch request back."
+    }
+  ],
+  "rewards": {
+    "xp": 100
+  }
+}

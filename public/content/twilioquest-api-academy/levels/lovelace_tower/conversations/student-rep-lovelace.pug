@@ -1,0 +1,76 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin nice_to_see
+  response#nice_to_see.
+    Nice to see you again too! What do you think happened to the missing student?
+
+mixin rumors
+  response#rumors.
+    What rumors?
+
+mixin you_think
+  response#you_think.
+    You think it has something to do with...
+
+mixin on_it
+  response#on_it.
+    Secret library? Don't worry, I'm on it!
+
+conversation(display_name="Articia, House Lovelace Student Rep")
+  case lastResponse
+    
+    when "nice_to_see"
+      statement#nice_to_see
+      responses
+        +rumors
+
+    when "rumors"
+      statement#rumors
+      responses
+        +you_think
+
+    when "you_think"
+      statement#you_think
+      responses
+        +on_it
+
+    when "on_it"
+      statement#on_it
+
+    default
+      statement#default
+      responses
+        +nice_to_see
+
+  statements
+    statement#default
+      text.
+        So nice to see you again, Operator! It looks like you’ve come a long way since we met outside on the Academy grounds. 
+        How are you enjoying the House Gauntlet so far? I don’t know if it’s just me, but I’m a little freaked out about the missing Gauntleter who was supposed to compete. 
+        Do you think something happened to her? What if...?
+
+    statement#nice_to_see
+      text.
+        *lowers voice*<br><br>
+        Well, you didn’t hear it from me, but there are some rumors going around that... Oh, I shouldn’t say. It’s so frightening!
+
+    statement#rumors
+      text.
+        There’s a theory that the missing student...<br><br>
+        Let's just say, some people think that a student going missing not just 
+        on the day of the House Gauntlet, but on the day an Operator joins the Academy, is not a coincidence.
+
+    statement#you_think
+      text.
+        The Legacy Systems, yes! What if they’ve infiltrated the Academy? What if they’ve found our secret library...? 
+        Please finish the Gauntlet, Operator. There might be more at stake than we think!
+
+    statement#on_it
+      text.
+        Thank you, Operator, and good luck!
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

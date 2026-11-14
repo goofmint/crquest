@@ -1,0 +1,35 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin apis  
+  response#apis.
+    What makes APIs so powerful?
+
+conversation(display_name="Dusty Statue of John von Neumann")
+  case lastResponse
+    when "apis"
+      statement#apis
+
+    default
+      statement#default
+      responses
+        +apis
+        
+  statements
+    statement#default
+      text.
+        In House von Neumann, you will discover that efficiency and logic are at the core of your magic. 
+        Knowing that GET requests are used to retrieve information and POST requests are used to send information is necessary to 
+        maximize the efficiency of your API code.
+
+    statement#apis 
+      text.
+        I may only be a memory of my former living self, but if I may humble boast for a moment, 
+        I was once named Person of the Century for my belief that the mind could shape the physical world. 
+        Never has that been more true than it is at Arcane Academy. 
+        Though I may be but a dusty statue lost within the shadowed walls of these Catacombs, 
+        I have watched cohort after cohort of students build castles with their minds and then bring those castles to life using APIs.
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

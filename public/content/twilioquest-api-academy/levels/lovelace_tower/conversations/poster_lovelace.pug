@@ -1,0 +1,20 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="House Lovelace Poster")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">The International Exhibition of Virtual Art hosted by 
+        House Lovelace of the World-Renowned Arcane Academy of API Arts<br><br>
+        presents<br><BR>
+        <span class="highlight">INTERFACE ABSTRACTIONS // ABSTRACT INTERFACES</span><BR><BR>
+        featuring original code art and interactive installations by more than 25 student artists across all four houses.</p>
+
+      
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

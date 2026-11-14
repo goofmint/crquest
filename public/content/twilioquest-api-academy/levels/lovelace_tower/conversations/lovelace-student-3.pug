@@ -1,0 +1,84 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);    
+
+mixin busy
+  response#busy.
+    How about you find me after the House Gauntlet and I’ll help you out.
+
+mixin wrong_1
+  response#wrong_1.
+    Are you sure your monitor isn’t upside down? Just kidding...
+
+mixin wrong_2
+  response#wrong_2.
+    Your code must be wrong. Code only runs synchronously, one line after the other.
+
+mixin right
+  response#right.
+    Are there perhaps asynchronous functions?
+
+conversation(display_name="House Lovelace Student")
+  case lastResponse
+    
+    when "busy"
+      statement#busy
+    
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +right
+        +wrong_1
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_2
+        +right
+        +wrong_1 
+
+
+  statements
+    statement#default
+      text.
+        If you made it this far into Lovelace Tower, you must know what you’re doing. 
+        Could you help me with this problem from Advanced Divination?<br><br> 
+        I have this code, but my functions aren’t running in the order that I thought they would. 
+        What do you think might be causing this?
+
+    statement#busy
+      text.
+        Okay, Operator! Good luck on the challenges.
+
+    statement#wrong_1
+      text.
+        Good one, Operator. But seriously, do you have any idea why my code might be running out of order?
+
+    statement#wrong_2
+      text.
+        Now that you mention synchronous code, I do remember learning something about asynchronous code. 
+        I definitely know that it’s possible to run multiple, non-blocking functions at once. 
+        I promise I learned about it... I just don’t remember the specifics!<br><br>
+        What do you think could be behind this asynchronous execution?
+
+    statement#right
+      text.
+        Oh, that’s it! I’m making two HTTP requests and I should use the #[span.highlight await] keyword after an asynchronous 
+        function to get the value back before my code keeps going.<br><br>
+        I knew you’d be able to solve it for me. Thanks, Operator!
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);
