@@ -1,7 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Popover from 'react-tiny-popover';
+import { Popover } from 'react-tiny-popover';
 const { setTimeout, clearTimeout } = window;
+
+// react-tiny-popover 3 -> 8: the v3 defaults this component relied on are now
+// explicit. v3 tried the requested position first and then the remaining ones
+// (top, right, left, bottom order), padded the popover 6px from the target and
+// kept it 6px inside the window, and clipped (overflow: hidden) the container,
+// which also makes it contain the floated avatar. v8 defaults are 0px, 0px and
+// overflow: visible.
+const POPOVER_POSITIONS = ['bottom', 'top', 'right', 'left'];
+const POPOVER_PADDING = 6;
+const POPOVER_BOUNDARY_INSET = 6;
+const POPOVER_CONTAINER_STYLE = { overflow: 'hidden' };
 
 export default class ItemPopover extends React.Component {
   static propTypes = {
@@ -40,9 +51,11 @@ export default class ItemPopover extends React.Component {
       <Popover
         isOpen={isHover}
         containerClassName="ItemPopover bg-light-gray black"
-        position="bottom"
+        positions={POPOVER_POSITIONS}
         align="start"
-        transitionDuration={0.01}
+        padding={POPOVER_PADDING}
+        boundaryInset={POPOVER_BOUNDARY_INSET}
+        containerStyle={POPOVER_CONTAINER_STYLE}
         content={
           <div>
             <div className="fl w3 h3 ma1 relative avatar">
