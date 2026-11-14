@@ -1,0 +1,20 @@
+{
+  "title": "The Tower of Infinite Knowledge",
+  "description": "Be a lifelong learner and get started using your computer like a developer! This mission will continue to be updated with developer fundamentals topics. This includes topics like \"What is a file system?\" and \"How do I use my terminal?\"",
+  "questTitle": "The Tower of Infinite Knowledge",
+  "questDescription": "Be a lifelong learner and get started using your computer like a developer!",
+  "is_mission": false,
+  "priority": 3,
+  "backgroundMusic": "fascinatingarea_108253b",
+  "flavorTextOverrides": {},
+  "objectives": [
+    "fs-01-path",
+    "fs-02-pwd",
+    "fs-03-ls",
+    "fs-04-cd",
+    "fs-05-mkdir",
+    "fs-06-touch",
+    "fs-07-rm",
+    "fs-08-hidden"
+  ]
+}

@@ -21,6 +21,7 @@ const fetch = window.fetch;
  * readFile(path, options)      -> Buffer, or string with an encoding
  * readdir(path)                -> string[]
  * stat(path)                   -> fs.Stats
+ * lstat(path)                  -> fs.Stats (does not follow a symbolic link)
  * writeAsync(path, data)       -> creates missing parent directories
  * copyAsync(from, to, options) -> rejects with ENOENT if `from` is missing
  * removeAsync(path)            -> no-op if the path is missing
@@ -29,6 +30,7 @@ const validatorFs = Object.freeze({
   readFile: platformFs.readFile,
   readdir: platformFs.readdir,
   stat: platformFs.stat,
+  lstat: platformFs.lstat,
   existsAsync: platformFs.existsAsync,
   listAsync: platformFs.listAsync,
   readAsync: platformFs.readAsync,
@@ -47,6 +49,9 @@ export default class ValidationHelper {
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
     this.fs = validatorFs;
+    // Operating system the game runs on (Node's process.platform values, e.g.
+    // 'win32', 'darwin', 'linux'), for validators that branch per OS.
+    this.platform = process.platform;
 
     // Process validation fields
     Object.keys(validationContext.validationFields).forEach(key => {
@@ -96,11 +101,15 @@ export default class ValidationHelper {
    *
    * @param {String} program
    * @param {String[]} [args]
-   * @param {{cwd?: String}} [options]
+   * @param {{cwd?: String, timeout?: Number}} [options] timeout in ms: the process is
+   *   killed and the promise rejects (error.killed) when it runs longer
    * @returns {Promise<{code: Number, stdout: String, stderr: String}>}
    */
-  exec(program, args = [], { cwd } = {}) {
-    return platformExec.run(program, args, cwd === undefined ? {} : { cwd });
+  exec(program, args = [], { cwd, timeout } = {}) {
+    const options = {};
+    if (cwd !== undefined) options.cwd = cwd;
+    if (timeout !== undefined) options.timeout = timeout;
+    return platformExec.run(program, args, options);
   }
 
   /**
@@ -217,6 +226,23 @@ export default class ValidationHelper {
 
   async pullVarsFromQuestIdeUserCodeLocalScope(keys = [], objective, mission) {
     const userCode = await this.getQuestIdeUserCode(objective, mission);
+
+    return this.pullVarsFromUserCodeLocalScope(userCode, keys);
+  }
+
+  /**
+   * Same as pullVarsFromQuestIdeUserCodeLocalScope, but for code the validator
+   * already has as a string (for example a script the learner saved in their
+   * own workspace directory). Runs `userCode`, then returns the values of the
+   * top-level variables named in `keys`. If a variable cannot be read, the
+   * returned object has an `_error` property holding the thrown error (for
+   * example a ReferenceError); an error thrown by `userCode` itself is thrown.
+   *
+   * @param {String} userCode
+   * @param {String[]} [keys]
+   * @returns {Promise<Object>}
+   */
+  async pullVarsFromUserCodeLocalScope(userCode, keys = []) {
     // Hard coding polyfill of String.replaceAll, since the version of electron we're using (as of 11/16/2022)
     // doesn't have a new enough version of Node to natively support it
     const extendedUserCode = `
