@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import path from 'path';
-import { list } from '../../platform/fs';
+import { listAsync } from '../../platform/fs';
 import { getValue, setValue } from '../../platform/store';
 import { staticFilePath, staticFileUrl } from '../fs_utils';
 import TrackPlayer from './TrackPlayer';
@@ -152,10 +152,19 @@ class AudioManager {
     };
   }
 
-  loadSfx() {
+  /**
+   * Lists the directory, registers every supported file and calls load() on the
+   * player. Resolves once load() has been called (not when the Howl files have
+   * finished loading); rejects if the directory cannot be listed.
+   */
+  async loadSfx() {
     const sfxDirPath = staticFilePath(`levels/common/sfx`);
     const sfxFileUrls = {};
-    list(sfxDirPath).forEach(fileName => {
+    const fileNames = await listAsync(sfxDirPath);
+    if (fileNames === undefined) {
+      throw new Error(`Audio directory does not exist: ${sfxDirPath}`);
+    }
+    fileNames.forEach(fileName => {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);
@@ -174,10 +183,19 @@ class AudioManager {
     this.sfx.load();
   }
 
-  loadMusic() {
+  /**
+   * Lists the directory, registers every supported file and calls load() on the
+   * player. Resolves once load() has been called (not when the Howl files have
+   * finished loading); rejects if the directory cannot be listed.
+   */
+  async loadMusic() {
     const musicDirPath = staticFilePath(`levels/common/music`);
     const musicFileUrls = {};
-    list(musicDirPath).forEach(fileName => {
+    const fileNames = await listAsync(musicDirPath);
+    if (fileNames === undefined) {
+      throw new Error(`Audio directory does not exist: ${musicDirPath}`);
+    }
+    fileNames.forEach(fileName => {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);

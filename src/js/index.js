@@ -193,10 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
   attemptAppRender();
 });
 
-audioManager.loadMusic();
-audioManager.loadSfx();
 audioManager.onload = () => {
   appDependencies.audio.loaded = true;
 
   attemptAppRender();
 };
+// Rejections (e.g. a missing audio directory) surface as unhandled promise
+// rejections; the app is not rendered, as before.
+Promise.all([audioManager.loadMusic(), audioManager.loadSfx()]);
