@@ -1,7 +1,6 @@
 import path from 'path';
-import { promises as fs } from 'fs';
 import isDev from 'electron-is-dev';
-import * as jetpack from 'fs-jetpack';
+import * as fs from '../platform/fs';
 import { removeDuplicates } from './utils';
 import {
   getAllValidExtensions,
@@ -177,7 +176,7 @@ async function copyDirectory(source, destination, extensions) {
     const sourcePath = await resolveAbsolutePath(relativePath, extensions);
     const destinationPath = path.join(destination, sourceFile);
 
-    await jetpack.copyAsync(sourcePath, destinationPath, { overwrite: true });
+    await fs.copyAsync(sourcePath, destinationPath, { overwrite: true });
   });
 
   await Promise.all(copyPromises);
@@ -203,7 +202,7 @@ async function syncBundledAssets() {
 
   // Clear the existing bundled extensions to ensure we're
   // operating on the latest versions.
-  await jetpack.removeAsync(destinationRoot);
+  await fs.removeAsync(destinationRoot);
 
   const tilesetsDestination = path.join(destinationRoot, 'tilesets');
   await copyDirectory('tilesets', tilesetsDestination, bundledExtensions);

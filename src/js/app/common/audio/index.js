@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import path from 'path';
-import * as jetpack from 'fs-jetpack';
+import { list } from '../../platform/fs';
 import Store from 'electron-store';
 import { staticFilePath, staticFileUrl } from '../fs_utils';
 import TrackPlayer from './TrackPlayer';
@@ -156,7 +156,7 @@ class AudioManager {
   loadSfx() {
     const sfxDirPath = staticFilePath(`levels/common/sfx`);
     const sfxFileUrls = {};
-    jetpack.list(sfxDirPath).forEach(fileName => {
+    list(sfxDirPath).forEach(fileName => {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);
@@ -178,7 +178,7 @@ class AudioManager {
   loadMusic() {
     const musicDirPath = staticFilePath(`levels/common/music`);
     const musicFileUrls = {};
-    jetpack.list(musicDirPath).forEach(fileName => {
+    list(musicDirPath).forEach(fileName => {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);

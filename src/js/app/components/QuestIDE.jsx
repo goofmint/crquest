@@ -1,11 +1,11 @@
 import path from 'path';
 import React from 'react';
-import * as jetpack from 'fs-jetpack';
 import SplitterLayout from 'react-splitter-layout';
 import codeRunner from '../common/code_runner';
 import { getContext } from '../common/context';
 import Button from './Button';
 import config from '../config/config';
+import { existsAsync, readAsync, writeAsync } from '../platform/fs';
 import { readFile } from '../common/assetLoader';
 
 // Ace editor is present in the window scope
@@ -63,7 +63,7 @@ export default class QuestIDE extends React.Component {
   async saveCode() {
     if (this.savedCodePath) {
       const code = this.editor.getValue();
-      await jetpack.writeAsync(this.savedCodePath, code);
+      await writeAsync(this.savedCodePath, code);
     }
   }
 
@@ -71,9 +71,9 @@ export default class QuestIDE extends React.Component {
   // code, use the example code, save that to disk, and load that into the
   // editor instead
   async loadSavedCode() {
-    const savedCodeExists = await jetpack.existsAsync(this.savedCodePath);
+    const savedCodeExists = await existsAsync(this.savedCodePath);
     if (savedCodeExists) {
-      const code = await jetpack.readAsync(this.savedCodePath);
+      const code = await readAsync(this.savedCodePath);
       this.setCode(code);
       console.log(`Loaded code from ${this.savedCodePath}`);
     } else {

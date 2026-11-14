@@ -1,4 +1,4 @@
-import * as jetpack from 'fs-jetpack';
+import { read } from '../../platform/fs';
 import { staticFilePath } from '../../common/fs_utils';
 import TiledService from '../../common/tiled';
 import levelLoader from '../../common/levelLoader';
@@ -11,7 +11,7 @@ class InteractionTextService {
   load(interactionDirPath) {
     const flavorTextFilePath = `${interactionDirPath}/flavorText.json`;
     const staticPath = staticFilePath(flavorTextFilePath);
-    const flavorTextFile = jetpack.read(staticPath, 'json');
+    const flavorTextFile = read(staticPath, 'json');
 
     this.defaultTextList = flavorTextFile.text;
     this.tiledIdMaps = flavorTextFile.tiledIdMaps;

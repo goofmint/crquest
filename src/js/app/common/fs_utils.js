@@ -1,6 +1,6 @@
 import path from 'path';
-import * as jetpack from 'fs-jetpack';
 import fileUrl from 'file-url';
+import { exists } from '../platform/fs';
 
 /*
 Relative paths are different after compilation to the public folder - these
@@ -22,5 +22,5 @@ export function staticFileUrl(relativePath) {
 // Does a static file at the given URL actually exist?
 export function sfExists(relativePath) {
   const p = staticFilePath(relativePath);
-  return jetpack.exists(p);
+  return exists(p);
 }
