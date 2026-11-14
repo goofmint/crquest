@@ -87,6 +87,8 @@
   const regExpToString = RegExp.prototype.toString;
   const mapEntries = Map.prototype.entries;
   const setValues = Set.prototype.values;
+  const mapIteratorNext = Object.getPrototypeOf(new Map().entries()).next;
+  const setIteratorNext = Object.getPrototypeOf(new Set().values()).next;
   const arrayBufferByteLength = Object.getOwnPropertyDescriptor(
     ArrayBuffer.prototype,
     'byteLength'
@@ -128,8 +130,29 @@
       try {
         result.push(next(read(i)));
       } catch (e) {
+        // A failed read still costs one node (successful reads are counted by
+        // serialize itself), so throwing getters cannot evade the budget.
+        budget.remaining--;
         result.push(`[Getter threw: ${safeMessage(e)}]`);
       }
+    }
+    return result;
+  }
+
+  // Pulls elements lazily from a built-in iterator, checking the shared budget
+  // BEFORE each pull, so a huge Map/Set is never copied into a temporary array.
+  function serializeIterator(iterator, iteratorNext, next, budget) {
+    const result = [];
+    for (;;) {
+      if (budget.remaining <= 0) {
+        result.push(TRUNCATED);
+        break;
+      }
+      const step = iteratorNext.call(iterator);
+      if (step.done) {
+        break;
+      }
+      result.push(next(step.value));
     }
     return result;
   }
@@ -156,12 +179,10 @@
       return serializeItems(i => value[i], value.length, next, budget);
     }
     if (value instanceof Map) {
-      const entries = Array.from(mapEntries.call(value));
-      return serializeItems(i => entries[i], entries.length, next, budget);
+      return serializeIterator(mapEntries.call(value), mapIteratorNext, next, budget);
     }
     if (value instanceof Set) {
-      const values = Array.from(setValues.call(value));
-      return serializeItems(i => values[i], values.length, next, budget);
+      return serializeIterator(setValues.call(value), setIteratorNext, next, budget);
     }
     if (ArrayBuffer.isView(value) && !(value instanceof DataView)) {
       return serializeItems(i => value[i], typedArrayLength.call(value), next, budget);

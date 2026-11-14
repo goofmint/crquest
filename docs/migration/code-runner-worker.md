@@ -37,7 +37,7 @@ Issue #38 の成果物である。現行の挙動と判定は `code-runner-behav
 `worker.js` が、すべての console 引数を structured clone で必ず送れる値に変換する。規則の全体は `code-runner-behavior.md` の 4.2 章と、`worker.js` の冒頭コメントにある。要点は次のとおり。
 
 - 関数は `"[Function: name]"`、`Symbol` / `bigint` は文字列、`Error` は `{ message, stack }`、循環は `"[Circular]"`、深さ 20 超は `"[Max depth exceeded]"`。
-- 1 回の console 呼び出しあたり、全引数あわせて 100000 ノード (`MAX_SERIALIZE_NODES`) まで変換する。超えた分は `"[Truncated: too many nodes]"` に置き換える (共有された非循環の参照が指数的に展開されるのを防ぐ。配列とオブジェクトは超えた時点で打ち切る)。
+- 1 回の console 呼び出しあたり、全引数あわせて 100000 ノード (`MAX_SERIALIZE_NODES`) まで変換する。超えた分は `"[Truncated: too many nodes]"` に置き換える (共有された非循環の参照が指数的に展開されるのを防ぐ。配列とオブジェクトは超えた時点で打ち切る)。getter が例外を投げた要素も 1 ノードとして数える。`Map` / `Set` は組み込みのイテレータで 1 要素ずつ取り出し、各要素を取り出す前に予算を確認するので、巨大なコレクションを一時配列にコピーしない。
 - 入力値のメソッドは呼ばない。配列は添字ループで新しい配列に変換し、`Date` / `Map` / `Set` / `RegExp` / 型付き配列は組み込みのメソッドを使うので、ユーザーコードが `map` や `toString` を上書きしても影響しない。getter や Proxy のトラップが例外を投げる場合は、その値だけを `"[Getter threw: ...]"` / `"[Unserializable: ...]"` にして、呼び出し全体は失われない。
 - `DataCloneError` で呼び出しが失われることは無い。シリアライズ自体が例外 (Proxy のトラップなど) を投げた場合は、その旨を `error` の `log` で明示する。
 

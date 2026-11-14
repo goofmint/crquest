@@ -315,6 +315,56 @@ describe('worker.js', () => {
         expect(second[second.length - 1]).toBe('[Truncated: too many nodes]');
       });
 
+      it('counts failed array reads, so throwing getters cannot evade the budget', () => {
+        const h = createScope();
+        const start = Date.now();
+        h.run(`
+          const a = new Array(500000);
+          for (let i = 0; i < a.length; i++) Object.defineProperty(a, i, { get() { throw new Error('g'); } });
+          console.log(a); console.log('after');
+        `);
+        expect(Date.now() - start).toBeLessThan(20000);
+        const list = h.posted[0].arguments[0];
+        expect(list.length).toBeLessThanOrEqual(100001);
+        expect(list[0]).toBe('[Getter threw: g]');
+        expect(list[list.length - 1]).toBe('[Truncated: too many nodes]');
+        expect(h.posted[1].arguments).toEqual(['after']);
+      });
+
+      it('keeps successful reads counted once (exactly the budget of elements fit)', () => {
+        const h = createScope();
+        // 1 node for the array + 99999 elements = 100000
+        h.run(`console.log(Array.from({ length: 99999 }, () => 1))`);
+        const list = h.posted[0].arguments[0];
+        expect(list).toHaveLength(99999);
+        expect(list).not.toContain('[Truncated: too many nodes]');
+      });
+
+      it.each([
+        ['Map', `new Map(Array.from({ length: 300000 }, (_, i) => [i, i]))`],
+        ['Set', `new Set(Array.from({ length: 300000 }, (_, i) => i))`],
+      ])('truncates a large %s at the budget', (_, expr) => {
+        const h = createScope();
+        h.run(`console.log(${expr})`);
+        const list = h.posted[0].arguments[0];
+        expect(list.length).toBeLessThanOrEqual(100001);
+        expect(list[list.length - 1]).toBe('[Truncated: too many nodes]');
+      });
+
+      it('serializes a Set of 10^6 numbers quickly and truncated', () => {
+        const h = createScope();
+        h.run(`const s = new Set(); for (let i = 0; i < 1e6; i++) s.add(i); const t = Date.now(); console.log(s); console.log(Date.now() - t < 2000)`);
+        expect(h.posted[0].arguments[0]).toHaveLength(100000);
+        expect(h.posted[0].arguments[0][99999]).toBe('[Truncated: too many nodes]');
+        expect(h.posted[1].arguments).toEqual([true]);
+      });
+
+      it('small Map and Set still serialize completely', () => {
+        const h = createScope();
+        h.run(`console.log(new Map([['a', { b: 1 }]]), new Set([1, 2, 3]), new Map(), new Set())`);
+        expect(h.posted[0].arguments).toEqual([[['a', { b: 1 }]], [1, 2, 3], [], []]);
+      });
+
       it('leaves normal values untouched and resets per call', () => {
         const h = createScope();
         h.run(`const big = Array.from({ length: 60000 }, () => ({})); console.log(big); console.log(big); console.log({ a: [1, { b: 2 }] })`);
