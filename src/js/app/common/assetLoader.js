@@ -8,8 +8,9 @@ import {
   areExtensionsReady,
   getExtensionDirectory,
   BUNDLED_ASSET_DIRECTORY,
-  BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY,
+  BUNDLED_EXTENSION_DIRECTORIES,
 } from './extensions';
+import { staticFilePath } from './fs_utils';
 
 /**
  * Read a file based on a path relative to extensions' root directory.
@@ -239,8 +240,22 @@ async function requireFromExtension(modulePath) {
   return require(absoluteModulePath);
 }
 
+/**
+ * Finds the bundled extension root (`public/content` or `public/node_modules`)
+ * that contains the given absolute path.
+ *
+ * @param {string} absolutePath
+ * @returns {string | undefined} absolute path of the root, or undefined if the
+ *                               path is not inside a bundled extension root
+ */
+function getBundledExtensionRoot(absolutePath) {
+  return BUNDLED_EXTENSION_DIRECTORIES.map(directory =>
+    staticFilePath(directory)
+  ).find(root => absolutePath.startsWith(root + path.sep));
+}
+
 function isPathFromBundledExtension(absolutePath) {
-  return absolutePath.includes(BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY);
+  return getBundledExtensionRoot(absolutePath) !== undefined;
 }
 
 async function getOwningExtensionName(absolutePath) {
@@ -248,8 +263,8 @@ async function getOwningExtensionName(absolutePath) {
 
   if (isPathFromBundledExtension(absolutePath)) {
     // this is a bundled extension path
-    [, pathRelativeToExtensionsDirectory] = absolutePath.split(
-      BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY
+    pathRelativeToExtensionsDirectory = absolutePath.slice(
+      getBundledExtensionRoot(absolutePath).length
     );
   }
 

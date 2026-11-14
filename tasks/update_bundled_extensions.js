@@ -1,6 +1,6 @@
 const path = require('path');
 const util = require('util');
-const { getBundledExtensionNames } = require('./utils/bundledExtensions');
+const { getNpmExtensionNames } = require('./utils/bundledExtensions');
 const exec = util.promisify(require('child_process').exec);
 
 /**
@@ -11,7 +11,7 @@ const exec = util.promisify(require('child_process').exec);
  * CI and not locally with developer supervision.
  */
 async function run() {
-  const bundledExtensionModules = getBundledExtensionNames();
+  const bundledExtensionModules = getNpmExtensionNames();
 
   const publicPath = path.join(__dirname, '..', 'public');
 

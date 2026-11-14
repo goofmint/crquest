@@ -7,6 +7,9 @@ import {
   resolveAbsolutePath,
   requireFromExtension,
   syncBundledAssets,
+  isPathFromBundledExtension,
+  getOwningExtensionName,
+  getPathRelativeToOwningExtension,
 } from '../../../js/app/common/assetLoader';
 import {
   getExternalExtensionDirectories,
@@ -32,6 +35,7 @@ const mockExtensionsContext = mockContextFactory('extensions', {
 });
 const mockConfig = mockConfigFactory({
   bundledExtensionModules: ['twilioquest-base', 'owls-nest-extension'],
+  vendoredExtensionModules: ['twilioquest-base'],
 });
 
 beforeAll(() => {
@@ -228,6 +232,62 @@ describe('resolveAbsolutePath', () => {
       'overriddenFile.js'
     );
     expect(absolutePath).toBe(expectedPath);
+  });
+});
+
+describe('bundled extension ownership', () => {
+  beforeEach(() => {
+    mockConfig();
+    mockExtensionsContext();
+  });
+
+  const vendoredFile = path.join(
+    PUBLIC_PATH,
+    'content',
+    'twilioquest-base',
+    'objects',
+    'collider',
+    'config.js'
+  );
+  const npmFile = path.join(
+    PUBLIC_PATH,
+    'node_modules',
+    'twilioquest-aaa-bundled-two',
+    'objects',
+    'collider',
+    'config.js'
+  );
+  const externalFile = path.join(
+    EXTENSIONS_PATH,
+    'aaa-exhaustive-config-extension',
+    'overriddenFile.js'
+  );
+
+  test('should recognize paths under both bundled roots', () => {
+    expect(isPathFromBundledExtension(vendoredFile)).toBe(true);
+    expect(isPathFromBundledExtension(npmFile)).toBe(true);
+    expect(isPathFromBundledExtension(externalFile)).toBe(false);
+  });
+
+  test('should not treat a directory merely named content as a bundled root', () => {
+    expect(
+      isPathFromBundledExtension(
+        path.join(EXTENSIONS_PATH, 'content', 'foo', 'config.js')
+      )
+    ).toBe(false);
+  });
+
+  test('should resolve the owning extension name and relative path', async () => {
+    expect(await getOwningExtensionName(vendoredFile)).toBe('twilioquest-base');
+    expect(await getOwningExtensionName(npmFile)).toBe(
+      'twilioquest-aaa-bundled-two'
+    );
+    expect(await getOwningExtensionName(externalFile)).toBe(
+      'aaa-exhaustive-config-extension'
+    );
+    expect(await getPathRelativeToOwningExtension(vendoredFile)).toBe(
+      path.join(path.sep, 'objects', 'collider', 'config.js')
+    );
   });
 });
 
