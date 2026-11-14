@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// The bundle must reference react/jsx-runtime, which exists in every React 19
+// build. With NODE_ENV=development in the caller's shell the React plugin would
+// emit react/jsx-dev-runtime instead, whose jsxDEV is undefined in React's
+// production build (the Electron renderer loads whichever build NODE_ENV picks).
+process.env.NODE_ENV = 'production';
+
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(rootDir, 'src');
 const publicDir = path.join(rootDir, 'public');
@@ -76,8 +82,9 @@ export default defineConfig({
   publicDir: false,
   logLevel: 'info',
   plugins: [
-    // React 16.8: no react/jsx-runtime, so keep the classic runtime
-    react({ jsxRuntime: 'classic' }),
+    // React 19 requires the automatic JSX runtime (react/jsx-runtime is
+    // resolved at runtime from public/node_modules like every bare import)
+    react({ jsxRuntime: 'automatic' }),
     optionalLocalConfig(),
     emitIndexHtml(),
   ],

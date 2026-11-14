@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Transition } from 'react-transition-group';
 
 const FogOwlFlying = ({
@@ -8,6 +8,7 @@ const FogOwlFlying = ({
   fadeIn = false,
 }) => {
   const [showing, setShowing] = useState(true);
+  const nodeRef = useRef(null);
 
   /**
    * Ryan Kubik - 7/14/22
@@ -26,6 +27,7 @@ const FogOwlFlying = ({
 
   return (
     <Transition
+      nodeRef={nodeRef}
       in={showing}
       timeout={{
         enter: 1000,
@@ -35,6 +37,7 @@ const FogOwlFlying = ({
     >
       {state => (
         <div
+          ref={nodeRef}
           className={`animate__animated ${
             state === 'entering' || state === 'entered'
               ? fadeIn

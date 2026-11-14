@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import App from './app/components/App';
 import audioManager from './app/common/audio/index';
 import { isDev } from './app/platform/env';
@@ -179,7 +179,7 @@ function attemptAppRender() {
     // Mount React app on named DOM element
     const appNode = document.getElementById('app');
 
-    ReactDOM.render(<App />, appNode);
+    createRoot(appNode).render(<App />);
   }
 }
 

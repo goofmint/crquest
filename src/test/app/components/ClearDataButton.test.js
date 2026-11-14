@@ -1,5 +1,5 @@
 import React from 'react';
-import { shallow } from 'enzyme';
+import { render } from '@testing-library/react';
 
 jest.mock('../../../js/app/platform/fs', () => ({ remove: jest.fn() }));
 jest.mock('../../../js/app/common/database', () => ({
@@ -41,7 +41,9 @@ afterEach(() => {
 });
 
 function makeInstance() {
-  return shallow(<ClearDataButton />).instance();
+  const ref = React.createRef();
+  render(<ClearDataButton ref={ref} />);
+  return ref.current;
 }
 
 describe('ClearDataButton.clearUserData', () => {

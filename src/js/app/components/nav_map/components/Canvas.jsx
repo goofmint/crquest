@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Transition } from 'react-transition-group';
 
 const Canvas = ({
@@ -7,6 +7,7 @@ const Canvas = ({
   selectedPlanetNode,
   descriptionRef,
 }) => {
+  const nodeRef = useRef(null);
   const startRect = selectedPlanetNode ? 
     selectedPlanetNode.getBoundingClientRect() : null;
   const endRect = (descriptionRef && descriptionRef.current) ? 
@@ -46,12 +47,14 @@ const Canvas = ({
       }}
     >
       <Transition
+        nodeRef={nodeRef}
         in={levelLoadingState === 'loading' || levelLoadingState === 'loaded'}
         timeout={250}
         onExited={() => setLevelLoadingState('unloaded')}
       >
         {state => (
           <div
+            ref={nodeRef}
             style={{
               position: 'absolute',
               background: '#8EDDEF',

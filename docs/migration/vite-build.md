@@ -16,7 +16,7 @@
 - 形式は CommonJS 出力を、banner/footer で `(function () { 'use strict'; ... })();` に包んだもの。従来どおり古典的な `<script src="index.js">` で読み込む。包むのは、トップレベルの `let` が ace / phaser などの他スクリプトのグローバルと衝突しないようにするためと、ES モジュールが暗黙に持っていた strict mode を保つため。
 - `build.target` は `chrome87`。この指定では class fields が `@oxc-project/runtime` のヘルパー (`defineProperty`) に変換される (Babel の class-properties と同じ意味)。ヘルパーはバンドルに取り込むため、`@oxc-project/runtime` を devDependency に入れている。
 - Node 組み込み、`electron`、`public/node_modules` のパッケージ (react, jimp, pug など、裸のモジュール指定すべて) は external。`require("...")` のまま残り、実行時にレンダラーの `require` が `public/node_modules` から解決する (従来と同じ解決元)。バンドルするのは `src/` 以下のアプリのコードだけ。
-- JSX: `@vitejs/plugin-react` を `jsxRuntime: 'classic'` で使う (`public/node_modules` の React は 16.8 で `react/jsx-runtime` が無い)。Vite 8 の oxc は `.js` の JSX を解釈しないため、JSX を含んでいた 13 ファイルを `.jsx` にリネームした (import は拡張子なしなので変更なし)。
+- JSX: `@vitejs/plugin-react` を `jsxRuntime: 'automatic'` で使う (React 19 化 (#46) 以降。それ以前は React 16.8 に `react/jsx-runtime` が無く classic だった)。`react/jsx-runtime` も他の裸の import と同じく実行時に `public/node_modules` から解決する。`vite.config.mjs` は `NODE_ENV=production` に固定する (呼び出し側の `NODE_ENV=development` で `react/jsx-dev-runtime` が出力されるのを防ぐ。React の production ビルドには `jsxDEV` が無い)。Vite 8 の oxc は `.js` の JSX を解釈しないため、JSX を含んでいた 13 ファイルを `.jsx` にリネームした (import は拡張子なしなので変更なし)。
 - `public/` は静的ルートのまま。`images/`, `lib/`, `levels/`, `content/`, `code_runner/`, `avatars/` などはバンドルせず、`publicDir: false` と `emptyOutDir: false` で Vite に触らせない。
 
 (b) `__dirname`: `staticFilePath` は `fileURLToPath(new URL('.', document.baseURI))` (= ページのディレクトリ `public/`) を基準にする。呼び出し側の仕様 (相対パス → 絶対パス、絶対パスはそのまま) は同じ。`file:` 以外のページでは例外になる (フォールバックなし)。ほかに `__dirname` / `__filename` を使うアプリコードは無い (`moduleLoader` の文字列は拡張用ラッパーの引数名)。
