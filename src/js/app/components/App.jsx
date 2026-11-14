@@ -1,5 +1,5 @@
 import React from 'react';
-import { remote } from 'electron';
+import { openDevTools } from '../platform/devtools';
 import sharedListener from '../common/listener';
 import { setContextRef, setContext, context } from '../common/context';
 import HackInterface from './hack_interface/HackInterface';
@@ -36,7 +36,7 @@ export default class App extends React.Component {
     const code = 'up up down down left right left right b a enter';
     sharedListener.sequence_combo(code, () => {
       console.warn(DEVTOOLS_WARNING);
-      remote.BrowserWindow.getFocusedWindow().webContents.openDevTools();
+      openDevTools();
     });
   }
 
