@@ -234,12 +234,6 @@ export default class ValidationHelper {
     return userCode;
   }
 
-  async evalQuestIdeUserCode(objective, mission) {
-    const userCode = await this.getQuestIdeUserCode(objective, mission);
-
-    eval(userCode);
-  }
-
   async pullVarsFromQuestIdeUserCodeLocalScope(keys = [], objective, mission) {
     const userCode = await this.getQuestIdeUserCode(objective, mission);
 

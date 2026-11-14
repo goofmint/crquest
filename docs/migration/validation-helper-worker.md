@@ -60,3 +60,11 @@ Worker (`worker.js` の `pull`) は、ユーザーコードと `__TQ["key"] = ke
 ### QuestIDE のタスクが `fs` / `Buffer` / `http` をユーザーコードの中で使う場合 (範囲外)
 
 Worker には `require`、`fs`、`Buffer`、`http` が無い (`code-runner-behavior.md` 6 章)。ユーザーコードが `require` を呼ぶと `ReferenceError: require is not defined` になる (pullVars では `ValidationHelper` の例外、runner では QuestIDE の画面に出る)。ホストの API を `postMessage` 経由で公開するなどの設計はここでは行わず、Phase 5 / 6 の残課題とする。
+
+## 3. #27: evalQuestIdeUserCode
+
+`evalQuestIdeUserCode(objective, mission)` は保存済みのユーザーコードをホストのレンダラで `eval` していた (戻り値なし。ローカルスコープの `eval` なので、効果は副作用だけ)。
+
+調査: `grep -rn evalQuestIdeUserCode src public` の結果、定義 (`ValidationHelper.js`) 以外の参照は `docs/` だけで、`src/` にも `public/content` (全コンテンツパッケージ) にも呼び出しは無い。
+
+決定: **削除した。** 利用者がいないため、Worker 経由で作り直す理由が無い。ホストの `eval` はユーザーコードを無制限の権限で実行するので、残すと Tauri の CSP / サンドボックス方針とも衝突する。`ValidationHelper.test.js` に「このメソッドが存在しない」ことのテストを置いた。副作用だけが必要なら `pullVarsFromQuestIdeUserCodeLocalScope([], objective, mission)` で Worker 上で実行できる。外部のコンテンツパッケージがこのメソッドを呼んでいた場合は `TypeError: helper.evalQuestIdeUserCode is not a function` で明示的に失敗する。

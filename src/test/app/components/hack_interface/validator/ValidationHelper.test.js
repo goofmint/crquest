@@ -239,6 +239,12 @@ describe('getAppDataPath', () => {
   });
 });
 
+describe('evalQuestIdeUserCode is removed (#27)', () => {
+  test('the direct eval helper no longer exists', () => {
+    expect(makeHelper().evalQuestIdeUserCode).toBeUndefined();
+  });
+});
+
 // The code runs in a real Web Worker (public/code_runner/worker.js)
 describe('pullVarsFromUserCodeLocalScope', () => {
   test('returns the requested top-level variables (let/const/var)', async () => {
