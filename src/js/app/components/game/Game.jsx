@@ -1,8 +1,8 @@
 import React from 'react';
 import cx from 'classnames';
-import * as jetpack from 'fs-jetpack';
 import path from 'path';
 import config from '../../config/config';
+import { list, exists, read } from '../../platform/fs';
 import ga from '../../common/analytics';
 import { getContext, setContext, emitter } from '../../common/context';
 import LevelLifecycleManager from '../../common/levelLifecycleManager';
@@ -216,11 +216,10 @@ export default class Game extends React.Component {
         // all old entities have been migrated to the new Object
         // config format.
         const commonEntitiesDir = staticFilePath('levels/common/entities');
-        const legacyEntityConfigs = jetpack
-          .list(commonEntitiesDir)
+        const legacyEntityConfigs = list(commonEntitiesDir)
           .map(entityKey => {
             const entityDirPath = `${commonEntitiesDir}/${entityKey}`;
-            if (jetpack.exists(entityDirPath) !== 'dir') {
+            if (exists(entityDirPath) !== 'dir') {
               console.error(
                 `Entity key must be a directory. Skipping: ${entityKey}.`
               );
@@ -228,7 +227,7 @@ export default class Game extends React.Component {
             }
 
             const configPath = staticFilePath(`${entityDirPath}/config.json`);
-            if (jetpack.exists(configPath) !== 'file') {
+            if (exists(configPath) !== 'file') {
               console.error(
                 `Entity must contain a 'config.json' file. Skipping: ${entityKey}.`
               );
@@ -236,7 +235,7 @@ export default class Game extends React.Component {
             }
 
             try {
-              const config = jetpack.read(configPath, 'json');
+              const config = read(configPath, 'json');
               EntityConfigService.register(entityKey, config);
 
               return {

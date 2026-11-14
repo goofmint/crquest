@@ -1,10 +1,10 @@
 import path from 'path';
-import jetpack from 'fs-jetpack';
 import * as yup from 'yup';
 import { staticFilePath } from './fs_utils';
 import { getContext } from './context';
 import config from '../config/config';
 import { omitKey } from './utils';
+import { listAsync, existsAsync, readAsync } from '../platform/fs';
 
 const BUNDLED_ASSET_DIRECTORY = '.bundled';
 const BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY = 'node_modules';
@@ -42,7 +42,7 @@ async function getAllValidExtensions() {
  * @returns {Extension[]}
  */
 async function parseExtensionsDirectory(directoryPath) {
-  const potentialExtensions = await jetpack.listAsync(directoryPath);
+  const potentialExtensions = await listAsync(directoryPath);
 
   if (!potentialExtensions) {
     // directory path was invalid
@@ -55,7 +55,7 @@ async function parseExtensionsDirectory(directoryPath) {
 
       return {
         isValid: await isExtensionValid(absolutePath),
-        isDir: (await jetpack.existsAsync(absolutePath)) === 'dir',
+        isDir: (await existsAsync(absolutePath)) === 'dir',
         absolutePath,
         name: potentialExtension,
       };
@@ -133,7 +133,7 @@ function areExtensionsEnabled() {
  * @returns {boolean}
  */
 async function isExtensionValid(extensionPath) {
-  if ((await jetpack.existsAsync(extensionPath)) !== 'dir') {
+  if ((await existsAsync(extensionPath)) !== 'dir') {
     // extensions must be a directory
     return false;
   }
@@ -141,7 +141,7 @@ async function isExtensionValid(extensionPath) {
   const configPath = path.join(extensionPath, 'package.json');
 
   try {
-    const configString = await jetpack.readAsync(configPath);
+    const configString = await readAsync(configPath);
 
     if (configString === undefined) {
       // package.json does not exist!
