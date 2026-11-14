@@ -12,8 +12,7 @@ The game is currently under active development, after a transition in ownership.
 
 Developing TerminalQuest requires the following dependencies to be installed:
 
-* [Node.js](https://nodejs.org/en) and [npm](npmjs.com) - the game is currently tested and running locally with Node 18.
-* [Python](https://www.python.org/downloads/) is currently required to install and configure some dependencies. Python 3.9 should work - 3.11 has been known to cause problems with our current build.
+* [Node.js](https://nodejs.org/en) and [npm](https://www.npmjs.com/) - the build tooling targets Node 26 LTS (see `.nvmrc`). Use npm 11 or later, which ships with Node 26.
 
 After cloning this repository, install dependencies with:
 
