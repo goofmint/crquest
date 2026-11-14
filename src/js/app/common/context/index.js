@@ -1,5 +1,4 @@
 import React from 'react';
-import Store from 'electron-store';
 import EventEmitter from 'events';
 import {
   stripIndents
@@ -12,10 +11,10 @@ import {
 import {
   syncContext
 } from './sync';
+import { setValue } from '../../platform/store';
 
 export const context = React.createContext({});
 export const emitter = new EventEmitter();
-const store = new Store();
 let contextRef;
 
 export function getSavedFields() {
@@ -75,7 +74,7 @@ export function setContext(newContext) {
     emitter.emit('contextUpdate', validatedNewContext);
     Object.entries(validatedNewContext).forEach(([key, value]) => {
       emitter.emit(`contextUpdate:${key}`, value);
-      if (getSavedFields().includes(key)) store.set(key, value);
+      if (getSavedFields().includes(key)) setValue(key, value);
     });
 
     syncContext(validatedNewContext);
