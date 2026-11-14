@@ -1,0 +1,30 @@
+{
+  "title": "Raid the Dark Ducktypium Forge",
+  "description": "Practice your programming skills to prepare for raiding the Dark Ducktypium Forge! This mission is intended for Operators who already know how to program in JavaScript.",
+  "questTitle": "Raid the Dark Ducktypium Forge",
+  "questDescription": "Practice your programming skills to prepare for raiding the Dark Ducktypium Forge!",
+  "mission_icon": "challenge-questions/Icon_Forgex4.png",
+  "is_mission": true,
+  "priority": 4,
+  "backgroundMusic": "hackertheme_104771b",
+  "backgroundEffect": {
+    "key": "vr",
+    "options": {}
+  },
+  "flavorTextOverrides": {},
+  "objectives": [
+    "difference-max-min",
+    "ducktypium-chest",
+    "ducktypium-helm",
+    "remove-duplicate-characters",
+    "reverse-words",
+    "sum-array",
+    "balance-brackets",
+    "check-for-palindrome",
+    "flatten-array",
+    "03-debugging-1",
+    "03-debugging-2",
+    "03-debugging-3",
+    "03-ducktypium-legs"
+  ]
+}
