@@ -1,13 +1,14 @@
 import EventEmitter from 'events';
 import * as jetpack from 'fs-jetpack';
 import { staticFilePath } from './fs_utils';
+import { getUserDataPath } from '../platform/paths';
 
 // Necessary electron goodies
 const { ipcRenderer, remote } = require('electron');
-const { app, BrowserWindow } = remote;
+const { BrowserWindow } = remote;
 
 // Paths for code execution
-const basePath = `${app.getPath('userData')}/QuestIDE`;
+const basePath = `${getUserDataPath()}/QuestIDE`;
 const appCodePath = `${basePath}/script.js`;
 
 // Run IDE code in an invisible browser window instance
