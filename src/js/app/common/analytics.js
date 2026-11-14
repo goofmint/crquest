@@ -1,4 +1,4 @@
-import isDev from 'electron-is-dev';
+import { isDev } from '../platform/env';
 import ua from 'universal-analytics';
 import { getAppVersion } from '../platform/paths';
 
@@ -34,7 +34,7 @@ function initializeAnalytics(state) {
   // Determine where to send data based on dev/prod build
   const UA_DEV = 'UA-135538733-1';
   const UA_PROD = 'UA-135538733-2';
-  UA_ID = isDev ? UA_DEV : UA_PROD;
+  UA_ID = isDev() ? UA_DEV : UA_PROD;
 
   // Create a visitor object to track analytics events
   analytics.visitor = ua(UA_ID, guid);

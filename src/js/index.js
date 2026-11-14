@@ -2,13 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './app/components/App';
 import audioManager from './app/common/audio/index';
-import isDev from 'electron-is-dev';
+import { isDev } from './app/platform/env';
 import { syncBundledAssets } from './app/common/assetLoader';
 import extendYup from './app/common/extendYup';
-const { shell, remote } = require('electron');
+const { remote } = require('electron');
 import config from './app/config/config';
 import { showAlert } from './app/platform/dialog';
-import { openExternal } from './app/platform/shell';
+import { openExternal, openPath } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
 
 extendYup();
@@ -71,7 +71,7 @@ document.addEventListener(
 
 // Load Spector.js debugger
 let spector;
-if (isDev) {
+if (isDev()) {
   const script = document.createElement('script');
   script.onload = () => {
     spector = new window.SPECTOR.Spector();
@@ -123,7 +123,7 @@ if (!devToolsItem) {
     new MenuItem({
       label: 'Open User Data',
       click: () => {
-        shell.openItem(config.userDataPath);
+        openPath(config.userDataPath);
       },
     })
   );
@@ -132,12 +132,12 @@ if (!devToolsItem) {
     new MenuItem({
       label: 'Open Save File',
       click: () => {
-        shell.openItem(config.saveFilePath);
+        openPath(config.saveFilePath);
       },
     })
   );
 
-  if (isDev) {
+  if (isDev()) {
     helpMenuItem.submenu.append(
       new MenuItem({
         label: 'Show Spector.js UI',

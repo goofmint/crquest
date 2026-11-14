@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from '../../platform/fs';
 import { platform } from 'process';
 
 function deepClone(object) {

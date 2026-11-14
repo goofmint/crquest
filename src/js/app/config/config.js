@@ -1,5 +1,5 @@
 import path from 'path';
-import isDev from 'electron-is-dev';
+import { isDev } from '../platform/env';
 import bundledExtensionModules from './bundledExtensionModules.json';
 import { getAppDataPath, getUserDataPath } from '../platform/paths';
 
@@ -30,7 +30,7 @@ let config = {
 };
 
 // Attempt to load local config in the dev environment, if present
-if (isDev) {
+if (isDev()) {
   try {
     const localConfig = require('./local_config');
     config = Object.assign(config, localConfig);

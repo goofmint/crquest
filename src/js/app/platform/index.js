@@ -44,6 +44,7 @@
  * @property {import('./shell').PlatformShell} shell
  * @property {import('./exec').PlatformExec} exec
  * @property {import('./devtools').PlatformDevtools} devtools
+ * @property {import('./env').PlatformEnv} env
  */
 
 export {};

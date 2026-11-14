@@ -18,7 +18,13 @@
  *    a missing source rejects with `code: 'ENOENT'`, and `removeAsync` of a
  *    missing path is a no-op. Synchronous methods block the event loop.
  *
- * Exported names: `stat`, `readFile`, `readdir` (Node), `exists`, `list`,
+ * Synchronous additions (call sites keep their sync semantics):
+ * `remove` is jetpack's synchronous remove (return value unused; a missing
+ * path is a no-op). `readFileSync` is Node's: with an encoding it returns a
+ * string, and a missing file throws `ENOENT` (context_provider/system.js
+ * relies on that throw).
+ *
+ * Exported names: `remove`, `readFileSync`, `stat`, `readFile`, `readdir` (Node), `exists`, `list`,
  * `read` (jetpack, sync), `existsAsync`, `listAsync`, `readAsync`,
  * `writeAsync`, `copyAsync`, `removeAsync` (jetpack, async).
  *
@@ -48,11 +54,16 @@
  *   Creates missing parent directories.
  * @property {(from: string, to: string, options?: {overwrite?: boolean}) => Promise<void>} copyAsync
  * @property {(path: string) => Promise<void>} removeAsync
+ * @property {(path: string) => void} remove
+ *   Synchronous. Return value is not used by callers.
+ * @property {(path: string, options?: string | {encoding?: string}) => string | Buffer} readFileSync
+ *   Synchronous. String with an encoding. Throws `ENOENT` for a missing file.
  */
 
-import { promises as nodeFs } from 'fs';
+import { promises as nodeFs, readFileSync as nodeReadFileSync } from 'fs';
 import * as jetpack from 'fs-jetpack';
 
+export const readFileSync = nodeReadFileSync;
 export const stat = nodeFs.stat;
 export const readFile = nodeFs.readFile;
 export const readdir = nodeFs.readdir;
@@ -60,6 +71,7 @@ export const readdir = nodeFs.readdir;
 export const exists = jetpack.exists;
 export const list = jetpack.list;
 export const read = jetpack.read;
+export const remove = jetpack.remove;
 export const existsAsync = jetpack.existsAsync;
 export const listAsync = jetpack.listAsync;
 export const readAsync = jetpack.readAsync;

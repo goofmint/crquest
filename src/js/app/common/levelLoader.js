@@ -1,5 +1,4 @@
 import path from 'path';
-import * as jetpack from 'fs-jetpack';
 import * as yup from 'yup';
 import { staticFilePath, staticFileUrl } from './fs_utils';
 import db from './database';

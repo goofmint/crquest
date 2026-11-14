@@ -1,5 +1,4 @@
 import React from 'react';
-import * as jetpack from 'fs-jetpack';
 import { keypress } from 'keypress.js';
 import ga from '../../common/analytics';
 import { staticFilePath } from '../../common/fs_utils';

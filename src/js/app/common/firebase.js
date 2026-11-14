@@ -1,4 +1,4 @@
-const isDev = require('electron-is-dev');
+import { isDev } from '../platform/env';
 
 /**
  * https://firebase.google.com/docs/projects/api-keys
@@ -37,6 +37,6 @@ const DEV_CONFIG = {
   appId: '1:64086769119:web:8814deb9dfccf55f',
 };
 
-firebase.initializeApp(isDev ? DEV_CONFIG : PROD_CONFIG);
+firebase.initializeApp(isDev() ? DEV_CONFIG : PROD_CONFIG);
 
 export const Firestore = firebase.firestore();

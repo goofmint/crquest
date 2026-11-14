@@ -1,5 +1,5 @@
 import path from 'path';
-import isDev from 'electron-is-dev';
+import { isDev } from '../platform/env';
 import * as fs from '../platform/fs';
 import { removeDuplicates } from './utils';
 import {
@@ -229,7 +229,7 @@ async function requireFromExtension(modulePath) {
     return null;
   }
 
-  if (isDev || window.reloadExternalModules) {
+  if (isDev() || window.reloadExternalModules) {
     // In development, constantly reload external modules, since with
     // validators and event code, we want to reload the latest regularly
     delete require.cache[require.resolve(absoluteModulePath)];

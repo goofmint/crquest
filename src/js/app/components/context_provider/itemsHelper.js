@@ -1,6 +1,6 @@
 import { getContext, setContext } from '../../common/context';
 import { reduceEntries } from '../../common/utils';
-const isDev = require('electron-is-dev');
+import { isDev } from '../../platform/env';
 
 export function getItemFromKey(itemKey) {
   const items = getContext('items');
@@ -14,7 +14,7 @@ export function addItems(items = []) {
   setContext({ inventory: [...inventory, ...newItems] });
 }
 
-if (isDev) {
+if (isDev()) {
   window.addItem = item => addItems([item]);
 }
 
