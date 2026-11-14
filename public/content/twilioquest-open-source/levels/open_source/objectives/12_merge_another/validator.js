@@ -1,5 +1,3 @@
-const got = require("got");
-
 module.exports = async (helper) => {
   const { prNumber, repositoryOwner, repository } = helper.validationFields;
   const { TQ_GITHUB_USERNAME } = helper.env;
@@ -31,21 +29,18 @@ module.exports = async (helper) => {
   }
 
   try {
-    const response = await got(
-      `https://api.github.com/repos/${repositoryOwner}/${repository}/pulls/${prNumber}`,
-      {
-        throwHttpErrors: false,
-      }
+    const response = await fetch(
+      `https://api.github.com/repos/${repositoryOwner}/${repository}/pulls/${prNumber}`
     );
 
-    if (response.statusCode !== 200) {
+    if (response.status !== 200) {
       helper.fail(
         `We could not find the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}"!`
       );
       return;
     }
 
-    const parsedResponseBody = JSON.parse(response.body);
+    const parsedResponseBody = await response.json();
     const isPrClosed = parsedResponseBody.state === "closed";
     const isPrMerged = parsedResponseBody.merged === true;
     const prOwner = parsedResponseBody.user.login;

@@ -1,25 +1,19 @@
-const got = require('got');
-
 module.exports = async helper => {
   const { TQ_OPEN_PIXEL_ART_PR_NUMBER } = helper.env;
 
   try {
-    const response = await got(
-      `https://api.github.com/repos/twilio-labs/open-pixel-art/pulls/${TQ_OPEN_PIXEL_ART_PR_NUMBER}`,
-      // `https://api.github.com/repos/sindresorhus/got/pulls/889`,
-      {
-        throwHttpErrors: false,
-      }
+    const response = await fetch(
+      `https://api.github.com/repos/twilio-labs/open-pixel-art/pulls/${TQ_OPEN_PIXEL_ART_PR_NUMBER}`
     );
 
-    if (response.statusCode !== 200) {
+    if (response.status !== 200) {
       helper.fail(
         `We could not find the Pull Request #${TQ_OPEN_PIXEL_ART_PR_NUMBER} on the Open Pixel Art remote repository"!`
       );
       return;
     }
 
-    const parsedResponseBody = JSON.parse(response.body);
+    const parsedResponseBody = await response.json();
     const isPrClosed = parsedResponseBody.state === 'closed';
     const isPrMerged = parsedResponseBody.merged === true;
 

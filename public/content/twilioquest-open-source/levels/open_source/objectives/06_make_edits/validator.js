@@ -1,4 +1,3 @@
-const jetpack = require("fs-jetpack");
 const path = require("path");
 const { execGitWithArgs } = require("../../../../scripts/objectiveValidation");
 
@@ -29,7 +28,7 @@ module.exports = async (helper) => {
 
   try {
     const pixelsPath = path.join(TQ_OPEN_PIXEL_ART_DIR, "_data", "pixels.json");
-    const pixelFileExists = await jetpack.existsAsync(pixelsPath);
+    const pixelFileExists = await helper.fs.existsAsync(pixelsPath);
 
     if (pixelFileExists !== "file") {
       helper.fail(
@@ -38,7 +37,7 @@ module.exports = async (helper) => {
       return;
     }
 
-    const pixelsContent = await jetpack.readAsync(pixelsPath, "json");
+    const pixelsContent = await helper.fs.readAsync(pixelsPath, "json");
     const isPixelPresentWithUsername = pixelsContent.data.find(
       (pixel) =>
         pixel.username &&
@@ -63,10 +62,9 @@ module.exports = async (helper) => {
 
     const gitPixelsCommitLog = await execGitWithArgs(
       helper,
-      `log _data/pixels.json`,
+      ["log", "_data/pixels.json"],
       {
         cwd: TQ_OPEN_PIXEL_ART_DIR,
-        timeout: 2000,
       }
     );
 

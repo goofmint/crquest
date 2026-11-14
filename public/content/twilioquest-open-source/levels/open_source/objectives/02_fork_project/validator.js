@@ -1,17 +1,12 @@
-const got = require('got');
-
 module.exports = async helper => {
   const { TQ_GITHUB_USERNAME } = helper.env;
 
   try {
-    const response = await got(
-      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art`,
-      {
-        throwHttpErrors: false,
-      }
+    const response = await fetch(
+      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art`
     );
 
-    if (response.statusCode === 200) {
+    if (response.status === 200) {
       return helper.success(
         `We found your fork of the Open Pixel Art respository! Good job!`
       );

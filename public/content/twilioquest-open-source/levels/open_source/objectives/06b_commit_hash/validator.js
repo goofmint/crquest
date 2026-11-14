@@ -19,7 +19,7 @@ module.exports = async (helper) => {
   }
 
   try {
-    const gitShowCommit = await execGitWithArgs(helper, `show ${commitHash}`, {
+    const gitShowCommit = await execGitWithArgs(helper, commitHash ? ["show", commitHash] : ["show"], {
       cwd: TQ_OPEN_PIXEL_ART_DIR,
     });
 

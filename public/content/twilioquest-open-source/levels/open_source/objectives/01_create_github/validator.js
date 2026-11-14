@@ -1,5 +1,3 @@
-const got = require("got");
-
 module.exports = async (helper) => {
   const username = helper.getNormalizedInput("username", { lowerCase: false });
 
@@ -8,11 +6,9 @@ module.exports = async (helper) => {
   }
 
   try {
-    const response = await got(`https://api.github.com/users/${username}`, {
-      throwHttpErrors: false,
-    });
+    const response = await fetch(`https://api.github.com/users/${username}`);
 
-    if (response.statusCode === 200) {
+    if (response.status === 200) {
       return helper.success(
         `We found your GitHub user, ${username}. Good job!`,
         [{ name: "GITHUB_USERNAME", value: username }]

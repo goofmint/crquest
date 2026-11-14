@@ -20,7 +20,7 @@ module.exports = async (helper) => {
   try {
     const gitLogLastMasterCommit = await execGitWithArgs(
       helper,
-      `log master -n 1 --pretty=format:"%H"`,
+      ["log", "master", "-n", "1", "--pretty=format:%H"],
       {
         cwd: TQ_OPEN_PIXEL_ART_DIR,
       }
@@ -30,7 +30,7 @@ module.exports = async (helper) => {
 
     const gitBranchListContainingMasterCommit = await execGitWithArgs(
       helper,
-      `branch --contains ${latestMasterCommit}`,
+      ["branch", "--contains", latestMasterCommit],
       {
         cwd: TQ_OPEN_PIXEL_ART_DIR,
       }

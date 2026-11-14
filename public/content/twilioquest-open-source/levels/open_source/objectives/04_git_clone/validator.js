@@ -1,4 +1,3 @@
-const jetpack = require('fs-jetpack');
 const path = require('path');
 
 module.exports = async helper => {
@@ -10,7 +9,7 @@ module.exports = async helper => {
   }
 
   try {
-    const directoryExists = await jetpack.existsAsync(repositoryFilePath);
+    const directoryExists = await helper.fs.existsAsync(repositoryFilePath);
 
     if (directoryExists !== 'dir') {
       helper.fail(
@@ -20,7 +19,7 @@ module.exports = async helper => {
     }
 
     const packagePath = path.join(repositoryFilePath, 'package.json');
-    const packageFileExists = await jetpack.existsAsync(packagePath);
+    const packageFileExists = await helper.fs.existsAsync(packagePath);
 
     if (packageFileExists !== 'file') {
       helper.fail(
@@ -29,7 +28,7 @@ module.exports = async helper => {
       return;
     }
 
-    const packageContents = await jetpack.readAsync(packagePath, 'json');
+    const packageContents = await helper.fs.readAsync(packagePath, 'json');
 
     if (packageContents.name !== 'open-pixel-art') {
       helper.fail(

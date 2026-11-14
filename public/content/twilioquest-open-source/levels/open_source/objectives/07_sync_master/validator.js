@@ -1,4 +1,3 @@
-const got = require("got");
 const { execGitWithArgs } = require("../../../../scripts/objectiveValidation");
 
 module.exports = async (helper) => {
@@ -19,7 +18,7 @@ module.exports = async (helper) => {
   }
 
   try {
-    const gitRemote = await execGitWithArgs(helper, `remote -v`, {
+    const gitRemote = await execGitWithArgs(helper, ["remote", "-v"], {
       cwd: TQ_OPEN_PIXEL_ART_DIR,
     });
 
@@ -55,37 +54,31 @@ module.exports = async (helper) => {
       return;
     }
 
-    const openPixelArtResponse = await got(
-      `https://api.github.com/repos/twilio-labs/open-pixel-art/branches/master`,
-      {
-        throwHttpErrors: false,
-      }
+    const openPixelArtResponse = await fetch(
+      `https://api.github.com/repos/twilio-labs/open-pixel-art/branches/master`
     );
 
-    if (openPixelArtResponse.statusCode !== 200) {
+    if (openPixelArtResponse.status !== 200) {
       helper.fail(`We couldn't connect to the Open Pixel Art repository!
       
-      ${openPixelArtResponse.statusMessage}`);
+      ${openPixelArtResponse.status} ${openPixelArtResponse.statusText}`);
       return;
     }
 
-    const playerResponse = await got(
-      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art/branches/master`,
-      {
-        throwHttpErrors: false,
-      }
+    const playerResponse = await fetch(
+      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art/branches/master`
     );
 
-    if (playerResponse.statusCode !== 200) {
+    if (playerResponse.status !== 200) {
       helper.fail(`We couldn't find the "open-pixel-art" repository for your user "${TQ_GITHUB_USERNAME}"!
       
-      ${playerResponse.statusMessage}`);
+      ${playerResponse.status} ${playerResponse.statusText}`);
       return;
     }
 
     if (
-      JSON.parse(playerResponse.body).commit.sha !==
-      JSON.parse(openPixelArtResponse.body).commit.sha
+      (await playerResponse.json()).commit.sha !==
+      (await openPixelArtResponse.json()).commit.sha
     ) {
       helper.fail(
         `The Open Pixel Art repository and the "open-pixel-art" repository for your user "${TQ_GITHUB_USERNAME} are out of sync"! New changes may've been added since your last sync. Try syncing again!`

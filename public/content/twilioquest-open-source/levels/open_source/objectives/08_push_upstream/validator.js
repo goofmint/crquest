@@ -1,17 +1,12 @@
-const got = require('got');
-
 module.exports = async helper => {
   const { TQ_GITHUB_USERNAME, TQ_OPEN_PIXEL_ART_BRANCH } = helper.env;
 
   try {
-    const response = await got(
-      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art/branches/${TQ_OPEN_PIXEL_ART_BRANCH}`,
-      {
-        throwHttpErrors: false,
-      }
+    const response = await fetch(
+      `https://api.github.com/repos/${TQ_GITHUB_USERNAME}/open-pixel-art/branches/${TQ_OPEN_PIXEL_ART_BRANCH}`
     );
 
-    if (response.statusCode === 200) {
+    if (response.status === 200) {
       return helper.success(
         `We found your branch "${TQ_OPEN_PIXEL_ART_BRANCH}" on your remote repository for the user "${TQ_GITHUB_USERNAME}"!`
       );

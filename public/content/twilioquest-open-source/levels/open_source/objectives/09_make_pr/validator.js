@@ -1,25 +1,20 @@
-const got = require('got');
-
 module.exports = async helper => {
   const { TQ_GITHUB_USERNAME } = helper.env;
   const prNumber = helper.getNormalizedInput('prNumber');
 
   try {
-    const response = await got(
-      `https://api.github.com/repos/twilio-labs/open-pixel-art/pulls/${prNumber}`,
-      {
-        throwHttpErrors: false,
-      }
+    const response = await fetch(
+      `https://api.github.com/repos/twilio-labs/open-pixel-art/pulls/${prNumber}`
     );
 
-    if (response.statusCode !== 200) {
+    if (response.status !== 200) {
       helper.fail(
         `We could not find the Pull Request #${prNumber} on the Open Pixel Art remote repository"!`
       );
       return;
     }
 
-    const parsedResponseBody = JSON.parse(response.body);
+    const parsedResponseBody = await response.json();
 
     const prOwner = parsedResponseBody.user.login;
 

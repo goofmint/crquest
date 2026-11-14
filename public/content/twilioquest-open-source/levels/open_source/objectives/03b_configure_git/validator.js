@@ -2,7 +2,7 @@ const { execGitWithArgs } = require("../../../../scripts/objectiveValidation");
 
 module.exports = async (helper) => {
   try {
-    const gitConfigList = await execGitWithArgs(helper, `config --list`);
+    const gitConfigList = await execGitWithArgs(helper, ["config", "--list"]);
 
     if (!gitConfigList.stdout.includes("user.email=")) {
       helper.fail(`We did not find your email configured correctly!`);

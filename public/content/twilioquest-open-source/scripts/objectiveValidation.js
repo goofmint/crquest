@@ -1,7 +1,14 @@
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
-
-async function execGitWithArgs(helper, argString, execOptions = {}) {
+/**
+ * Runs the learner's git (TQ_GIT_EXE) with an argument array (no shell, so no
+ * quoting of the executable path or arguments is needed). Resolves
+ * { stdout, stderr } on exit code 0. A non-zero exit rejects, like the
+ * promisified child_process.exec this replaced.
+ *
+ * @param {object} helper - validation helper
+ * @param {string[]} args - git arguments, e.g. ["branch", "--list", name]
+ * @param {{cwd?: string}} [execOptions]
+ */
+async function execGitWithArgs(helper, args, execOptions = {}) {
   const { TQ_GIT_EXE } = helper.env;
 
   if (!!TQ_GIT_EXE === false) {
@@ -22,7 +29,23 @@ async function execGitWithArgs(helper, argString, execOptions = {}) {
     );
   }
 
-  return exec(`"${TQ_GIT_EXE}" ${argString}`, execOptions);
+  const { code, stdout, stderr } = await helper.exec(
+    TQ_GIT_EXE,
+    args,
+    execOptions
+  );
+
+  if (code !== 0) {
+    const error = new Error(
+      `Command failed: "${TQ_GIT_EXE}" ${args.join(" ")}\n${stderr}`
+    );
+    error.code = code;
+    error.stdout = stdout;
+    error.stderr = stderr;
+    throw error;
+  }
+
+  return { stdout, stderr };
 }
 
 module.exports = {

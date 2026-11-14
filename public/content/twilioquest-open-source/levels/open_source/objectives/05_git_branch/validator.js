@@ -12,7 +12,7 @@ module.exports = async (helper) => {
   try {
     const gitBranchList = await execGitWithArgs(
       helper,
-      `branch --list ${branchName}`,
+      ["branch", "--list", branchName],
       {
         cwd: TQ_OPEN_PIXEL_ART_DIR,
       }
