@@ -1,0 +1,15 @@
+{
+  "name": "twilioquest-javascript",
+  "description": "This is the JavaScript Test Lab extension for TwilioQuest.",
+  "version": "1.1.7",
+  "engines": {
+    "twilioquest": "3.1.44"
+  },
+  "dependencies": {
+    "command-exists": "^1.2.9",
+    "esprima": "^4.0.1",
+    "fs-jetpack": "^4.1.1",
+    "lodash.merge": "^4.6.2",
+    "uuid": "^8.3.2"
+  }
+}
