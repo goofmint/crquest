@@ -34,8 +34,7 @@ describe('vendored twilioquest-javascript layout', () => {
       path.join(PUBLIC_PATH, 'package-lock.json'),
       'json'
     );
-    // lockfileVersion 3 lists packages under "packages", keyed by install path
-    expect(lock.packages).not.toHaveProperty([`node_modules/${NAME}`]);
+    expect(lock.dependencies).not.toHaveProperty([NAME]);
   });
 
   test('keeps the package metadata, license and the level', () => {
