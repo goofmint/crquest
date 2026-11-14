@@ -19,6 +19,7 @@ import TiledService from '../../common/tiled';
 import EntityConfigService from './EntityConfigService';
 import levelLoader from '../../common/levelLoader';
 import audioManager from '../../common/audio';
+import InteractionTextService from './InteractionTextService';
 
 const TRANSITION_DELAY = 750;
 
@@ -118,6 +119,11 @@ export default class Game extends React.Component {
         //
         // Phaser's set up methods do not support async behaviors.
         const levelInfo = await levelLoader.readLevelInfo(levelName);
+
+        // Default object interaction (flavor) text. DynamicLevel.preload reads
+        // it synchronously via InteractionTextService.getText, so it must be
+        // loaded before the level is created or restarted.
+        await InteractionTextService.load('levels/common');
 
         if (levelInfo) {
           levelProperties = levelInfo;

@@ -1,4 +1,4 @@
-import { read } from '../../platform/fs';
+import { readAsync } from '../../platform/fs';
 import { staticFilePath } from '../../common/fs_utils';
 import TiledService from '../../common/tiled';
 import levelLoader from '../../common/levelLoader';
@@ -8,10 +8,17 @@ class InteractionTextService {
   tiledIdMaps = {};
   currentLevelTextList = [];
 
-  load(interactionDirPath) {
+  // Must be awaited before the level is created: Phaser's preload() cannot
+  // await, so Game.loadLevel loads the default text and getText() then reads
+  // from the already-loaded data.
+  async load(interactionDirPath) {
     const flavorTextFilePath = `${interactionDirPath}/flavorText.json`;
     const staticPath = staticFilePath(flavorTextFilePath);
-    const flavorTextFile = read(staticPath, 'json');
+    const flavorTextFile = await readAsync(staticPath, 'json');
+
+    if (flavorTextFile === undefined) {
+      throw new Error(`Flavor text file not found: ${flavorTextFilePath}`);
+    }
 
     this.defaultTextList = flavorTextFile.text;
     this.tiledIdMaps = flavorTextFile.tiledIdMaps;

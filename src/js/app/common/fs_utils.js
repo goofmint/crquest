@@ -1,6 +1,6 @@
 import path from 'path';
 import fileUrl from 'file-url';
-import { exists } from '../platform/fs';
+import { existsAsync } from '../platform/fs';
 
 /*
 Relative paths are different after compilation to the public folder - these
@@ -20,7 +20,7 @@ export function staticFileUrl(relativePath) {
 }
 
 // Does a static file at the given URL actually exist?
-export function sfExists(relativePath) {
+export async function sfExists(relativePath) {
   const p = staticFilePath(relativePath);
-  return exists(p);
+  return existsAsync(p);
 }
