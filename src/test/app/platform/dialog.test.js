@@ -10,19 +10,19 @@ function loadDialog(remote) {
 function makeRemote() {
   return {
     dialog: {
-      showMessageBoxSync: jest.fn(),
+      showMessageBox: jest.fn(),
       showOpenDialog: jest.fn(),
     },
   };
 }
 
-describe('showConfirmSync', () => {
-  test('calls showMessageBoxSync with the question options and null window', () => {
+describe('showConfirm', () => {
+  test('calls showMessageBox with the question options and null window', async () => {
     const remote = makeRemote();
-    remote.dialog.showMessageBoxSync.mockReturnValue(0);
-    loadDialog(remote).showConfirmSync('Sure?');
-    expect(remote.dialog.showMessageBoxSync).toHaveBeenCalledTimes(1);
-    expect(remote.dialog.showMessageBoxSync).toHaveBeenCalledWith(null, {
+    remote.dialog.showMessageBox.mockResolvedValue({ response: 0, checkboxChecked: false });
+    await loadDialog(remote).showConfirm('Sure?');
+    expect(remote.dialog.showMessageBox).toHaveBeenCalledTimes(1);
+    expect(remote.dialog.showMessageBox).toHaveBeenCalledWith(null, {
       type: 'question',
       buttons: ['OK', 'Cancel'],
       defaultId: 0,
@@ -37,27 +37,33 @@ describe('showConfirmSync', () => {
     [1, false],
     [2, false],
     [undefined, false],
-  ])('button index %p returns %p', (idx, expected) => {
+  ])('button index %p resolves %p', async (response, expected) => {
     const remote = makeRemote();
-    remote.dialog.showMessageBoxSync.mockReturnValue(idx);
-    expect(loadDialog(remote).showConfirmSync('m')).toBe(expected);
+    remote.dialog.showMessageBox.mockResolvedValue({ response, checkboxChecked: false });
+    await expect(loadDialog(remote).showConfirm('m')).resolves.toBe(expected);
   });
 
-  test('propagates thrown errors', () => {
+  test('propagates rejections', async () => {
     const remote = makeRemote();
-    remote.dialog.showMessageBoxSync.mockImplementation(() => {
+    remote.dialog.showMessageBox.mockRejectedValue(new Error('boom'));
+    await expect(loadDialog(remote).showConfirm('m')).rejects.toThrow('boom');
+  });
+
+  test('propagates synchronous throws as rejections', async () => {
+    const remote = makeRemote();
+    remote.dialog.showMessageBox.mockImplementation(() => {
       throw new Error('boom');
     });
-    expect(() => loadDialog(remote).showConfirmSync('m')).toThrow('boom');
+    await expect(loadDialog(remote).showConfirm('m')).rejects.toThrow('boom');
   });
 });
 
-describe('showAlertSync', () => {
-  test('calls showMessageBoxSync with the warning options and returns undefined', () => {
+describe('showAlert', () => {
+  test('calls showMessageBox with the warning options and resolves undefined', async () => {
     const remote = makeRemote();
-    remote.dialog.showMessageBoxSync.mockReturnValue(0);
-    expect(loadDialog(remote).showAlertSync('Careful')).toBeUndefined();
-    expect(remote.dialog.showMessageBoxSync).toHaveBeenCalledWith(null, {
+    remote.dialog.showMessageBox.mockResolvedValue({ response: 0, checkboxChecked: false });
+    await expect(loadDialog(remote).showAlert('Careful')).resolves.toBeUndefined();
+    expect(remote.dialog.showMessageBox).toHaveBeenCalledWith(null, {
       type: 'warning',
       buttons: ['OK'],
       defaultId: 0,
@@ -65,6 +71,12 @@ describe('showAlertSync', () => {
       detail: 'Careful',
       message: '',
     });
+  });
+
+  test('propagates rejections', async () => {
+    const remote = makeRemote();
+    remote.dialog.showMessageBox.mockRejectedValue(new Error('boom'));
+    await expect(loadDialog(remote).showAlert('m')).rejects.toThrow('boom');
   });
 });
 
@@ -133,14 +145,14 @@ describe('unavailable remote', () => {
 
   test('throws explicit errors when remote is undefined', async () => {
     const mod = loadDialog(undefined);
-    expect(() => mod.showConfirmSync('m')).toThrow(/remote\.dialog/);
-    expect(() => mod.showAlertSync('m')).toThrow(/remote\.dialog/);
+    await expect(mod.showConfirm('m')).rejects.toThrow(/remote\.dialog/);
+    await expect(mod.showAlert('m')).rejects.toThrow(/remote\.dialog/);
     await expect(mod.showDirectoryDialog({ title: 'T', buttonLabel: 'B' })).rejects.toThrow(
       /remote\.dialog/
     );
   });
 
-  test('throws when remote.dialog is missing', () => {
-    expect(() => loadDialog({}).showConfirmSync('m')).toThrow(/remote\.dialog/);
+  test('rejects when remote.dialog is missing', async () => {
+    await expect(loadDialog({}).showConfirm('m')).rejects.toThrow(/remote\.dialog/);
   });
 });

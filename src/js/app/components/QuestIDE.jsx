@@ -3,6 +3,7 @@ import React from 'react';
 import SplitterLayout from 'react-splitter-layout';
 import codeRunner from '../common/code_runner';
 import { getContext } from '../common/context';
+import { showConfirm } from '../platform/dialog';
 import Button from './Button';
 import config from '../config/config';
 import { existsAsync, readAsync, writeAsync } from '../platform/fs';
@@ -165,8 +166,19 @@ export default class QuestIDE extends React.Component {
   }
 
   // Reset saved code to the initial example code
-  resetCode() {
-    if (confirm('Discard your changes and reset to the sample code?')) {
+  async resetCode() {
+    // The async message box is not modal, so ignore repeated clicks while it is open
+    if (this.confirmingReset) {
+      return;
+    }
+    this.confirmingReset = true;
+    let confirmed;
+    try {
+      confirmed = await showConfirm('Discard your changes and reset to the sample code?');
+    } finally {
+      this.confirmingReset = false;
+    }
+    if (confirmed) {
       this.loadSampleCode();
     }
   }

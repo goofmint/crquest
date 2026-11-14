@@ -7,18 +7,14 @@ import { syncBundledAssets } from './app/common/assetLoader';
 import extendYup from './app/common/extendYup';
 const { shell, remote } = require('electron');
 import config from './app/config/config';
-import { showConfirmSync, showAlertSync } from './app/platform/dialog';
+import { showAlert } from './app/platform/dialog';
 import { openExternal } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
 
 extendYup();
 
-window.confirm = function(message) {
-  return showConfirmSync(message);
-};
-
 window.alert = function(message) {
-  showAlertSync(message);
+  showAlert(message);
 };
 
 const DEVTOOLS_WARNING = `
