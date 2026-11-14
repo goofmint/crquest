@@ -15,10 +15,10 @@
  * options that only exist in newer versions):
  * - Electron 11.5.0 (package.json: ^11.5.0, package-lock.json: 11.5.0)
  * - Node.js v12.18.3 (the Node bundled with Electron 11.5.0)
- * - electron-store 6.0.0 (NOTE: electron-store is imported by the renderer but
- *   is not declared in package.json or package-lock.json at this commit, so
- *   this version could not be verified from the lockfile)
- * - fs-jetpack 2.2.3 (package-lock.json; package.json: ^2.2.3)
+ * - electron-store 6.0.0 (public/package.json: ^6.0.0, public/package-lock.json:
+ *   6.0.0; the renderer runtime dependencies live under public/)
+ * - fs-jetpack 2.2.2 (public/package-lock.json; the root package.json resolves
+ *   2.2.3, but that copy is only used by the build tasks, not the renderer)
  *
  * Shared conventions for every area:
  * - A synchronous method reports failure by throwing. An asynchronous method

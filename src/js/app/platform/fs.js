@@ -5,7 +5,7 @@
  * difference in how a missing path is reported:
  *
  * 1. Node `fs` family: a missing path is a failure (`ENOENT`).
- * 2. fs-jetpack 2.2.3 family: a missing path is a normal value
+ * 2. fs-jetpack 2.2.2 family: a missing path is a normal value
  *    (`undefined` / `false`).
  *
  * For both families, any I/O failure other than "missing" in family 2 is a
