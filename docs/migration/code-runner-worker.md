@@ -14,7 +14,7 @@ Issue #38 の成果物である。現行の挙動と判定は `code-runner-behav
 
 ### Worker スクリプトの置き場所
 
-リポジトリのビルドは Babel で `src/js` を `public` へコンパイルするだけで、バンドラは無い。`public/code_runner/runner.js` と同様に、`public/code_runner/worker.js` をそのままコミットした静的ファイルとして置く。これは次の理由による。
+リポジトリのビルドは Vite で `src/js` を 1 つの `public/index.js` にバンドルする (`docs/migration/vite-build.md`)。Worker 用のエントリは無い。`public/code_runner/runner.js` と同様に、`public/code_runner/worker.js` をそのままコミットした静的ファイルとして置く。これは次の理由による。
 
 - `new Worker(url)` は URL でファイルを読むので、1 つの自己完結したプレーンな JS ファイルが必要である。
 - `public` 全体がリリースの tarball に入る (`tasks/create_release.js`)。
