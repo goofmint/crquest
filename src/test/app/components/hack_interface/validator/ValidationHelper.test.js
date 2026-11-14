@@ -230,6 +230,9 @@ describe('getAppDataPath', () => {
       throw new Error('no app');
     });
     expect(() => makeHelper().getAppDataPath()).toThrow('no app');
+  });
+});
+
 describe('pullVarsFromUserCodeLocalScope', () => {
   test('returns the requested top-level variables', async () => {
     const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
