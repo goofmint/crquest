@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   NiceError,
   executeScript,
@@ -15,12 +14,12 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     let stdout = "";
 
     // Test for zero
-    stdout = await executeScript(py, programPath, ["-1", "1"]);
+    stdout = await executeScript(helper, py, programPath, ["-1", "1"]);
     if (stdout.indexOf("destitution") < 0) {
       throw new NiceError(`
         When the sum of the input numbers is zero or less, you should print the
@@ -29,7 +28,7 @@ module.exports = async (helper) => {
     }
 
     // Test negative
-    stdout = await executeScript(py, programPath, ["-10", "1"]);
+    stdout = await executeScript(helper, py, programPath, ["-10", "1"]);
     if (stdout.indexOf("destitution") < 0) {
       throw new NiceError(`
         When the sum of the input numbers is zero or less, you should print the
@@ -38,7 +37,7 @@ module.exports = async (helper) => {
     }
 
     // Test 1 - 100
-    stdout = await executeScript(py, programPath, ["50", "50"]);
+    stdout = await executeScript(helper, py, programPath, ["50", "50"]);
     if (stdout.indexOf("plenty") < 0) {
       throw new NiceError(`
         When the sum of the input numbers is 1 to 100, you should print the
@@ -47,7 +46,7 @@ module.exports = async (helper) => {
     }
 
     // Test 101+
-    stdout = await executeScript(py, programPath, ["50", "51"]);
+    stdout = await executeScript(helper, py, programPath, ["50", "51"]);
     if (stdout.indexOf("excess") < 0) {
       throw new NiceError(`
         When the sum of the input numbers is greater than 100, you should print the

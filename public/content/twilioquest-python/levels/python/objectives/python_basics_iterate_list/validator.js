@@ -15,19 +15,19 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Our test args
     const ARGS = ["Duke", "Ruby", "Dottie", "Snake", "Joe"];
 
     // Execute the player's script just to ensure it executes successfully
-    const stdout = await executeScript(py, programPath, ARGS);
+    const stdout = await executeScript(helper, py, programPath, ARGS);
 
     // Loop through each line of the output and ensure it has the right stuff
     const lines = stdout.split("\n");
     let found = 0;
     async function fail(name, place) {
-      await writeFile(programPath, "output.txt", ARGS, stdout);
+      await writeFile(helper, programPath, "output.txt", ARGS, stdout);
 
       throw new NiceError(`
         It looks like your list output was a bit off - in the input we gave you,

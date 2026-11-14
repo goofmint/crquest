@@ -48,7 +48,6 @@
     "twilio": "^3.27.1",
     "twilioquest-api-academy": "^3.0.2",
     "twilioquest-javascript": "^1.1.7",
-    "twilioquest-python": "^1.0.7",
     "twilioquest-twilio-vr": "^1.1.4",
     "universal-analytics": "^0.4.20",
     "uuid": "^3.3.2",

@@ -14,10 +14,10 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Execute the player's script and capture the output
-    const stdout = await executeScript(py, programPath, [
+    const stdout = await executeScript(helper, py, programPath, [
       "salad",
       "christmas",
       "cherry soda",

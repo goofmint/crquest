@@ -16,6 +16,9 @@ jest.mock('../../../../../js/app/platform/exec', () => ({
   commandExists: jest.fn(),
   pathExistsSync: jest.fn(),
 }));
+jest.mock('../../../../../js/app/platform/paths', () => ({
+  getAppDataPath: jest.fn(),
+}));
 jest.mock('../../../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
@@ -38,6 +41,7 @@ jest.mock('../../../../../js/app/common/context', () => ({
 import ValidationHelper from '../../../../../js/app/components/hack_interface/validator/ValidationHelper';
 import * as platformFs from '../../../../../js/app/platform/fs';
 import * as platformExec from '../../../../../js/app/platform/exec';
+import * as platformPaths from '../../../../../js/app/platform/paths';
 
 const makeHelper = () =>
   new ValidationHelper(
@@ -203,5 +207,19 @@ describe('getQuestIdeUserCode', () => {
       require('path').join('/code', 'mission', 'obj', 'code.js'),
       'utf8'
     );
+  });
+});
+
+describe('getAppDataPath', () => {
+  test('returns the platform appData path', () => {
+    platformPaths.getAppDataPath.mockReturnValue('/appdata');
+    expect(makeHelper().getAppDataPath()).toBe('/appdata');
+  });
+
+  test('propagates the error when the path is unavailable', () => {
+    platformPaths.getAppDataPath.mockImplementation(() => {
+      throw new Error('no app');
+    });
+    expect(() => makeHelper().getAppDataPath()).toThrow('no app');
   });
 });

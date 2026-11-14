@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   NiceError,
   executeScript,
@@ -34,20 +33,20 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Our test args
     const ARGS = [];
 
     // Execute the player's script just to ensure it executes successfully
-    const stdout = await executeScript(py, programPath, ARGS);
+    const stdout = await executeScript(helper, py, programPath, ARGS);
     console.log(stdout);
 
     // Now, do an assertion check of the code with our own python code appended
-    const code = await jetpack.readAsync(programPath);
+    const code = await helper.fs.readAsync(programPath);
     const testCode = `${code}\n\n${VALIDATION_PYTHON_CODE}`;
 
-    const testResult = await executePythonCode(helper.env, testCode, ARGS);
+    const testResult = await executePythonCode(helper, testCode, ARGS);
     console.log(testResult);
     if (testResult.exitCode !== 0) {
       if (testResult.stderr.indexOf("AssertionError:") > 0) {

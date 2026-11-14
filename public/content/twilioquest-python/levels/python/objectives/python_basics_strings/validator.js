@@ -11,13 +11,13 @@ module.exports = async (helper) => {
     const programPath = path.join(helper.env.TQ_PYTHON_CODE_PATH, "strings.py");
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Our test args
     const ARGS = ["i am so stoked"];
 
     // Execute the player's script just to ensure it executes successfully
-    const stdout = await executeScript(py, programPath, ARGS);
+    const stdout = await executeScript(helper, py, programPath, ARGS);
     console.log(stdout);
 
     // Check the output for the target string

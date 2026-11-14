@@ -14,10 +14,10 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Test a sequence of numbers
-    const stdout = await executeScript(py, programPath, [
+    const stdout = await executeScript(helper, py, programPath, [
       "-3000",
       "7",
       "6",

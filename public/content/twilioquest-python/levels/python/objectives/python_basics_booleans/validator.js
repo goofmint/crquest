@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   NiceError,
   executeScript,
@@ -38,7 +37,7 @@ module.exports = async (helper) => {
     );
 
     // Ensure prerequisite stuff is set up
-    await checkSetup(py, programPath);
+    await checkSetup(helper, py, programPath);
 
     // Helper to process the results of different script tests
     function processTestRun(testResult) {
@@ -61,22 +60,22 @@ module.exports = async (helper) => {
     let ARGS = ["Python is glorious"];
     let testCode = "";
     let testResult = {};
-    let userCode = await jetpack.readAsync(programPath);
+    let userCode = await helper.fs.readAsync(programPath);
 
     // First just ensure their script runs unchanged
-    const stdout = await executeScript(py, programPath, ARGS);
+    const stdout = await executeScript(helper, py, programPath, ARGS);
     console.log(stdout);
 
     // Execute with incorrect argument
     ARGS = ["Python is super glorious!"];
     testCode = `${userCode}\n\n${VALIDATION_CODE_WRONG_GREETING}`;
-    testResult = await executePythonCode(helper.env, testCode, ARGS);
+    testResult = await executePythonCode(helper, testCode, ARGS);
     processTestRun(testResult);
 
     // Execute with correct argument
     ARGS = ["For the glory of Python!"];
     testCode = `${userCode}\n\n${VALIDATION_CODE_CORRECT_GREETING}`;
-    testResult = await executePythonCode(helper.env, testCode, ARGS);
+    testResult = await executePythonCode(helper, testCode, ARGS);
     processTestRun(testResult);
 
     // If we make it this far, we've passed validation

@@ -1,14 +1,11 @@
-const { spawn } = require("child_process");
 const path = require("path");
-const { remote } = require("electron");
-const jetpack = require("fs-jetpack");
 
-const appDataPath = path.resolve(remote.app.getPath("appData"), "TwilioQuest");
-
-// Create a directory to house our python code validator
-const pythonValidatorPath = path.join(appDataPath, "python_validator");
-const pythonValidatorCodePath = path.join(pythonValidatorPath, "validate.py");
-jetpack.dir(pythonValidatorPath);
+// Directory (below the OS application data directory) that houses our python
+// code validator. Resolved lazily because it needs the validation helper.
+function getPythonValidatorCodePath(helper) {
+  const appDataPath = path.resolve(helper.getAppDataPath(), "TwilioQuest");
+  return path.join(appDataPath, "python_validator", "validate.py");
+}
 
 // An error wrapper we can assume to have a nice human readable error message
 class NiceError extends Error {
@@ -19,8 +16,8 @@ class NiceError extends Error {
 }
 
 // Helper to double check both the python EXE and code path for validation
-async function checkSetup(py, programPath) {
-  const programExists = await jetpack.existsAsync(programPath);
+async function checkSetup(helper, py, programPath) {
+  const programExists = await helper.fs.existsAsync(programPath);
   if (!programExists) {
     throw new NiceError(`
       Whoops! This trial asked you to create a file at this location:<br/>
@@ -44,119 +41,94 @@ async function checkSetup(py, programPath) {
   }
 }
 
+// Reject if the promise doesn't settle within the given time. Like the
+// original timers, this does not kill the child process.
+function withTimeout(promise, milliseconds, createError) {
+  let timer;
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(createError()), milliseconds);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // Execute a Python program at the path provided and capture the output
-function executeScript(pythonPath, codePath, args = []) {
-  return new Promise(async (resolve, reject) => {
-    const process = spawn(pythonPath, [codePath].concat(args));
-    let finished = false;
-    let bufferedStdout = "";
-    let bufferedStderr = "";
+async function executeScript(helper, pythonPath, codePath, args = []) {
+  const run = async () => {
+    const { code, stdout, stderr } = await helper.exec(
+      pythonPath,
+      [codePath].concat(args)
+    );
 
-    process.on("error", (e) => {
-      reject(e);
-    });
+    if (code === 0) {
+      return stdout;
+    }
 
-    process.stdout.on("data", (data) => {
-      bufferedStdout += `${data}`;
-    });
-
-    process.stderr.on("data", (data) => {
-      bufferedStderr += `${data}`;
-    });
-
-    process.on("close", async (code) => {
-      if (code === 0) {
-        resolve(bufferedStdout);
-      } else {
-        const err = new NiceError(`
+    const err = new NiceError(`
           We tried executing your code, but we encountered an error. In the same
           directory as your script, look for a file called 
           <span class="highlight">error.txt</span>. It will
           contain further details about the error we saw.
         `);
-        err.bufferedStderr = bufferedStderr;
-        console.error(bufferedStderr);
+    err.bufferedStderr = stderr;
+    console.error(stderr);
 
-        // Write error file
-        await writeFile(codePath, "error.txt", args, bufferedStderr);
-        reject(err);
-      }
-      finished = true;
-    });
+    // Write error file
+    await writeFile(helper, codePath, "error.txt", args, stderr);
+    throw err;
+  };
 
-    setTimeout(() => {
-      if (!finished) {
-        reject(
-          new NiceError(`
+  return withTimeout(
+    run(),
+    30000,
+    () =>
+      new NiceError(`
           Your script didn't return a response in time - we waited for five
           seconds, but it didn't finish executing in that time.
         `)
-        );
-      }
-    }, 30000);
-  });
+  );
 }
 
 // Helper to write script output to a file
-async function writeFile(codePath, fileName, args, output) {
+async function writeFile(helper, codePath, fileName, args, output) {
   const p = path.dirname(codePath);
   const t = path.join(p, fileName);
   const text =
     `Executing script: ${codePath}\n` +
     `Script arguments: ${args}\n` +
     `Output:\n${output}\n`;
-  await jetpack.writeAsync(t, text);
+  await helper.fs.writeAsync(t, text);
 }
 
 // Execute the given chunk of validation Python code
-async function executePythonCode(env, code, args = []) {
-  const py = env.TQ_PYTHON_EXE;
-  await jetpack.writeAsync(pythonValidatorCodePath, code);
+async function executePythonCode(helper, code, args = []) {
+  const py = helper.env.TQ_PYTHON_EXE;
+  const pythonValidatorCodePath = getPythonValidatorCodePath(helper);
+  await helper.fs.writeAsync(pythonValidatorCodePath, code);
 
-  return new Promise(async (resolve, reject) => {
-    const process = spawn(py, [pythonValidatorCodePath].concat(args));
-    let finished = false;
-    let bufferedStdout = "";
-    let bufferedStderr = "";
-
-    process.on("error", (e) => {
-      reject(
-        new NiceError(`
+  const run = async () => {
+    let result;
+    try {
+      result = await helper.exec(py, [pythonValidatorCodePath].concat(args));
+    } catch (e) {
+      throw new NiceError(`
         There was a problem validating your Python code. Please try again.
-      `)
-      );
-    });
+      `);
+    }
 
-    process.stdout.on("data", (data) => {
-      bufferedStdout += `${data}`;
-    });
+    // We don't care about success or failure - let the validation code sort
+    // that out
+    return {
+      exitCode: result.code,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    };
+  };
 
-    process.stderr.on("data", (data) => {
-      bufferedStderr += `${data}`;
-    });
-
-    process.on("close", (code) => {
-      finished = true;
-
-      // We don't care about success or failure - let the validation code sort
-      // that out
-      resolve({
-        exitCode: code,
-        stdout: bufferedStdout,
-        stderr: bufferedStderr,
-      });
-    });
-
-    setTimeout(() => {
-      if (!finished) {
-        console.warn("Python validation code timed out.");
-        reject(
-          new NiceError(`
+  return withTimeout(run(), 5000, () => {
+    console.warn("Python validation code timed out.");
+    return new NiceError(`
           There was a problem validating your Python code - please try again.
-        `)
-        );
-      }
-    }, 5000);
+        `);
   });
 }
 

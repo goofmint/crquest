@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   NiceError,
   executeScript,
@@ -15,7 +14,7 @@ module.exports = async (helper) => {
       `);
     }
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       throw new NiceError(`
         We couldn't find a file at the path you provided. Please double check
@@ -23,7 +22,7 @@ module.exports = async (helper) => {
       `);
     }
 
-    const stdout = await executeScript(helper.env.TQ_PYTHON_EXE, programPath);
+    const stdout = await executeScript(helper, helper.env.TQ_PYTHON_EXE, programPath);
     console.log(stdout);
 
     helper.success(
