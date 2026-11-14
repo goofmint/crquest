@@ -27,9 +27,9 @@
  * `removeAsync` (assetLoader.js), `remove` (ClearDataButton.jsx).
  *
  * @typedef {Object} PlatformFsStats
- * @property {boolean} isFile - Node `fs.Stats#isFile` is a method; the
- *   contract only requires a truthy Stats object, as callers use it for
- *   existence checks.
+ * @property {() => boolean} isFile - Node `fs.Stats#isFile` is a method. The
+ *   contract only relies on a Stats object being returned, as callers use it
+ *   for existence checks.
  *
  * @typedef {Object} PlatformFsReadOptions
  * @property {string} [encoding] - e.g. 'utf8'. With an encoding the result is

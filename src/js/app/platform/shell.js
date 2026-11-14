@@ -7,23 +7,16 @@
  * - `shell.openExternal(url)` for external links; the call is not awaited
  *   today.
  * - `shell.openItem(path)` for the "Open User Data" and "Open Save File" menu
- *   items. `openItem` is deprecated in Electron 11 and returns a boolean.
- *
- * The plan for this ticket described only `openExternal` and `openPath`.
- * Because the real code calls `openItem`, the contract includes `openItem`
- * with its current semantics. `openPath` is also defined (available in
- * Electron 11) but has no caller yet. Replacing `openItem` with `openPath` at
- * the call sites changes behavior (boolean vs error string) and is left to a
- * later ticket.
+ *   items. This API does NOT exist in Electron 11.5.0 (`typeof
+ *   shell.openItem === 'undefined'`, verified at runtime; it was replaced by
+ *   `shell.openPath` in Electron 9), so those two menu items currently throw
+ *   a TypeError. The contract therefore does not define `openItem`; fixing the
+ *   call sites to use `openPath` is tracked as a separate ticket.
  *
  * @typedef {Object} PlatformShell
  * @property {(url: string) => Promise<void>} openExternal
  *   Opens the URL with the OS default handler. Rejects if the OS reports a
  *   failure.
- * @property {(fullPath: string) => boolean} openItem
- *   Synchronous. Opens the file or folder with the OS default application.
- *   Returns whether the item was opened successfully; does not throw for a
- *   failure to open.
  * @property {(path: string) => Promise<void>} openPath
  *   Opens the file or folder. Electron resolves with an error string, empty on
  *   success; a non-empty string is converted to a rejection with

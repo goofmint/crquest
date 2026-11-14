@@ -21,7 +21,9 @@
  * @property {Object<string, string>} [env]
  * @property {number} [timeout]
  * @property {number} [maxBuffer]
- * @property {string} [encoding]
+ *
+ * `encoding` is intentionally not part of the options: no caller sets it, and
+ * `encoding: 'buffer'` would make stdout / stderr a Buffer instead of a string.
  *
  * @typedef {Object} PlatformExecResult
  * @property {string} stdout
