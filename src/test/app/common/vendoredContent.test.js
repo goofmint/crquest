@@ -143,7 +143,7 @@ describe('moduleLoader with the vendored twilioquest-base', () => {
     const base = jetpack.cwd(BASE_PATH);
     const referencing = base
       .find({ matching: ['**/*.js'] })
-      .filter(file => file !== 'scripts/extendTilesetIds.js')
+      .filter(file => file !== path.join('scripts', 'extendTilesetIds.js'))
       .filter(file => base.read(file).includes('extendTilesetIds'));
 
     expect(referencing).toEqual([]);
