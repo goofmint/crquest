@@ -1,0 +1,25 @@
+{
+  "title": "Code Safety",
+  "description": "Inside this chest is a <strong>fire extinguisher</strong> you can use to put out fires. Prove you're ready to use code responsibly to get this item!",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "type": "boolean",
+      "label": "True or False: Software you install on your computer can potentially access your files and personal data."
+    },
+    {
+      "name": "answer2",
+      "type": "boolean",
+      "label": "True or False: Code samples you copy, paste, and run from the Internet cannot harm your computer."
+    },
+    {
+      "name": "answer3",
+      "type": "boolean",
+      "label": "True or False: It is always safe to keep passwords, emails, and other personal data in code files."
+    }
+  ],
+  "rewards": {
+    "xp": 100,
+    "items": ["fire_extinguisher"]
+  }
+}

@@ -2,5 +2,7 @@
   "twilioquest-base",
   "twilioquest-dev-fundamentals",
   "twilioquest-javascript",
-  "twilioquest-open-source"
+  "twilioquest-open-source",
+  "twilioquest-python",
+  "owls-nest-extension"
 ]
