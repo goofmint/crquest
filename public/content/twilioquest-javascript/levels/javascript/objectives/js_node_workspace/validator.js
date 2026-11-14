@@ -1,4 +1,3 @@
-const jetpack = require("fs-jetpack");
 const { NiceError } = require("../../../../scripts/objectiveValidation");
 
 module.exports = async (helper) => {
@@ -11,7 +10,7 @@ module.exports = async (helper) => {
       `);
     }
 
-    const exists = await jetpack.existsAsync(workspacePath);
+    const exists = await helper.fs.existsAsync(workspacePath);
     if (!exists) {
       throw new NiceError(`
         We couldn't find a directory at the path you provided. 

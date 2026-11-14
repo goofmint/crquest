@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   executeCodeString,
 } = require("../../../../scripts/objectiveValidation");
@@ -12,7 +11,7 @@ module.exports = async (helper) => {
       "divideByTwo.js"
     );
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "divideByTwo.js" script in your 
@@ -22,9 +21,9 @@ module.exports = async (helper) => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
+    const userCode = await helper.fs.readAsync(programPath);
 
-    const { stdout } = await executeCodeString(TQ_NODE_EXE, userCode, ["128"]);
+    const { stdout } = await executeCodeString(helper, TQ_NODE_EXE, userCode, ["128"]);
 
     if (!stdout.includes("64")) {
       helper.fail(`

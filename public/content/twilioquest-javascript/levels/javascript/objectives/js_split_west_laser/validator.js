@@ -1,6 +1,4 @@
-const vm = require("vm");
 const path = require("path");
-const jetpack = require("fs-jetpack");
 
 function isFunction(obj) {
   return !!(obj && obj.constructor && obj.call && obj.apply);
@@ -32,7 +30,7 @@ module.exports = async (helper) => {
       "ducktypium.js"
     );
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "ducktypium.js" script in your 
@@ -42,36 +40,15 @@ module.exports = async (helper) => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
-    const scriptContext = {
-      process: process,
-      __TQ: {},
-    };
-    const testCode = `
-      ${userCode};
-      
-      try {
-        __TQ.Ducktypium = Ducktypium;
-      } catch(e) {
-        __TQ.error = e;
-      }
-    `;
+    const userCode = await helper.fs.readAsync(programPath);
+    const tq = await helper.pullVarsFromUserCodeLocalScope(
+      userCode,
+      ['Ducktypium']
+    );
 
-    // First, execute user code to ensure it runs unchanged
-    let script = new vm.Script(userCode);
-    script.runInNewContext(Object.assign({}, scriptContext));
-
-    // Assuming that it doesn't throw, we can try running it with our test
-    // code appended to it.
-    script = new vm.Script(testCode);
-    script.runInNewContext(scriptContext);
-
-    // Inspect the script context for the stuff we want
-    const tq = scriptContext.__TQ;
-
-    if (tq.error) {
-      console.log(tq.error);
-      if (tq.error.name === "ReferenceError") {
+    if (tq._error) {
+      console.log(tq._error);
+      if (tq._error.name === "ReferenceError") {
         return helper.fail(`
           It looks like a <span class="highlight">Ducktypium</span> 
           class was not defined in your
@@ -85,7 +62,7 @@ module.exports = async (helper) => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq.error}
+          ${tq._error}
         `);
       }
     }

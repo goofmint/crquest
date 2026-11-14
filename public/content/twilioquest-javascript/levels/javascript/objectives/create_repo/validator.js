@@ -1,15 +1,13 @@
-const commandExists = require('command-exists');
 const path = require('path');
-const jetpack = require('fs-jetpack');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
 
 module.exports = async helper => {
   try {
     const { TQ_JAVASCRIPT_WORKSPACE_PATH } = helper.env;
 
     try {
-      await commandExists('git');
+      if (!(await helper.commandExists('git'))) {
+        throw new Error('not found: git');
+      }
     } catch (err) {
       helper.fail(`
         We tried to find a local "git" installation on your computer, but we could not!
@@ -20,7 +18,7 @@ module.exports = async helper => {
     }
 
     const gitDirPath = path.join(TQ_JAVASCRIPT_WORKSPACE_PATH, '.git');
-    const gitRepoExists = await jetpack.existsAsync(gitDirPath);
+    const gitRepoExists = await helper.fs.existsAsync(gitDirPath);
 
     if (gitRepoExists !== 'dir') {
       helper.fail(
@@ -29,9 +27,14 @@ module.exports = async helper => {
       return;
     }
 
-    const gitStatus = await exec(`git status`, {
+    const gitStatus = await helper.exec('git', ['status'], {
       cwd: TQ_JAVASCRIPT_WORKSPACE_PATH,
     });
+
+    // A non-zero exit rejected before (child_process.exec); keep that.
+    if (gitStatus.code !== 0) {
+      throw new Error(`Command failed: git status\n${gitStatus.stderr}`);
+    }
 
     const status = gitStatus.stdout;
 

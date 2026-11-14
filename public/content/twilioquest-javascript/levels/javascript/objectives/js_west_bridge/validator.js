@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   executeCodeString,
 } = require("../../../../scripts/objectiveValidation");
@@ -12,7 +11,7 @@ module.exports = async (helper) => {
       "treeLifeDetector.js"
     );
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "treeLifeDetector.js" script in your 
@@ -22,9 +21,9 @@ module.exports = async (helper) => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
+    const userCode = await helper.fs.readAsync(programPath);
 
-    let result = await executeCodeString(TQ_NODE_EXE, userCode, ["11"]);
+    let result = await executeCodeString(helper, TQ_NODE_EXE, userCode, ["11"]);
 
     if (result.stdout && result.stdout.trim() !== "other") {
       helper.fail(`
@@ -36,7 +35,7 @@ module.exports = async (helper) => {
       return;
     }
 
-    result = await executeCodeString(TQ_NODE_EXE, userCode, ["0"]);
+    result = await executeCodeString(helper, TQ_NODE_EXE, userCode, ["0"]);
 
     if (!result.stdout || result.stdout.trim() !== "alive") {
       helper.fail(`

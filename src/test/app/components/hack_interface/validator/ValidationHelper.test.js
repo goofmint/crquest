@@ -197,3 +197,39 @@ describe('getQuestIdeUserCode', () => {
     );
   });
 });
+
+describe('pullVarsFromUserCodeLocalScope', () => {
+  test('returns the requested top-level variables', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'const a = 1; function f() { return 2; } class C {}',
+      ['a', 'f', 'C']
+    );
+    expect(vars.a).toBe(1);
+    expect(vars.f()).toBe(2);
+    expect(vars.C.toString()).toContain('class');
+    expect(vars._error).toBeUndefined();
+  });
+
+  test('records a ReferenceError for a missing variable in _error', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope('const a = 1;', [
+      'missing',
+    ]);
+    expect(vars._error.name).toBe('ReferenceError');
+  });
+
+  test('throws when the code itself throws', async () => {
+    await expect(
+      makeHelper().pullVarsFromUserCodeLocalScope('throw new Error("boom");', ['a'])
+    ).rejects.toThrow('boom');
+  });
+
+  test('pullVarsFromQuestIdeUserCodeLocalScope reads the saved code and delegates', async () => {
+    platformFs.readFile.mockResolvedValue('var answer = 42;');
+    const vars = await makeHelper().pullVarsFromQuestIdeUserCodeLocalScope(
+      ['answer'],
+      'obj',
+      'mission'
+    );
+    expect(vars.answer).toBe(42);
+  });
+});

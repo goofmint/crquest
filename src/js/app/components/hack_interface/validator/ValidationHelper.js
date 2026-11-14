@@ -217,6 +217,23 @@ export default class ValidationHelper {
 
   async pullVarsFromQuestIdeUserCodeLocalScope(keys = [], objective, mission) {
     const userCode = await this.getQuestIdeUserCode(objective, mission);
+
+    return this.pullVarsFromUserCodeLocalScope(userCode, keys);
+  }
+
+  /**
+   * Same as pullVarsFromQuestIdeUserCodeLocalScope, but for code the validator
+   * already has as a string (for example a script the learner saved in their
+   * own workspace directory). Runs `userCode`, then returns the values of the
+   * top-level variables named in `keys`. If a variable cannot be read, the
+   * returned object has an `_error` property holding the thrown error (for
+   * example a ReferenceError); an error thrown by `userCode` itself is thrown.
+   *
+   * @param {String} userCode
+   * @param {String[]} [keys]
+   * @returns {Promise<Object>}
+   */
+  async pullVarsFromUserCodeLocalScope(userCode, keys = []) {
     // Hard coding polyfill of String.replaceAll, since the version of electron we're using (as of 11/16/2022)
     // doesn't have a new enough version of Node to natively support it
     const extendedUserCode = `

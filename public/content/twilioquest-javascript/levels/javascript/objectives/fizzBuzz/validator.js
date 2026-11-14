@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   executeCodeString,
 } = require("../../../../scripts/objectiveValidation");
@@ -27,7 +26,7 @@ module.exports = async (helper) => {
     const { TQ_NODE_EXE, TQ_JAVASCRIPT_WORKSPACE_PATH } = helper.env;
     const programPath = path.join(TQ_JAVASCRIPT_WORKSPACE_PATH, "fizzBuzz.js");
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "fizzBuzz.js" script in your 
@@ -37,13 +36,13 @@ module.exports = async (helper) => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
+    const userCode = await helper.fs.readAsync(programPath);
     const testNumbers = [4, 24, 25, 30];
     let results = [];
 
     for (let i = 0, l = testNumbers.length; i < l; i++) {
       let result = await executeCodeString(
-        TQ_NODE_EXE, userCode, [testNumbers[i]]
+        helper, TQ_NODE_EXE, userCode, [testNumbers[i]]
       );
       let n = result.stdout ? result.stdout.trim() : "";
       results.push(n);

@@ -1,6 +1,4 @@
-const vm = require('vm');
 const path = require('path');
-const jetpack = require('fs-jetpack');
 
 module.exports = async helper => {
   try {
@@ -10,7 +8,7 @@ module.exports = async helper => {
       'chestConfiguration.js'
     );
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "chestConfiguration.js" script in your 
@@ -20,35 +18,15 @@ module.exports = async helper => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
-    const scriptContext = { __TQ: {} };
-    const testCode = `
-      ${userCode};
-      
-      try {
-        __TQ.accessLevel = accessLevel;
-        __TQ.favoriteRobot = favoriteRobot;
-        __TQ.verifiedUser = verifiedUser;
-      } catch(e) {
-        __TQ.error = e;
-      }
-    `;
-
-    // First, execute user code to ensure it runs unchanged
-    let script = new vm.Script(userCode);
-    script.runInNewContext();
-
-    // Assuming that it doesn't throw, we can try running it with our test
-    // code appended to it.
-    script = new vm.Script(testCode);
-    script.runInNewContext(scriptContext);
-
-    // Inspect the script context for the stuff we want
-    const tq = scriptContext.__TQ;
-    if (tq.error) {
-      console.log(tq.error);
-      if (tq.error.name === 'ReferenceError') {
-        const { message } = tq.error;
+    const userCode = await helper.fs.readAsync(programPath);
+    const tq = await helper.pullVarsFromUserCodeLocalScope(
+      userCode,
+      ['accessLevel', 'favoriteRobot', 'verifiedUser']
+    );
+    if (tq._error) {
+      console.log(tq._error);
+      if (tq._error.name === 'ReferenceError') {
+        const { message } = tq._error;
 
         let missingVariable = 'accessLevel';
         if (message.includes('favoriteRobot')) {
@@ -70,7 +48,7 @@ module.exports = async helper => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq.error}
+          ${tq._error}
         `);
       }
     }

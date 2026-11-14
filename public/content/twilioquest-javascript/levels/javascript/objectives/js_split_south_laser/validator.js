@@ -1,5 +1,4 @@
 const path = require("path");
-const jetpack = require("fs-jetpack");
 const {
   executeCodeString,
 } = require("../../../../scripts/objectiveValidation");
@@ -22,7 +21,7 @@ module.exports = async (helper) => {
       `);
     }
 
-    const exists = await jetpack.existsAsync(programPath);
+    const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
       helper.fail(`
         We couldn't find your "sortOrder.js" script in your 
@@ -32,9 +31,9 @@ module.exports = async (helper) => {
       return;
     }
 
-    const userCode = await jetpack.readAsync(programPath);
+    const userCode = await helper.fs.readAsync(programPath);
 
-    let result = await executeCodeString(TQ_NODE_EXE, userCode, ["a", "b"]);
+    let result = await executeCodeString(helper, TQ_NODE_EXE, userCode, ["a", "b"]);
 
     if (!result.stdout || result.stdout.trim() !== "-1") {
       helper.fail(`
@@ -44,7 +43,7 @@ module.exports = async (helper) => {
       return;
     }
 
-    result = await executeCodeString(TQ_NODE_EXE, userCode, [
+    result = await executeCodeString(helper, TQ_NODE_EXE, userCode, [
       "apples",
       "Ability",
     ]);
@@ -57,7 +56,7 @@ module.exports = async (helper) => {
       return;
     }
 
-    result = await executeCodeString(TQ_NODE_EXE, userCode, [
+    result = await executeCodeString(helper, TQ_NODE_EXE, userCode, [
       "apples",
       "APPleS",
     ]);
