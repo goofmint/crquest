@@ -42,7 +42,24 @@ const KNOWN_NON_LITERAL_REQUIRES = [
   'twilioquest-base/objects/tq-npc/builder.js',
 ];
 
-const NON_LITERAL_REQUIRE = /(?:^|[^.\w$])require\s*\(\s*(?:`[^`]*\$\{|[^'"`\s)])/;
+// A `require(` call is literal only if its WHOLE argument is a single string
+// literal (a template literal without `${}` counts). `require('f' + 's')`,
+// `require(name)` and `require(`./x/${name}`)` are all non-literal.
+const REQUIRE_CALL = /(?:^|[^.\w$])require\s*\(/g;
+const SINGLE_LITERAL_ARGUMENT = /^\s*(?:'[^'\\\n]*'|"[^"\\\n]*"|`[^`$\\]*`)\s*,?\s*\)/;
+
+export const hasNonLiteralRequire = source => {
+  REQUIRE_CALL.lastIndex = 0;
+  let match = REQUIRE_CALL.exec(source);
+  while (match) {
+    const rest = source.slice(match.index + match[0].length);
+    if (!SINGLE_LITERAL_ARGUMENT.test(rest)) {
+      return true;
+    }
+    match = REQUIRE_CALL.exec(source);
+  }
+  return false;
+};
 
 const isRelative = specifier =>
   specifier.startsWith('./') || specifier.startsWith('../');
@@ -89,9 +106,27 @@ describe('public/content requires', () => {
 
   test('no require has a non-literal argument (known exceptions listed)', () => {
     const nonLiteral = files.filter(file =>
-      NON_LITERAL_REQUIRE.test(jetpack.cwd(CONTENT_PATH).read(file))
+      hasNonLiteralRequire(jetpack.cwd(CONTENT_PATH).read(file))
     );
 
     expect(nonLiteral).toEqual(KNOWN_NON_LITERAL_REQUIRES);
+  });
+});
+
+describe('hasNonLiteralRequire', () => {
+  test.each([
+    ["require('fs')", false],
+    ['require("./a.json")', false],
+    ["require( 'a' )", false],
+    ['require(`./a`)', false],
+    ["const x = require('a'), y = require('b');", false],
+    ["require('f' + 's')", true],
+    ['require("c" + "hild_process")', true],
+    ['require(name)', true],
+    ['require(`./animations/${name}`)', true],
+    ["obj.require(name)", false],
+    ["// no calls here", false],
+  ])('%s', (source, expected) => {
+    expect(hasNonLiteralRequire(source)).toBe(expected);
   });
 });
