@@ -2,7 +2,7 @@
  * Platform dialog module.
  *
  * Single place for Electron's `remote.dialog` calls that used to live in
- * src/js/index.js (window.confirm / window.alert) and
+ * src/js/index.js (window.alert / confirm dialogs) and
  * src/js/app/components/menu/settings/Extensions.jsx (directory chooser).
  * Nothing touches Electron at import time; `remote.dialog` is looked up on
  * every call. Dialog errors are not caught and propagate to the caller. No
@@ -14,11 +14,12 @@
  * functions that build the existing options internally.
  *
  * @typedef {Object} PlatformDialog
- * @property {(message: string) => boolean} showConfirmSync
- *   Synchronous, blocking question box with buttons ['OK', 'Cancel'].
- *   Returns true only when the button index is 0 (OK).
- * @property {(message: string) => undefined} showAlertSync
- *   Synchronous, blocking warning box with an 'OK' button. Returns undefined.
+ * @property {(message: string) => Promise<boolean>} showConfirm
+ *   Asynchronous question box with buttons ['OK', 'Cancel'] (does not block
+ *   the renderer). Resolves true only when the button index (`response`) is 0
+ *   (OK).
+ * @property {(message: string) => Promise<undefined>} showAlert
+ *   Asynchronous warning box with an 'OK' button. Resolves undefined.
  * @property {(params: {title: string, buttonLabel: string, defaultPath?: string}) => Promise<string | undefined>} showDirectoryDialog
  *   Opens a directory chooser (`message` is set to `title`; `defaultPath` is
  *   only passed when truthy). Resolves with `filePaths[0]`, which is
@@ -33,8 +34,8 @@ function getDialog() {
   return remote.dialog;
 }
 
-function showConfirmSync(message) {
-  const buttonIdx = getDialog().showMessageBoxSync(null, {
+async function showConfirm(message) {
+  const { response } = await getDialog().showMessageBox(null, {
     type: 'question',
     buttons: ['OK', 'Cancel'],
     defaultId: 0,
@@ -42,11 +43,11 @@ function showConfirmSync(message) {
     detail: message,
     message: '',
   });
-  return buttonIdx === 0;
+  return response === 0;
 }
 
-function showAlertSync(message) {
-  getDialog().showMessageBoxSync(null, {
+async function showAlert(message) {
+  await getDialog().showMessageBox(null, {
     type: 'warning',
     buttons: ['OK'],
     defaultId: 0,
@@ -75,4 +76,4 @@ async function showDirectoryDialog({ title, buttonLabel, defaultPath }) {
   return result.filePaths[0];
 }
 
-export { showConfirmSync, showAlertSync, showDirectoryDialog };
+export { showConfirm, showAlert, showDirectoryDialog };

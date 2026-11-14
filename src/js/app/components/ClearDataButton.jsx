@@ -2,6 +2,7 @@ import React from 'react';
 import * as jetpack from 'fs-jetpack';
 import db from '../common/database';
 import { hasValue, deleteValue } from '../platform/store';
+import { showConfirm } from '../platform/dialog';
 import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
@@ -19,15 +20,28 @@ function clearStoreValues() {
 }
 
 export default class ClearDataButton extends React.Component {
-  clearUserData() {
-    if (
-      !window.confirm(
-        `All user data and progress will be deleted. Continue?`
-      ) ||
-      !window.confirm(
-        `Seriously, we are about to delete all your items and re-set all your progress in the game. Are you very sure you want to do this?`
-      )
-    ) {
+  async confirmClear() {
+    // The async message box is not modal, so ignore repeated clicks while it is open
+    if (this.confirming) {
+      return false;
+    }
+    this.confirming = true;
+    try {
+      return (
+        (await showConfirm(
+          `All user data and progress will be deleted. Continue?`
+        )) &&
+        (await showConfirm(
+          `Seriously, we are about to delete all your items and re-set all your progress in the game. Are you very sure you want to do this?`
+        ))
+      );
+    } finally {
+      this.confirming = false;
+    }
+  }
+
+  async clearUserData() {
+    if (!(await this.confirmClear())) {
       console.log('aborting data clear...');
       return;
     }

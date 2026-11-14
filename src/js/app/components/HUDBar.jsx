@@ -4,6 +4,7 @@ import sharedListener from '../common/listener';
 import { context, setContext, emitter } from '../common/context';
 import rank from '../common/rank';
 import CharacterAvatar from './CharacterAvatar';
+import { showConfirm } from '../platform/dialog';
 
 const DEF_TITLE = 'TerminalQuest';
 const DEF_DESC = 'Explore The Cloud and build your programming skills!';
@@ -79,8 +80,22 @@ export default class HUDBar extends React.Component {
     }
   }
 
-  returnToFogOwl() {
-    if (this.state.showFogOwlButton && window.confirm('Return to the Fog Owl?')) {
+  async returnToFogOwl() {
+    // The async message box is not modal, so ignore repeated triggers while it is open
+    if (this.confirmingFogOwl) {
+      return;
+    }
+    if (!this.state.showFogOwlButton) {
+      return;
+    }
+    this.confirmingFogOwl = true;
+    let confirmed;
+    try {
+      confirmed = await showConfirm('Return to the Fog Owl?');
+    } finally {
+      this.confirmingFogOwl = false;
+    }
+    if (confirmed) {
       setContext({
         currentLevel: {
           levelName: 'fog_owl',
