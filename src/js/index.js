@@ -8,6 +8,8 @@ import extendYup from './app/common/extendYup';
 const { shell, remote } = require('electron');
 import config from './app/config/config';
 import { showConfirmSync, showAlertSync } from './app/platform/dialog';
+import { openExternal } from './app/platform/shell';
+import { toggleDevTools } from './app/platform/devtools';
 
 extendYup();
 
@@ -65,7 +67,7 @@ document.addEventListener(
         targetUrl.hash,
       ].join('');
       console.log('Opening external link:', newUrl);
-      shell.openExternal(newUrl);
+      openExternal(newUrl);
     }
   },
   false
@@ -105,7 +107,7 @@ if (!devToolsItem) {
       label: devToolsLabel,
       click: () => {
         console.warn(DEVTOOLS_WARNING);
-        remote.BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
+        toggleDevTools();
       },
     })
   );
