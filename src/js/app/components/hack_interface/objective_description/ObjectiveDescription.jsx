@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as jetpack from 'fs-jetpack';
 import ejs from 'ejs';
 import { Converter } from 'showdown';
 import showdownHighlight from 'showdown-highlight';

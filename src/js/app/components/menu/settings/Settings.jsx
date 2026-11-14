@@ -1,5 +1,4 @@
 import React from 'react';
-import { remote } from 'electron';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
 import update from 'immutability-helper';

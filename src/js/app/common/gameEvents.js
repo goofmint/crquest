@@ -1,4 +1,4 @@
-import isDev from 'electron-is-dev';
+import { isDev } from '../platform/env';
 import config from '../config/config';
 import ga from './analytics';
 import { getGamePackageVersion } from '../platform/paths';
@@ -13,7 +13,7 @@ async function logMissionObjectiveCompletion(context, liveEvent) {
     accountSid: (context.env.TQ_TWILIO_ACCOUNT_SID || { value: null }).value,
     githubId: (context.env.TQ_GITHUB_USERNAME || { value: null }).value,
     analyticsId: ga.analyticsId,
-    appType: 'desktop' + (isDev ? '-dev' : ''),
+    appType: 'desktop' + (isDev() ? '-dev' : ''),
     appVersion: appVersion,
     eventDataLevel: context.hackObject.level.levelName,
     eventDataObjective: context.hackObject.objectiveName,

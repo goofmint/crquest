@@ -79,3 +79,32 @@ describe('Node fs.promises family (missing path rejects)', () => {
     );
   });
 });
+
+describe('synchronous additions', () => {
+  test('readFileSync returns a string with an encoding', () => {
+    const text = fs.readFileSync(FIXTURE_JSON, { encoding: 'utf8' });
+    expect(typeof text).toBe('string');
+    expect(JSON.parse(text)).toEqual(
+      JSON.parse(require('fs').readFileSync(FIXTURE_JSON, 'utf8'))
+    );
+  });
+
+  test('readFileSync throws ENOENT for a missing file', () => {
+    expect(() => fs.readFileSync(MISSING, { encoding: 'utf8' })).toThrow(
+      expect.objectContaining({ code: 'ENOENT' })
+    );
+  });
+
+  test('remove (detached from jetpack) deletes a directory synchronously', () => {
+    const nodeFs = require('fs');
+    const dir = nodeFs.mkdtempSync(path.join(require('os').tmpdir(), 'crq-rm-'));
+    nodeFs.writeFileSync(path.join(dir, 'a.txt'), 'x');
+    const { remove } = fs;
+    remove(dir);
+    expect(nodeFs.existsSync(dir)).toBe(false);
+  });
+
+  test('remove of a missing path is a no-op', () => {
+    expect(() => fs.remove(MISSING)).not.toThrow();
+  });
+});

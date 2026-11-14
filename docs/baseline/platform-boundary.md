@@ -4,8 +4,29 @@ Phase 1 task 1-7。`src/js/app/platform/` 以外のレンダラーコードが `
 
 ## 結果
 
-**未達: 違反 17 行 / 15 ファイル。`npm run check:platform` は終了コード 1 で失敗する。**
-（CodeRabbit のプランは 30 行と見積もっていたが、platform モジュール導入（#5-#10）後の main で実測した値は 17 行。）
+**未達: 違反 4 行 / 3 ファイル。`npm run check:platform` は終了コード 1 のまま。**
+（ベースライン 17 行 / 15 ファイルから #76 / #86 で 13 行を解消した。以下の「違反一覧」「契約で表現できないもの」の旧記述は、末尾の「#86 後の状況」で上書きされる。）
+
+### #86 後の状況（現行）
+
+残る 4 行（許可リスト・除外は追加していない）:
+
+```
+src/js/app/common/code_runner.js:2:import * as jetpack from 'fs-jetpack';
+src/js/app/common/code_runner.js:7:const { ipcRenderer, remote } = require('electron');
+src/js/app/components/hack_interface/validator/ValidationHelper.js:5:import { existsSync, promises as fs } from 'fs';
+src/js/index.js:8:const { remote } = require('electron');
+```
+
+| 行 | 担当 | 理由 |
+|---|---|---|
+| `code_runner.js:2, :7` | Phase 6 | code runner の Web Worker 化（`BrowserWindow` / IPC / `jetpack.writeAsync`） |
+| `ValidationHelper.js:5` | Phase 4 | ValidationHelper 改修（`existsSync` / `fs.promises.readFile`） |
+| `index.js:8` | メニュー移行（Tauri 化の段階、Phase 10 想定） | `remote.Menu` / `MenuItem` によるアプリケーションメニュー構築（`index.js` 89 行付近〜）。 |
+
+解消した違反: 未使用 import 4 行（`levelLoader.js`、`HackInterface.jsx`、`ObjectiveDescription.jsx` の `fs-jetpack`、`Settings.jsx` の `remote`）、`electron-is-dev` 7 行（`platform/env` の `isDev()` へ）、`ClearDataButton.jsx` の `jetpack.remove`（`platform/fs` の `remove`）、`system.js` の `readFileSync`（`platform/fs` の `readFileSync`）、`index.js` の `shell`（#76 で `platform/shell` の `openPath` に置換）。
+
+メニュー API の判断（#86 項目 4）: 今回は `platform` にメニュー API を追加せず、`index.js` のメニュー構築を既知の例外として残す。`remote.Menu` / `MenuItem` はメニュー項目の `click` コールバック、Help サブメニューの前提、重複判定（Toggle Developer Tools の有無）、dev 限定項目、登録タイミングと密に結びつき、Electron 固有の `remote` を使わない形（Tauri のメニュー API）の契約は移行先が決まってから設計するほうが手戻りが少ないため。メニューだけを `platform` に移しても、`index.js` は `remote` を他に使わなくなるまで違反が残る。挙動は変えない。
 
 ## 実行コマンド
 

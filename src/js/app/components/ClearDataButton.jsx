@@ -1,5 +1,5 @@
 import React from 'react';
-import * as jetpack from 'fs-jetpack';
+import { remove } from '../platform/fs';
 import db from '../common/database';
 import { hasValue, deleteValue } from '../platform/store';
 import { showConfirm } from '../platform/dialog';
@@ -53,7 +53,7 @@ export default class ClearDataButton extends React.Component {
     clearStoreValues();
 
     // Delete saved user code
-    jetpack.remove(config.codeStoragePath);
+    remove(config.codeStoragePath);
 
     // Drop IndexedDB database and reload browser window
     db.delete()

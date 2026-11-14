@@ -1,7 +1,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-jest.mock('fs-jetpack', () => ({ remove: jest.fn() }));
+jest.mock('../../../js/app/platform/fs', () => ({ remove: jest.fn() }));
 jest.mock('../../../js/app/common/database', () => ({
   __esModule: true,
   default: { delete: jest.fn() },
@@ -19,7 +19,7 @@ jest.mock('../../../js/app/common/context/schema', () => ({
   describeSchema: jest.fn(() => ({ fields: { a: {}, b: { meta: { persistOnClearProgess: true } } } })),
 }));
 
-const jetpack = require('fs-jetpack');
+const { remove } = require('../../../js/app/platform/fs');
 const db = require('../../../js/app/common/database').default;
 const { hasValue, deleteValue } = require('../../../js/app/platform/store');
 const { showConfirm } = require('../../../js/app/platform/dialog');
@@ -50,7 +50,7 @@ describe('ClearDataButton.clearUserData', () => {
     await makeInstance().clearUserData();
     expect(showConfirm).toHaveBeenCalledTimes(1);
     expect(deleteValue).not.toHaveBeenCalled();
-    expect(jetpack.remove).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
     expect(db.delete).not.toHaveBeenCalled();
   });
 
@@ -59,7 +59,7 @@ describe('ClearDataButton.clearUserData', () => {
     await makeInstance().clearUserData();
     expect(showConfirm).toHaveBeenCalledTimes(2);
     expect(deleteValue).not.toHaveBeenCalled();
-    expect(jetpack.remove).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
     expect(db.delete).not.toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe('ClearDataButton.clearUserData', () => {
     showConfirm.mockRejectedValueOnce(new Error('boom'));
     await expect(makeInstance().clearUserData()).rejects.toThrow('boom');
     expect(deleteValue).not.toHaveBeenCalled();
-    expect(jetpack.remove).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
     expect(db.delete).not.toHaveBeenCalled();
   });
 
@@ -77,7 +77,7 @@ describe('ClearDataButton.clearUserData', () => {
     expect(showConfirm).toHaveBeenCalledTimes(2);
     expect(deleteValue).toHaveBeenCalledTimes(1);
     expect(deleteValue).toHaveBeenCalledWith('a');
-    expect(jetpack.remove).toHaveBeenCalledWith('/code');
+    expect(remove).toHaveBeenCalledWith('/code');
     expect(db.delete).toHaveBeenCalledTimes(1);
   });
 

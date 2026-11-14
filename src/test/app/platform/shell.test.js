@@ -33,9 +33,26 @@ describe('openExternal', () => {
     loadShell(shell);
     expect(shell.openExternal).not.toHaveBeenCalled();
   });
+});
 
-  test('does not export openPath', () => {
-    const shell = { openExternal: jest.fn() };
-    expect(loadShell(shell).openPath).toBeUndefined();
+describe('openPath', () => {
+  test('delegates to shell.openPath with only the path and resolves', async () => {
+    const shell = { openPath: jest.fn().mockResolvedValue('') };
+    await expect(loadShell(shell).openPath('/tmp/x')).resolves.toBeUndefined();
+    expect(shell.openPath).toHaveBeenCalledTimes(1);
+    expect(shell.openPath).toHaveBeenCalledWith('/tmp/x');
+  });
+
+  test('rejects with the error string as the message when non-empty', async () => {
+    const shell = { openPath: jest.fn().mockResolvedValue('Failed to open path') };
+    const promise = loadShell(shell).openPath('/missing');
+    await expect(promise).rejects.toThrow('Failed to open path');
+    await expect(promise).rejects.toBeInstanceOf(Error);
+  });
+
+  test('propagates electron rejections unchanged', async () => {
+    const error = new Error('boom');
+    const shell = { openPath: jest.fn().mockRejectedValue(error) };
+    await expect(loadShell(shell).openPath('x')).rejects.toBe(error);
   });
 });
