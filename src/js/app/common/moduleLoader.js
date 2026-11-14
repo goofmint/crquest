@@ -251,13 +251,16 @@ function tokenize(source) {
   };
 
   // Every token records the offset where its lexing started (for line numbers).
+  // Tokens are only ever appended, so everything before `unmarked` already has
+  // its start and each call only visits the tokens added since the last one.
   let lastStart = 0;
+  let unmarked = 0;
   const markStart = () => {
-    tokens.forEach(token => {
-      if (token.start === undefined) {
-        token.start = lastStart;
+    for (; unmarked < tokens.length; unmarked += 1) {
+      if (tokens[unmarked].start === undefined) {
+        tokens[unmarked].start = lastStart;
       }
-    });
+    }
     lastStart = index;
   };
 
