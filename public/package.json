@@ -36,8 +36,8 @@
     "numeral": "^2.0.6",
     "prop-types": "^15.6.2",
     "pug": "^3.0.2",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-splitter-layout": "^3.0.1",
     "react-tiny-popover": "^3.4.2",
     "react-transition-group": "^4.4.2",
@@ -49,5 +49,10 @@
     "uuid": "^3.3.2",
     "vm2": "^3.8.2",
     "yup": "^0.29.1"
+  },
+  "overrides": {
+    "react-splitter-layout": {
+      "react": "$react"
+    }
   }
 }

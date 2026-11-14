@@ -1,5 +1,5 @@
 import React from 'react';
-import { shallow } from 'enzyme';
+import { render, act } from '@testing-library/react';
 
 jest.mock('electron', () => ({ remote: {} }));
 jest.mock('../../../js/app/platform/paths', () => ({
@@ -34,7 +34,8 @@ import Settings from '../../../js/app/components/menu/settings/Settings';
 import { getGamePackageVersion } from '../../../js/app/platform/paths';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
-const versionText = (wrapper) => wrapper.find('.game-version').text();
+const versionText = (container) =>
+  container.querySelector('.game-version').textContent;
 
 describe('Settings game version', () => {
   let errorSpy;
@@ -48,31 +49,30 @@ describe('Settings game version', () => {
 
   test('shows nothing for the version while loading, then the version', async () => {
     getGamePackageVersion.mockResolvedValue('1.2.3');
-    const wrapper = shallow(<Settings />);
-    expect(versionText(wrapper)).not.toContain('1.2.3');
-    await flush();
-    wrapper.update();
-    expect(versionText(wrapper)).toContain('TerminalQuest v1.2.3');
+    const { container } = render(<Settings />);
+    expect(versionText(container)).not.toContain('1.2.3');
+    await act(flush);
+    expect(versionText(container)).toContain('TerminalQuest v1.2.3');
   });
 
   test('shows an explicit error and no version when loading fails', async () => {
     getGamePackageVersion.mockRejectedValue(new Error('boom'));
-    const wrapper = shallow(<Settings />);
-    await flush();
-    wrapper.update();
-    expect(versionText(wrapper)).toContain('failed to load version: boom');
-    expect(versionText(wrapper)).not.toMatch(/ v\d/);
+    const { container } = render(<Settings />);
+    await act(flush);
+    expect(versionText(container)).toContain('failed to load version: boom');
+    expect(versionText(container)).not.toMatch(/ v\d/);
     expect(errorSpy).toHaveBeenCalled();
   });
 
   test('does not update state after unmount', async () => {
     let resolveVersion;
     getGamePackageVersion.mockReturnValue(new Promise((r) => { resolveVersion = r; }));
-    const wrapper = shallow(<Settings />);
-    const setState = jest.spyOn(wrapper.instance(), 'setState');
-    wrapper.unmount();
+    const ref = React.createRef();
+    const { unmount } = render(<Settings ref={ref} />);
+    const setState = jest.spyOn(ref.current, 'setState');
+    unmount();
     resolveVersion('1.2.3');
-    await flush();
+    await act(flush);
     expect(setState).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
   });

@@ -54,7 +54,8 @@ describe('vendored twilioquest-api-academy layout', () => {
 
   test('does not depend on twilio any more (lock file and sources)', () => {
     const lock = jetpack.read(path.join(PUBLIC_PATH, 'package-lock.json'), 'json');
-    expect(lock.dependencies).not.toHaveProperty([NAME]);
+    // lockfileVersion 3 lists packages under "packages", keyed by install path
+    expect(lock.packages).not.toHaveProperty([`node_modules/${NAME}`]);
 
     const requiring = jetpack
       .cwd(PACKAGE_PATH)

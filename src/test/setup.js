@@ -1,11 +1,6 @@
 import path from 'path';
 import jetpack from 'fs-jetpack';
-import { configure } from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
-
-configure({ 
-  adapter: new Adapter()
-});
+import '@testing-library/jest-dom';
 
 // Bootstrap browser window environment, as we do in our HTML wrapper
 [

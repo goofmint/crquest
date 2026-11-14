@@ -1,8 +1,10 @@
 import React from 'react';
-import { shallow } from 'enzyme';
+import { render, screen } from '@testing-library/react';
 import Button from '../../../js/app/components/Button';
 
 test('Button component', async () => {
-  const btn = shallow(<Button>Testing!</Button>);
-  expect(btn.is('.Button')).toBe(true);
+  render(<Button>Testing!</Button>);
+  const btn = screen.getByRole('button');
+  expect(btn).toHaveClass('Button');
+  expect(btn).toHaveTextContent('Testing!');
 });
