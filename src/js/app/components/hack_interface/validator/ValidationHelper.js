@@ -21,6 +21,7 @@ const fetch = window.fetch;
  * readFile(path, options)      -> Buffer, or string with an encoding
  * readdir(path)                -> string[]
  * stat(path)                   -> fs.Stats
+ * lstat(path)                  -> fs.Stats (does not follow a symbolic link)
  * writeAsync(path, data)       -> creates missing parent directories
  * copyAsync(from, to, options) -> rejects with ENOENT if `from` is missing
  * removeAsync(path)            -> no-op if the path is missing
@@ -29,6 +30,7 @@ const validatorFs = Object.freeze({
   readFile: platformFs.readFile,
   readdir: platformFs.readdir,
   stat: platformFs.stat,
+  lstat: platformFs.lstat,
   existsAsync: platformFs.existsAsync,
   listAsync: platformFs.listAsync,
   readAsync: platformFs.readAsync,
@@ -47,6 +49,9 @@ export default class ValidationHelper {
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
     this.fs = validatorFs;
+    // Operating system the game runs on (Node's process.platform values, e.g.
+    // 'win32', 'darwin', 'linux'), for validators that branch per OS.
+    this.platform = process.platform;
 
     // Process validation fields
     Object.keys(validationContext.validationFields).forEach(key => {
