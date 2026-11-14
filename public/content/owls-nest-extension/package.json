@@ -1,0 +1,9 @@
+{
+  "name": "owls-nest-extension",
+  "description": "This extension contains the prologue level for TwilioQuest.",
+  "version": "1.0.10",
+  "engines": {
+    "twilioquest": "3.2.x"
+  },
+  "dependencies": {}
+}
