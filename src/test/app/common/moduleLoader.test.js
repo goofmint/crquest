@@ -701,6 +701,23 @@ describe('moduleLoader', () => {
       ).toEqual(['./a', './b']);
     });
 
+    it('starts a regex after a prefix ++/--, divides after a postfix one', () => {
+      expect(scanRequires("++/\"/.lastIndex; require('./dep');")).toEqual([
+        './dep',
+      ]);
+      expect(scanRequires("a = ++/x/.lastIndex / 2; require('./b');")).toEqual([
+        './b',
+      ]);
+      expect(scanRequires("i++ / 2; require('./a');")).toEqual(['./a']);
+      expect(scanRequires("x = y-- / 2 / 3; require('./c');")).toEqual(['./c']);
+      expect(
+        scanRequires(
+          "function f() { return ++/re'/.lastIndex; } require('./r');"
+        )
+      ).toEqual(['./r']);
+      expect(scanRequires("x = (a)++ / 2; require('./p');")).toEqual(['./p']);
+    });
+
     it('keeps a regex literal after a prefix or binary + / -', () => {
       expect(
         scanRequires(

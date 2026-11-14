@@ -224,21 +224,29 @@ function tokenize(source) {
   let index = source.startsWith('#!') ? source.search(/[\n\r]|$/) : 0;
 
   const previous = () => tokens[tokens.length - 1];
-  const slashStartsRegex = () => {
-    const last = previous();
-    if (!last) {
-      return true;
+  // True when the token ends an operand (so a following `/` divides).
+  const endsOperand = token => {
+    if (!token) {
+      return false;
     }
-    if (last.type === 'name') {
-      return REGEX_PRECEDING_KEYWORDS.has(last.value);
+    if (token.type === 'name') {
+      return !REGEX_PRECEDING_KEYWORDS.has(token.value);
     }
-    if (last.type === 'punct') {
-      // `++`/`--` before a `/` is postfix (a prefix one cannot precede a
-      // regex literal), so the slash is a division.
-      return ![')', ']', '++', '--'].includes(last.value);
+    if (token.type === 'punct') {
+      return token.value === ')' || token.value === ']';
     }
 
-    return false;
+    return true;
+  };
+  const slashStartsRegex = () => {
+    const last = previous();
+    if (last && last.type === 'punct' && ['++', '--'].includes(last.value)) {
+      // Postfix (the token before ends an operand): `a++ / 2` divides.
+      // Prefix: `++/x/.lastIndex` increments a member of a regex literal.
+      return !endsOperand(tokens[tokens.length - 2]);
+    }
+
+    return !endsOperand(last);
   };
 
   // Consumes template text from `index` up to the closing backtick or `${`.
