@@ -7,7 +7,18 @@ import { omitKey } from './utils';
 import { listAsync, existsAsync, readAsync } from '../platform/fs';
 
 const BUNDLED_ASSET_DIRECTORY = '.bundled';
-const BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY = 'node_modules';
+// Bundled extensions live in one of two roots, both relative to the static
+// root (`public/`). Which one is decided per extension by
+// `config.vendoredExtensionModules` (see docs/migration/content-layout.md).
+// Vendored extensions are checked into the repository under `content/`;
+// every other bundled extension is still an npm dependency in `node_modules/`
+// (transition state until all packages are vendored).
+const BUNDLED_EXTENSION_VENDORED_DIRECTORY = 'content';
+const BUNDLED_EXTENSION_NPM_DIRECTORY = 'node_modules';
+const BUNDLED_EXTENSION_DIRECTORIES = [
+  BUNDLED_EXTENSION_VENDORED_DIRECTORY,
+  BUNDLED_EXTENSION_NPM_DIRECTORY,
+];
 
 /**
  * @typedef {Object} Extension
@@ -95,12 +106,24 @@ async function getExternalExtensionDirectories() {
  * @returns {Extension[]} - extension directory file path
  */
 function getBundledExtensionDirectories() {
-  const pathToNodeModules = staticFilePath(
-    BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY
-  );
+  const { bundledExtensionModules, vendoredExtensionModules } = config;
 
-  const extensions = config.bundledExtensionModules.map(module => {
-    const absolutePath = path.join(pathToNodeModules, module);
+  vendoredExtensionModules.forEach(module => {
+    if (!bundledExtensionModules.includes(module)) {
+      throw new Error(
+        `"${module}" is listed in vendoredExtensionModules but not in bundledExtensionModules.`
+      );
+    }
+  });
+
+  const extensions = bundledExtensionModules.map(module => {
+    const distributionDirectory = vendoredExtensionModules.includes(module)
+      ? BUNDLED_EXTENSION_VENDORED_DIRECTORY
+      : BUNDLED_EXTENSION_NPM_DIRECTORY;
+    const absolutePath = path.join(
+      staticFilePath(distributionDirectory),
+      module
+    );
 
     return {
       absolutePath,
@@ -201,5 +224,7 @@ export {
   areExtensionsReady,
   areExtensionsEnabled,
   BUNDLED_ASSET_DIRECTORY,
-  BUNDLED_EXTENSION_DISTRIBUTION_DIRECTORY,
+  BUNDLED_EXTENSION_VENDORED_DIRECTORY,
+  BUNDLED_EXTENSION_NPM_DIRECTORY,
+  BUNDLED_EXTENSION_DIRECTORIES,
 };
