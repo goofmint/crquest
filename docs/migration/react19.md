@@ -13,7 +13,7 @@ Electron 11 (Chromium 87) のまま、レンダラーの React を 16.8 から 1
 
 ### #46 createRoot と React 19
 - `src/js/index.jsx`: `ReactDOM.render` を `createRoot(appNode).render(<App />)` (`react-dom/client`) に変更。
-- `public/package.json`: `react` / `react-dom` を `^19.1.0` に。`public/package-lock.json` は `npm install` で再生成した (lockfileVersion 1 から 3)。
+- `public/package.json`: `react` / `react-dom` を `^19.1.0` に。`public/package-lock.json` は postinstall (`npm run install:app`) が使うルート devDependency の npm 6 で生成した lockfileVersion 1 のまま (npm 11 で v3 にしても、postinstall が v1 に書き戻す)。
 - Vite: JSX を automatic ランタイムに (`react/jsx-runtime` は他の裸の import と同様、実行時に `public/node_modules` から解決)。React 19 の production ビルドには `jsxDEV` が無いため、`vite.config.mjs` で `NODE_ENV=production` に固定し、`jsx-dev-runtime` が出力されないようにした。
 - Jest 用の `.babelrc` は classic ランタイムのまま (インストール済みの `@babel/preset-react` 7.8.3 は automatic に未対応。テストのファイルはすべて `import React` している)。
 - `public/package.json` の `overrides` で `react-splitter-layout` の peer (`react ^15 || ^16`) を `$react` に上書きしている (下記 #50)。
@@ -23,7 +23,6 @@ Electron 11 (Chromium 87) のまま、レンダラーの React を 16.8 から 1
 - Jest のランナーは `@jest-runner/electron` で、テストは Electron 11 の実ブラウザ (Chromium 87) 内で動く。jsdom は使っていないため、RTL 16 と Jest 26 はそのまま動く。Vitest へは移行していない (Phase 9, #54-57)。
 - Jest のフェイクタイマーは Electron 環境では使えない (`fakeTimers are not supproted in electron environment`)。タイマーを使うテストは `window.setTimeout` を差し替えるか実時間で待っている。
 - `jest.config.js` の `moduleNameMapper` で `react` / `react-dom` を `public/node_modules` に固定した。RTL (ルートの devDependency) が peer としてルートの `node_modules` に別の React を入れるため、固定しないとアプリ・styled-components・RTL が別々の React を見てしまう。
-- `vendoredJavaScript.test.js` / `vendoredApiAcademy.test.js` は lockfile v1 の `dependencies` を見ていたため、v3 の `packages["node_modules/<name>"]` を見るように変更した。
 - 追加したテスト: `react19Compat.test.js` (Transition の `nodeRef` と、コールバック ref を使う `NameStep`)、`styledComponents.test.js`、`ItemPopover.test.js`、`SplitterLayout.test.js`。
 
 ### #48 styled-components 5 から 6
