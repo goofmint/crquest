@@ -3,9 +3,8 @@
  * so that it can run in a Tauri webview. Source is read through the platform
  * file system layer and evaluated with `new Function`.
  *
- * Phase 3 tasks 3-2 / 3-3. Nothing calls it yet (assetLoader's
- * `requireFromExtension` still uses Node `require`); switching over is a
- * separate ticket.
+ * Phase 3 tasks 3-2 / 3-3. assetLoader's `requireFromExtension` uses it
+ * (task 3-4).
  *
  * Sync/async: the platform file system is asynchronous but CommonJS `require`
  * is synchronous. So loading has two phases:
@@ -75,6 +74,7 @@
  */
 import * as platformFs from '../platform/fs';
 import { getBuiltIn, isAllowedBuiltIn } from './moduleAllowlist';
+import { getExtraRequiresFor } from './moduleRequireHints';
 import { isAbsolute, normalize, dirname, resolve } from './modulePath';
 
 const IDENTIFIER_START = /[A-Za-z_$\u0080-\uFFFF]/;
@@ -515,12 +515,24 @@ function findRequireCalls(tokens) {
  *   Rejects with `code: 'ENOENT'` when the path does not exist.
  * @property {(specifier: string) => boolean} isAllowed - bare specifier allowlist check
  * @property {(specifier: string) => *} getAllowed - implementation of an allowed specifier
+ * @property {(absolutePath: string) => string[]} [getExtraRequires]
+ *   Specifiers to preload for a file in addition to the ones found by the
+ *   static scan. This is the explicit, documented way to support a known
+ *   non-literal `require` (see moduleRequireHints.js); each specifier is
+ *   resolved exactly like a literal one, so a missing file is reported when
+ *   (and only when) the module requires it.
  */
 
 /**
  * @param {ModuleLoaderDependencies} dependencies
  */
-function createModuleLoader({ readFile, stat, isAllowed, getAllowed }) {
+function createModuleLoader({
+  readFile,
+  stat,
+  isAllowed,
+  getAllowed,
+  getExtraRequires = () => [],
+}) {
   /** @type {Map<string, Object>} absolute path -> module object */
   const moduleCache = new Map();
   /**
@@ -740,7 +752,11 @@ function createModuleLoader({ readFile, stat, isAllowed, getAllowed }) {
     const outcomes = new Map();
 
     if (!absolutePath.endsWith('.json')) {
-      for (const specifier of scanRequires(source)) {
+      const specifiers = new Set([
+        ...scanRequires(source),
+        ...getExtraRequires(absolutePath),
+      ]);
+      for (const specifier of specifiers) {
         let outcome;
         try {
           outcome = await resolveSpecifier(specifier, absolutePath);
@@ -1025,6 +1041,7 @@ const defaultLoader = createModuleLoader({
   stat: platformFs.stat,
   isAllowed: isAllowedBuiltIn,
   getAllowed: getBuiltIn,
+  getExtraRequires: getExtraRequiresFor,
 });
 
 const loadModule = defaultLoader.load;

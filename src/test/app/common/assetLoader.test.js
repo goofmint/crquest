@@ -17,10 +17,13 @@ import {
 } from '../../../js/app/common/extensions';
 
 import { staticFilePath } from '../../../js/app/common/fs_utils';
+import { isDev } from '../../../js/app/platform/env';
+import { isModuleCached } from '../../../js/app/common/moduleLoader';
 
 jest.mock('../../../js/app/common/context');
 jest.mock('../../../js/app/common/fs_utils');
 jest.mock('../../../js/app/config/config');
+jest.mock('../../../js/app/platform/env', () => ({ isDev: jest.fn() }));
 
 import mockContextFactory from '../../utils/mockContextFactory';
 import mockConfigFactory from '../../utils/mockConfigFactory';
@@ -311,6 +314,70 @@ describe('requireFromExtension', () => {
     expect(testFoo).toBeDefined();
     expect(testFoo('alshd')).toBe(false);
     expect(testFoo('bar')).toBe(true);
+  });
+
+  describe('with the CommonJS loader', () => {
+    const CASES = 'objectives/test_mission/loader_cases';
+    const counterPath = path.join(
+      EXTENSIONS_PATH,
+      'aaa-exhaustive-config-extension',
+      CASES,
+      'counter.js'
+    );
+
+    beforeEach(() => {
+      delete globalThis.__requireFromExtensionEvaluations;
+      delete window.reloadExternalModules;
+      isDev.mockReturnValue(false);
+    });
+
+    afterEach(() => {
+      delete window.reloadExternalModules;
+    });
+
+    test('should return parsed JSON for a .json module', async () => {
+      expect(await requireFromExtension(`${CASES}/tile.json`)).toEqual({
+        tilesets: [{ source: 'a.json' }],
+      });
+    });
+
+    test('should keep the cached module when not in development', async () => {
+      const first = await requireFromExtension(`${CASES}/counter.js`);
+      const second = await requireFromExtension(`${CASES}/counter.js`);
+
+      expect(second).toBe(first);
+      expect(isModuleCached(counterPath)).toBe(true);
+    });
+
+    test('should re-evaluate the module on every call in development', async () => {
+      isDev.mockReturnValue(true);
+
+      const first = await requireFromExtension(`${CASES}/counter.js`);
+      const second = await requireFromExtension(`${CASES}/counter.js`);
+
+      expect(second).toBe(first + 1);
+    });
+
+    test('should re-evaluate the module when window.reloadExternalModules is set', async () => {
+      window.reloadExternalModules = true;
+
+      const first = await requireFromExtension(`${CASES}/counter.js`);
+      const second = await requireFromExtension(`${CASES}/counter.js`);
+
+      expect(second).toBe(first + 1);
+    });
+
+    test('should reject with an explicit error for a module that is not allowlisted', async () => {
+      await expect(
+        requireFromExtension(`${CASES}/forbidden.js`)
+      ).rejects.toMatchObject({ code: 'ERR_MODULE_NOT_ALLOWED' });
+    });
+
+    test('should reject with an explicit error for a non-literal require without a hint', async () => {
+      await expect(
+        requireFromExtension(`${CASES}/not_preloaded.js`)
+      ).rejects.toMatchObject({ code: 'ERR_MODULE_NOT_PRELOADED' });
+    });
   });
 });
 
