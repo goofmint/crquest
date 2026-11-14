@@ -1,6 +1,6 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { createCodeRunnerWorker } from '../../../js/app/common/codeRunnerWorker';
+import { createCodeRunnerWorker, pullVarsInWorker } from '../../../js/app/common/codeRunnerWorker';
 
 // Runs the real public/code_runner/worker.js in a real Web Worker. Jest runs in
 // an Electron renderer (@jest-runner/electron), so `Worker` exists and a
@@ -188,5 +188,49 @@ describe('code runner with a real Worker', () => {
     const [log] = await current.waitForLogs(1);
     expect(log.logLevel).toBe('error');
     expect(log.arguments[0].message).toMatch(/Code runner worker failed/);
+  });
+});
+
+describe('pullVarsInWorker with a real Worker', () => {
+  const pull = (code, keys, extra) =>
+    pullVarsInWorker({ workerUrl: WORKER_URL, code, keys, ...extra });
+
+  it('returns the variables and discards console output', async () => {
+    await expect(
+      pull('console.log("hi"); const a = 1; var b = { c: [2] };', ['a', 'b'])
+    ).resolves.toEqual({ a: 1, b: { c: [2] } });
+  });
+
+  it('passes env as process.env', async () => {
+    await expect(
+      pull('const v = process.env.X;', ['v'], { env: { X: 'y' } })
+    ).resolves.toEqual({ v: 'y' });
+  });
+
+  it('terminates a synchronous infinite loop with a timeout error', async () => {
+    await expect(pull('while (true) {}', [], { timeoutMs: 200 })).rejects.toThrow(
+      'timed out after 200 ms'
+    );
+  });
+
+  it('rejects when worker.js cannot be loaded', async () => {
+    await expect(
+      pull('', [], {
+        workerUrl: pathToFileURL(path.resolve(__dirname, 'does-not-exist.js')).href,
+      })
+    ).rejects.toThrow(/Code runner worker failed/);
+  });
+
+  it('does not touch the QuestIDE runner worker', async () => {
+    const runnerSide = start();
+    try {
+      runnerSide.runner.runCode(`setInterval(() => console.log('tick'), 5)`, {});
+      await runnerSide.waitForLogs(1);
+      await pull('var a = 1;', ['a']);
+      const count = runnerSide.logs.length;
+      await runnerSide.waitFor(() => runnerSide.logs.length > count);
+    } finally {
+      runnerSide.runner.terminate();
+    }
   });
 });

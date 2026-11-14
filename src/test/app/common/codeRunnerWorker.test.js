@@ -1,4 +1,4 @@
-import { createCodeRunnerWorker } from '../../../js/app/common/codeRunnerWorker';
+import { createCodeRunnerWorker, pullVarsInWorker } from '../../../js/app/common/codeRunnerWorker';
 
 // Fake Worker recording what the host does with it
 function createFakeWorkerFactory() {
@@ -290,5 +290,103 @@ describe('createCodeRunnerWorker', () => {
         'Web Workers are not available'
       );
     });
+  });
+});
+
+describe('pullVarsInWorker', () => {
+  const URL_ = 'file:///static/code_runner/worker.js';
+  const start = (extra = {}) => {
+    const { factory, workers } = createFakeWorkerFactory();
+    const promise = pullVarsInWorker({
+      workerUrl: URL_,
+      code: 'var a = 1;',
+      keys: ['a'],
+      createWorker: factory,
+      ...extra,
+    });
+    return { promise, worker: workers[0], factory };
+  };
+
+  it('posts a pull message to its own worker and resolves with the vars', async () => {
+    const { promise, worker } = start({ env: { A: 'b' } });
+    expect(worker.url).toBe(URL_);
+    expect(worker.postMessage).toHaveBeenCalledWith({
+      type: 'pull',
+      code: 'var a = 1;',
+      keys: ['a'],
+      env: { A: 'b' },
+    });
+    worker.emit('message', { data: { type: 'vars', vars: { a: 1 } } });
+    await expect(promise).resolves.toEqual({ a: 1 });
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores log messages from the code', async () => {
+    const { promise, worker } = start();
+    worker.emit('message', { data: { type: 'log', logLevel: 'log', arguments: ['x'] } });
+    expect(worker.terminate).not.toHaveBeenCalled();
+    worker.emit('message', { data: { type: 'vars', vars: {} } });
+    await expect(promise).resolves.toEqual({});
+  });
+
+  it('rejects with the error the code threw, keeping name and message', async () => {
+    const { promise, worker } = start();
+    worker.emit('message', {
+      data: { type: 'vars-error', error: { name: 'RangeError', message: 'bad', stack: 's' } },
+    });
+    await expect(promise).rejects.toMatchObject({ name: 'RangeError', message: 'bad' });
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects on worker errors, messageerror and unexpected messages', async () => {
+    let t = start();
+    t.worker.emit('error', { message: 'nope', filename: 'f', lineno: 1, colno: 2 });
+    await expect(t.promise).rejects.toThrow('Code runner worker failed: nope (f:1:2)');
+    t = start();
+    t.worker.emit('messageerror', {});
+    await expect(t.promise).rejects.toThrow('could not deserialize');
+    t = start();
+    t.worker.emit('message', { data: 'x' });
+    await expect(t.promise).rejects.toThrow('unexpected message');
+  });
+
+  it('rejects and terminates when the code does not finish in time', async () => {
+    const { promise, worker } = start({ timeoutMs: 10 });
+    await expect(promise).rejects.toThrow('timed out after 10 ms');
+    expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when postMessage throws', async () => {
+    const { factory } = createFakeWorkerFactory();
+    const failing = jest.fn(() => ({
+      addEventListener: () => {},
+      terminate: jest.fn(),
+      postMessage: () => {
+        throw new Error('post failed');
+      },
+    }));
+    await expect(
+      pullVarsInWorker({ workerUrl: URL_, code: '', keys: [], createWorker: failing })
+    ).rejects.toThrow('post failed');
+    expect(factory).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ workerUrl: '' }, 'workerUrl is required'],
+    [{ code: 5 }, 'code must be a string'],
+    [{ keys: 'a' }, 'keys must be an array of strings'],
+    [{ env: { A: 1 } }, 'env.A must be a string'],
+  ])('rejects invalid options %j', async (override, message) => {
+    const { factory } = createFakeWorkerFactory();
+    await expect(
+      pullVarsInWorker({
+        workerUrl: URL_,
+        code: '',
+        keys: [],
+        createWorker: factory,
+        ...override,
+      })
+    ).rejects.toThrow(message);
+    expect(factory).not.toHaveBeenCalled();
   });
 });

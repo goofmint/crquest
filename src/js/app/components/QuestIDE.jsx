@@ -156,13 +156,22 @@ export default class QuestIDE extends React.Component {
   async runCode() {
     this.printLn('Executing your program...');
     await this.saveCode();
-    codeRunner.runCode(
-      this.editor.getValue(),
-      Object.entries(getContext('env')).reduce((acc, [name, entry]) => {
-        acc[name] = entry.value;
-        return acc;
-      }, {})
-    );
+    try {
+      codeRunner.runCode(
+        this.editor.getValue(),
+        Object.entries(getContext('env')).reduce((acc, [name, entry]) => {
+          acc[name] = entry.value;
+          return acc;
+        }, {})
+      );
+    } catch (e) {
+      // e.g. an environment variable whose value is not a string, or the
+      // worker could not be created: show it instead of dropping it
+      this.consoleLog({
+        logLevel: 'error',
+        arguments: [{ message: e.message, stack: e.stack }],
+      });
+    }
   }
 
   // Reset saved code to the initial example code

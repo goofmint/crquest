@@ -1,9 +1,13 @@
-import vm from 'vm';
 import path from 'path';
 import ga from '../../../common/analytics';
 import World from '../../../common/world';
 import config from '../../../config/config';
 import { getContext } from '../../../common/context';
+import { staticFileUrl } from '../../../common/fs_utils';
+import {
+  pullVarsInWorker,
+  WORKER_RELATIVE_PATH,
+} from '../../../common/codeRunnerWorker';
 import * as platformFs from '../../../platform/fs';
 import * as platformExec from '../../../platform/exec';
 import * as platformPaths from '../../../platform/paths';
@@ -245,79 +249,32 @@ export default class ValidationHelper {
   /**
    * Same as pullVarsFromQuestIdeUserCodeLocalScope, but for code the validator
    * already has as a string (for example a script the learner saved in their
-   * own workspace directory). Runs `userCode`, then returns the values of the
-   * top-level variables named in `keys`. If a variable cannot be read, the
-   * returned object has an `_error` property holding the thrown error (for
-   * example a ReferenceError); an error thrown by `userCode` itself is thrown.
+   * own workspace directory).
+   *
+   * The code runs once in a throw-away Web Worker (public/code_runner/worker.js,
+   * no Node `vm`, `require`, `window` or `fetchOverride`; `process.env` is an
+   * empty shim), then the values of the top-level variables named in `keys`
+   * are returned. If a variable cannot be read, the returned object has an
+   * `_error` property holding the thrown error (for example a
+   * ReferenceError). An error thrown by `userCode` itself is thrown.
+   *
+   * Values cross the Worker boundary by structured clone, so only data can be
+   * returned (numbers, strings, arrays, plain objects, Map, Set, Date, ...;
+   * class instances arrive as plain objects). Requesting a function, a class
+   * or any value containing one rejects with an explicit error naming the
+   * variable; it is never dropped or converted. See
+   * docs/migration/validation-helper-worker.md.
    *
    * @param {String} userCode
-   * @param {String[]} [keys]
+   * @param {String[]} [keys] identifiers of top-level variables
    * @returns {Promise<Object>}
    */
   async pullVarsFromUserCodeLocalScope(userCode, keys = []) {
-    // Hard coding polyfill of String.replaceAll, since the version of electron we're using (as of 11/16/2022)
-    // doesn't have a new enough version of Node to natively support it
-    const extendedUserCode = `
-      /**
-       * String.prototype.replaceAll() polyfill
-       * https://gomakethings.com/how-to-replace-a-section-of-a-string-with-another-one-with-vanilla-js/
-       * @author Chris Ferdinandi
-       * @license MIT
-       */
-      if (!String.prototype.replaceAll) {
-        String.prototype.replaceAll = function(str, newStr) {
-          // If a regex pattern
-          if (
-            Object.prototype.toString.call(str).toLowerCase() ===
-            '[object regexp]'
-          ) {
-            return this.replace(str, newStr);
-          }
-
-          // If a string
-          return this.replace(new RegExp(str, 'g'), newStr);
-        };
-      }
-
-      ${userCode};
-    `;
-
-    const scriptContext = {
-      fetch: this.fetchOverride.bind(this),
-      window,
-      process,
-      URL,
-      URLSearchParams,
-      require,
-      __TQ: {},
-    };
-    const testCode = `
-      ${extendedUserCode};
-      
-      try {
-        ${keys
-          .map(key => {
-            return `__TQ["${key}"] = ${key};`;
-          })
-          .join('\n')}
-      } catch (error) {
-        __TQ._error = error;
-      }
-    `;
-
-    // First, execute user code to ensure it runs unchanged
-    let script = new vm.Script(extendedUserCode);
-    script.runInNewContext(Object.assign({}, scriptContext));
-
-    // Assuming that it doesn't throw, we can try running it with our test
-    // code appended to it.
-    script = new vm.Script(testCode);
-    script.runInNewContext(scriptContext);
-
-    // Inspect the script context for the stuff we want
-    const context = scriptContext.__TQ;
-
-    return context;
+    return pullVarsInWorker({
+      workerUrl: staticFileUrl(WORKER_RELATIVE_PATH),
+      code: userCode,
+      keys,
+    });
   }
 
   getFilePathPartsArray(filePath) {

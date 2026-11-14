@@ -27,6 +27,12 @@ jest.mock('../../../../../js/app/common/world', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
+jest.mock('../../../../../js/app/common/fs_utils', () => ({
+  staticFileUrl: relativePath =>
+    require('url').pathToFileURL(
+      require('path').resolve(__dirname, '..', '..', '..', '..', '..', '..', 'public', relativePath)
+    ).href,
+}));
 jest.mock('../../../../../js/app/config/config', () => ({
   __esModule: true,
   default: {
@@ -233,16 +239,45 @@ describe('getAppDataPath', () => {
   });
 });
 
+// The code runs in a real Web Worker (public/code_runner/worker.js)
 describe('pullVarsFromUserCodeLocalScope', () => {
-  test('returns the requested top-level variables', async () => {
+  test('returns the requested top-level variables (let/const/var)', async () => {
     const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
-      'const a = 1; function f() { return 2; } class C {}',
-      ['a', 'f', 'C']
+      'const a = 1; let b = "two"; var c = [1, { d: 3 }];',
+      ['a', 'b', 'c']
     );
-    expect(vars.a).toBe(1);
-    expect(vars.f()).toBe(2);
-    expect(vars.C.toString()).toContain('class');
+    expect(vars).toEqual({ a: 1, b: 'two', c: [1, { d: 3 }] });
     expect(vars._error).toBeUndefined();
+  });
+
+  test('runs the code exactly once', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'var runs = (typeof runs === "undefined" ? 0 : runs) + 1; var counter = 0; counter++;',
+      ['runs', 'counter']
+    );
+    expect(vars).toEqual({ runs: 1, counter: 1 });
+  });
+
+  test('returns an empty object when no keys are requested', async () => {
+    expect(await makeHelper().pullVarsFromUserCodeLocalScope('var a = 1;')).toEqual({});
+  });
+
+  test('keeps Map, Set and Date values', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'const m = new Map([[1, 2]]); const s = new Set([1]); const d = new Date(0);',
+      ['m', 's', 'd']
+    );
+    expect(Array.from(vars.m)).toEqual([[1, 2]]);
+    expect(Array.from(vars.s)).toEqual([1]);
+    expect(vars.d.getTime()).toBe(0);
+  });
+
+  test('a class instance arrives as a plain object (data only)', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'class P { constructor() { this.x = 1; } get y() { return 2; } hi() {} } const p = new P();',
+      ['p']
+    );
+    expect(vars.p).toEqual({ x: 1 });
   });
 
   test('records a ReferenceError for a missing variable in _error', async () => {
@@ -252,10 +287,62 @@ describe('pullVarsFromUserCodeLocalScope', () => {
     expect(vars._error.name).toBe('ReferenceError');
   });
 
+  test('keeps variables read before the failing one next to _error', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope('const a = 1;', [
+      'a',
+      'missing',
+    ]);
+    expect(vars.a).toBe(1);
+    expect(vars._error.name).toBe('ReferenceError');
+  });
+
   test('throws when the code itself throws', async () => {
     await expect(
       makeHelper().pullVarsFromUserCodeLocalScope('throw new Error("boom");', ['a'])
     ).rejects.toThrow('boom');
+  });
+
+  test('throws a SyntaxError for code that does not parse', async () => {
+    await expect(
+      makeHelper().pullVarsFromUserCodeLocalScope('const = ;', ['a'])
+    ).rejects.toMatchObject({ name: 'SyntaxError' });
+  });
+
+  test.each([
+    ['function', 'function f() { return 2; }', 'f', /Variable "f" \(function\)/],
+    ['class', 'class C {}', 'C', /Variable "C" \(class\)/],
+    ['arrow function', 'const g = () => 1;', 'g', /Variable "g" \(function\)/],
+    ['symbol', 'const s = Symbol("x");', 's', /Variable "s" \(symbol\)/],
+    ['object holding a function', 'const o = { run() {} };', 'o', /Variable "o"/],
+  ])('rejects explicitly for a %s', async (name, code, key, message) => {
+    const helper = makeHelper();
+    const promise = helper.pullVarsFromUserCodeLocalScope(code, [key]);
+    await expect(promise).rejects.toThrow(message);
+    await expect(helper.pullVarsFromUserCodeLocalScope(code, [key])).rejects.toThrow(
+      'cannot be returned from the code runner worker'
+    );
+  });
+
+  test('a function that is not requested does not matter', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'function f() {} const a = 1;',
+      ['a']
+    );
+    expect(vars).toEqual({ a: 1 });
+  });
+
+  test('rejects keys that are not identifiers', async () => {
+    await expect(
+      makeHelper().pullVarsFromUserCodeLocalScope('var a = 1;', ['a; throw 1'])
+    ).rejects.toThrow('"keys" must be an array of variable names');
+  });
+
+  test('has no require, window or fetchOverride in scope', async () => {
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
+      'const r = typeof require; const w = typeof window; const p = typeof process.env;',
+      ['r', 'w', 'p']
+    );
+    expect(vars).toEqual({ r: 'undefined', w: 'undefined', p: 'object' });
   });
 
   test('pullVarsFromQuestIdeUserCodeLocalScope reads the saved code and delegates', async () => {
