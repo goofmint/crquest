@@ -35,3 +35,5 @@
  *   spawn failure, timeout or kill, rejects with the Node Error unchanged; it
  *   carries `code`, `stdout` and `stderr`.
  */
+
+export {};

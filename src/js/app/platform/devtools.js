@@ -23,3 +23,5 @@
  *   Synchronous. Toggles devtools of the focused window. Throws if there is no
  *   focused window.
  */
+
+export {};

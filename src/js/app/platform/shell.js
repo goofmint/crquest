@@ -22,3 +22,5 @@
  *   success; a non-empty string is converted to a rejection with
  *   `new Error(thatString)`.
  */
+
+export {};

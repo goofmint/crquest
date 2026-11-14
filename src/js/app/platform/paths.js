@@ -18,3 +18,5 @@
  *   returns it (no normalization, no trailing-slash handling). Throws if
  *   Electron cannot resolve the name. Never returns a fallback.
  */
+
+export {};

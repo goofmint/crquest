@@ -34,3 +34,5 @@
  * @property {(key: string) => void} delete
  *   Synchronous. Removes the key; deleting a missing key is not an error.
  */
+
+export {};

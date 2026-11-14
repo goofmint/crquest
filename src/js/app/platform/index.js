@@ -8,7 +8,8 @@
  *
  * This directory only DEFINES contracts as JSDoc. It contains no executable
  * statements and no imports, and nothing under src/js or src/test references
- * it yet. Adding it does not change runtime behavior. Implementations and the
+ * it yet. Each file ends with `export {};`, which only marks it as a module so
+ * that the `import('./x').Type` references below resolve in editors. Adding it does not change runtime behavior. Implementations and the
  * migration of call sites are separate, later tickets.
  *
  * Baseline versions the contracts are written against (do not rely on APIs or
@@ -44,3 +45,5 @@
  * @property {import('./exec').PlatformExec} exec
  * @property {import('./devtools').PlatformDevtools} devtools
  */
+
+export {};

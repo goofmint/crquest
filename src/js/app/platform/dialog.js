@@ -48,3 +48,5 @@
  *   (`canceled: true`, empty `filePaths`), not a rejection. Any other failure
  *   rejects.
  */
+
+export {};

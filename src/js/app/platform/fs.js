@@ -4,13 +4,18 @@
  * Two families that must NOT be unified, because callers depend on the
  * difference in how a missing path is reported:
  *
- * 1. Node `fs` family: a missing path is a failure (`ENOENT`).
- * 2. fs-jetpack 2.2.2 family: a missing path is a normal value
- *    (`undefined` / `false`).
+ * 1. Node `fs` family: a missing path is a failure (`ENOENT`), except
+ *    `existsSync`, which never throws and returns `false` for a missing path.
+ * 2. fs-jetpack 2.2.2 family: for the read / exists / list style methods
+ *    (`read`, `readAsync`, `exists`, `existsAsync`, `list`, `listAsync`) a
+ *    missing path is a normal value (`undefined` / `false`). This is decided
+ *    per method, not per library: `copyAsync` with a missing source rejects
+ *    with `code: 'ENOENT'` (fs-jetpack 2.2.2, lib/copy.js), and `remove` /
+ *    `removeAsync` of a missing path is a no-op.
  *
- * For both families, any I/O failure other than "missing" in family 2 is a
- * throw (sync) or a rejection (async), unchanged. Synchronous methods block
- * the event loop.
+ * Any I/O failure other than a "missing path" normal value above is a throw
+ * (sync) or a rejection (async), unchanged. Synchronous methods block the
+ * event loop.
  *
  * Out of scope: how assetLoader.js resolves extension-relative paths and how
  * fs_utils.js computes static paths (the platform layer only receives final
@@ -78,3 +83,5 @@
  * @property {(path: string) => Promise<void>} removeAsync
  *   Removing a missing target is not an error.
  */
+
+export {};
