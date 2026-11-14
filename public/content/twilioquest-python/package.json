@@ -1,0 +1,11 @@
+{
+  "name": "twilioquest-python",
+  "description": "This is an extension for the Pythonic Temple for TwilioQuest.",
+  "version": "1.0.7",
+  "engines": {
+    "twilioquest": "3.1.44"
+  },
+  "dependencies": {
+    "fs-jetpack": "^2.2.0"
+  }
+}
