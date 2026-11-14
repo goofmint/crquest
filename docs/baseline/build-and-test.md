@@ -82,3 +82,12 @@ npm test -- --verbose --json --outputFile=$SCR/jest-A.json > $SCR/build-A-test.l
 - インストール問題: `@electron/remote` を electron 11 と peer が整合するバージョンにする、electron を >=13 に上げる、`.npmrc` に `legacy-peer-deps=true` を置く、などの候補がある。いずれも別チケットで判断する。
 - テスト失敗: 3 suite の失敗は `electron-is-dev` と `electron.remote` の関係に起因する可能性が高い。`@electron/remote` 対応のモックを `src/test/setup.js` に置く、`electron-is-dev` を差し替えるなどの候補がある。要因の切り分けは別途必要。
 - node-sass の arm64 キャッシュバイナリは不正で、node-gyp 再ビルドに依存している。Xcode CLT と Python が必要になる点を環境要件として記録するとよい。
+
+## 追記: 3 suite の失敗の原因と修正(#75)
+
+上記の `analytics` / `assetLoader` / `extensions` の失敗は、アプリ本体の不具合ではなく、テスト基盤側の問題だった。#75 で修正済みで、現在は 4 suite / 39 テストがすべて通過する。
+
+- 原因 1(3 suite がロード時に失敗): `@jest-runner/electron`(3.0.0。最新の 3.0.1 も同じ)は、テスト用 BrowserWindow を `webPreferences: {nodeIntegration: true}` だけで作る。Electron 10 以降は `enableRemoteModule` の既定が false なので `electron.remote` が `undefined` になり、`electron-is-dev@1` の `electron.app || electron.remote.app` が `Cannot read property 'app' of undefined` で落ちる。アプリ本体は `main.js` で `enableRemoteModule: true` を指定しているため動く。
+- 原因 2(`assetLoader` の 1 テスト): テストは `require('foo')` が `'bar'` を返す前提だが、`foo` の実体が `.gitignore` の `node_modules` ルールで無視され、upstream にも存在しなかった。
+- 修正: `patch-package` でテスト用ランナーの `webPreferences` に `enableRemoteModule: true` を追加し(`patches/`)、`foo` のフィクスチャを追加して追跡対象にした。
+- 補足: 原因 1 の間は 3 suite のテストが 1 件も実行されていなかった(通過 1 件だったのは `Button.test.js` のみ)。修正後に 39 件が初めて実行されている。
