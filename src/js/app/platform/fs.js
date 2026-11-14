@@ -24,7 +24,7 @@
  * string, and a missing file throws `ENOENT` (context_provider/system.js
  * relies on that throw).
  *
- * Exported names: `remove`, `readFileSync`, `stat`, `readFile`, `readdir` (Node), `exists`, `list`,
+ * Exported names: `remove`, `readFileSync`, `stat`, `lstat`, `readFile`, `readdir` (Node), `exists`, `list`,
  * `read` (jetpack, sync), `existsAsync`, `listAsync`, `readAsync`,
  * `writeAsync`, `copyAsync`, `removeAsync` (jetpack, async).
  *
@@ -41,6 +41,8 @@
  *   Rejects on failure, including `ENOENT`.
  * @property {(path: string) => Promise<import('fs').Stats>} stat
  *   Rejects on failure; `error.code` is preserved.
+ * @property {(path: string) => Promise<import('fs').Stats>} lstat
+ *   Like `stat`, but does not follow a symbolic link.
  * @property {(path: string) => false | 'dir' | 'file' | 'other'} exists
  *   Synchronous.
  * @property {(path?: string) => string[] | undefined} list
@@ -65,6 +67,7 @@ import * as jetpack from 'fs-jetpack';
 
 export const readFileSync = nodeReadFileSync;
 export const stat = nodeFs.stat;
+export const lstat = nodeFs.lstat;
 export const readFile = nodeFs.readFile;
 export const readdir = nodeFs.readdir;
 

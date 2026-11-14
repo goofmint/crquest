@@ -150,3 +150,69 @@ describe('moduleLoader with the vendored twilioquest-base', () => {
     expect(base.read('scripts/extendTilesetIds.js')).toContain('require("fs")');
   });
 });
+
+describe('moduleLoader with the vendored twilioquest-dev-fundamentals', () => {
+  const DEV_PATH = path.join(
+    PUBLIC_PATH,
+    BUNDLED_EXTENSION_VENDORED_DIRECTORY,
+    'twilioquest-dev-fundamentals'
+  );
+  const dev = jetpack.cwd(DEV_PATH);
+  const runtimeEntries = [
+    ...dev.find({ matching: 'objects/*/config.js' }),
+    ...dev.find({ matching: 'levels/*/events.js' }),
+    ...dev.find({ matching: 'levels/**/validator.js' }),
+  ]
+    .map(relative => path.join(DEV_PATH, relative))
+    .sort();
+
+  test('is vendored and no longer an npm dependency', () => {
+    expect(vendoredExtensionModules).toContain('twilioquest-dev-fundamentals');
+    expect(
+      jetpack.read(path.join(DEV_PATH, 'package.json'), 'json')
+    ).toEqual(
+      expect.objectContaining({
+        name: 'twilioquest-dev-fundamentals',
+        version: '2.4.0',
+      })
+    );
+    expect(jetpack.exists(path.join(DEV_PATH, 'LICENSE'))).toBe('file');
+  });
+
+  test('loads every runtime entry file with the real allowlist (no failures)', async () => {
+    expect(runtimeEntries.length).toBeGreaterThanOrEqual(12);
+    const failures = [];
+
+    for (const entry of runtimeEntries) {
+      const loader = createModuleLoader({
+        readFile: fsPlatform.readFile,
+        stat: fsPlatform.stat,
+        isAllowed: isAllowedBuiltIn,
+        getAllowed: getBuiltIn,
+      });
+
+      try {
+        await loader.load(normalize(entry));
+      } catch (error) {
+        failures.push(
+          `${path.relative(DEV_PATH, entry).split(path.sep).join('/')}: ${error.code} ${error.message}`
+        );
+      }
+    }
+
+    expect(failures).toEqual([]);
+  });
+
+  test('requires no Node-only module and no process global in any JS file', () => {
+    const offenders = dev
+      .find({ matching: ['**/*.js'] })
+      .filter(file => {
+        const source = dev.read(file);
+        return /require\((["'])(fs|child_process|vm|electron)\1\)|\bprocess\./.test(
+          source
+        );
+      });
+
+    expect(offenders).toEqual([]);
+  });
+});
