@@ -40,7 +40,7 @@ npm start
 - 過去の記録(`docs/baseline/npm-install.md`)では、#74 以前の素の `npm install` は `@electron/remote@2.0.9` の peer 依存で ERESOLVE となった。
 - `postinstall` で `public/` 配下の `npm install` も自動実行される。
 - `npm test` は 4 suite / 39 テストがすべて通過する(#75 で修正済み。以前の 3 suite の失敗は、テスト用ウィンドウで `remote` が無効だったことと、`foo` フィクスチャの欠落が原因で、アプリ本体の不具合ではなかった。経緯は `docs/baseline/build-and-test.md` を参照)。今回の起動確認では `npm test` は必須ではない。
-- `npm start` は開発サーバとして `watch` 系プロセスが残り続ける。確認が終わったらターミナルで Ctrl+C を押して止める。
+- `npm start` は `npm-run-all -r`(race)で `launch` と `watch:all` を並列実行するため、ウィンドウを閉じて Electron が終了すれば、`watch` 系プロセスも止まってターミナルが戻る想定である(未確認。実際の挙動は第3章の項目 6 で記録する)。ターミナルが戻らない場合は Ctrl+C で止め、その旨を報告する。
 - `.env` と `src/js/app/config/local_config.js` は任意である。`.env` は `tasks/` 配下のスクリプト(`create_release.js` など)が `dotenv` で読む。`local_config.js` は開発モードで読み込みを試み、無ければ `Error loading local config:` がコンソールに出るだけで続行する(`src/js/app/config/config.js`)。どちらも gitignore 対象で、作成しなくてよい。API キーなどの秘密情報を設定した場合は報告に含めない。
 
 ### 2.3 セーブデータの安全性
@@ -67,7 +67,7 @@ npm start
 | 3 | 会話 | NPC に話しかける | 会話ウィンドウが開き、送りと終了ができる | | |
 | 4 | ハック画面(validator)と QuestIDE 実行 | ハックできる対象で QuestIDE を開き、コードを実行する | ハック画面が開き、コードが実行され、検証結果が表示される。`ValidationHelper.js` の `String.replaceAll` ポリフィルに関わる処理も含む | | |
 | 5 | 設定画面 | 設定を開き、拡張機能ディレクトリの「Choose Directory」を押す。Clear data は押さない | 設定画面が開き、ディレクトリ選択ダイアログ(`remote.dialog.showOpenDialog`)が表示され、選択が反映される | | |
-| 6 | 終了・ダイアログ | ウィンドウを閉じる | ウィンドウが閉じ、プロセスも終了する(`main.js` は closed 時に `process.exit(0)`)。`npm start` 側のターミナルが戻る | | |
+| 6 | 終了・ダイアログ | ウィンドウを閉じる | ウィンドウが閉じ、プロセスも終了する(`main.js` は closed 時に `process.exit(0)`)。`npm start` 側のターミナルが戻る想定。戻らない場合は Ctrl+C で止め、報告する | | |
 | 7 | 音楽・効果音 | 起動後と操作中に音を確認する | 音楽が再生され、操作時に効果音が鳴る | | |
 
 補足: 各項目で DevTools(開き方は環境による。右クリックメニューなど)の Console にエラーが出ていないかも確認する。出た場合は全文を報告に貼る。
