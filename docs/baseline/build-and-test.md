@@ -87,7 +87,7 @@ npm test -- --verbose --json --outputFile=$SCR/jest-A.json > $SCR/build-A-test.l
 
 上記の `analytics` / `assetLoader` / `extensions` の失敗は、アプリ本体の不具合ではなく、テスト基盤側の問題だった。#75 で修正済みで、現在は 4 suite / 39 テストがすべて通過する。
 
-- 原因 1(3 suite がロード時に失敗): `@jest-runner/electron`(3.0.0。最新の 3.0.1 も同じ)は、テスト用 BrowserWindow を `webPreferences: {nodeIntegration: true}` だけで作る。Electron 10 以降は `enableRemoteModule` の既定が false なので `electron.remote` が `undefined` になり、`electron-is-dev@1` の `electron.app || electron.remote.app` が `Cannot read property 'app' of undefined` で落ちる。アプリ本体は `main.js` で `enableRemoteModule: true` を指定しているため動く。
+- 原因 1(3 suite がロード時に失敗): `@jest-runner/electron`(3.0.0。最新の 3.0.1 も同じ)は、テスト用 BrowserWindow を `webPreferences: {nodeIntegration: true}` だけで作る。Electron 10 以降は `enableRemoteModule` の既定が false なので `electron.remote` が `undefined` になり、`electron-is-dev@1` の `electron.app || electron.remote.app` が `Cannot read property 'app' of undefined` で落ちる。アプリ本体では `main.js` が `enableRemoteModule: true` を指定している点がテストと異なる(アプリの起動確認は未実施)。
 - 原因 2(`assetLoader` の 1 テスト): テストは `require('foo')` が `'bar'` を返す前提だが、`foo` の実体が `.gitignore` の `node_modules` ルールで無視され、upstream にも存在しなかった。
 - 修正: `patch-package` でテスト用ランナーの `webPreferences` に `enableRemoteModule: true` を追加し(`patches/`)、`foo` のフィクスチャを追加して追跡対象にした。
 - 補足: 原因 1 の間は 3 suite のテストが 1 件も実行されていなかった(通過 1 件だったのは `Button.test.js` のみ)。修正後に 39 件が初めて実行されている。

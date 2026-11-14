@@ -63,10 +63,10 @@ npm start
 | # | マイルストーン | 手順 | 期待結果 | 結果 | メモ |
 |---|---|---|---|---|---|
 | 1 | 起動・ウィンドウ表示 | `npm start` を実行する | ビルド完了後に「TerminalQuest」ウィンドウ(既定 1280x800、最小 1024x576)が開き、白画面やクラッシュなしで初期表示される | | |
-| 2 | 初期画面(fog_owl)と移動 | 起動直後の画面を確認し、移動操作を行う | 開始レベルは `fog_owl`(`config.js` の `defaultLevelName`)。キャラクターが操作でき、HUD が表示される | | |
+| 2 | 初期画面と移動 | 起動直後の画面を確認し、移動操作を行う | 開始レベルは、プロローグを済ませていない新規セーブ(`shouldSkipPrologue` と `missionComplete` がどちらも偽)では `owls_nest`(`config.js` の `defaultLevelNamePrologue`)、それ以外では `fog_owl`(`defaultLevelName`)(`Game.jsx` 102-105 行目、`levelLoader.js` 91-94 行目)。どちらから始まったかを記録する。キャラクターが操作でき、HUD が表示される | | |
 | 3 | 会話 | NPC に話しかける | 会話ウィンドウが開き、送りと終了ができる | | |
 | 4 | ハック画面(validator)と QuestIDE 実行 | ハックできる対象で QuestIDE を開き、コードを実行する | ハック画面が開き、コードが実行され、検証結果が表示される。`ValidationHelper.js` の `String.replaceAll` ポリフィルに関わる処理も含む | | |
-| 5 | 設定画面 | 設定を開き、拡張機能ディレクトリの「Choose Directory」を押す。Clear data は押さない | 設定画面が開き、ディレクトリ選択ダイアログ(`remote.dialog.showOpenDialog`)が表示され、選択が反映される | | |
+| 5 | 設定画面 | 設定を開く。拡張機能が無効だと「Choose Directory」は表示されないため、いったん「Enable Extensions」を有効にして「Choose Directory」を押す。確認後は、確認前の有効・無効の状態に戻す。Clear data は押さない | 設定画面が開き、ディレクトリ選択ダイアログ(`remote.dialog.showOpenDialog`)が表示され、選択が反映される | | |
 | 6 | 終了・ダイアログ | ウィンドウを閉じる | ウィンドウが閉じ、プロセスも終了する(`main.js` は closed 時に `process.exit(0)`)。`npm start` 側のターミナルが戻る想定。戻らない場合は Ctrl+C で止め、報告する | | |
 | 7 | 音楽・効果音 | 起動後と操作中に音を確認する | 音楽が再生され、操作時に効果音が鳴る | | |
 
