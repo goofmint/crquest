@@ -36,10 +36,10 @@ npm install
 npm start
 ```
 
-- 素の `npm install` は #74 で `@electron/remote` を削除した後は ERESOLVE で止まらないはずである。ただし、削除後の素の `npm install` の成功は本書の作成時点では未記録である。失敗した場合は出力全文を報告に貼ること。`--legacy-peer-deps` や `--force` は使わない。
+- #74 で `@electron/remote` を削除した後は、Node 18.20.8 / npm 10.8.2 の素の `npm install` が成功することを隔離クローンで確認済みである（回避フラグなし。`npm run build:all` も成功）。失敗した場合は出力全文を報告に貼ること。`--legacy-peer-deps` や `--force` は使わない。
 - 過去の記録(`docs/baseline/npm-install.md`)では、#74 以前の素の `npm install` は `@electron/remote@2.0.9` の peer 依存で ERESOLVE となった。
 - `postinstall` で `public/` 配下の `npm install` も自動実行される。
-- `npm test` は 4 suite 中 3 suite が失敗する状態が既存のベースラインである(`docs/baseline/build-and-test.md`)。失敗は `analytics` / `assetLoader` / `extensions` で、いずれも `Cannot read property 'app' of undefined`(`electron-is-dev` 由来)。この数値は `--legacy-peer-deps` での診断結果であり、#74 後の再計測は未実施である。今回の起動確認では `npm test` は必須ではない。
+- `npm test` は 4 suite 中 3 suite が失敗する状態が既存のベースラインである(`docs/baseline/build-and-test.md`)。失敗は `analytics` / `assetLoader` / `extensions` で、いずれも `Cannot read property 'app' of undefined`(`electron-is-dev` 由来)。#74 後の素の install でも同じ結果（1 suite 通過 / 3 suite 失敗、同一のエラー）であることを確認済みである。今回の起動確認では `npm test` は必須ではない。
 - `npm start` は開発サーバとして `watch` 系プロセスが残り続ける。確認が終わったらターミナルで Ctrl+C を押して止める。
 - `.env` と `src/js/app/config/local_config.js` は任意である。`.env` は `tasks/` 配下のスクリプト(`create_release.js` など)が `dotenv` で読む。`local_config.js` は開発モードで読み込みを試み、無ければ `Error loading local config:` がコンソールに出るだけで続行する(`src/js/app/config/config.js`)。どちらも gitignore 対象で、作成しなくてよい。API キーなどの秘密情報を設定した場合は報告に含めない。
 
@@ -120,7 +120,7 @@ npm start
 |---|---|---|---|
 | R1 | Python 3.11 ではビルドに問題が出ることがある | `README.md` 16 行目 | unconfirmed |
 | R2 | 旧 Electron に `String.prototype.replaceAll` が無いため、QuestIDE ユーザーコード実行にポリフィルが埋め込まれている。ポリフィルの挙動差が検証結果に影響する可能性がある | `src/js/app/components/hack_interface/validator/ValidationHelper.js` 322-323 行目 | unconfirmed |
-| R3 | `electron-is-dev` と `electron.remote` の関係により、`analytics` / `assetLoader` / `extensions` の 3 つの jest suite がロードに失敗する | `docs/baseline/build-and-test.md`(`--legacy-peer-deps` での診断結果。#74 後は未再計測) | unconfirmed(テスト側のみ。アプリ起動への影響は不明) |
+| R3 | `electron-is-dev` と `electron.remote` の関係により、`analytics` / `assetLoader` / `extensions` の 3 つの jest suite がロードに失敗する | `docs/baseline/build-and-test.md`(#74 後の素の install でも同一の結果を確認済み) | unconfirmed(テスト側のみ。アプリ起動への影響は不明) |
 | R4 | node-sass 8.0.0 の prebuilt バイナリが arm64 で不正と判定され、node-gyp 再ビルドに依存した | `docs/baseline/build-and-test.md` | unconfirmed(特定環境での診断結果) |
 | R5 | 開発モードで React DevTools の自動インストールを試みる | `main.js` 16-26 行目 | unconfirmed(失敗してもログ出力のみで続行する実装) |
 | R6 | 開発モードで `local_config.js` が無いと `Error loading local config:` がログに出る | `src/js/app/config/config.js` 32-40 行目 | unconfirmed(ログ出力のみで続行する実装) |
