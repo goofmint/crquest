@@ -15,7 +15,7 @@ describe('sfExists', () => {
 
     expect(result).toBeInstanceOf(Promise);
     await expect(result).resolves.toBe(v);
-    expect(existsAsync.mock.calls[0][0]).toMatch(/levels\/common$/);
+    expect(existsAsync.mock.calls[0][0]).toMatch(/levels[\\/]common$/);
   });
 
   it('propagates rejections', async () => {
