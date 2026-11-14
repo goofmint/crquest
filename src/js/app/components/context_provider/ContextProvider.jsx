@@ -1,5 +1,5 @@
 import React from 'react';
-import Store from 'electron-store';
+import { getValue } from '../../platform/store';
 import {
   context,
   getContext,
@@ -62,8 +62,6 @@ export default class ContextProvider extends React.Component {
     xp: 0,
   };
 
-  store = new Store();
-
   // Load item catalog from disk and add in any saved values, then setState with
   // it to initialize the app state
   async componentDidMount() {
@@ -101,7 +99,7 @@ export default class ContextProvider extends React.Component {
       async state => ({ ...state, items: await loadItemsFromDisk() }),
       state => {
         getSavedFields().forEach(key => {
-          const savedValue = this.store.get(key);
+          const savedValue = getValue(key);
           if (savedValue) {
             state[key] = savedValue;
           }
