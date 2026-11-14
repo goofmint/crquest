@@ -3,7 +3,6 @@ import audioManager from './audio';
 import { setContext, getContext, emitter } from './context';
 import { staticFilePath } from './fs_utils';
 import TiledService from './tiled';
-import { requireFromExtension } from './assetLoader';
 import analytics from './analytics';
 
 function resolveFilterFn(keyOrFilter) {

@@ -131,3 +131,8 @@ invalidateModule(absolutePath);          // 開発時の再読み込み用
 - 4 章のとおり、`fs`、`child_process`、`vm`、`electron`、`twilio`、`got`、`fs-jetpack`、`command-exists` は未登録で、同梱の検証関数の多くが使っている。方針の決定が必要。
 - 非リテラルの `require` (4 章の 1 件) は先読みできない。
 - `require.cache`、`require.main`、`module.paths` は未提供。`require.resolve` は提供する (先読み済みのものだけ)。
+
+### #21 での切り替え結果
+
+- `requireFromExtension` は `loadModule` / `invalidateModule` を使う。シグネチャ、`null` を返す分岐、`isDev() || window.reloadExternalModules` のときだけキャッシュを破棄する挙動は変えていない。`world.js` の未使用 import は削除した。
+- 非リテラル `require` (`tq-npc/builder.js`) は、同梱コンテンツを変更せず `src/js/app/common/moduleRequireHints.js` の明示的なヒント (`/objects/tq-npc/builder.js` に対して `./animations/<名前>` を先読み) で扱う。`NPC_LIST` との一致は `moduleRequireHints.test.js` が検査する。

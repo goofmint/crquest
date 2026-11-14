@@ -11,6 +11,7 @@ import {
   BUNDLED_EXTENSION_DIRECTORIES,
 } from './extensions';
 import { staticFilePath } from './fs_utils';
+import { loadModule, invalidateModule } from './moduleLoader';
 
 /**
  * Read a file based on a path relative to extensions' root directory.
@@ -233,11 +234,11 @@ async function requireFromExtension(modulePath) {
   if (isDev() || window.reloadExternalModules) {
     // In development, constantly reload external modules, since with
     // validators and event code, we want to reload the latest regularly
-    delete require.cache[require.resolve(absoluteModulePath)];
+    invalidateModule(absoluteModulePath);
   }
 
-  // Go ahead and require the module, then resolve the promise
-  return require(absoluteModulePath);
+  // Go ahead and load the module, then resolve the promise
+  return loadModule(absoluteModulePath);
 }
 
 /**

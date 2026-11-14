@@ -43,8 +43,9 @@ const KNOWN_DISALLOWED_REQUIRES = [
 // An additional call in an already listed file raises its count and fails the
 // test; so does a listed file that no longer has exactly that many.
 const KNOWN_NON_LITERAL_REQUIRES = {
-  // objects/tq-npc/builder.js: require(`./animations/${npcName}`), tracked for
-  // the ticket that switches requireFromExtension to the loader.
+  // objects/tq-npc/builder.js: require(`./animations/${npcName}`). Handled by
+  // the explicit preload hint in moduleRequireHints.js (kept in sync by
+  // moduleRequireHints.test.js).
   'twilioquest-base/objects/tq-npc/builder.js': 1,
 };
 
