@@ -396,7 +396,7 @@ function tokenize(source) {
 
 /**
  * Finds `require('literal')` calls: the identifier `require` (not a property
- * access such as `foo.require`), `(`, a string literal (or a backtick
+ * access such as `foo.require` / `foo?.require`), `(` (or `?.(`), a string literal (or a backtick
  * template literal without `${}`), then `)` or `,` (comments/whitespace
  * between tokens and a trailing comma are fine).
  * Non-literal arguments are not reported (see `scanNonLiteralRequires`).
@@ -481,12 +481,18 @@ function findRequireCalls(tokens) {
     if (before && before.type === 'punct' && before.value === '.') {
       return;
     }
-    const open = tokens[position + 1];
-    if (!open || open.type !== 'punct' || open.value !== '(') {
+    // `require?.(...)` is lexed as `?` `.` `(`; skip the optional-call marker.
+    const isPunct = (token, value) =>
+      Boolean(token) && token.type === 'punct' && token.value === value;
+    const openAt = isPunct(tokens[position + 1], '?') &&
+      isPunct(tokens[position + 2], '.')
+      ? position + 3
+      : position + 1;
+    if (!isPunct(tokens[openAt], '(')) {
       return;
     }
-    const literal = tokens[position + 2];
-    const after = tokens[position + 3];
+    const literal = tokens[openAt + 1];
+    const after = tokens[openAt + 2];
     const isConstant =
       literal &&
       (literal.type === 'string' || literal.type === 'template') &&

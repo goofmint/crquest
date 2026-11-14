@@ -745,6 +745,12 @@ describe('moduleLoader', () => {
         )
       ).toEqual(['a', 'b', './d']);
     });
+
+    it('registers optional calls require?.() but not obj?.require()', () => {
+      expect(
+        scanRequires(`require?.('a'); require ?. ("b"); x?.require('c'); require?.(n)`)
+      ).toEqual(['a', 'b']);
+    });
   });
 });
 
@@ -783,6 +789,12 @@ describe('modulePath', () => {
 
 describe('scanNonLiteralRequires', () => {
   const texts = source => scanNonLiteralRequires(source).map(c => c.text);
+
+  it('reports optional calls require?.(x) but not obj?.require(x)', () => {
+    expect(texts('require?.(name); x?.require(y); require?.("ok")')).toEqual([
+      'require?.(name)',
+    ]);
+  });
 
   it('reports calls whose argument is not a single constant string', () => {
     expect(
