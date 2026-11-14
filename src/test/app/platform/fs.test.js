@@ -63,6 +63,11 @@ describe('Node fs.promises family (missing path rejects)', () => {
     expect(stats.isFile()).toBe(true);
   });
 
+  test('lstat resolves a Stats object and rejects with ENOENT for a missing path', async () => {
+    expect((await fs.lstat(FIXTURE_JSON)).isFile()).toBe(true);
+    await expect(fs.lstat(MISSING)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   test('stat, readFile and readdir reject with ENOENT for a missing path', async () => {
     await expect(fs.stat(MISSING)).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(fs.readFile(MISSING)).rejects.toMatchObject({

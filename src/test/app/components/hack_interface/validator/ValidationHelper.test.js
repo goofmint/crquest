@@ -2,6 +2,7 @@ jest.mock('../../../../../js/app/platform/fs', () => ({
   readFile: jest.fn(),
   readdir: jest.fn(),
   stat: jest.fn(),
+  lstat: jest.fn(),
   existsAsync: jest.fn(),
   listAsync: jest.fn(),
   readAsync: jest.fn(),
@@ -75,6 +76,7 @@ describe('helper.fs', () => {
       'readFile',
       'readdir',
       'stat',
+      'lstat',
       'existsAsync',
       'listAsync',
       'readAsync',
@@ -94,6 +96,12 @@ describe('helper.fs', () => {
     expect(helper.fs.exists).toBeUndefined();
     expect(helper.fs.readFileSync).toBeUndefined();
     expect(Object.isFrozen(helper.fs)).toBe(true);
+  });
+});
+
+describe('helper.platform', () => {
+  test('is process.platform', () => {
+    expect(makeHelper().platform).toBe(process.platform);
   });
 });
 
