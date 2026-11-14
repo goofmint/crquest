@@ -19,8 +19,11 @@
 | node-sass バイナリキャッシュ | なし |
 
 ## 実行コマンド
+`NODE18_DIR` は Node 18.20.8 を展開したディレクトリに置き換える（例: `$HOME/node-v18.20.8-darwin-arm64`）。
+
 ```
-export PATH=<node18>/bin:$PATH PYENV_VERSION=3.9.21
+NODE18_DIR="$HOME/node-v18.20.8-darwin-arm64"
+export PATH="$NODE18_DIR/bin:$PATH" PYENV_VERSION=3.9.21
 cd install-baseline
 npm install --loglevel verbose --foreground-scripts > install-baseline.log 2>&1
 ```
