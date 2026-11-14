@@ -1,15 +1,41 @@
-import * as cheerio from 'cheerio';
-import * as crypto from 'crypto';
-import { Twilio } from 'twilio';
-import { exec } from 'child_process';
-import { existsSync, promises as fs } from 'fs';
 import vm from 'vm';
 import path from 'path';
 import ga from '../../../common/analytics';
 import World from '../../../common/world';
 import config from '../../../config/config';
 import { getContext } from '../../../common/context';
+import * as platformFs from '../../../platform/fs';
+import * as platformExec from '../../../platform/exec';
 const fetch = window.fetch;
+
+/**
+ * File system API exposed to validators as `helper.fs`. Every member is the
+ * platform/fs function of the same name, unwrapped (no path rewriting, no
+ * error translation). Everything is asynchronous. Missing paths: `readFile`,
+ * `readdir`, `stat` reject with ENOENT; `existsAsync` resolves `false`,
+ * `listAsync` / `readAsync` resolve `undefined`.
+ *
+ * existsAsync(path)            -> false | 'dir' | 'file' | 'other'
+ * readAsync(path, returnAs)    -> 'utf8' (default) | 'json' | 'buffer' | 'jsonWithDates'
+ * listAsync(path)              -> string[] | undefined
+ * readFile(path, options)      -> Buffer, or string with an encoding
+ * readdir(path)                -> string[]
+ * stat(path)                   -> fs.Stats
+ * writeAsync(path, data)       -> creates missing parent directories
+ * copyAsync(from, to, options) -> rejects with ENOENT if `from` is missing
+ * removeAsync(path)            -> no-op if the path is missing
+ */
+const validatorFs = Object.freeze({
+  readFile: platformFs.readFile,
+  readdir: platformFs.readdir,
+  stat: platformFs.stat,
+  existsAsync: platformFs.existsAsync,
+  listAsync: platformFs.listAsync,
+  readAsync: platformFs.readAsync,
+  writeAsync: platformFs.writeAsync,
+  copyAsync: platformFs.copyAsync,
+  removeAsync: platformFs.removeAsync,
+});
 
 export default class ValidationHelper {
   constructor(validationContext, callback, level) {
@@ -18,10 +44,9 @@ export default class ValidationHelper {
     this.validationFields = {};
     this.context = validationContext.context;
     this.env = validationContext.env;
-    this.client = null;
-    this.fakeNumber = '+12025550136';
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
+    this.fs = validatorFs;
 
     // Process validation fields
     Object.keys(validationContext.validationFields).forEach(key => {
@@ -46,29 +71,6 @@ export default class ValidationHelper {
     return val;
   }
 
-  /*
-  Retrieve an authenticated Twilio client using system environment variables.
-  Throw an error if the necessary variables have not been defined.
-  */
-  getTwilioClient() {
-    if (this.client !== null) {
-      return this.client;
-    }
-    const accountSid = this.env.TQ_TWILIO_ACCOUNT_SID;
-    const authToken = this.env.TQ_TWILIO_AUTH_TOKEN;
-
-    try {
-      this.client = new Twilio(accountSid, authToken);
-      return this.client;
-    } catch (e) {
-      throw new Error(`
-        It seems you don't have a valid Twilio account configured - 
-        open the Settings UI to double check your Twilio account configuration 
-        variables.
-      `);
-    }
-  }
-
   // Helper to invoke the validation callback with a success message
   success(message, env = []) {
     this.validationCallback(null, { message, env });
@@ -86,120 +88,30 @@ export default class ValidationHelper {
     this.validationCallback({ message });
   }
 
-  // Helper to validate a phone number using either the configured Twilio
-  // account credentials, or a provided client
-  findPhoneNumber(phoneNumber, client) {
-    return new Promise((resolve, reject) => {
-      try {
-        client = client || this.getTwilioClient();
-        let number;
-        client.incomingPhoneNumbers.each({
-          phoneNumber,
-          callback: incoming => (number = incoming),
-          done: err => {
-            if (err) {
-              return reject(err);
-            }
-            if (number) {
-              resolve(number);
-            } else {
-              reject(`Couldn't find ${phoneNumber}. Please try again`);
-            }
-          },
-        });
-      } catch (e) {
-        reject(e);
-      }
-    });
+  /**
+   * Runs `program` with `args` (array, no shell, no quoting needed).
+   * Resolves `{ code, stdout, stderr }` for any exit code (a non-zero exit is
+   * data, not an error). Rejects if the program cannot be spawned (e.g. ENOENT,
+   * EACCES), is killed by a signal, times out or exceeds maxBuffer.
+   *
+   * @param {String} program
+   * @param {String[]} [args]
+   * @param {{cwd?: String}} [options]
+   * @returns {Promise<{code: Number, stdout: String, stderr: String}>}
+   */
+  exec(program, args = [], { cwd } = {}) {
+    return platformExec.run(program, args, cwd === undefined ? {} : { cwd });
   }
 
-  // Helper function to create a signature for fake webhook requests
-  createSignature(signUrl, params, token) {
-    Object.keys(params)
-      .sort()
-      .forEach(key => {
-        signUrl = signUrl + key + params[key];
-      });
-    return crypto
-      .createHmac('sha1', token)
-      .update(Buffer.from(signUrl, 'utf-8'))
-      .digest('Base64');
-  }
-
-  // Helper function to make a mock call request to an HTTP endpoint
-  async fakeCall(webhookUrl, to, from, parameterOverrides = {}, client) {
-    client = client || this.getTwilioClient();
-
-    // POST body to send to the Twilio webhook endpoint
-    const params = {
-      ApiVersion: '2010-04-01',
-      Called: to,
-      To: to,
-      Caller: from,
-      From: from,
-      Direction: 'inbound',
-      CallStatus: 'ringing',
-    };
-    Object.assign(params, parameterOverrides);
-
-    return await this.getTwiML(webhookUrl, params, client);
-  }
-
-  // Helper to send a mocked SMS webhook request
-  async fakeMessage(webhookUrl, to, from, parameterOverrides = {}, client) {
-    client = client || this.getTwilioClient();
-
-    const params = {
-      ApiVersion: '2010-04-01',
-      To: to,
-      From: from,
-      Body: 'Test message sent by TwilioQuest',
-    };
-    Object.assign(params, parameterOverrides);
-
-    return await this.getTwiML(webhookUrl, params, client);
-  }
-
-  // Make a signed request to a Twilio webhook URL
-  async fakeRequest(webhookUrl, parameters, client, method = 'POST') {
-    client = client || this.getTwilioClient();
-    const userAgent = `twilioquest/${process.env.npm_package_version} (node.js ${process.version})`;
-    parameters.AccountSid = client.accountSid;
-
-    const fetchParams = {
-      method,
-      headers: {
-        'X-Twilio-Signature': this.createSignature(
-          webhookUrl,
-          parameters,
-          client.password
-        ),
-        'User-Agent': userAgent,
-        'Accept-Charset': 'utf-8',
-      },
-    };
-
-    if (method === 'POST') {
-      fetchParams.headers['Content-Type'] =
-        'application/x-www-form-urlencoded;charset=UTF-8';
-      fetchParams.body = new URLSearchParams(parameters);
-    }
-
-    const response = await fetch(webhookUrl, fetchParams);
-    return response;
-  }
-
-  async getTwiML(webhookUrl, parameters, client) {
-    client = client || this.getTwilioClient();
-    const response = await this.fakeRequest(webhookUrl, parameters, client);
-    if (!response.ok) {
-      throw `
-        Oh no there seems to be a problem with your TwiML generation. 
-        Status code: ${response.statusCode}
-      `;
-    }
-    const responseText = await response.text();
-    return cheerio.load(responseText);
+  /**
+   * Resolves true if `name` is an executable found on the PATH, else false.
+   * Rejects if the lookup cannot be run.
+   *
+   * @param {String} name
+   * @returns {Promise<Boolean>}
+   */
+  commandExists(name) {
+    return platformExec.commandExists(name);
   }
 
   /**
@@ -233,7 +145,7 @@ export default class ValidationHelper {
      *                https://github.com/microsoft/vscode/issues/95828
      * This is true as of: 8/26/2020.
      */
-    if (!existsSync(path)) {
+    if (!platformExec.pathExistsSync(path)) {
       return [
         false,
         `The path you provided does not exist!
@@ -244,21 +156,7 @@ export default class ValidationHelper {
     }
 
     try {
-      await new Promise((resolve, reject) => {
-        exec(
-          `"${path}" ${args.join(' ')}`,
-          {
-            // empty settings object
-          },
-          error => {
-            if (error) {
-              return reject(error);
-            }
-
-            return resolve();
-          }
-        );
-      });
+      await platformExec.exec(`"${path}" ${args.join(' ')}`);
     } catch (err) {
       // EPERM is an access error that comes from child_process.spawn.
       // When a user doesn't have permissions for child_process.exec, the
@@ -306,7 +204,7 @@ export default class ValidationHelper {
       config.codeStorageFileName
     );
 
-    const userCode = await fs.readFile(savedCodePath, 'utf8');
+    const userCode = await platformFs.readFile(savedCodePath, 'utf8');
 
     return userCode;
   }
