@@ -1,8 +1,6 @@
-import {
-  remote
-} from 'electron';
 import isDev from 'electron-is-dev';
 import ua from 'universal-analytics';
+import { getAppVersion } from '../platform/paths';
 
 // Session tracking singleton
 let sessionTrackingStarted = false;
@@ -28,7 +26,7 @@ function initializeAnalytics(state) {
   } = state;
 
   // Get app version - will be electron version in dev, actual app version in prod
-  analytics.appVersion = remote.app.getVersion();
+  analytics.appVersion = getAppVersion();
   userAgent = `${window.navigator.userAgent} // ${analytics.appVersion}`;
 
   analytics.analyticsId = guid;

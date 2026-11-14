@@ -16,9 +16,9 @@ import AudioTab from './AudioTab';
 import UnlocksTab from './UnlocksTab';
 import Credits from './Credits';
 import Extensions from './Extensions';
-import { staticFilePath } from '../../../common/fs_utils';
+import { getGamePackageVersion } from '../../../platform/paths';
 
-const GAME_VERSION = require(staticFilePath('package.json')).version;
+const GAME_VERSION = getGamePackageVersion();
 const SUBNAV_SECTIONS = [
   'Audio',
   'User',

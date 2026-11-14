@@ -1,9 +1,9 @@
 import isDev from 'electron-is-dev';
 import config from '../config/config';
 import ga from './analytics';
-import { staticFilePath } from './fs_utils';
+import { getGamePackageVersion } from '../platform/paths';
 
-const GAME_VERSION = require(staticFilePath('package.json')).version;
+const GAME_VERSION = getGamePackageVersion();
 
 async function logMissionObjectiveCompletion(context, liveEvent) {
   /*
