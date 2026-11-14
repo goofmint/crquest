@@ -24,6 +24,8 @@ src/js/index.js:8:const { remote } = require('electron');
 | `ValidationHelper.js:5` | Phase 4 | ValidationHelper 改修（`existsSync` / `fs.promises.readFile`） |
 | `index.js:8` | メニュー移行（Tauri 化の段階、Phase 10 想定） | `remote.Menu` / `MenuItem` によるアプリケーションメニュー構築（`index.js` 89 行付近〜）。 |
 
+更新 (#39): `code_runner.js` は Web Worker 版に置き換わり、`electron` / `fs-jetpack` の直接 import は無くなった (`docs/migration/validation-helper-worker.md`)。上の表と以降の一覧は #86 時点の記録である。
+
 解消した違反: 未使用 import 4 行（`levelLoader.js`、`HackInterface.jsx`、`ObjectiveDescription.jsx` の `fs-jetpack`、`Settings.jsx` の `remote`）、`electron-is-dev` 7 行（`platform/env` の `isDev()` へ）、`ClearDataButton.jsx` の `jetpack.remove`（`platform/fs` の `remove`）、`system.js` の `readFileSync`（`platform/fs` の `readFileSync`）、`index.js` の `shell`（#76 で `platform/shell` の `openPath` に置換）。
 
 メニュー API の判断（#86 項目 4）: 今回は `platform` にメニュー API を追加せず、`index.js` のメニュー構築を既知の例外として残す。`remote.Menu` / `MenuItem` はメニュー項目の `click` コールバック、Help サブメニューの前提、重複判定（Toggle Developer Tools の有無）、dev 限定項目、登録タイミングと密に結びつき、Electron 固有の `remote` を使わない形（Tauri のメニュー API）の契約は移行先が決まってから設計するほうが手戻りが少ないため。メニューだけを `platform` に移しても、`index.js` は `remote` を他に使わなくなるまで違反が残る。挙動は変えない。

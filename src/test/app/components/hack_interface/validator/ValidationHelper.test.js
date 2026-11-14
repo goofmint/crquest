@@ -233,6 +233,12 @@ describe('getAppDataPath', () => {
   });
 });
 
+describe('evalQuestIdeUserCode is removed (#27)', () => {
+  test('the direct eval helper no longer exists', () => {
+    expect(makeHelper().evalQuestIdeUserCode).toBeUndefined();
+  });
+});
+
 describe('pullVarsFromUserCodeLocalScope', () => {
   test('returns the requested top-level variables', async () => {
     const vars = await makeHelper().pullVarsFromUserCodeLocalScope(

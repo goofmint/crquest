@@ -1,6 +1,6 @@
 # Phase 6-2: Web Worker 版 code runner
 
-Issue #38 の成果物である。現行の挙動と判定は `code-runner-behavior.md` (#37) を参照。**この変更では既存の runner を置き換えていない**。`code_runner.js`、`runner.js`、`ValidationHelper.js`、`index.js` は未変更で、新しい runner は追加のファイルだけである。アプリへの配線は #39、`pullVarsFromQuestIdeUserCodeLocalScope` の移行は #40 / #26 で行う。
+Issue #38 の成果物である。現行の挙動と判定は `code-runner-behavior.md` (#37) を参照。#38 の時点では既存の runner を置き換えていなかった。配線 (#39) と `pullVars` の移行 (#26 / #40) は `validation-helper-worker.md` に記載している。
 
 ## 1. ファイル
 
@@ -27,6 +27,7 @@ Issue #38 の成果物である。現行の挙動と判定は `code-runner-behav
 
 | 方向 | メッセージ | 備考 |
 | --- | --- | --- |
+| ホスト → Worker | `{ type: 'pull', code, keys, env }` | `run` の代わりに送る (Worker 1 つにつき `run` か `pull` のどちらか 1 回)。応答は `{ type: 'vars', vars }` または `{ type: 'vars-error', error: { name, message, stack } }`。`vars` の値は structured clone できる値のみ (関数、クラス、`Symbol` は `vars-error`)。`pullVarsInWorker` が使う。詳細は `validation-helper-worker.md`。 |
 | ホスト → Worker | `{ type: 'run', code: string, env: { [name]: string } }` | Worker 1 つにつき 1 回だけ。2 回目と未知の `type` は、Worker が `error` の `log` で通知する。 |
 | Worker → ホスト | `{ type: 'log', logLevel: 'log' \| 'info' \| 'warn' \| 'error', arguments: any[] }` | 現行の `code_runner:log` のペイロード (`{ logLevel, arguments }`) と同じ形。ホストは `type` を除いて `log` イベントとして emit する。 |
 

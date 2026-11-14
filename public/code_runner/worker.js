@@ -8,6 +8,14 @@
 // Protocol (postMessage, structured clone):
 //   host   -> worker  { type: 'run', code: string, env: { [name]: string } }   (exactly once per worker)
 //   worker -> host    { type: 'log', logLevel: 'log'|'info'|'warn'|'error', arguments: any[] }
+// Variable extraction (validators, ValidationHelper.pullVarsFromUserCodeLocalScope);
+// like 'run' it is accepted exactly once per worker, in place of 'run':
+//   host   -> worker  { type: 'pull', code: string, keys: string[], env: { [name]: string } }
+//   worker -> host    { type: 'vars', vars: { [key]: value, _error?: Error } }
+//                     { type: 'vars-error', error: { name, message, stack } }
+// 'vars' values must be structured-cloneable; a requested variable that is not
+// (a function, a class, a symbol, an object containing one) is reported with
+// 'vars-error', never silently dropped or converted.
 // Errors are reported as logLevel 'error' messages whose argument is a plain
 // `{ message, stack }` object, the shape QuestIDE.jsx already recognises.
 (function(scope) {
@@ -16,6 +24,11 @@
   const LOG_LEVELS = ['log', 'info', 'warn', 'error'];
   const MESSAGE_RUN = 'run';
   const MESSAGE_LOG = 'log';
+  const MESSAGE_PULL = 'pull';
+  const MESSAGE_VARS = 'vars';
+  const MESSAGE_VARS_ERROR = 'vars-error';
+  const PULL_HOLDER = '__TQ';
+  const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
   const SOURCE_URL = 'script.js';
   const MAX_SERIALIZE_DEPTH = 20;
   const MAX_SERIALIZE_NODES = 100000;
@@ -373,13 +386,114 @@
     }
   }
 
+
+  // ---------------------------------------------------------------------
+  // Pulling top-level variables out of the user's code
+  // ---------------------------------------------------------------------
+  function describeValue(value) {
+    if (typeof value === 'function') {
+      return /^class[\s{]/.test(Function.prototype.toString.call(value))
+        ? 'class'
+        : 'function';
+    }
+    return typeof value;
+  }
+
+  // postMessage throws a DataCloneError synchronously for values that cannot
+  // be structured-cloned; a throw-away MessagePort lets us test one value
+  // without sending anything (structuredClone is missing in Chromium 87).
+  function assertCloneable(label, value) {
+    const channel = new MessageChannel();
+    try {
+      channel.port1.postMessage(value);
+    } catch (e) {
+      throw new TypeError(
+        `${label} (${describeValue(value)}) cannot be returned from the code ` +
+          `runner worker: only structured-cloneable values are supported ` +
+          `(functions, classes and symbols are not): ${safeMessage(e)}`
+      );
+    } finally {
+      channel.port1.close();
+      channel.port2.close();
+    }
+  }
+
+  function postVarsError(error) {
+    const isObject = error !== null && error !== undefined;
+    scope.postMessage({
+      type: MESSAGE_VARS_ERROR,
+      error: {
+        name: isObject && error.name ? String(error.name) : 'Error',
+        message: thrownMessage(error),
+        stack: isObject ? cleanStack(error.stack) : '',
+      },
+    });
+  }
+
+  function pull(code, keys, env) {
+    if (
+      !Array.isArray(keys) ||
+      !keys.every(key => typeof key === 'string' && IDENTIFIER.test(key))
+    ) {
+      throw new TypeError('"keys" must be an array of variable names');
+    }
+    installEnv(env);
+    installReplaceAllPolyfill();
+
+    // No prototype: a requested `__proto__` is then an ordinary own property
+    // and is reported like any other variable.
+    const holder = Object.create(null);
+    Object.defineProperty(scope, PULL_HOLDER, {
+      value: holder,
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    });
+
+    // The user's code and the reads are one script so that top-level `let`,
+    // `const` and `class` declarations (scoped to the eval) are visible to
+    // the reads. A read that throws (e.g. ReferenceError) is stored in
+    // `_error` like the former vm based implementation did.
+    const reads = keys
+      .map(key => `${PULL_HOLDER}[${JSON.stringify(key)}] = ${key};`)
+      .join('\n');
+    const source =
+      `${code};\n` +
+      `try {\n${reads}\n} catch (error) {\n${PULL_HOLDER}._error = error;\n}\n` +
+      `//# sourceURL=${SOURCE_URL}`;
+
+    try {
+      (0, eval)(source);
+    } catch (e) {
+      // An error thrown by the user's code itself is reported as such
+      postVarsError(e);
+      return;
+    }
+
+    try {
+      Object.keys(holder).forEach(key => {
+        assertCloneable(
+          key === '_error' ? 'The read error' : `Variable "${key}"`,
+          holder[key]
+        );
+      });
+      scope.postMessage({ type: MESSAGE_VARS, vars: holder });
+    } catch (e) {
+      postVarsError(e);
+    }
+  }
+
   function reportProtocolError(message) {
     scope.console.error({ message, stack: '' });
   }
 
   function onMessage(event) {
     const data = event.data;
-    if (data === null || typeof data !== 'object' || data.type !== MESSAGE_RUN) {
+    if (
+      data === null ||
+      typeof data !== 'object' ||
+      (data.type !== MESSAGE_RUN && data.type !== MESSAGE_PULL)
+    ) {
       reportProtocolError(
         `Code runner worker received an unknown message: ${
           data && typeof data === 'object' ? String(data.type) : typeof data
@@ -394,14 +508,26 @@
     started = true;
 
     if (typeof data.code !== 'string') {
+      if (data.type === MESSAGE_PULL) {
+        postVarsError(new TypeError('Code runner worker: "code" must be a string'));
+        return;
+      }
       reportProtocolError('Code runner worker: "code" must be a string');
       return;
     }
 
     try {
-      run(data.code, data.env);
+      if (data.type === MESSAGE_PULL) {
+        pull(data.code, data.keys, data.env);
+      } else {
+        run(data.code, data.env);
+      }
     } catch (e) {
-      reportProtocolError(`Code runner worker: ${e.message}`);
+      if (data.type === MESSAGE_PULL) {
+        postVarsError(e);
+      } else {
+        reportProtocolError(`Code runner worker: ${e.message}`);
+      }
     }
   }
 

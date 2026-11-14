@@ -570,6 +570,20 @@ describe('worker.js', () => {
     });
   });
 
+  describe('pull', () => {
+    it('reports a requested __proto__ as an own property of the result', () => {
+      const h = createScope();
+      // assertCloneable needs the Worker global MessageChannel
+      h.scope.MessageChannel = MessageChannel;
+      h.send({ type: 'pull', code: "var a = 1; let __proto__ = 'own';", keys: ['a', '__proto__'], env: {} });
+      const [message] = h.posted;
+      expect(message.type).toBe('vars');
+      expect(Object.keys(message.vars)).toEqual(['a', '__proto__']);
+      expect(message.vars.a).toBe(1);
+      expect(Object.getOwnPropertyDescriptor(message.vars, '__proto__').value).toBe('own');
+    });
+  });
+
   describe('String.prototype.replaceAll polyfill', () => {
     it('is installed when the runtime lacks replaceAll', () => {
       const h = createScope({ withReplaceAll: false });
