@@ -8,23 +8,8 @@ import {
 import Button from '../../Button';
 import InlineButton from './InlineButton';
 import InputTextField from './InputTextField';
-import { remote } from 'electron';
+import { showDirectoryDialog } from '../../../platform/dialog';
 
-async function getDirectoryPath({ defaultPath, buttonLabel, title }) {
-  const dialogueOptions = {
-    title,
-    message: title,
-    buttonLabel,
-    properties: ['openDirectory'],
-  };
-
-  if (defaultPath) {
-    dialogueOptions.defaultPath = defaultPath;
-  }
-
-  const result = await remote.dialog.showOpenDialog(dialogueOptions);
-  return result.filePaths[0];
-}
 function ExtensionsList({ extensions }) {
   return extensions.length > 0 ? (
     <ul>
@@ -118,7 +103,7 @@ function EnabledExtensions({ onFocus, onBlur, save }) {
         <InlineButton
           label="Choose Directory"
           onClick={async () => {
-            const directoryPath = await getDirectoryPath({
+            const directoryPath = await showDirectoryDialog({
               defaultPath: directory,
               buttonLabel: 'Choose',
               title: 'Choose a directory to load your extensions from',

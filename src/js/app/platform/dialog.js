@@ -1,52 +1,78 @@
 /**
- * Dialog contract.
+ * Platform dialog module.
  *
- * Wraps Electron's `remote.dialog`.
+ * Single place for Electron's `remote.dialog` calls that used to live in
+ * src/js/index.js (window.confirm / window.alert) and
+ * src/js/app/components/menu/settings/Extensions.jsx (directory chooser).
+ * Nothing touches Electron at import time; `remote.dialog` is looked up on
+ * every call. Dialog errors are not caught and propagate to the caller. No
+ * fallback values are used: an unusable `remote` / `dialog` or a result
+ * without a `filePaths` array throws an Error.
  *
- * Existing call sites:
- * - showMessageBoxSync(null, options) in src/js/index.js, behind
- *   `window.confirm` (buttons ['OK', 'Cancel'], defaultId 0, cancelId 1) and
- *   `window.alert` (buttons ['OK']). The result is compared with 0 by the
- *   caller.
- * - showOpenDialog(options) in
- *   src/js/app/components/menu/settings/Extensions.jsx with `title`,
- *   `message`, `buttonLabel`, `properties: ['openDirectory']` and an optional
- *   `defaultPath`. The caller reads `filePaths[0]` and treats a falsy value as
- *   "nothing chosen".
- *
- * Other Electron 11 options of the same methods are passed through untouched;
- * the platform layer neither validates nor defaults options.
- *
- * @typedef {Object} PlatformMessageBoxOptions
- * @property {string} [type] - 'none' | 'info' | 'error' | 'question' | 'warning'
- * @property {string[]} [buttons]
- * @property {number} [defaultId]
- * @property {number} [cancelId]
- * @property {string} [title]
- * @property {string} [message]
- * @property {string} [detail]
- *
- * @typedef {Object} PlatformOpenDialogOptions
- * @property {string} [title]
- * @property {string} [message] - macOS
- * @property {string} [buttonLabel]
- * @property {string} [defaultPath]
- * @property {string[]} [properties] - e.g. 'openFile', 'openDirectory'
- *
- * @typedef {Object} PlatformOpenDialogResult
- * @property {boolean} canceled
- * @property {string[]} filePaths
+ * Differs from the #5 contract (generic `showMessageBoxSync(null, options)` /
+ * `showOpenDialog(options)` pass-through): it is replaced by purpose-specific
+ * functions that build the existing options internally.
  *
  * @typedef {Object} PlatformDialog
- * @property {(window: null, options: PlatformMessageBoxOptions) => number} showMessageBoxSync
- *   Synchronous and blocking. Returns the index of the clicked button. It must
- *   not return a Promise, because `window.confirm` / `window.alert` are
- *   synchronous. The first argument is the parent window; existing callers
- *   always pass `null`. Throws on failure.
- * @property {(options: PlatformOpenDialogOptions) => Promise<PlatformOpenDialogResult>} showOpenDialog
- *   Resolves with `{ canceled, filePaths }`. Cancellation is a normal result
- *   (`canceled: true`, empty `filePaths`), not a rejection. Any other failure
- *   rejects.
+ * @property {(message: string) => boolean} showConfirmSync
+ *   Synchronous, blocking question box with buttons ['OK', 'Cancel'].
+ *   Returns true only when the button index is 0 (OK).
+ * @property {(message: string) => undefined} showAlertSync
+ *   Synchronous, blocking warning box with an 'OK' button. Returns undefined.
+ * @property {(params: {title: string, buttonLabel: string, defaultPath?: string}) => Promise<string | undefined>} showDirectoryDialog
+ *   Opens a directory chooser (`message` is set to `title`; `defaultPath` is
+ *   only passed when truthy). Resolves with `filePaths[0]`, which is
+ *   undefined when nothing was chosen. `canceled` is not inspected.
  */
+import { remote } from 'electron';
 
-export {};
+function getDialog() {
+  if (!remote || !remote.dialog) {
+    throw new Error('Electron remote.dialog is not available');
+  }
+  return remote.dialog;
+}
+
+function showConfirmSync(message) {
+  const buttonIdx = getDialog().showMessageBoxSync(null, {
+    type: 'question',
+    buttons: ['OK', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+    detail: message,
+    message: '',
+  });
+  return buttonIdx === 0;
+}
+
+function showAlertSync(message) {
+  getDialog().showMessageBoxSync(null, {
+    type: 'warning',
+    buttons: ['OK'],
+    defaultId: 0,
+    cancelId: 0,
+    detail: message,
+    message: '',
+  });
+}
+
+async function showDirectoryDialog({ title, buttonLabel, defaultPath }) {
+  const dialogOptions = {
+    title,
+    message: title,
+    buttonLabel,
+    properties: ['openDirectory'],
+  };
+
+  if (defaultPath) {
+    dialogOptions.defaultPath = defaultPath;
+  }
+
+  const result = await getDialog().showOpenDialog(dialogOptions);
+  if (!result || !Array.isArray(result.filePaths)) {
+    throw new Error('Electron showOpenDialog returned no filePaths array');
+  }
+  return result.filePaths[0];
+}
+
+export { showConfirmSync, showAlertSync, showDirectoryDialog };
