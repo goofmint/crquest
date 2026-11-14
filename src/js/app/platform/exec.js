@@ -81,8 +81,10 @@ export const exec = (command, options = {}) =>
 export const run = (program, args = [], options = {}) =>
   new Promise((resolve, reject) => {
     nodeExecFile(program, args, options, (error, stdout, stderr) => {
-      if (error && typeof error.code !== 'number') {
-        // spawn failure (string code), signal kill, timeout, maxBuffer;
+      if (error && (error.killed || typeof error.code !== 'number')) {
+        // spawn failure (string code), signal kill, timeout (error.killed is
+        // set even if the child trapped the signal and exited with a number),
+        // maxBuffer;
         // keep any output captured so far on the error, like exec above.
         error.stdout = stdout;
         error.stderr = stderr;

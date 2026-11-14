@@ -81,6 +81,12 @@ describe('run (no shell)', () => {
     });
   });
 
+  test('killed (timeout) rejects even when the child exited with a numeric code', async () => {
+    const err = Object.assign(new Error('timed out'), { killed: true, code: 2 });
+    childProcess.execFile.mockImplementation((p, a, o, cb) => cb(err, 'o', 'e'));
+    await expect(platformExec.run('x')).rejects.toBe(err);
+  });
+
   test('signal kill rejects', async () => {
     const err = Object.assign(new Error('killed'), { code: null, signal: 'SIGTERM' });
     childProcess.execFile.mockImplementation((p, a, o, cb) => cb(err, '', ''));
