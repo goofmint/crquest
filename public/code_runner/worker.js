@@ -15,7 +15,8 @@
 //                     { type: 'vars-error', error: { name, message, stack } }
 // Test-case evaluation (validators, ValidationHelper.evaluateInUserCodeLocalScope);
 // also accepted exactly once per worker, in place of 'run':
-//   host   -> worker  { type: 'evaluate', code: string, test: string, args: JSON value, env: { [name]: string } }
+//   host   -> worker  { type: 'evaluate', code: string, test: string, args: JSON value, env: { [name]: string },
+//                       mocks?: { fetch?: string, fs?: { directories: { [path]: string[] } } } }
 //   worker -> host    { type: 'result', value }
 //                     { type: 'result-error', error: { name, message, stack } }
 // `test` is the source text of a function expression. It is evaluated in the
@@ -23,6 +24,17 @@
 // functions and classes of the user's code, and is called with `args`. It may
 // return a Promise. Its (awaited) result must be structured-cloneable, else
 // 'result-error' is sent; so is an error thrown by `code` or `test`.
+// `mocks` (optional, 'evaluate' only) installs stand-ins for host services
+// BEFORE `code` runs, so the user's code (also its top-level statements) sees
+// them. Nothing else is ever installed, and an unknown key is an error:
+//   mocks.fetch  source text of a factory `realFetch => fetchLike`; the function
+//                it returns replaces the global `fetch` (state lives in the
+//                factory's closure). `realFetch` is the worker's own fetch.
+//   mocks.fs     a read-only virtual file system: installs a global `require`
+//                that knows only 'fs' and 'fs/promises' with `readdir(path)`,
+//                which resolves the listed directories (a trailing separator
+//                is ignored; options: none, 'utf8' or { encoding: 'utf8' }) and rejects with ENOENT
+//                for any other path. Any other module is 'Cannot find module'.
 // 'vars' values must be structured-cloneable; a requested variable that is not
 // (a function, a class, a symbol, an object containing one) is reported with
 // 'vars-error', never silently dropped or converted.
@@ -373,6 +385,156 @@
   }
 
   // ---------------------------------------------------------------------
+  // Mocks of host services (evaluate only)
+  // ---------------------------------------------------------------------
+  const MOCK_KEYS = ['fetch', 'fs'];
+
+  function isPlainObject(value) {
+    if (value === null || typeof value !== 'object') {
+      return false;
+    }
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+  }
+
+  function defineGlobal(name, value) {
+    Object.defineProperty(scope, name, {
+      value,
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+
+  function installFetchMock(source) {
+    if (typeof source !== 'string' || source.trim() === '') {
+      throw new TypeError('mocks.fetch must be the source text of a function');
+    }
+    const factory = (0, eval)(`(${source}\n)`);
+    if (typeof factory !== 'function') {
+      throw new TypeError('mocks.fetch must be the source text of a function');
+    }
+    const realFetch =
+      typeof scope.fetch === 'function' ? scope.fetch.bind(scope) : undefined;
+    const mock = factory(realFetch);
+    if (typeof mock !== 'function') {
+      throw new TypeError('mocks.fetch must be a factory that returns a function');
+    }
+    defineGlobal('fetch', mock);
+  }
+
+  function installFsMock(fsMock) {
+    if (
+      !isPlainObject(fsMock) ||
+      Object.keys(fsMock).some(key => key !== 'directories') ||
+      !isPlainObject(fsMock.directories) ||
+      !Object.keys(fsMock.directories).every(
+        dir =>
+          Array.isArray(fsMock.directories[dir]) &&
+          fsMock.directories[dir].every(name => typeof name === 'string')
+      )
+    ) {
+      throw new TypeError(
+        'mocks.fs must be { directories: { [path]: string[] } }'
+      );
+    }
+    // `dir` and `dir/` name the same directory (as with the real fs); a root
+    // ('/', 'C:\\') keeps one separator.
+    function normalizeDirectory(dirPath) {
+      if (dirPath !== '' && /^(?:[A-Za-z]:)?[\\/]*$/.test(dirPath)) {
+        const drive = /^[A-Za-z]:/.test(dirPath) ? dirPath.slice(0, 2) : '';
+        return `${drive}/`;
+      }
+      return dirPath.replace(/[\\/]+$/, '');
+    }
+    const directories = Object.create(null);
+    Object.keys(fsMock.directories).forEach(dir => {
+      directories[normalizeDirectory(dir)] = fsMock.directories[dir];
+    });
+
+    // The names are always utf8 strings: no options, null, 'utf8' / 'utf-8' or
+    // { encoding } with one of those are accepted, like the real readdir.
+    function isDefaultEncoding(encoding) {
+      return (
+        encoding === undefined ||
+        encoding === null ||
+        (typeof encoding === 'string' &&
+          ['utf8', 'utf-8'].indexOf(encoding.toLowerCase()) !== -1)
+      );
+    }
+    function isSupportedOptions(options) {
+      if (isDefaultEncoding(options)) {
+        return true;
+      }
+      return (
+        isPlainObject(options) &&
+        Object.keys(options).every(key => key === 'encoding') &&
+        isDefaultEncoding(options.encoding)
+      );
+    }
+
+    function readdir(dirPath, options) {
+      if (typeof dirPath !== 'string') {
+        return Promise.reject(
+          new TypeError('The "path" argument must be of type string')
+        );
+      }
+      if (!isSupportedOptions(options)) {
+        return Promise.reject(
+          new TypeError('readdir options are not supported in the validator worker')
+        );
+      }
+      const key = normalizeDirectory(dirPath);
+      if (!(key in directories)) {
+        const error = new Error(
+          `ENOENT: no such file or directory, scandir '${dirPath}'`
+        );
+        error.code = 'ENOENT';
+        error.syscall = 'scandir';
+        error.path = dirPath;
+        return Promise.reject(error);
+      }
+      return Promise.resolve(directories[key].slice());
+    }
+
+    const promises = Object.freeze({ readdir });
+    const modules = {
+      fs: Object.freeze({ promises }),
+      'fs/promises': promises,
+    };
+    defineGlobal('require', function require(name) {
+      if (Object.prototype.hasOwnProperty.call(modules, name)) {
+        return modules[name];
+      }
+      const error = new Error(`Cannot find module '${name}'`);
+      error.code = 'MODULE_NOT_FOUND';
+      throw error;
+    });
+  }
+
+  function installMocks(mocks) {
+    if (mocks === undefined) {
+      return;
+    }
+    if (!isPlainObject(mocks)) {
+      throw new TypeError('mocks must be a plain object');
+    }
+    Object.keys(mocks).forEach(key => {
+      if (MOCK_KEYS.indexOf(key) === -1) {
+        throw new TypeError(
+          `Unknown mock "${key}" (supported: ${MOCK_KEYS.join(', ')})`
+        );
+      }
+    });
+    if (mocks.fetch !== undefined) {
+      installFetchMock(mocks.fetch);
+    }
+    if (mocks.fs !== undefined) {
+      installFsMock(mocks.fs);
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // Running the user's code
   // ---------------------------------------------------------------------
   let started = false;
@@ -504,12 +666,13 @@
   // `args` in the same script, so that `test` can use the top-level `let`,
   // `const`, `class` and function declarations of `code`. The result (a
   // Promise is awaited) is posted back after checking it can be cloned.
-  function evaluate(code, test, args, env) {
+  function evaluate(code, test, args, env, mocks) {
     if (typeof test !== 'string' || test.trim() === '') {
       throw new TypeError('"test" must be the source text of a function');
     }
     installEnv(env);
     installReplaceAllPolyfill();
+    installMocks(mocks);
 
     const holder = Object.create(null);
     holder.args = args;
@@ -607,7 +770,7 @@
       if (data.type === MESSAGE_PULL) {
         pull(data.code, data.keys, data.env);
       } else if (data.type === MESSAGE_EVALUATE) {
-        evaluate(data.code, data.test, data.args, data.env);
+        evaluate(data.code, data.test, data.args, data.env, data.mocks);
       } else {
         run(data.code, data.env);
       }

@@ -56,7 +56,7 @@ Issue #37 の成果物である。Issue #38 (Worker 版 runner, `code-runner-wor
 | `QuestIDE.jsx:40, 53` | `codeRunner.on('log', this.consoleLog)` / `off`。 |
 | `QuestIDE.jsx:159` | `codeRunner.runCode(editor.getValue(), env)`。`env` は `getContext('env')` の `{ name: entry.value }` への変換 (値の型は実行時のコンテキスト次第で、文字列とは限らない)。戻り値は使わない。 |
 | `HackInterface.jsx:136` | `codeRunner.terminate()`。 |
-| `Validator.jsx` / `ValidationHelper.js` | **runner を使わない。** `Validator.jsx` に `codeRunner` への参照は無い。`ValidationHelper` は保存済みコード (`user_code.js`) を読み、自前の `vm` で再実行する (`evalQuestIdeUserCode` は `eval`、`pullVarsFromQuestIdeUserCodeLocalScope` は `vm.Script.runInNewContext`)。これは runner とは別の実行経路で、#40 / #26 で扱う。 |
+| `Validator.jsx` / `ValidationHelper.js` | **runner を使わない。** `Validator.jsx` に `codeRunner` への参照は無い。`ValidationHelper` は保存済みコード (`user_code.js`) を読み、自前の `vm` で再実行していた (#120 で Worker 方式に置き換え、`vm` は削除済み。`validation-helper-worker.md`。以下は変更前の記述) (`evalQuestIdeUserCode` は `eval`、`pullVarsFromQuestIdeUserCodeLocalScope` は `vm.Script.runInNewContext`)。これは runner とは別の実行経路で、#40 / #26 で扱う。 |
 | `window.reloadExternalModules` | runner とは無関係である (`assetLoader.js:232` のモジュールキャッシュ破棄フラグ。`docs/migration/module-loader-usage.md` 参照)。runner はこのフラグを読まない。 |
 
 `QuestIDE.jsx` の `consoleLog` (`:100-138`) が `log` イベントの引数をどう描画するか。

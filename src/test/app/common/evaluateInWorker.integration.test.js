@@ -366,3 +366,278 @@ describe('evaluateInWorker argument validation', () => {
     ).resolves.toEqual([{ v: 1 }, { v: 1 }]);
   });
 });
+
+describe('evaluateInWorker mocks', () => {
+  describe('fetch', () => {
+    // the factory runs in the worker and must be self-contained
+    const factory = realFetch => {
+      let calls = 0;
+      return async function mockFetch(url) {
+        calls += 1;
+        if (String(url).includes('/fake')) {
+          return { value: `fake #${calls}` };
+        }
+        return realFetch(url);
+      };
+    };
+
+    it('replaces the global fetch before the user code runs, keeping state in the factory', async () => {
+      const result = await evaluate({
+        code: `
+          let early;
+          fetch('http://x/fake').then(r => { early = r.value; });
+          async function again() { return (await fetch('http://x/fake')).value; }
+        `,
+        test: async () => {
+          await new Promise(resolve => setTimeout(resolve, 0));
+          return {
+            early,
+            again: await again(),
+            global: (await globalThis.fetch('http://x/fake')).value,
+          };
+        },
+        mocks: { fetch: factory },
+      });
+      expect(result).toEqual({ early: 'fake #1', again: 'fake #2', global: 'fake #3' });
+    });
+
+    it('hands the worker fetch to the factory for requests it does not fake', async () => {
+      const http = await import('node:http');
+      const server = http.createServer((request, response) => {
+        response.end('from the real server');
+      });
+      await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+      try {
+        const url = `http://127.0.0.1:${server.address().port}/`;
+        const result = await evaluate({
+          code: '',
+          test: async ({ url: target }) => (await fetch(target)).text(),
+          args: { url },
+          mocks: { fetch: factory },
+        });
+        expect(result).toBe('from the real server');
+      } finally {
+        await new Promise(resolve => server.close(resolve));
+      }
+    });
+
+    it('accepts the source text of the factory', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => (await fetch('/fake')).value,
+        mocks: { fetch: `${factory}` },
+      });
+      expect(result).toBe('fake #1');
+    });
+
+    it('does not mock fetch when no mock is given', async () => {
+      const result = await evaluate({ code: '', test: () => typeof fetch });
+      expect(result).toBe('function');
+    });
+
+    it('fails explicitly when the factory does not return a function', async () => {
+      await expect(
+        evaluate({ code: '', test: () => 1, mocks: { fetch: () => 42 } })
+      ).rejects.toThrow('mocks.fetch must be a factory that returns a function');
+    });
+
+    it('fails explicitly when the factory uses a host variable', async () => {
+      const hostVariable = 1;
+      await expect(
+        evaluate({
+          code: '',
+          test: () => 1,
+          mocks: { fetch: () => (hostVariable, () => 1) },
+        })
+      ).rejects.toThrow(/hostVariable is not defined|ReferenceError/);
+    });
+  });
+
+  describe('fs', () => {
+    const mocks = { fs: { directories: { '/houses': ['hopper', 'turing'] } } };
+
+    it('lets the user code list the given directories through require("fs")', async () => {
+      const result = await evaluate({
+        code: `
+          const { readdir } = require('fs').promises;
+          const viaPromisesModule = require('fs/promises').readdir;
+        `,
+        test: async () => {
+          const first = await readdir('/houses');
+          first.push('mutated');
+          return {
+            first,
+            second: await readdir('/houses'),
+            sameFunction: viaPromisesModule === readdir,
+            callbackApi: typeof require('fs').readdir,
+          };
+        },
+        mocks,
+      });
+      expect(result).toEqual({
+        first: ['hopper', 'turing', 'mutated'],
+        second: ['hopper', 'turing'],
+        sameFunction: true,
+        callbackApi: 'undefined',
+      });
+    });
+
+    it('treats a trailing separator like none, for registered and requested paths, and keeps roots', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const { readdir } = require('fs').promises;
+          return {
+            plain: await readdir('/houses'),
+            slash: await readdir('/houses/'),
+            backslash: await readdir('/houses\\'),
+            nested: await readdir('/a/b/'),
+            root: await readdir('/'),
+            rootMany: await readdir('//'),
+            drive: await readdir('C:\\'),
+            empty: await readdir('').catch(e => e.code),
+          };
+        },
+        mocks: {
+          fs: {
+            directories: {
+              '/houses': ['hopper', 'turing'],
+              '/a/b/': ['x'],
+              '/': ['r'],
+              'C:/': ['c'],
+            },
+          },
+        },
+      });
+      expect(result).toEqual({
+        plain: ['hopper', 'turing'],
+        slash: ['hopper', 'turing'],
+        backslash: ['hopper', 'turing'],
+        nested: ['x'],
+        root: ['r'],
+        rootMany: ['r'],
+        drive: ['c'],
+        empty: 'ENOENT',
+      });
+    });
+
+    it('accepts the utf8 encoding forms of the real readdir and rejects other options', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const { readdir } = require('fs').promises;
+          const ok = await Promise.all(
+            [undefined, null, 'utf8', 'utf-8', { encoding: 'utf8' }, { encoding: null }, {}].map(o =>
+              readdir('/houses', o)
+            )
+          );
+          const bad = [];
+          for (const o of ['buffer', { encoding: 'hex' }, { withFileTypes: true }, 1]) {
+            await readdir('/houses', o).catch(e => bad.push(e.message));
+          }
+          return { ok, bad };
+        },
+        mocks,
+      });
+      expect(result.ok).toEqual(Array(7).fill(['hopper', 'turing']));
+      expect(result.bad).toEqual(
+        Array(4).fill('readdir options are not supported in the validator worker')
+      );
+    });
+
+    it('rejects with ENOENT for any other path and for non-string paths', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const { readdir } = require('fs').promises;
+          const outcome = {};
+          for (const [name, argument] of [['other', '/other'], ['number', 1]]) {
+            try {
+              await readdir(argument);
+            } catch (error) {
+              outcome[name] = { name: error.name, code: error.code, message: error.message };
+            }
+          }
+          return outcome;
+        },
+        mocks,
+      });
+      expect(result.other).toEqual({
+        name: 'Error',
+        code: 'ENOENT',
+        message: "ENOENT: no such file or directory, scandir '/other'",
+      });
+      expect(result.number.name).toBe('TypeError');
+    });
+
+    it('does not support readdir options and unknown modules', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const outcome = {};
+          try {
+            await require('fs').promises.readdir('/houses', { withFileTypes: true });
+          } catch (error) {
+            outcome.options = error.message;
+          }
+          try {
+            require('child_process');
+          } catch (error) {
+            outcome.module = { code: error.code, message: error.message };
+          }
+          try {
+            require('toString');
+          } catch (error) {
+            outcome.inherited = error.code;
+          }
+          return outcome;
+        },
+        mocks,
+      });
+      expect(result).toEqual({
+        options: 'readdir options are not supported in the validator worker',
+        module: { code: 'MODULE_NOT_FOUND', message: "Cannot find module 'child_process'" },
+        inherited: 'MODULE_NOT_FOUND',
+      });
+    });
+
+    it('has no require without the fs mock', async () => {
+      expect(await evaluate({ code: '', test: () => typeof require })).toBe('undefined');
+    });
+  });
+
+  describe('validation', () => {
+    it.each([
+      ['an unknown mock', { http: {} }, /unknown mock "http" \(supported: fetch, fs\)/],
+      ['mocks that are not an object', 'fetch', /mocks must be a plain object/],
+      ['a fetch mock that is not a function', { fetch: 1 }, /mocks\.fetch must be a function or the source text of one/],
+      ['a native fetch mock', { fetch: Math.max }, /mocks\.fetch must be a plain function/],
+      ['an fs mock without directories', { fs: {} }, /mocks\.fs must be/],
+      ['an fs mock with another key', { fs: { directories: {}, files: {} } }, /mocks\.fs must be/],
+      ['a directory that is not a string list', { fs: { directories: { '/a': [1] } } }, /mocks\.fs\.directories\["\/a"\] must be an array of strings/],
+    ])('rejects %s before starting a worker', async (_name, mocks, message) => {
+      const createWorker = vi.fn();
+      await expect(
+        evaluateInWorker({ workerUrl: WORKER_URL, code: '', test: () => 1, mocks, createWorker })
+      ).rejects.toThrow(message);
+      expect(createWorker).not.toHaveBeenCalled();
+    });
+
+    it('sends no mocks key when none are given', async () => {
+      const posted = [];
+      const worker = {
+        postMessage: message => posted.push(message),
+        addEventListener: () => {},
+        terminate: () => {},
+      };
+      evaluateInWorker({
+        workerUrl: WORKER_URL,
+        code: '',
+        test: () => 1,
+        timeoutMs: 1,
+        createWorker: () => worker,
+      }).catch(() => {});
+      expect(Object.keys(posted[0])).toEqual(['type', 'code', 'test', 'args', 'env']);
+    });
+  });
+});

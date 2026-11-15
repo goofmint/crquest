@@ -28,7 +28,7 @@ Issue #38 の成果物である。現行の挙動と判定は `code-runner-behav
 | 方向 | メッセージ | 備考 |
 | --- | --- | --- |
 | ホスト → Worker | `{ type: 'pull', code, keys, env }` | `run` の代わりに送る (Worker 1 つにつき `run` か `pull` のどちらか 1 回)。応答は `{ type: 'vars', vars }` または `{ type: 'vars-error', error: { name, message, stack } }`。`vars` の値は structured clone できる値のみ (関数、クラス、`Symbol` は `vars-error`)。`pullVarsInWorker` が使う。詳細は `validation-helper-worker.md`。 |
-| ホスト → Worker | `{ type: 'evaluate', code, test, args, env }` | `run` / `pull` の代わりに送る (Worker 1 つにつき 1 回)。`test` は関数式のソース文字列で、`code` の直後に同じスクリプト内で `test(args)` として呼ばれる (ユーザーコードの最上位の変数・関数・クラスが見える)。Promise を返してもよい。応答は `{ type: 'result', value }` または `{ type: 'result-error', error: { name, message, stack } }` (ユーザーコード・`test` の例外、structured clone できない結果)。`evaluateInWorker` が使う。詳細は `validation-helper-worker.md`。 |
+| ホスト → Worker | `{ type: 'evaluate', code, test, args, env }` | `run` / `pull` の代わりに送る (Worker 1 つにつき 1 回)。`test` は関数式のソース文字列で、`code` の直後に同じスクリプト内で `test(args)` として呼ばれる (ユーザーコードの最上位の変数・関数・クラスが見える)。Promise を返してもよい。応答は `{ type: 'result', value }` または `{ type: 'result-error', error: { name, message, stack } }` (ユーザーコード・`test` の例外、structured clone できない結果)。任意の `mocks: { fetch?: 工場関数のソース, fs?: { directories } }` を足すと、ユーザーコードの実行前に偽の `fetch` / 読み取り専用 `fs` を入れる。`evaluateInWorker` が使う。詳細は `validation-helper-worker.md`。 |
 | ホスト → Worker | `{ type: 'run', code: string, env: { [name]: string } }` | Worker 1 つにつき 1 回だけ。2 回目と未知の `type` は、Worker が `error` の `log` で通知する。 |
 | Worker → ホスト | `{ type: 'log', logLevel: 'log' \| 'info' \| 'warn' \| 'error', arguments: any[] }` | 現行の `code_runner:log` のペイロード (`{ logLevel, arguments }`) と同じ形。ホストは `type` を除いて `log` イベントとして emit する。 |
 
@@ -85,7 +85,7 @@ runner.terminate();
 | `process.env` | `process = { env }` の最小の shim。`env` の値は文字列のみ (違反は明示的なエラー)。ホストが送ったオブジェクトのコピーで、実行中に書き換えられる。`process` の他のメンバーは無い。Node の `process.env` へのマージ (`Object.assign(process.env, env)`) とは違い、送られた値だけになる。 |
 | `String.prototype.replaceAll` | 無いランタイムでだけ定義する。文字列の引数をリテラルとして扱う (runner.js のポリフィルは正規表現として解釈していた)。ユーザーコードとは別に実行するので、行番号に影響しない。 |
 | `require`、`module`、`window`、`document` | 無い。使うと `ReferenceError` が `error` の `log` として表示される (明示的な失敗)。 |
-| `fetchOverride` | 移植していない (`api-05-get-patch` 専用の回避策)。`fetch` はそのまま Worker の `fetch`。 |
+| `fetchOverride` | QuestIDE の実行 (`run`) には移植していない (`api-05-get-patch` 専用の回避策)。`fetch` はそのまま Worker の `fetch`。検証側 (`evaluate`) には、同じ偽サーバーを入れる `mocks.fetch` がある (`validation-helper-worker.md`)。 |
 | 実行ごとの状態 | Worker を作り直すので、グローバル変数、タイマー、Promise は引き継がれない。 |
 
 ## 5. テストと検証の範囲
@@ -118,5 +118,5 @@ runner.terminate();
 - `runCode` の `env` の値が文字列でない場合は `TypeError` になる。`QuestIDE.jsx` の `getContext('env')` から作る `env` の値が必ず文字列か、配線時に確認する (違えば変換側を明示的に直す)。
 - `runCode` は同期的に例外を投げうる (引数不正、Worker 作成失敗)。`QuestIDE.runCode` の `async` 関数の中で呼ばれているので、未処理の拒否になる。表示するかどうかを決める。
 - Worker が `require` を持たないので、`code-runner-behavior.md` の 6 章の「不可」の 12 目標が動かなくなる。配線前か同時に、Phase 5 でコンテンツを書き換えるか、その目標でのエラー表示を許容する。
-- `api-05-get-patch` の `fetchOverride` を、Worker に組み込むか、コンテンツを変えるか決める。
+- `api-05-get-patch` の `fetchOverride` (と `api-02` の `require("fs")`) を、QuestIDE の実行 (`run`) にも組み込むか、コンテンツを変えるか決める。検証側は `mocks` で対応済み (`validation-helper-worker.md`)。
 - `docs/baseline/platform-boundary.md` の `code_runner.js` の行を、配線後に更新する。
