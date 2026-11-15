@@ -235,6 +235,11 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - 挙動が変わる点: 書き込み失敗は、以前は `setState` コールバック内の同期例外だったが、報告のダイアログに変わる。
 - 検証できないこと: 実機 (Electron / Tauri) での動作。テストは store をモックしている。
 
+レビュー対応 (#147):
+
+- 保存の直列化: `setContext` が起こす `setValueAsync` は `common/context/index.js` のキューで 1 件ずつ、呼び出し順に実行する (非同期の store が後の値を先に適用しないため)。失敗した保存は後続を止めず、各呼び出しが自分のエラーを `reportFailure` に渡す。Electron でも書き込み順は変わらない (開始が 1 マイクロタスク遅れる)。
+- 消去中の書き込み抑止: `ClearDataButton` は 2 回の確認のあと、`suppressPersistence()` で保存フィールドの永続化だけを止める。メモリ上の context、イベント、`syncContext` は変えず、抑止した書き込みは `console.warn` に出す (黙って捨てない)。キューにある保存を `flushPendingSaves()` で終わらせてから削除する。成功時はリロードまで抑止したまま、失敗時は `resumePersistence()` で再開する。キャンセル時は抑止しない。
+
 残り: Tauri 実機での設定の永続化確認 (W11)。Tauri の保存先は Electron の `config.json` と別 (R7)。
 
 

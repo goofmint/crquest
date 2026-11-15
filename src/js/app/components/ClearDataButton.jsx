@@ -7,6 +7,11 @@ import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
 import { reportFailure } from '../common/reportFailure';
+import {
+  suppressPersistence,
+  resumePersistence,
+  flushPendingSaves,
+} from '../common/context';
 
 // Sequential, in schema order: the first failure stops the clearing.
 async function clearStoreValues() {
@@ -52,9 +57,16 @@ export default class ClearDataButton extends React.Component {
     console.log('clearing data...');
 
     // Clear data stored on disk
+    // From here until the reload, setContext must not write saved fields back
+    // (see suppressPersistence). Saves already queued are finished first, so
+    // they cannot land after the deletion. Persistence is resumed only when
+    // clearing fails; on success the window reloads.
+    suppressPersistence();
     try {
+      await flushPendingSaves();
       await clearStoreValues();
     } catch (error) {
+      resumePersistence();
       await reportFailure('Could not clear the saved game data', error);
       throw error;
     }

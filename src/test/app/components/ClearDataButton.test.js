@@ -10,6 +10,11 @@ vi.mock('../../../js/app/platform/store', () => ({
   hasValueAsync: vi.fn(),
   deleteValueAsync: vi.fn(),
 }));
+vi.mock('../../../js/app/common/context', () => ({
+  suppressPersistence: vi.fn(),
+  resumePersistence: vi.fn(),
+  flushPendingSaves: vi.fn(),
+}));
 vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn(), showAlert: vi.fn() }));
 vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
@@ -22,6 +27,7 @@ vi.mock('../../../js/app/common/context/schema', () => ({
 import { remove } from '../../../js/app/platform/fs';
 import db from '../../../js/app/common/database';
 import { hasValueAsync as hasValue, deleteValueAsync as deleteValue } from '../../../js/app/platform/store';
+import { suppressPersistence, resumePersistence, flushPendingSaves } from '../../../js/app/common/context';
 import { showConfirm, showAlert } from '../../../js/app/platform/dialog';
 import ClearDataButton from '../../../js/app/components/ClearDataButton';
 
@@ -29,6 +35,7 @@ import ClearDataButton from '../../../js/app/components/ClearDataButton';
 // jsdom reports as a "not implemented: navigation" console error) is not asserted.
 beforeEach(() => {
   vi.clearAllMocks();
+  flushPendingSaves.mockResolvedValue(undefined);
   hasValue.mockResolvedValue(true);
   deleteValue.mockResolvedValue(undefined);
   showAlert.mockResolvedValue(undefined);
@@ -130,5 +137,30 @@ describe('ClearDataButton.clearUserData', () => {
     hasValue.mockResolvedValue(false);
     await makeInstance().clearUserData();
     expect(deleteValue).not.toHaveBeenCalled();
+  });
+
+  test('suppresses persistence after confirmation, flushes queued saves before deleting', async () => {
+    showConfirm.mockResolvedValue(true);
+    const order = [];
+    suppressPersistence.mockImplementation(() => order.push('suppress'));
+    flushPendingSaves.mockImplementation(async () => void order.push('flush'));
+    deleteValue.mockImplementation(async () => void order.push('delete'));
+    await makeInstance().clearUserData();
+    expect(order).toEqual(['suppress', 'flush', 'delete']);
+    expect(resumePersistence).not.toHaveBeenCalled();
+  });
+
+  test('does not suppress persistence when the user cancels', async () => {
+    showConfirm.mockResolvedValueOnce(false);
+    await makeInstance().clearUserData();
+    expect(suppressPersistence).not.toHaveBeenCalled();
+  });
+
+  test('resumes persistence when clearing fails', async () => {
+    showConfirm.mockResolvedValue(true);
+    deleteValue.mockRejectedValue(new Error('x'));
+    await expect(makeInstance().clearUserData()).rejects.toThrow('x');
+    expect(suppressPersistence).toHaveBeenCalledTimes(1);
+    expect(resumePersistence).toHaveBeenCalledTimes(1);
   });
 });
