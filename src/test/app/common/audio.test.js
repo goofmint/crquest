@@ -1,20 +1,20 @@
 import audioManager from '../../../js/app/common/audio/index';
 import { listAsync } from '../../../js/app/platform/fs';
 
-jest.mock('../../../js/app/platform/fs', () => ({ listAsync: jest.fn() }));
-jest.mock('../../../js/app/platform/store', () => ({
-  getValue: jest.fn(),
-  setValue: jest.fn(),
+vi.mock('../../../js/app/platform/fs', () => ({ listAsync: vi.fn() }));
+vi.mock('../../../js/app/platform/store', () => ({
+  getValue: vi.fn(),
+  setValue: vi.fn(),
 }));
-jest.mock('../../../js/app/common/fs_utils', () => ({
-  staticFilePath: jest.fn(p => `/static/${p}`),
-  staticFileUrl: jest.fn(p => `file://${p}`),
+vi.mock('../../../js/app/common/fs_utils', () => ({
+  staticFilePath: vi.fn(p => `/static/${p}`),
+  staticFileUrl: vi.fn(p => `file://${p}`),
 }));
-jest.mock('../../../js/app/common/assetLoader', () => ({
-  readDirectory: jest.fn(),
-  resolveAbsolutePath: jest.fn(),
+vi.mock('../../../js/app/common/assetLoader', () => ({
+  readDirectory: vi.fn(),
+  resolveAbsolutePath: vi.fn(),
 }));
-jest.mock('../../../js/app/common/levelLoader', () => ({}));
+vi.mock('../../../js/app/common/levelLoader', () => ({}));
 
 const players = [
   ['loadSfx', 'sfx', '/static/levels/common/sfx'],
@@ -26,13 +26,13 @@ describe.each(players)('AudioManager.%s', (method, key, dirPath) => {
   let calls;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     player = audioManager[key];
     calls = [];
-    player.register = jest.fn((name, urls) =>
+    player.register = vi.fn((name, urls) =>
       calls.push(['register', name, urls])
     );
-    player.load = jest.fn(() => calls.push(['load']));
+    player.load = vi.fn(() => calls.push(['load']));
   });
 
   it('registers grouped supported files in order, then calls load() after the listing resolves', async () => {

@@ -1,17 +1,14 @@
-function loadDialog(remote) {
-  let mod;
-  jest.isolateModules(() => {
-    jest.doMock('electron', () => ({ remote }));
-    mod = require('../../../js/app/platform/dialog');
-  });
-  return mod;
+async function loadDialog(remote) {
+  vi.resetModules();
+  vi.doMock('electron', () => ({ remote }));
+  return import('../../../js/app/platform/dialog');
 }
 
 function makeRemote() {
   return {
     dialog: {
-      showMessageBox: jest.fn(),
-      showOpenDialog: jest.fn(),
+      showMessageBox: vi.fn(),
+      showOpenDialog: vi.fn(),
     },
   };
 }
@@ -20,7 +17,7 @@ describe('showConfirm', () => {
   test('calls showMessageBox with the question options and null window', async () => {
     const remote = makeRemote();
     remote.dialog.showMessageBox.mockResolvedValue({ response: 0, checkboxChecked: false });
-    await loadDialog(remote).showConfirm('Sure?');
+    await (await loadDialog(remote)).showConfirm('Sure?');
     expect(remote.dialog.showMessageBox).toHaveBeenCalledTimes(1);
     expect(remote.dialog.showMessageBox).toHaveBeenCalledWith(null, {
       type: 'question',
@@ -40,13 +37,13 @@ describe('showConfirm', () => {
   ])('button index %p resolves %p', async (response, expected) => {
     const remote = makeRemote();
     remote.dialog.showMessageBox.mockResolvedValue({ response, checkboxChecked: false });
-    await expect(loadDialog(remote).showConfirm('m')).resolves.toBe(expected);
+    await expect((await loadDialog(remote)).showConfirm('m')).resolves.toBe(expected);
   });
 
   test('propagates rejections', async () => {
     const remote = makeRemote();
     remote.dialog.showMessageBox.mockRejectedValue(new Error('boom'));
-    await expect(loadDialog(remote).showConfirm('m')).rejects.toThrow('boom');
+    await expect((await loadDialog(remote)).showConfirm('m')).rejects.toThrow('boom');
   });
 
   test('propagates synchronous throws as rejections', async () => {
@@ -54,7 +51,7 @@ describe('showConfirm', () => {
     remote.dialog.showMessageBox.mockImplementation(() => {
       throw new Error('boom');
     });
-    await expect(loadDialog(remote).showConfirm('m')).rejects.toThrow('boom');
+    await expect((await loadDialog(remote)).showConfirm('m')).rejects.toThrow('boom');
   });
 });
 
@@ -62,7 +59,7 @@ describe('showAlert', () => {
   test('calls showMessageBox with the warning options and resolves undefined', async () => {
     const remote = makeRemote();
     remote.dialog.showMessageBox.mockResolvedValue({ response: 0, checkboxChecked: false });
-    await expect(loadDialog(remote).showAlert('Careful')).resolves.toBeUndefined();
+    await expect((await loadDialog(remote)).showAlert('Careful')).resolves.toBeUndefined();
     expect(remote.dialog.showMessageBox).toHaveBeenCalledWith(null, {
       type: 'warning',
       buttons: ['OK'],
@@ -76,7 +73,7 @@ describe('showAlert', () => {
   test('propagates rejections', async () => {
     const remote = makeRemote();
     remote.dialog.showMessageBox.mockRejectedValue(new Error('boom'));
-    await expect(loadDialog(remote).showAlert('m')).rejects.toThrow('boom');
+    await expect((await loadDialog(remote)).showAlert('m')).rejects.toThrow('boom');
   });
 });
 
@@ -86,7 +83,7 @@ describe('showDirectoryDialog', () => {
   test('includes defaultPath when truthy and passes no window argument', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: ['/a'] });
-    await loadDialog(remote).showDirectoryDialog(params);
+    await (await loadDialog(remote)).showDirectoryDialog(params);
     expect(remote.dialog.showOpenDialog).toHaveBeenCalledTimes(1);
     expect(remote.dialog.showOpenDialog.mock.calls[0]).toEqual([
       {
@@ -102,7 +99,7 @@ describe('showDirectoryDialog', () => {
   test('omits defaultPath when falsy', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: ['/a'] });
-    await loadDialog(remote).showDirectoryDialog({ ...params, defaultPath: '' });
+    await (await loadDialog(remote)).showDirectoryDialog({ ...params, defaultPath: '' });
     const options = remote.dialog.showOpenDialog.mock.calls[0][0];
     expect(options).not.toHaveProperty('defaultPath');
   });
@@ -110,41 +107,41 @@ describe('showDirectoryDialog', () => {
   test('returns the first path', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: ['/a', '/b'] });
-    await expect(loadDialog(remote).showDirectoryDialog(params)).resolves.toBe('/a');
+    await expect((await loadDialog(remote)).showDirectoryDialog(params)).resolves.toBe('/a');
   });
 
   test('returns undefined for an empty array', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: [] });
-    await expect(loadDialog(remote).showDirectoryDialog(params)).resolves.toBeUndefined();
+    await expect((await loadDialog(remote)).showDirectoryDialog(params)).resolves.toBeUndefined();
   });
 
   test('returns the path even when canceled is true', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: ['/a'] });
-    await expect(loadDialog(remote).showDirectoryDialog(params)).resolves.toBe('/a');
+    await expect((await loadDialog(remote)).showDirectoryDialog(params)).resolves.toBe('/a');
   });
 
   test('propagates rejections', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockRejectedValue(new Error('nope'));
-    await expect(loadDialog(remote).showDirectoryDialog(params)).rejects.toThrow('nope');
+    await expect((await loadDialog(remote)).showDirectoryDialog(params)).rejects.toThrow('nope');
   });
 
   test('throws when filePaths is missing', async () => {
     const remote = makeRemote();
     remote.dialog.showOpenDialog.mockResolvedValue({ canceled: true });
-    await expect(loadDialog(remote).showDirectoryDialog(params)).rejects.toThrow(/filePaths/);
+    await expect((await loadDialog(remote)).showDirectoryDialog(params)).rejects.toThrow(/filePaths/);
   });
 });
 
 describe('unavailable remote', () => {
-  test('does not access electron at import time', () => {
-    expect(() => loadDialog(undefined)).not.toThrow();
+  test('does not access electron at import time', async () => {
+    await expect(loadDialog(undefined)).resolves.toBeDefined();
   });
 
   test('throws explicit errors when remote is undefined', async () => {
-    const mod = loadDialog(undefined);
+    const mod = await loadDialog(undefined);
     await expect(mod.showConfirm('m')).rejects.toThrow(/remote\.dialog/);
     await expect(mod.showAlert('m')).rejects.toThrow(/remote\.dialog/);
     await expect(mod.showDirectoryDialog({ title: 'T', buttonLabel: 'B' })).rejects.toThrow(
@@ -153,6 +150,6 @@ describe('unavailable remote', () => {
   });
 
   test('rejects when remote.dialog is missing', async () => {
-    await expect(loadDialog({}).showConfirm('m')).rejects.toThrow(/remote\.dialog/);
+    await expect((await loadDialog({})).showConfirm('m')).rejects.toThrow(/remote\.dialog/);
   });
 });

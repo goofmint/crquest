@@ -1,12 +1,14 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { createCodeRunnerWorker, pullVarsInWorker } from '../../../js/app/common/codeRunnerWorker';
+import { NodeWorker } from '../../utils/nodeWorker';
 
-// Runs the real public/code_runner/worker.js in a real Web Worker. Jest runs in
-// an Electron renderer (@jest-runner/electron), so `Worker` exists and a
-// file: URL can be loaded. If this suite fails because the worker cannot be
-// loaded, the launcher/Tauri asset setup needs attention: do not work around it
-// with Blob URLs here.
+// Runs the real public/code_runner/worker.js in a real worker thread. The
+// tests run in Node/jsdom (not in an Electron renderer), which has no `Worker`,
+// so the global is provided by NodeWorker (src/test/utils/nodeWorker.js), a Web
+// Worker facade over worker_threads that loads the script from a file: URL.
+// Behavior that only a browser engine can show (e.g. Chromium-specific error
+// text) is not covered here.
 const WORKER_URL = pathToFileURL(
   path.resolve(__dirname, '..', '..', '..', '..', 'public', 'code_runner', 'worker.js')
 ).href;
@@ -44,6 +46,13 @@ function start(url = WORKER_URL) {
 }
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+beforeAll(() => {
+  vi.stubGlobal('Worker', NodeWorker);
+});
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('code runner with a real Worker', () => {
   let current;

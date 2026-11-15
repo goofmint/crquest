@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 
-jest.mock('../../../js/app/common/context', () => ({
+vi.mock('../../../js/app/common/context', () => ({
   context: require('react').createContext({}),
-  setContext: jest.fn(),
+  setContext: vi.fn(),
 }));
 
 import { context } from '../../../js/app/common/context';
@@ -26,7 +26,7 @@ describe('React 19 compatibility', () => {
   let setTimeoutSpy;
   beforeEach(() => {
     timers = [];
-    setTimeoutSpy = jest.spyOn(window, 'setTimeout').mockImplementation((fn, ms) => {
+    setTimeoutSpy = vi.spyOn(window, 'setTimeout').mockImplementation((fn, ms) => {
       timers.push({ fn, ms });
       return timers.length;
     });
@@ -36,8 +36,8 @@ describe('React 19 compatibility', () => {
   });
 
   test('FogOwlFlying runs its Transition through to onExited', () => {
-    const hide = jest.fn();
-    const finishTransition = jest.fn();
+    const hide = vi.fn();
+    const finishTransition = vi.fn();
     const { container } = render(
       <FogOwlFlying
         hide={hide}
@@ -57,7 +57,7 @@ describe('React 19 compatibility', () => {
   });
 
   test('NameStep keeps its callback ref and focuses the input when activated', () => {
-    const props = { onClick: jest.fn(), setValid: jest.fn() };
+    const props = { onClick: vi.fn(), setValid: vi.fn() };
     const wrap = isActive => (
       <context.Provider value={{ settings: { name: 'Ada' } }}>
         <NameStep {...props} isActive={isActive} />

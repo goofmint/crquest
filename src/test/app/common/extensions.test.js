@@ -11,9 +11,9 @@ import {
 
 import { staticFilePath } from '../../../js/app/common/fs_utils';
 
-jest.mock('../../../js/app/common/context');
-jest.mock('../../../js/app/common/fs_utils');
-jest.mock('../../../js/app/config/config');
+vi.mock('../../../js/app/common/context');
+vi.mock('../../../js/app/common/fs_utils');
+vi.mock('../../../js/app/config/config');
 
 import mockContextFactory from '../../utils/mockContextFactory';
 import mockConfigFactory from '../../utils/mockConfigFactory';
@@ -45,7 +45,7 @@ const consoleErrorFunction = console.error;
 
 beforeEach(() => {
   // mock console error
-  console.error = jest.fn();
+  console.error = vi.fn();
 });
 
 afterEach(() => {

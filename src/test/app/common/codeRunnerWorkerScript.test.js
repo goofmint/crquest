@@ -485,7 +485,7 @@ describe('worker.js', () => {
     it('reports an error event as { message, stack } and prevents default', () => {
       const h = createScope();
       h.run('');
-      const preventDefault = jest.fn();
+      const preventDefault = vi.fn();
       h.listeners.error({
         error: h.evaluate(`new Error('async boom')`),
         message: 'Uncaught Error: async boom',
@@ -506,7 +506,7 @@ describe('worker.js', () => {
 
     it('reports an unhandled rejection with an Error reason', () => {
       const h = createScope();
-      const preventDefault = jest.fn();
+      const preventDefault = vi.fn();
       h.listeners.unhandledrejection({
         reason: h.evaluate(`new RangeError('rejected')`),
         preventDefault,

@@ -1,6 +1,7 @@
 import { getContext } from '../../js/app/common/context';
 
-jest.mock('../../js/app/common/context');
+// The test file must call vi.mock('.../common/context') itself: vi.mock is only
+// hoisted and applied for the test file (or setup file) that contains it.
 
 function mockContextFactory(expectedKey, defaults) {
   function mockContext(overrides) {

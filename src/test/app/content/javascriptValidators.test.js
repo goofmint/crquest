@@ -1,20 +1,20 @@
-jest.mock('../../../js/app/common/analytics', () => ({
+vi.mock('../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
 }));
-jest.mock('../../../js/app/common/world', () => ({
+vi.mock('../../../js/app/common/world', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
-jest.mock('../../../js/app/config/config', () => ({
+vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
   default: {
     codeStoragePath: '/code',
     codeStorageFileName: 'code.js',
   },
 }));
-jest.mock('../../../js/app/common/context', () => ({
-  getContext: jest.fn(() => ({ levelName: 'javascript' })),
+vi.mock('../../../js/app/common/context', () => ({
+  getContext: vi.fn(() => ({ levelName: 'javascript' })),
 }));
 
 import fs from 'fs';
@@ -68,7 +68,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  fs.rmdirSync(workspace, { recursive: true });
+  fs.rmSync(workspace, { recursive: true, force: true });
 });
 
 const writeScript = (name, code) =>
@@ -81,7 +81,7 @@ const makeHelper = ({
   validationFields = {},
   worldState = READY_WORLD_STATE,
 } = {}) => {
-  const callback = jest.fn();
+  const callback = vi.fn();
   const helper = new ValidationHelper(
     {
       context: { levelState: { TQ_JAVASCRIPT_WORLD_STATE: worldState } },
@@ -429,7 +429,7 @@ describe('executeCodeString', () => {
   });
 
   test('rejects with a NiceError when the program cannot be spawned', async () => {
-    const helper = { exec: jest.fn().mockRejectedValue(new Error('ENOENT')) };
+    const helper = { exec: vi.fn().mockRejectedValue(new Error('ENOENT')) };
     await expect(executeCodeString(helper, 'x', 'code')).rejects.toBeInstanceOf(
       NiceError
     );
@@ -439,10 +439,10 @@ describe('executeCodeString', () => {
   });
 
   test('asks helper.exec to kill the program after five seconds and reports a timeout', async () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const killed = Object.assign(new Error('timed out'), { killed: true });
-      const helper = { exec: jest.fn().mockRejectedValue(killed) };
+      const helper = { exec: vi.fn().mockRejectedValue(killed) };
       const error = await executeCodeString(helper, 'x', 'code').catch(e => e);
       expect(error).toBeInstanceOf(NiceError);
       expect(error.message).toContain('validating your Node.js code');
@@ -465,7 +465,7 @@ describe('executeCodeString', () => {
           timeout: 300,
         }),
     });
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     await expect(
       executeCodeString(slow, NODE_EXE, 'while (true) {}')
     ).rejects.toBeInstanceOf(NiceError);
@@ -480,7 +480,7 @@ describe('js_node_env_setup', () => {
     });
     // validationFields are trimmed by ValidationHelper; use the real helper
     // for exec and stub only the (shell based) executable pre-check.
-    helper.isExecutableValid = jest.fn().mockResolvedValue([true, undefined]);
+    helper.isExecutableValid = vi.fn().mockResolvedValue([true, undefined]);
     helper.validationFields.nodePath = 'node';
     await requireValidator('js_node_env_setup')(helper);
 
@@ -495,7 +495,7 @@ describe('js_node_env_setup', () => {
     const { helper, callback } = makeHelper({
       validationFields: { nodePath: '/nope' },
     });
-    helper.isExecutableValid = jest.fn().mockResolvedValue([false, 'not executable']);
+    helper.isExecutableValid = vi.fn().mockResolvedValue([false, 'not executable']);
     await requireValidator('js_node_env_setup')(helper);
     expect(callback.mock.calls[0][0].message).toBe('not executable');
   });
@@ -504,8 +504,8 @@ describe('js_node_env_setup', () => {
     const { helper, callback } = makeHelper({
       validationFields: { nodePath: 'node' },
     });
-    helper.isExecutableValid = jest.fn().mockResolvedValue([true, undefined]);
-    helper.exec = jest.fn().mockResolvedValue({ code: 1, stdout: '', stderr: 'x' });
+    helper.isExecutableValid = vi.fn().mockResolvedValue([true, undefined]);
+    helper.exec = vi.fn().mockResolvedValue({ code: 1, stdout: '', stderr: 'x' });
     await requireValidator('js_node_env_setup')(helper);
     expect(callback.mock.calls[0][0].message).toMatch(/something went wrong/);
     expect(helper.exec).toHaveBeenCalledWith('node', ['--version']);
@@ -515,9 +515,9 @@ describe('js_node_env_setup', () => {
     const { helper, callback } = makeHelper({
       validationFields: { nodePath: 'node' },
     });
-    helper.isExecutableValid = jest.fn().mockResolvedValue([true, undefined]);
-    helper.exec = jest.fn().mockRejectedValue(new Error('spawn failed'));
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+    helper.isExecutableValid = vi.fn().mockResolvedValue([true, undefined]);
+    helper.exec = vi.fn().mockRejectedValue(new Error('spawn failed'));
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     await requireValidator('js_node_env_setup')(helper);
     console.log.mockRestore();
     expect(callback.mock.calls[0][0].message).toMatch(/couldn't validate your Node.js installation/);
@@ -538,7 +538,7 @@ describe('js_node_workspace', () => {
   });
 
   test('fails for a missing directory and for an empty value', async () => {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     const missing = makeHelper({
       validationFields: { workspacePath: path.join(workspace, 'nope') },
     });
@@ -561,7 +561,7 @@ describe('create_repo', () => {
 
   test('fails when git is not installed', async () => {
     const { helper, callback } = makeRepoHelper({
-      commandExists: jest.fn().mockResolvedValue(false),
+      commandExists: vi.fn().mockResolvedValue(false),
     });
     await requireValidator('create_repo')(helper);
     expect(callback.mock.calls[0][0].message).toContain('could not!');
@@ -570,7 +570,7 @@ describe('create_repo', () => {
 
   test('fails when there is no .git directory', async () => {
     const { helper, callback } = makeRepoHelper({
-      commandExists: jest.fn().mockResolvedValue(true),
+      commandExists: vi.fn().mockResolvedValue(true),
     });
     await requireValidator('create_repo')(helper);
     expect(callback.mock.calls[0][0].message).toContain(
@@ -581,8 +581,8 @@ describe('create_repo', () => {
   test('fails when there is no commit yet, succeeds after one', async () => {
     fs.mkdirSync(path.join(workspace, '.git'));
     const noCommits = makeRepoHelper({
-      commandExists: jest.fn().mockResolvedValue(true),
-      exec: jest.fn().mockResolvedValue({ code: 0, stdout: 'No commits yet', stderr: '' }),
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: vi.fn().mockResolvedValue({ code: 0, stdout: 'No commits yet', stderr: '' }),
     });
     await requireValidator('create_repo')(noCommits.helper);
     expect(noCommits.callback.mock.calls[0][0].message).toMatch(/initial commit/);
@@ -591,8 +591,8 @@ describe('create_repo', () => {
     });
 
     const committed = makeRepoHelper({
-      commandExists: jest.fn().mockResolvedValue(true),
-      exec: jest.fn().mockResolvedValue({ code: 0, stdout: 'clean', stderr: '' }),
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: vi.fn().mockResolvedValue({ code: 0, stdout: 'clean', stderr: '' }),
     });
     await requireValidator('create_repo')(committed.helper);
     expect(committed.callback.mock.calls[0][0]).toBeNull();
@@ -601,8 +601,8 @@ describe('create_repo', () => {
   test('reports a failing git status', async () => {
     fs.mkdirSync(path.join(workspace, '.git'));
     const { helper, callback } = makeRepoHelper({
-      commandExists: jest.fn().mockResolvedValue(true),
-      exec: jest.fn().mockResolvedValue({ code: 128, stdout: '', stderr: 'fatal: bad' }),
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: vi.fn().mockResolvedValue({ code: 128, stdout: '', stderr: 'fatal: bad' }),
     });
     await requireValidator('create_repo')(helper);
     expect(callback.mock.calls[0][0].message).toContain('Command failed: git status');

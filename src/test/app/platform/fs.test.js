@@ -1,5 +1,7 @@
-const path = require('path');
-const fs = require('../../../js/app/platform/fs');
+import nodeFs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import * as fs from '../../../js/app/platform/fs';
 
 const FIXTURES = path.resolve(__dirname, '..', '..', 'fixtures');
 const FIXTURE_DIR = path.join(FIXTURES, 'platform');
@@ -90,7 +92,7 @@ describe('synchronous additions', () => {
     const text = fs.readFileSync(FIXTURE_JSON, { encoding: 'utf8' });
     expect(typeof text).toBe('string');
     expect(JSON.parse(text)).toEqual(
-      JSON.parse(require('fs').readFileSync(FIXTURE_JSON, 'utf8'))
+      JSON.parse(nodeFs.readFileSync(FIXTURE_JSON, 'utf8'))
     );
   });
 
@@ -101,8 +103,7 @@ describe('synchronous additions', () => {
   });
 
   test('remove (detached from jetpack) deletes a directory synchronously', () => {
-    const nodeFs = require('fs');
-    const dir = nodeFs.mkdtempSync(path.join(require('os').tmpdir(), 'crq-rm-'));
+    const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'crq-rm-'));
     nodeFs.writeFileSync(path.join(dir, 'a.txt'), 'x');
     const { remove } = fs;
     remove(dir);
@@ -113,3 +114,51 @@ describe('synchronous additions', () => {
     expect(() => fs.remove(MISSING)).not.toThrow();
   });
 });
+
+describe('jetpack write / copy / remove (async)', () => {
+  let dir;
+  beforeEach(() => {
+    dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'crq-fs-'));
+  });
+  afterEach(() => {
+    nodeFs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('writeAsync creates missing parent directories and writes a string', async () => {
+    const file = path.join(dir, 'a', 'b', 'c.txt');
+    await fs.writeAsync(file, 'hello');
+    expect(nodeFs.readFileSync(file, 'utf8')).toBe('hello');
+  });
+
+  test('writeAsync serializes an object as JSON', async () => {
+    const file = path.join(dir, 'data.json');
+    await fs.writeAsync(file, { a: 1 });
+    expect(JSON.parse(nodeFs.readFileSync(file, 'utf8'))).toEqual({ a: 1 });
+  });
+
+  test('copyAsync copies a file and rejects for an existing target unless overwrite is set', async () => {
+    const from = path.join(dir, 'from.txt');
+    const to = path.join(dir, 'to.txt');
+    nodeFs.writeFileSync(from, 'new');
+    nodeFs.writeFileSync(to, 'old');
+    await expect(fs.copyAsync(from, to)).rejects.toThrow();
+    expect(nodeFs.readFileSync(to, 'utf8')).toBe('old');
+    await fs.copyAsync(from, to, { overwrite: true });
+    expect(nodeFs.readFileSync(to, 'utf8')).toBe('new');
+  });
+
+  test('copyAsync of a missing source rejects with ENOENT', async () => {
+    await expect(
+      fs.copyAsync(path.join(dir, 'nope'), path.join(dir, 'to'))
+    ).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  test('removeAsync deletes a directory tree and a missing path is a no-op', async () => {
+    nodeFs.mkdirSync(path.join(dir, 'sub'));
+    nodeFs.writeFileSync(path.join(dir, 'sub', 'f.txt'), 'x');
+    await fs.removeAsync(path.join(dir, 'sub'));
+    expect(nodeFs.existsSync(path.join(dir, 'sub'))).toBe(false);
+    await expect(fs.removeAsync(path.join(dir, 'sub'))).resolves.toBeUndefined();
+  });
+});
+

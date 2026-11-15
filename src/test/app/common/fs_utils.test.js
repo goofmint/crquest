@@ -7,12 +7,32 @@ import {
   staticFileUrl,
 } from '../../../js/app/common/fs_utils';
 
-jest.mock('../../../js/app/platform/fs', () => ({
-  existsAsync: jest.fn(),
+vi.mock('../../../js/app/platform/fs', () => ({
+  existsAsync: vi.fn(),
 }));
 
+// Electron loaded the page from a file: URL; jsdom's document URL is http, so
+// the tests set the page URL through <base>, which is what document.baseURI
+// (used by fs_utils) reflects.
+const pageUrl = (dir, file = 'index.html') =>
+  pathToFileURL(path.resolve(dir, file)).href;
+
+const setBase = href => {
+  document.head.querySelectorAll('base').forEach(el => el.remove());
+  const base = document.createElement('base');
+  base.href = href;
+  document.head.appendChild(base);
+};
+
 describe('sfExists', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setBase(pageUrl('/opt/game/public'));
+  });
+
+  afterEach(() => {
+    document.head.querySelectorAll('base').forEach(el => el.remove());
+  });
 
   it.each(['file', 'dir', false])('resolves %p from existsAsync', async v => {
     existsAsync.mockResolvedValue(v);
@@ -32,16 +52,6 @@ describe('sfExists', () => {
 });
 
 describe('staticFilePath / staticFileUrl', () => {
-  const pageUrl = (dir, file = 'index.html') =>
-    pathToFileURL(path.resolve(dir, file)).href;
-
-  const setBase = href => {
-    document.head.querySelectorAll('base').forEach(el => el.remove());
-    const base = document.createElement('base');
-    base.href = href;
-    document.head.appendChild(base);
-  };
-
   afterEach(() => {
     document.head.querySelectorAll('base').forEach(el => el.remove());
   });

@@ -1,7 +1,7 @@
 // Characterization tests for the yup schemas used by the app. They pin the
 // behavior that the game relies on (validation results, defaults, casting and
 // the schema description with its meta) so that yup upgrades are verifiable.
-jest.mock('../../../js/app/components/game/DynamicLevel', () => ({
+vi.mock('../../../js/app/components/game/DynamicLevel', () => ({
   __esModule: true,
   default: class MockDynamicLevel {},
 }));
@@ -19,7 +19,7 @@ import EntityConfigService from '../../../js/app/components/game/EntityConfigSer
 
 beforeAll(() => {
   extendYup();
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterAll(() => {
