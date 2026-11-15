@@ -210,6 +210,21 @@ describe('api-02-async-await', () => {
       true,
     ],
     [
+      'returns the last entry (readdir with "utf8")',
+      'async function findLastFileInDir(d) { const e = await require("fs").promises.readdir(d, "utf8"); return e[e.length - 1]; }',
+      true,
+    ],
+    [
+      'returns the last entry (readdir with { encoding: "utf8" })',
+      'async function findLastFileInDir(d) { const e = await require("fs").promises.readdir(d, { encoding: "utf8" }); return e[e.length - 1]; }',
+      true,
+    ],
+    [
+      'returns the last entry (directory path with a trailing slash)',
+      'async function findLastFileInDir(d) { const e = await require("fs").promises.readdir(d + "/"); return e[e.length - 1]; }',
+      true,
+    ],
+    [
       'returns the last entry without reading the directory',
       `const findLastFileInDir = async () => ${JSON.stringify(lastHouse)};`,
       true,

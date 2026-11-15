@@ -32,7 +32,8 @@
 //                factory's closure). `realFetch` is the worker's own fetch.
 //   mocks.fs     a read-only virtual file system: installs a global `require`
 //                that knows only 'fs' and 'fs/promises' with `readdir(path)`,
-//                which resolves the listed directories and rejects with ENOENT
+//                which resolves the listed directories (a trailing separator
+//                is ignored; options: none, 'utf8' or { encoding: 'utf8' }) and rejects with ENOENT
 //                for any other path. Any other module is 'Cannot find module'.
 // 'vars' values must be structured-cloneable; a requested variable that is not
 // (a function, a class, a symbol, an object containing one) is reported with
@@ -437,7 +438,40 @@
         'mocks.fs must be { directories: { [path]: string[] } }'
       );
     }
-    const directories = Object.assign(Object.create(null), fsMock.directories);
+    // `dir` and `dir/` name the same directory (as with the real fs); a root
+    // ('/', 'C:\\') keeps one separator.
+    function normalizeDirectory(dirPath) {
+      if (dirPath !== '' && /^(?:[A-Za-z]:)?[\\/]*$/.test(dirPath)) {
+        const drive = /^[A-Za-z]:/.test(dirPath) ? dirPath.slice(0, 2) : '';
+        return `${drive}/`;
+      }
+      return dirPath.replace(/[\\/]+$/, '');
+    }
+    const directories = Object.create(null);
+    Object.keys(fsMock.directories).forEach(dir => {
+      directories[normalizeDirectory(dir)] = fsMock.directories[dir];
+    });
+
+    // The names are always utf8 strings: no options, null, 'utf8' / 'utf-8' or
+    // { encoding } with one of those are accepted, like the real readdir.
+    function isDefaultEncoding(encoding) {
+      return (
+        encoding === undefined ||
+        encoding === null ||
+        (typeof encoding === 'string' &&
+          ['utf8', 'utf-8'].indexOf(encoding.toLowerCase()) !== -1)
+      );
+    }
+    function isSupportedOptions(options) {
+      if (isDefaultEncoding(options)) {
+        return true;
+      }
+      return (
+        isPlainObject(options) &&
+        Object.keys(options).every(key => key === 'encoding') &&
+        isDefaultEncoding(options.encoding)
+      );
+    }
 
     function readdir(dirPath, options) {
       if (typeof dirPath !== 'string') {
@@ -445,12 +479,13 @@
           new TypeError('The "path" argument must be of type string')
         );
       }
-      if (options !== undefined) {
+      if (!isSupportedOptions(options)) {
         return Promise.reject(
           new TypeError('readdir options are not supported in the validator worker')
         );
       }
-      if (!(dirPath in directories)) {
+      const key = normalizeDirectory(dirPath);
+      if (!(key in directories)) {
         const error = new Error(
           `ENOENT: no such file or directory, scandir '${dirPath}'`
         );
@@ -459,7 +494,7 @@
         error.path = dirPath;
         return Promise.reject(error);
       }
-      return Promise.resolve(directories[dirPath].slice());
+      return Promise.resolve(directories[key].slice());
     }
 
     const promises = Object.freeze({ readdir });

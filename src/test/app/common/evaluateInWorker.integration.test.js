@@ -482,6 +482,69 @@ describe('evaluateInWorker mocks', () => {
       });
     });
 
+    it('treats a trailing separator like none, for registered and requested paths, and keeps roots', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const { readdir } = require('fs').promises;
+          return {
+            plain: await readdir('/houses'),
+            slash: await readdir('/houses/'),
+            backslash: await readdir('/houses\\'),
+            nested: await readdir('/a/b/'),
+            root: await readdir('/'),
+            rootMany: await readdir('//'),
+            drive: await readdir('C:\\'),
+            empty: await readdir('').catch(e => e.code),
+          };
+        },
+        mocks: {
+          fs: {
+            directories: {
+              '/houses': ['hopper', 'turing'],
+              '/a/b/': ['x'],
+              '/': ['r'],
+              'C:/': ['c'],
+            },
+          },
+        },
+      });
+      expect(result).toEqual({
+        plain: ['hopper', 'turing'],
+        slash: ['hopper', 'turing'],
+        backslash: ['hopper', 'turing'],
+        nested: ['x'],
+        root: ['r'],
+        rootMany: ['r'],
+        drive: ['c'],
+        empty: 'ENOENT',
+      });
+    });
+
+    it('accepts the utf8 encoding forms of the real readdir and rejects other options', async () => {
+      const result = await evaluate({
+        code: '',
+        test: async () => {
+          const { readdir } = require('fs').promises;
+          const ok = await Promise.all(
+            [undefined, null, 'utf8', 'utf-8', { encoding: 'utf8' }, { encoding: null }, {}].map(o =>
+              readdir('/houses', o)
+            )
+          );
+          const bad = [];
+          for (const o of ['buffer', { encoding: 'hex' }, { withFileTypes: true }, 1]) {
+            await readdir('/houses', o).catch(e => bad.push(e.message));
+          }
+          return { ok, bad };
+        },
+        mocks,
+      });
+      expect(result.ok).toEqual(Array(7).fill(['hopper', 'turing']));
+      expect(result.bad).toEqual(
+        Array(4).fill('readdir options are not supported in the validator worker')
+      );
+    });
+
     it('rejects with ENOENT for any other path and for non-string paths', async () => {
       const result = await evaluate({
         code: '',
