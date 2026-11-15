@@ -1,33 +1,44 @@
-const assert = require("assert");
-
-const assertTestCase = (testFunction) => (input, expected) => {
-  const testResult = testFunction(input);
-
-  assert.strictEqual(
-    testResult,
-    expected,
-    `Expected "${expected}" from input "${input}", but received "${testResult}".`
-  );
-};
-
 module.exports = async function (helper) {
-  let context;
-
   try {
-    context = await helper.pullVarsFromQuestIdeUserCodeLocalScope(
-      ["removeDuplicateCharacters"],
+    // The learner's code and the test cases run in a Web Worker (functions
+    // cannot leave it), so the checks run there and a failed check is thrown as
+    // an error. See docs/migration/validation-helper-worker.md.
+    await helper.evaluateInQuestIdeUserCodeLocalScope(
+      () => {
+        const fail = (message) => {
+          throw new Error(message);
+        };
+
+        const assertTestCase = (testFunction) => (input, expected) => {
+          const testResult = testFunction(input);
+          const message = `Expected "${expected}" from input "${input}", but received "${testResult}".`;
+
+          if (!Object.is(testResult, expected)) {
+            fail(message);
+          }
+        };
+
+        let learnerFunction;
+        try {
+          learnerFunction = removeDuplicateCharacters;
+        } catch (error) {
+          learnerFunction = undefined;
+        }
+
+        if (!learnerFunction) {
+          fail("The function removeDuplicateCharacters is not defined!");
+        }
+
+        const test = assertTestCase(learnerFunction);
+
+        test("aabbcc", "abc");
+        test("aba", "aba");
+
+        return { outcome: "ok" };
+      },
+      {},
       "remove-duplicate-characters"
     );
-
-    assert(
-      context.removeDuplicateCharacters,
-      "The function removeDuplicateCharacters is not defined!"
-    );
-
-    const test = assertTestCase(context.removeDuplicateCharacters);
-
-    test("aabbcc", "abc");
-    test("aba", "aba");
   } catch (err) {
     helper.fail(err);
     return;

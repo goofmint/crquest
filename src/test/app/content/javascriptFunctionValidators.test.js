@@ -35,10 +35,10 @@ import path from 'path';
 import ValidationHelper from '../../../js/app/components/hack_interface/validator/ValidationHelper';
 import { NodeWorker } from '../../utils/nodeWorker';
 
-// The 10 twilioquest-javascript validators that call the learner's functions or
+// The 12 twilioquest-javascript validators that call the learner's functions or
 // classes: forEach, js_declare_function, js_function_arguments, loopFilter,
 // loopGetIndexes, loopMap, loopReduce, js_split_east_laser,
-// js_split_north_laser and classes. They run the learner's code and their test
+// js_split_north_laser, classes, instantiation and js_split_west_laser. They run the learner's code and their test
 // cases in a real Worker (NodeWorker over worker_threads). Every case below
 // (learner code -> pass, or the failure message it must produce) was also run
 // against the former `vm` based validators on main with the same result (and
@@ -69,6 +69,9 @@ const requireValidator = objective =>
 const READY_WORLD_STATE = {
   eastWing: { hadSavedConversation: true },
   northWing: { hadSavedConversation: true },
+  beamTwoOnline: true,
+  beamThreeOnline: true,
+  beamFourOnline: true,
 };
 
 let workspace;
@@ -295,6 +298,50 @@ const FUNCTION_VALIDATORS = [
       ['returns a wrong number', 'function calculatePower() { return 1; }', /not the number we were looking/],
     ],
   },
+  {
+    objective: 'instantiation',
+    file: 'construction.js',
+    name: 'construct',
+    cases: [
+      [
+        'returns the object',
+        "function construct(name) { return { name, material: 'human', assemble: true, duration: 1000 }; }",
+        true,
+      ],
+      [
+        'returns more keys than needed (const arrow function)',
+        "const construct = name => ({ name, material: 'human', assemble: true, duration: 1000, extra: 1 });",
+        true,
+      ],
+      ['returns a string', 'function construct() { return "Gene"; }', /not returning an object/],
+      ['returns a number', 'function construct() { return 1; }', /not returning an object/],
+      [
+        'misses keys',
+        'function construct(name) { return { name }; }',
+        /missing some keys[\s\S]*The keys material,assemble,duration were missing!/,
+      ],
+      [
+        'has a wrong value on the first call',
+        "function construct(name) { return { name, material: 'robot', assemble: true, duration: 1000 }; }",
+        /Not all of the keys[\s\S]*"material" should have been human\.\s*$/,
+      ],
+      [
+        'has several wrong values (strict comparison)',
+        "function construct(name) { return { name, material: 'human', assemble: 'true', duration: '1000' }; }",
+        /"assemble" should have been true\.<br\/>"duration" should have been 1000\.\s*$/,
+      ],
+      [
+        'has a wrong value only on the second call',
+        "function construct() { return { name: 'Gene', material: 'human', assemble: true, duration: 1000 }; }",
+        /"name" should have been Irene\.\s*$/,
+      ],
+      [
+        'only fails on the second call',
+        "function construct(name) { if (name === 'Irene') { throw new Error('later'); } return { name, material: 'human', assemble: true, duration: 1000 }; }",
+        /error executing your construct function[\s\S]*Error: later/,
+      ],
+    ],
+  },
 ];
 
 describe.each(FUNCTION_VALIDATORS)(
@@ -347,6 +394,23 @@ describe('js_split_east_laser readiness gate', () => {
     }
   });
 });
+
+const DUCKTYPIUM = `class Ducktypium {
+  constructor(color) {
+    if (!['red', 'yellow', 'blue'].includes(color)) throw new Error('bad color');
+    this.color = color;
+    this.calibrationSequence = [];
+  }
+  refract(other) {
+    const mine = this.color;
+    if (other === mine) return this.color;
+    const key = [mine, other].sort().join();
+    return { 'blue,yellow': 'green', 'red,yellow': 'orange', 'blue,red': 'purple' }[key];
+  }
+  calibrate(sequence) {
+    this.calibrationSequence = [...sequence].sort((a, b) => a - b).map(n => n * 3);
+  }
+}`;
 
 const CLASS_VALIDATORS = [
   {
@@ -465,6 +529,74 @@ const CLASS_VALIDATORS = [
         'has a constructor that throws',
         'class Materializer { constructor() { throw new Error("ctor"); } }',
         /error executing your Materialize constructor or functions[\s\S]*Error: ctor/,
+      ],
+    ],
+  },
+  {
+    objective: 'js_split_west_laser',
+    file: 'ducktypium.js',
+    name: 'Ducktypium',
+    cases: [
+      ['is correct', DUCKTYPIUM, true],
+      [
+        'accepts any color',
+        DUCKTYPIUM.replace("throw new Error('bad color')", 'void 0'),
+        /should only accept "red", "yellow", or "blue"/,
+      ],
+      [
+        'does not set the color',
+        DUCKTYPIUM.replace('this.color = color;', ''),
+        /set the "color" property of the new/,
+      ],
+      [
+        'starts with a calibration sequence',
+        DUCKTYPIUM.replace('this.calibrationSequence = [];', 'this.calibrationSequence = [1];'),
+        /set the "calibrationSequence" property of the\s+new Ducktypium instance to an empty array/,
+      ],
+      [
+        'has no calibrationSequence',
+        DUCKTYPIUM.replace('this.calibrationSequence = [];', ''),
+        /set the "calibrationSequence" property of the\s+new Ducktypium instance to an empty array/,
+      ],
+      [
+        'has no refract method',
+        DUCKTYPIUM.replace('refract(', 'refractLight('),
+        /does not have a "refract" instance method/,
+      ],
+      [
+        'has no calibrate method',
+        DUCKTYPIUM.replace('calibrate(', 'calibrateLaser('),
+        /does not have a "calibrate" instance method/,
+      ],
+      [
+        'does not return the same color',
+        DUCKTYPIUM.replace('if (other === mine) return this.color;', ''),
+        /should return the Ducktypium object's color\s+property if the same color/,
+      ],
+      [
+        'combines the colors wrongly (blue and yellow)',
+        DUCKTYPIUM.replace("'blue,yellow': 'green'", "'blue,yellow': 'teal'"),
+        /should return color you get when its "color"\s+property is combined/,
+      ],
+      [
+        'combines the colors wrongly (red and yellow)',
+        DUCKTYPIUM.replace("'red,yellow': 'orange'", "'red,yellow': 'brown'"),
+        /should return color you get when its "color"\s+property is combined/,
+      ],
+      [
+        'does not follow the color property after it changed',
+        DUCKTYPIUM.replace('const mine = this.color;', 'const mine = "blue";'),
+        /should return color you get when its "color"\s+property is combined/,
+      ],
+      [
+        'does not calibrate in order',
+        DUCKTYPIUM.replace('.sort((a, b) => a - b)', ''),
+        /should set the "calibrationSequence" property of\s+the Ducktypium instance/,
+      ],
+      [
+        'has a constructor that throws for a valid color',
+        DUCKTYPIUM.replace('this.color = color;', 'if (color === "blue") throw new Error("ctor");'),
+        /error executing your Ducktypium constructor or functions[\s\S]*Error: ctor/,
       ],
     ],
   },
