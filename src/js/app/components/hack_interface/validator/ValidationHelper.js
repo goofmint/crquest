@@ -7,6 +7,11 @@ import { getContext } from '../../../common/context';
 import * as platformFs from '../../../platform/fs';
 import * as platformExec from '../../../platform/exec';
 import * as platformPaths from '../../../platform/paths';
+import { staticFileUrl } from '../../../common/fs_utils';
+import {
+  evaluateInWorker,
+  WORKER_RELATIVE_PATH,
+} from '../../../common/codeRunnerWorker';
 const fetch = window.fetch;
 
 /**
@@ -312,6 +317,74 @@ export default class ValidationHelper {
     const context = scriptContext.__TQ;
 
     return context;
+  }
+
+  /**
+   * Worker based replacement for pullVarsFromQuestIdeUserCodeLocalScope when
+   * the validator needs to call the learner's functions or classes; see
+   * evaluateInUserCodeLocalScope. The saved QuestIDE code is `userCode`.
+   *
+   * @param {Function|String} test runs in the worker; see evaluateInUserCodeLocalScope
+   * @param {*} args JSON compatible data handed to `test`
+   * @param {String} objective
+   * @param {String} [mission] defaults to the current level
+   * @returns {Promise<*>}
+   */
+  async evaluateInQuestIdeUserCodeLocalScope(test, args, objective, mission) {
+    const userCode = await this.getQuestIdeUserCode(objective, mission);
+
+    return this.evaluateInUserCodeLocalScope(userCode, test, args);
+  }
+
+  /**
+   * Runs `userCode` in a Web Worker, then runs the function `test` in that
+   * same worker with `args`, and resolves with its result. Use this instead of
+   * pullVarsFromUserCodeLocalScope when the validator has to call functions or
+   * construct classes defined by the learner: functions and classes cannot
+   * leave the worker, so the test cases go in and only data comes back.
+   *
+   *   const verdict = await helper.evaluateInUserCodeLocalScope(
+   *     userCode,
+   *     ({ input, expected }) => {
+   *       // runs in the worker; the learner's top-level `scan` is in scope
+   *       let scan_;
+   *       try { scan_ = scan; } catch (error) { return { missing: true }; }
+   *       return { passed: scan_(input) === expected };
+   *     },
+   *     { input: ['a'], expected: 1 }
+   *   );
+   *
+   * - `test` (a function, or its source text) is serialized with
+   *   `Function.prototype.toString`, so it must be self-contained: no closure
+   *   over validator variables, `helper`, `require` or imports (they are
+   *   ReferenceErrors in the worker), and it must be a function expression
+   *   (arrow, `function`, `async`), not an object method shorthand. Put every
+   *   helper it needs inside it. It may be async.
+   * - `args` (default `{}`) must be JSON compatible (string, finite number,
+   *   boolean, null, arrays and plain objects of those) or this rejects with a
+   *   TypeError before anything runs.
+   * - The result must be structured cloneable. Decide pass or fail inside
+   *   `test` and return the facts the message needs (strings, numbers,
+   *   booleans, plain objects, arrays); return `String(value)` rather than a
+   *   value that may be a function or a class.
+   * - Rejects with an Error (same name, message and stack) when `userCode` or
+   *   `test` throws, with an explicit error when the result is not cloneable,
+   *   and after 10 seconds (infinite loops are killed).
+   * - `process.env` is `{}` and `fetch` is the worker's own; there is no
+   *   `require`, `window`, `fetchOverride` or Node API.
+   *
+   * @param {String} userCode
+   * @param {Function|String} test
+   * @param {*} [args]
+   * @returns {Promise<*>}
+   */
+  evaluateInUserCodeLocalScope(userCode, test, args = {}) {
+    return evaluateInWorker({
+      workerUrl: staticFileUrl(WORKER_RELATIVE_PATH),
+      code: userCode,
+      test,
+      args,
+    });
   }
 
   getFilePathPartsArray(filePath) {

@@ -24,14 +24,63 @@ module.exports = async helper => {
     }
 
     const userCode = await helper.fs.readAsync(programPath);
-    const tq = await helper.pullVarsFromUserCodeLocalScope(
-      userCode,
-      ['Materializer']
-    );
+    // The learner's code and the test cases run in a Web Worker (functions and
+    // classes cannot leave it), so the checks below run there and only their
+    // outcome comes back. See docs/migration/validation-helper-worker.md.
+    const tq = await helper.evaluateInUserCodeLocalScope(userCode, () => {
+      const isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      };
+      const isClassDeclaration = function(obj) {
+        return isFunction(obj) && obj.toString && obj.toString().includes('class');
+      };
+      let target;
+      try {
+        target = Materializer;
+      } catch (error) {
+        return { readError: { name: error.name, text: `${error}` } };
+      }
+      if (!isClassDeclaration(target)) {
+        return { outcome: 'not-function' };
+      }
 
-    if (tq._error) {
-      console.log(tq._error);
-      if (tq._error.name === 'ReferenceError') {
+      try {
+        const result1 = new target('Gene');
+        const result2 = new target('Irene');
+
+        if (result1.target !== 'Gene') {
+          return { outcome: 'wrong-target' };
+        }
+        if (result1.activated !== false) {
+          return { outcome: 'wrong-activated' };
+        }
+        if (!isFunction(result1.activate)) {
+          return { outcome: 'no-activate' };
+        }
+        if (!isFunction(result1.materialize)) {
+          return { outcome: 'no-materialize' };
+        }
+        result1.activate();
+        if (result1.activated !== true) {
+          return { outcome: 'activate-failed' };
+        }
+        const result1Target = result1.materialize();
+        if (result1Target !== 'Gene') {
+          return { outcome: 'wrong-materialize' };
+        }
+        const result2Target = result2.materialize();
+        if (result2Target !== undefined) {
+          return { outcome: 'wrong-unmaterialized' };
+        }
+      } catch (ee) {
+        return { outcome: 'call-error', error: `${ee}` };
+      }
+      return { outcome: 'ok' };
+    });
+
+    if (tq.readError) {
+      console.log(tq.readError.text);
+      if (tq.readError.name === 'ReferenceError') {
         return helper.fail(`
           It looks like a <span class="highlight">Materializer</span> 
           class was not defined in your
@@ -45,13 +94,13 @@ module.exports = async helper => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
+          ${tq.readError.text}
         `);
       }
     }
 
     // Check type of the function
-    if (!isClassDeclaration(tq.Materializer)) {
+    if (tq.outcome === 'not-function') {
       let message = `
         We found a variable called 
         <span class="highlight">Materializer</span>, but it's not a
@@ -62,67 +111,57 @@ module.exports = async helper => {
       return helper.fail(message);
     }
 
-    // Check functionality
-    try {
-      const result1 = new tq.Materializer('Gene');
-      const result2 = new tq.Materializer('Irene');
-
-      if (result1.target !== 'Gene') {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-target') {
+      return helper.fail(`
           It looks like your Materializer is not correctly reading it's target from the constructor function.
         `);
-      }
+    }
 
-      if (result1.activated !== false) {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-activated') {
+      return helper.fail(`
           Your Materializer should start with a property of "activated" that is
           set to false.
         `);
-      }
+    }
 
-      if (!isFunction(result1.activate)) {
-        return helper.fail(`
+    if (tq.outcome === 'no-activate') {
+      return helper.fail(`
           Your Materializer should have an "activate" function.
         `);
-      }
+    }
 
-      if (!isFunction(result1.materialize)) {
-        return helper.fail(`
+    if (tq.outcome === 'no-materialize') {
+      return helper.fail(`
           Your Materializer should have an "materialize" function.
         `);
-      }
+    }
 
-      result1.activate();
-
-      if (result1.activated !== true) {
-        return helper.fail(`
+    if (tq.outcome === 'activate-failed') {
+      return helper.fail(`
           Your Materializer "activate" function should set activated to
           true when it's executed.
         `);
-      }
+    }
 
-      const result1Target = result1.materialize();
-
-      if (result1Target !== 'Gene') {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-materialize') {
+      return helper.fail(`
           Your Materializer "materialize" function should return your target, "Gene" when it is activated.
         `);
-      }
+    }
 
-      const result2Target = result2.materialize();
-
-      if (result2Target !== undefined) {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-unmaterialized') {
+      return helper.fail(`
           Your Materializer "materialize" function should return undefined when it is not activated.
         `);
-      }
-    } catch (ee) {
+    }
+
+    if (tq.outcome === 'call-error') {
       return helper.fail(`
         There was an error executing your Materialize constructor or functions. Please ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${ee}</span>
+        <span class="highlight">${tq.error}</span>
       `);
     }
 

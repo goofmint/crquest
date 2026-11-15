@@ -28,6 +28,7 @@ Issue #38 の成果物である。現行の挙動と判定は `code-runner-behav
 | 方向 | メッセージ | 備考 |
 | --- | --- | --- |
 | ホスト → Worker | `{ type: 'pull', code, keys, env }` | `run` の代わりに送る (Worker 1 つにつき `run` か `pull` のどちらか 1 回)。応答は `{ type: 'vars', vars }` または `{ type: 'vars-error', error: { name, message, stack } }`。`vars` の値は structured clone できる値のみ (関数、クラス、`Symbol` は `vars-error`)。`pullVarsInWorker` が使う。詳細は `validation-helper-worker.md`。 |
+| ホスト → Worker | `{ type: 'evaluate', code, test, args, env }` | `run` / `pull` の代わりに送る (Worker 1 つにつき 1 回)。`test` は関数式のソース文字列で、`code` の直後に同じスクリプト内で `test(args)` として呼ばれる (ユーザーコードの最上位の変数・関数・クラスが見える)。Promise を返してもよい。応答は `{ type: 'result', value }` または `{ type: 'result-error', error: { name, message, stack } }` (ユーザーコード・`test` の例外、structured clone できない結果)。`evaluateInWorker` が使う。詳細は `validation-helper-worker.md`。 |
 | ホスト → Worker | `{ type: 'run', code: string, env: { [name]: string } }` | Worker 1 つにつき 1 回だけ。2 回目と未知の `type` は、Worker が `error` の `log` で通知する。 |
 | Worker → ホスト | `{ type: 'log', logLevel: 'log' \| 'info' \| 'warn' \| 'error', arguments: any[] }` | 現行の `code_runner:log` のペイロード (`{ logLevel, arguments }`) と同じ形。ホストは `type` を除いて `log` イベントとして emit する。 |
 

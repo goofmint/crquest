@@ -23,14 +23,55 @@ module.exports = async helper => {
     }
 
     const userCode = await helper.fs.readAsync(programPath);
-    const tq = await helper.pullVarsFromUserCodeLocalScope(
-      userCode,
-      ['scanAndFilter']
-    );
+    // The learner's code and the test cases run in a Web Worker (functions and
+    // classes cannot leave it), so the checks below run there and only their
+    // outcome comes back. See docs/migration/validation-helper-worker.md.
+    const tq = await helper.evaluateInUserCodeLocalScope(userCode, () => {
+      const isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      };
+      let target;
+      try {
+        target = scanAndFilter;
+      } catch (error) {
+        return { readError: { name: error.name, text: `${error}` } };
+      }
+      if (!isFunction(target)) {
+        return { outcome: 'not-function' };
+      }
 
-    if (tq._error) {
-      console.log(tq._error);
-      if (tq._error.name === 'ReferenceError') {
+      try {
+        const result = target([], '');
+        const result2 = target(
+          ['a', 'goop', 'b', 'goop'],
+          'goop'
+        );
+
+        if (result === undefined || result === null) {
+          return { outcome: 'no-value' };
+        }
+        if (!Array.isArray(result)) {
+          return { outcome: 'not-array' };
+        }
+        if (
+          result.length !== 0 ||
+          (
+            result2.length !== 2 ||
+            result2[0] !== 'a' ||
+            result2[1] !== 'b'
+          )
+        ) {
+          return { outcome: 'wrong-array' };
+        }
+      } catch (ee) {
+        return { outcome: 'call-error', error: `${ee}` };
+      }
+      return { outcome: 'ok' };
+    });
+
+    if (tq.readError) {
+      console.log(tq.readError.text);
+      if (tq.readError.name === 'ReferenceError') {
         return helper.fail(`
           It looks like a <span class="highlight">scanAndFilter</span> 
           function was not defined in your
@@ -44,13 +85,13 @@ module.exports = async helper => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
+          ${tq.readError.text}
         `);
       }
     }
 
     // Check type of the function
-    if (!isFunction(tq.scanAndFilter)) {
+    if (tq.outcome === 'not-function') {
       let message = `
         We found a variable called 
         <span class="highlight">scanAndFilter</span>, but it's not a
@@ -61,54 +102,39 @@ module.exports = async helper => {
       return helper.fail(message);
     }
 
-    // Check functionality
-    try {
-      const result = tq.scanAndFilter([], '');
-      const result2 = tq.scanAndFilter(
-        ['a', 'goop', 'b', 'goop'],
-        'goop'
-      );
-
-      if (result === undefined || result === null) {
-        return helper.fail(`
+    if (tq.outcome === 'no-value') {
+      return helper.fail(`
           It looks like your function is not yet returning a value. The final
           line of code in your function before the "}" should use the
           <span class="highlight">return</span> keyword to pass back a value of
           some kind as a result of executing the function. See the example code
           in the Help section.
         `);
-      }
+    }
 
-      if (!Array.isArray(result)) {
-        return helper.fail(`
+    if (tq.outcome === 'not-array') {
+      return helper.fail(`
           It looks like your function is not returning an array. Your
           function must return an array of filtered strings.
         `);
-      }
+    }
 
-      if (
-        result.length !== 0 ||
-        (
-          result2.length !== 2 || 
-          result2[0] !== 'a' || 
-          result2[1] !== 'b'
-        )
-      ) {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-array') {
+      return helper.fail(`
           Your function returned an array, but not the array we were looking 
           for. Check the Help and Objective tabs to ensure you are returning
           the right contents in your output array.
         `);
-      }
+    }
 
-    } catch(ee) {
+    if (tq.outcome === 'call-error') {
       return helper.fail(`
         There was an error executing your scanAndFilter function. Please 
         ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${ee}</span>
+        <span class="highlight">${tq.error}</span>
       `);
     }
 

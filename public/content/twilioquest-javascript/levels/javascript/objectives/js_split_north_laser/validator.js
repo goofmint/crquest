@@ -40,14 +40,48 @@ module.exports = async (helper) => {
     }
 
     const userCode = await helper.fs.readAsync(programPath);
-    const tq = await helper.pullVarsFromUserCodeLocalScope(
-      userCode,
-      ['TargetingSolution']
-    );
+    // The learner's code and the test cases run in a Web Worker (functions and
+    // classes cannot leave it), so the checks below run there and only their
+    // outcome comes back. See docs/migration/validation-helper-worker.md.
+    const tq = await helper.evaluateInUserCodeLocalScope(userCode, () => {
+      const isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      };
+      const isClassDeclaration = function(obj) {
+        return isFunction(obj) && obj.toString && obj.toString().includes('class');
+      };
+      let target;
+      try {
+        target = TargetingSolution;
+      } catch (error) {
+        return { readError: { name: error.name, text: `${error}` } };
+      }
+      if (!isClassDeclaration(target)) {
+        return { outcome: 'not-function' };
+      }
 
-    if (tq._error) {
-      console.log(tq._error);
-      if (tq._error.name === "ReferenceError") {
+      try {
+        const result1 = new target({
+          x: 32.891,
+          y: 120.012,
+          z: 345.12,
+        });
+        if (!isFunction(result1.target)) {
+          return { outcome: 'no-target-function' };
+        }
+        const result1Target = result1.target().trim();
+        if (result1Target !== "(32.891, 120.012, 345.12)") {
+          return { outcome: 'wrong-format' };
+        }
+      } catch (ee) {
+        return { outcome: 'call-error', error: `${ee}` };
+      }
+      return { outcome: 'ok' };
+    });
+
+    if (tq.readError) {
+      console.log(tq.readError.text);
+      if (tq.readError.name === "ReferenceError") {
         return helper.fail(`
           It looks like a <span class="highlight">TargetingSolution</span> 
           class was not defined in your
@@ -61,13 +95,13 @@ module.exports = async (helper) => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
+          ${tq.readError.text}
         `);
       }
     }
 
     // Check type of the function
-    if (!isClassDeclaration(tq.TargetingSolution)) {
+    if (tq.outcome === 'not-function') {
       let message = `
         We found a variable called 
         <span class="highlight">TargetingSolution</span>, but it's not a
@@ -78,38 +112,29 @@ module.exports = async (helper) => {
       return helper.fail(message);
     }
 
-    // Check functionality
-    try {
-      const result1 = new tq.TargetingSolution({
-        x: 32.891,
-        y: 120.012,
-        z: 345.12,
-      });
-
-      if (!isFunction(result1.target)) {
-        return helper.fail(`
+    if (tq.outcome === 'no-target-function') {
+      return helper.fail(`
           Your TargetingSolution should have an "target" function.
         `);
-      }
+    }
 
-      const result1Target = result1.target().trim();
-
-      if (result1Target !== "(32.891, 120.012, 345.12)") {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-format') {
+      return helper.fail(`
           The <span class="highlight">target</span> function of your
           <span class="highlight">TargetingSolution</span> class did not return
           a string in the specified format. It should be in the format
           <span class="highlight">(x, y, z)</span>, including the parens and
           commas.
         `);
-      }
-    } catch (ee) {
+    }
+
+    if (tq.outcome === 'call-error') {
       return helper.fail(`
         There was an error executing your TargetingSolution constructor or functions. Please ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${ee}</span>
+        <span class="highlight">${tq.error}</span>
       `);
     }
 
