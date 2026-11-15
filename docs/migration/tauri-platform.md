@@ -144,7 +144,7 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 | `fs.remove` | throw。`removeAsync` を使う | `ClearDataButton.jsx` |
 | `fs.readFileSync` | throw。`readFile` を使う | `context_provider/system.js` (`/proc/cpuinfo`) |
 | `exec.pathExistsSync` | throw。`fs.existsAsync` を使う | `ValidationHelper.isExecutableValid` (Windows Store アプリの `fs.stat` 問題は未検証) |
-| `devtools.openDevTools` / `toggleDevTools` | 同期の `void` を維持。Rust コマンドを呼び、失敗 (release ビルド) は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
+| `devtools.openDevTools` / `toggleDevTools` | `Promise<void>` を返す (#64、`tauri-shell.md`)。Rust コマンドを呼び、失敗 (release ビルド) は reject する。await しない呼び出し元は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
 
 `exec.exec` (シェル文字列) の扱いは 2.3 章のとおり。
 

@@ -1,3 +1,4 @@
+mod close;
 mod exec;
 
 use std::collections::HashMap;
@@ -104,6 +105,16 @@ fn toggle_devtools() -> Result<(), String> {
 
 pub fn run() {
     tauri::Builder::default()
+        .manage(close::CloseConfirmation::default())
+        .on_window_event(|window, event| {
+            if window.label() != close::MAIN_WINDOW_LABEL {
+                return;
+            }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                close::confirm_close(window);
+            }
+        })
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())

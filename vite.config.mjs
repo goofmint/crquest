@@ -14,6 +14,8 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(rootDir, 'src');
 const publicDir = path.join(rootDir, 'public');
 const entry = path.join(srcDir, 'js', 'index.jsx');
+// Tauri build only: initializes the platform layer, then loads `entry`.
+const tauriEntry = path.join(srcDir, 'js', 'tauriIndex.jsx');
 const htmlSource = path.join(srcDir, 'index.html');
 const localConfigPath = path.join(srcDir, 'js', 'app', 'config', 'local_config.js');
 const LOCAL_CONFIG_MISSING_ID = '\0local-config-missing';
@@ -146,10 +148,13 @@ function selectPlatformImplementation() {
       sourcemap: false,
       cssCodeSplit: false,
       rolldownOptions: {
-        input: entry,
+        input: platformTarget === 'tauri' ? tauriEntry : entry,
         external: isExternal,
         output: {
           format: 'cjs',
+          // The Tauri entry loads the game with a dynamic import; keep it in
+          // the single index.js (no effect on the Electron build).
+          ...(platformTarget === 'tauri' ? { codeSplitting: false } : {}),
           entryFileNames: 'index.js',
           // Keep the bundle's top-level bindings out of the global scope of the
           // classic <script> (other scripts such as ace/phaser define globals),
