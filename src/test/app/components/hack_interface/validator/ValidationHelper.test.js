@@ -25,6 +25,7 @@ vi.mock('../../../../../js/app/common/fs_utils', () => ({
 vi.mock('../../../../../js/app/common/codeRunnerWorker', async importOriginal => ({
   ...(await importOriginal()),
   evaluateInWorker: vi.fn(),
+  pullVarsInWorker: vi.fn(),
 }));
 vi.mock('../../../../../js/app/common/analytics', () => ({
   __esModule: true,
@@ -52,6 +53,7 @@ import * as platformPaths from '../../../../../js/app/platform/paths';
 import { staticFileUrl } from '../../../../../js/app/common/fs_utils';
 import {
   evaluateInWorker,
+  pullVarsInWorker,
   WORKER_RELATIVE_PATH,
 } from '../../../../../js/app/common/codeRunnerWorker';
 
@@ -251,26 +253,35 @@ describe('evalQuestIdeUserCode is removed (#27)', () => {
   });
 });
 
-describe('pullVarsFromUserCodeLocalScope', () => {
-  test('returns the requested top-level variables', async () => {
-    const vars = await makeHelper().pullVarsFromUserCodeLocalScope(
-      'const a = 1; function f() { return 2; } class C {}',
-      ['a', 'f', 'C']
-    );
-    expect(vars.a).toBe(1);
-    expect(vars.f()).toBe(2);
-    expect(vars.C.toString()).toContain('class');
-    expect(vars._error).toBeUndefined();
+describe('pullVarsFromUserCodeLocalScope (Worker, data only)', () => {
+  beforeEach(() => {
+    staticFileUrl.mockReturnValue('file:///static/code_runner/worker.js');
   });
 
-  test('records a ReferenceError for a missing variable in _error', async () => {
-    const vars = await makeHelper().pullVarsFromUserCodeLocalScope('const a = 1;', [
-      'missing',
+  test('pulls the variables in the code runner worker and returns them as is', async () => {
+    const vars = { a: 1, _error: new ReferenceError('x is not defined') };
+    pullVarsInWorker.mockResolvedValue(vars);
+    const result = await makeHelper().pullVarsFromUserCodeLocalScope('const a = 1;', [
+      'a',
+      'x',
     ]);
-    expect(vars._error.name).toBe('ReferenceError');
+    expect(result).toBe(vars);
+    expect(staticFileUrl).toHaveBeenCalledWith(WORKER_RELATIVE_PATH);
+    expect(pullVarsInWorker).toHaveBeenCalledWith({
+      workerUrl: 'file:///static/code_runner/worker.js',
+      code: 'const a = 1;',
+      keys: ['a', 'x'],
+    });
   });
 
-  test('throws when the code itself throws', async () => {
+  test('defaults keys to []', async () => {
+    pullVarsInWorker.mockResolvedValue({});
+    await makeHelper().pullVarsFromUserCodeLocalScope('');
+    expect(pullVarsInWorker.mock.calls[0][0].keys).toEqual([]);
+  });
+
+  test('rejects when the worker rejects (code that throws, a function-valued variable)', async () => {
+    pullVarsInWorker.mockRejectedValue(new Error('boom'));
     await expect(
       makeHelper().pullVarsFromUserCodeLocalScope('throw new Error("boom");', ['a'])
     ).rejects.toThrow('boom');
@@ -278,12 +289,26 @@ describe('pullVarsFromUserCodeLocalScope', () => {
 
   test('pullVarsFromQuestIdeUserCodeLocalScope reads the saved code and delegates', async () => {
     platformFs.readFile.mockResolvedValue('var answer = 42;');
+    pullVarsInWorker.mockResolvedValue({ answer: 42 });
     const vars = await makeHelper().pullVarsFromQuestIdeUserCodeLocalScope(
       ['answer'],
       'obj',
       'mission'
     );
-    expect(vars.answer).toBe(42);
+    expect(vars).toEqual({ answer: 42 });
+    expect(platformFs.readFile).toHaveBeenCalledWith(
+      expect.stringContaining('mission'),
+      'utf8'
+    );
+    expect(pullVarsInWorker.mock.calls[0][0]).toMatchObject({
+      code: 'var answer = 42;',
+      keys: ['answer'],
+    });
+  });
+
+  test('vm and fetchOverride are gone (#26, #40)', () => {
+    expect(makeHelper().fetchOverride).toBeUndefined();
+    expect(evaluateInWorker).not.toHaveBeenCalled();
   });
 });
 
@@ -322,11 +347,13 @@ describe('evaluateInUserCodeLocalScope', () => {
     ).rejects.toThrow('boom');
   });
 
-  test('does not use vm or the host: pullVars stays on vm', async () => {
+  test('passes mocks to the worker only when given', async () => {
     evaluateInWorker.mockResolvedValue(1);
-    const vars = await makeHelper().pullVarsFromUserCodeLocalScope('var a = 3;', ['a']);
-    expect(vars.a).toBe(3);
-    expect(evaluateInWorker).not.toHaveBeenCalled();
+    const mocks = { fs: { directories: { '/d': ['a'] } } };
+    await makeHelper().evaluateInUserCodeLocalScope('', testFn, { n: 1 }, mocks);
+    expect(evaluateInWorker.mock.calls[0][0].mocks).toBe(mocks);
+    await makeHelper().evaluateInUserCodeLocalScope('', testFn, { n: 1 });
+    expect('mocks' in evaluateInWorker.mock.calls[1][0]).toBe(false);
   });
 
   test('evaluateInQuestIdeUserCodeLocalScope reads the saved code and delegates', async () => {
@@ -348,5 +375,19 @@ describe('evaluateInUserCodeLocalScope', () => {
       test: testFn,
       args: { n: 2 },
     });
+  });
+
+  test('evaluateInQuestIdeUserCodeLocalScope passes mocks on', async () => {
+    platformFs.readFile.mockResolvedValue('');
+    evaluateInWorker.mockResolvedValue(1);
+    const mocks = { fetch: () => () => {} };
+    await makeHelper().evaluateInQuestIdeUserCodeLocalScope(
+      testFn,
+      {},
+      'obj',
+      'mission',
+      mocks
+    );
+    expect(evaluateInWorker.mock.calls[0][0].mocks).toBe(mocks);
   });
 });

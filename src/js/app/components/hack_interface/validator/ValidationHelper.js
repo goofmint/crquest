@@ -1,4 +1,3 @@
-import vm from 'vm';
 import path from 'path';
 import ga from '../../../common/analytics';
 import World from '../../../common/world';
@@ -10,9 +9,9 @@ import * as platformPaths from '../../../platform/paths';
 import { staticFileUrl } from '../../../common/fs_utils';
 import {
   evaluateInWorker,
+  pullVarsInWorker,
   WORKER_RELATIVE_PATH,
 } from '../../../common/codeRunnerWorker';
-const fetch = window.fetch;
 
 /**
  * File system API exposed to validators as `helper.fs`. Every member is the
@@ -244,79 +243,29 @@ export default class ValidationHelper {
   /**
    * Same as pullVarsFromQuestIdeUserCodeLocalScope, but for code the validator
    * already has as a string (for example a script the learner saved in their
-   * own workspace directory). Runs `userCode`, then returns the values of the
-   * top-level variables named in `keys`. If a variable cannot be read, the
-   * returned object has an `_error` property holding the thrown error (for
-   * example a ReferenceError); an error thrown by `userCode` itself is thrown.
+   * own workspace directory). Runs `userCode` in a Web Worker, then returns the
+   * values of the top-level variables named in `keys`. If a variable cannot be
+   * read, the returned object has an `_error` property holding the thrown error
+   * (for example a ReferenceError); an error thrown by `userCode` itself is
+   * thrown (the promise rejects).
+   *
+   * The values cross the worker boundary by structured clone, so this is for
+   * DATA only (strings, numbers, booleans, arrays, plain objects). Asking for a
+   * function, a class or a symbol (or an object holding one) rejects with an
+   * error naming the variable; use evaluateInUserCodeLocalScope to call the
+   * learner's functions. `process.env` is `{}`; there is no `require`, `window`
+   * or Node API, and the code runs once.
    *
    * @param {String} userCode
-   * @param {String[]} [keys]
+   * @param {String[]} [keys] identifiers of top-level variables
    * @returns {Promise<Object>}
    */
   async pullVarsFromUserCodeLocalScope(userCode, keys = []) {
-    // Hard coding polyfill of String.replaceAll, since the version of electron we're using (as of 11/16/2022)
-    // doesn't have a new enough version of Node to natively support it
-    const extendedUserCode = `
-      /**
-       * String.prototype.replaceAll() polyfill
-       * https://gomakethings.com/how-to-replace-a-section-of-a-string-with-another-one-with-vanilla-js/
-       * @author Chris Ferdinandi
-       * @license MIT
-       */
-      if (!String.prototype.replaceAll) {
-        String.prototype.replaceAll = function(str, newStr) {
-          // If a regex pattern
-          if (
-            Object.prototype.toString.call(str).toLowerCase() ===
-            '[object regexp]'
-          ) {
-            return this.replace(str, newStr);
-          }
-
-          // If a string
-          return this.replace(new RegExp(str, 'g'), newStr);
-        };
-      }
-
-      ${userCode};
-    `;
-
-    const scriptContext = {
-      fetch: this.fetchOverride.bind(this),
-      window,
-      process,
-      URL,
-      URLSearchParams,
-      require,
-      __TQ: {},
-    };
-    const testCode = `
-      ${extendedUserCode};
-      
-      try {
-        ${keys
-          .map(key => {
-            return `__TQ["${key}"] = ${key};`;
-          })
-          .join('\n')}
-      } catch (error) {
-        __TQ._error = error;
-      }
-    `;
-
-    // First, execute user code to ensure it runs unchanged
-    let script = new vm.Script(extendedUserCode);
-    script.runInNewContext(Object.assign({}, scriptContext));
-
-    // Assuming that it doesn't throw, we can try running it with our test
-    // code appended to it.
-    script = new vm.Script(testCode);
-    script.runInNewContext(scriptContext);
-
-    // Inspect the script context for the stuff we want
-    const context = scriptContext.__TQ;
-
-    return context;
+    return pullVarsInWorker({
+      workerUrl: staticFileUrl(WORKER_RELATIVE_PATH),
+      code: userCode,
+      keys,
+    });
   }
 
   /**
@@ -328,12 +277,19 @@ export default class ValidationHelper {
    * @param {*} args JSON compatible data handed to `test`
    * @param {String} objective
    * @param {String} [mission] defaults to the current level
+   * @param {Object} [mocks] see evaluateInUserCodeLocalScope
    * @returns {Promise<*>}
    */
-  async evaluateInQuestIdeUserCodeLocalScope(test, args, objective, mission) {
+  async evaluateInQuestIdeUserCodeLocalScope(
+    test,
+    args,
+    objective,
+    mission,
+    mocks
+  ) {
     const userCode = await this.getQuestIdeUserCode(objective, mission);
 
-    return this.evaluateInUserCodeLocalScope(userCode, test, args);
+    return this.evaluateInUserCodeLocalScope(userCode, test, args, mocks);
   }
 
   /**
@@ -371,20 +327,33 @@ export default class ValidationHelper {
    *   `test` throws, with an explicit error when the result is not cloneable,
    *   and after 10 seconds (infinite loops are killed).
    * - `process.env` is `{}` and `fetch` is the worker's own; there is no
-   *   `require`, `window`, `fetchOverride` or Node API.
+   *   `require`, `window` or Node API.
+   * - `mocks` (optional) installs stand-ins BEFORE the learner's code runs:
+   *   `{ fetch: factory, fs: { directories: { [path]: string[] } } }`. `fetch`
+   *   is a self-contained factory `realFetch => fetchLike` whose result
+   *   replaces the global `fetch` (a fake server; state lives in the factory's
+   *   closure, and `realFetch` passes other requests through). `fs` lets the
+   *   learner's `require('fs').promises.readdir(path)` list the given
+   *   directories (anything else rejects with ENOENT). Unknown keys reject. See
+   *   evaluateInWorker and docs/migration/validation-helper-worker.md.
    *
    * @param {String} userCode
    * @param {Function|String} test
    * @param {*} [args]
+   * @param {Object} [mocks]
    * @returns {Promise<*>}
    */
-  evaluateInUserCodeLocalScope(userCode, test, args = {}) {
-    return evaluateInWorker({
+  evaluateInUserCodeLocalScope(userCode, test, args = {}, mocks) {
+    const options = {
       workerUrl: staticFileUrl(WORKER_RELATIVE_PATH),
       code: userCode,
       test,
       args,
-    });
+    };
+    if (mocks !== undefined) {
+      options.mocks = mocks;
+    }
+    return evaluateInWorker(options);
   }
 
   getFilePathPartsArray(filePath) {
@@ -419,136 +388,5 @@ export default class ValidationHelper {
     else if (typeof input === 'object') output = JSON.stringify(input);
 
     return output;
-  }
-
-  // Marvel Johnson [12/14/2022] A workaround to a validation bug which lives in
-  // the TwilioQuest-Server's /magic route. When used, it will fake requests that include
-  // the queried divination endpoint and treat all others normally (i.e. by using the regular fetch implementation).
-  // This method has been added to the validation helper so that it's accessible to the API Academy
-  // api-05-get-patch objective validator.
-  async fetchOverride(input, init = { method: 'GET', body: {} }) {
-    if (
-      input &&
-      input.includes(
-        'https://twilio.com/quest/magic/divination?target=lovelace_secret_statue'
-      )
-    ) {
-      if (!this.fakeFetch) {
-        this.fakeFetch = {};
-      }
-
-      const response = {
-        body: {
-          data: {
-            inscription: '',
-            operational: false,
-          },
-        },
-        // Only adding this because the player will have been introduced to it in a previous objective
-        async text() {
-          return this.body;
-        },
-        async json() {
-          return this.body;
-        },
-      };
-
-      const inscriptionIsCorrect = inscription => {
-        const inscriptionLowercased = inscription
-          .replace(/[^A-z ]/g, '')
-          .toLowerCase();
-
-        return (
-          inscriptionLowercased.includes('creators of the cloud') &&
-          inscriptionLowercased.includes('formed through a simple') &&
-          inscriptionLowercased.includes('strung together') &&
-          inscriptionLowercased.includes('requests may return') &&
-          inscriptionLowercased.includes('the towers supply') &&
-          inscriptionLowercased.includes('stay locked until i am able to') &&
-          inscriptionLowercased.includes('magical eye')
-        );
-      };
-
-      if (input.includes('guid=')) {
-        const inscription = this.fakeFetch.inscription
-          ? this.fakeFetch.inscription
-          : '';
-
-        if (inscriptionIsCorrect(inscription)) {
-          response.body.data.operational = true;
-        } else {
-          response.body = {
-            errorMessage:
-              'The inscription is still corrupted! Double check your work and try again.',
-          };
-        }
-      } else {
-        const method = init.method.toLowerCase();
-
-        switch (method) {
-          case 'patch':
-            try {
-              JSON.parse(init.body);
-            } catch (_) {
-              response.body = {
-                errorMessage:
-                  'Your request "body" is not JSON parsable! Double check the objective description on how to send the patch request and try again.',
-              };
-
-              return response;
-            }
-
-            const jsonBody = JSON.parse(init.body);
-
-            if (
-              jsonBody.guid === undefined ||
-              jsonBody.data === undefined ||
-              jsonBody.data.inscription === undefined
-            ) {
-              response.body = {
-                errorMessage: `Your patch is missing the "${
-                  jsonBody.guid === undefined
-                    ? 'guid'
-                    : jsonBody.data === undefined
-                    ? 'data'
-                    : jsonBody.data.inscription === undefined
-                    ? 'data.inscription'
-                    : ''
-                }" property! Double check that your formatting matches what is shown in the objective description and try again.`,
-              };
-            } else if (!inscriptionIsCorrect(jsonBody.data.inscription)) {
-              response.body = {
-                errorMessage:
-                  'The inscription is still corrupted! Double check your work and try again.',
-              };
-            } else {
-              this.fakeFetch.inscription = jsonBody.data.inscription;
-              response.body = {
-                message: 'Your patch was received!',
-              };
-            }
-            break;
-          case 'get':
-            response.body.data.inscription = `Oh, great adGRTgfhuwef, let me apply\n\
-This divination spell, newly *77hjfslkefWSghu3 phrase,\n\
-Anvnteu398gtEWRbkyrU thanks to a most helpful API,\n\n\
-That my LIUH4f92nfsDBHerWAGYito the knowledge I seek\n\
-To open my mind to JHBUfRRE#234ijgyREvd\n\
-Of resources both clear and covert.\n\n\
-For the final door shall 99234jtgeRasER$TGWE49 scry\n\
-The programmable answers that will remove this haze\n\
-From my querent and OOIJBUe11239sdSBs.`;
-            break;
-          default:
-            response.body = {
-              errorMessage: `TwilioQuest did not expect "${method}" as the request method! Make sure you're using "PATCH" and try again.`,
-            };
-        }
-      }
-
-      return response;
-    } else {
-      return fetch(...arguments);
-    }
   }
 }

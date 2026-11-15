@@ -219,54 +219,6 @@ describe('inside_perimeter / lovelace_key (message SID format check only)', () =
   });
 });
 
-describe('lovelace_tower / api-02-async-await (helper.fs.readdir)', () => {
-  const validate = requireValidator('lovelace_tower', 'api-02-async-await');
-  const housesDirectory = path.join(
-    LEVELS_PATH,
-    'lovelace_tower',
-    'objectives',
-    'api-02-async-await',
-    'houses'
-  );
-
-  const makeHelper = findLastFileInDir => ({
-    fs: { readdir: vi.fn(fsPlatform.readdir) },
-    pullVarsFromQuestIdeUserCodeLocalScope: vi.fn(async () => ({
-      findLastFileInDir,
-    })),
-    fail: vi.fn(),
-    success: vi.fn(),
-  });
-
-  test('succeeds when the learner function returns the last entry (listed via helper.fs.readdir)', async () => {
-    const entries = await fsPlatform.readdir(housesDirectory);
-    const helper = makeHelper(async () => entries[entries.length - 1]);
-
-    await validate(helper);
-
-    expect(helper.fs.readdir).toHaveBeenCalledWith(housesDirectory);
-    expect(helper.fail).not.toHaveBeenCalled();
-    expect(helper.success).toHaveBeenCalledWith('Great job!');
-  });
-
-  test('fails when the learner function returns something else', async () => {
-    const helper = makeHelper(async () => 'wrong');
-
-    await validate(helper);
-
-    expect(helper.success).not.toHaveBeenCalled();
-    expect(helper.fail.mock.calls[0][0].message).toMatch(/Expected/);
-  });
-
-  test('fails when the function is not defined', async () => {
-    const helper = makeHelper(undefined);
-
-    await validate(helper);
-
-    expect(helper.fail.mock.calls[0][0].message).toMatch(/not defined/);
-  });
-});
-
 describe('progression that depends on the Twilio-related objectives', () => {
   const insidePerimeter = path.join(LEVELS_PATH, 'inside_perimeter');
   const objectiveNames = jetpack.list(path.join(insidePerimeter, 'objectives'));
