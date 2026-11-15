@@ -1,6 +1,7 @@
 import config from '../../js/app/config/config';
 
-jest.mock('../../js/app/config/config');
+// The test file must call vi.mock('.../config/config') itself: vi.mock is only
+// hoisted and applied for the test file (or setup file) that contains it.
 
 function mockConfigFactory(defaults) {
   function mockConfig(overrides) {
