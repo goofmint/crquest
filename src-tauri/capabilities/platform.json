@@ -311,6 +311,9 @@
           "program": "python3.*"
         }
       ]
-    }
+    },
+    "allow-is-dev",
+    "allow-open-devtools",
+    "allow-toggle-devtools"
   ]
 }

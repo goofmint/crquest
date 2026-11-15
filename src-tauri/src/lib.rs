@@ -62,6 +62,46 @@ async fn command_exists(
     .map_err(join_failure)?
 }
 
+/// True in debug builds (`cargo build` without `--release`), like
+/// `electron-is-dev` for an unpackaged Electron app.
+#[tauri::command]
+fn is_dev() -> bool {
+    cfg!(debug_assertions)
+}
+
+/// DevTools are compiled into debug builds only (the `devtools` cargo feature
+/// is not enabled because it uses a private API on macOS). In release builds
+/// the commands fail explicitly.
+#[cfg(debug_assertions)]
+#[tauri::command]
+fn open_devtools(webview_window: tauri::WebviewWindow) -> Result<(), String> {
+    webview_window.open_devtools();
+    Ok(())
+}
+
+#[cfg(debug_assertions)]
+#[tauri::command]
+fn toggle_devtools(webview_window: tauri::WebviewWindow) -> Result<(), String> {
+    if webview_window.is_devtools_open() {
+        webview_window.close_devtools();
+    } else {
+        webview_window.open_devtools();
+    }
+    Ok(())
+}
+
+#[cfg(not(debug_assertions))]
+#[tauri::command]
+fn open_devtools() -> Result<(), String> {
+    Err("DevTools are not available in release builds".to_string())
+}
+
+#[cfg(not(debug_assertions))]
+#[tauri::command]
+fn toggle_devtools() -> Result<(), String> {
+    Err("DevTools are not available in release builds".to_string())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
@@ -69,7 +109,13 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
-        .invoke_handler(tauri::generate_handler![run_command, command_exists])
+        .invoke_handler(tauri::generate_handler![
+            run_command,
+            command_exists,
+            is_dev,
+            open_devtools,
+            toggle_devtools
+        ])
         .run(tauri::generate_context!())
         .expect("error while running TerminalQuest");
 }

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-is-dev"
+description = "Enables the is_dev command without any pre-configured scope."
+commands.allow = ["is_dev"]
+
+[[permission]]
+identifier = "deny-is-dev"
+description = "Denies the is_dev command without any pre-configured scope."
+commands.deny = ["is_dev"]

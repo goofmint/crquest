@@ -106,8 +106,93 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 `platform/exec.js` の `exec(command, options)` は、シェルを介して文字列を実行する。呼び出し元は `ValidationHelper.isExecutableValid` だけで、`"${path}" ${args.join(' ')}` を渡し、エラーメッセージの文字列 (`EPERM`、`access denied`) を見て分岐する。
 
-判断: Tauri にはシェル経由の経路を作らない。Rust 側に `exec` 用の command は無い。#60 の Tauri 実装 `exec` は、この形 (`"<絶対パス>" <空白区切りの引数>`) だけを厳密に解析して `run_command` に委譲する (`docs/migration/tauri-platform.md` の 3 章)。クォートやシェルのメタ文字を含む引数、先頭が `"` で始まらない文字列は、実行せず明示的なエラーにする。
+判断: Tauri にはシェル経由の経路を作らない。Rust 側に `exec` 用の command は無い。#60 の Tauri 実装 `exec` は、この形 (`"<絶対パス>" <空白区切りの引数>`) だけを厳密に解析して `run_command` に委譲する (次章)。クォートやシェルのメタ文字を含む引数、先頭が `"` で始まらない文字列は、実行せず明示的なエラーにする。
 
 ### 2.4 テスト
 
 `cd src-tauri && cargo test`: 許可リスト (許可、拒否、相対パス、空スコープ)、`command_exists`、実プロセスでの終了コード、出力、非ゼロ終了、ENOENT / EACCES、`cwd`、`env`、タイムアウト、`maxBuffer`、シグナル、引数がシェルに解釈されないこと (Unix のみ `/bin/sh` と `/bin/echo` を使うテスト)。
+
+## 3. `platform/*` の Tauri 実装 (#60)
+
+### 3.1 ファイルと選択方式
+
+| Electron (従来) | Tauri 実装 |
+| --- | --- |
+| `src/js/app/platform/{paths,dialog,store,fs,shell,exec,devtools,env}.js` | `src/js/app/platform/tauri/<同名>.js` |
+| `src/js/app/platform/init.js` (新規。何もしない `initPlatform()`) | `src/js/app/platform/tauri/init.js` |
+| (なし) | `tauri/errors.js` (エラー変換)、`tauri/state.js` (`initPlatform` が読んだ値) |
+
+公開する関数名は Electron と同じである (`src/test/app/platform/tauri/selection.test.js` が名前の一致を検査する)。例外は `tauri/store.js` が持つ追加の `getValueAsync` / `setValueAsync` / `hasValueAsync` / `deleteValueAsync` である。
+
+選択はビルド時に行う。`vite.config.mjs` に Vite プラグイン `terminalquest:select-platform` を足した。
+
+- `vite build` (`npm run build:js` / `build:all` / `npm start`): 従来どおり Electron 実装。プラグインは何もせず、出力 `public/index.js` は変更前とバイト単位で同一であることを確認済み。
+- `vite build --mode tauri` (`npm run build:js:tauri`): `platform/<名前>` への相対 import を `platform/tauri/<名前>` に差し替え、`@tauri-apps/*` を external にせず bundle する。
+- `build:all` と `tauri.conf.json` の `beforeBuildCommand` には接続していない。Electron 専用の `require` を使う他のコードが残っており (Phase 11)、Tauri 向け bundle 全体はまだ動かないため。`build:js:tauri` は `public/index.js` を上書きする点に注意 (出力先を変えたいときは `npx vite build --mode tauri --outDir <dir>`)。
+
+### 3.2 同期 API の扱い (一覧)
+
+Tauri の plugin はすべて非同期である。Electron 契約で同期のメンバーは次のとおり。呼び出し元の非同期化は範囲外とし、Tauri 実装は明示的に失敗する (既定値や代替動作は無い)。
+
+| メンバー | Tauri での扱い | 現在の呼び出し元 (対応が必要な箇所) |
+| --- | --- | --- |
+| `paths.getAppDataPath` / `getUserDataPath` / `getAppVersion` | 同期のまま。`await initPlatform()` が値を読み、以降は同期で返す。未初期化は throw | `config.js` (モジュール読み込み時に呼ぶ)、`analytics.js`。エントリで `initPlatform()` を待ってからアプリを読み込む必要がある |
+| `env.isDev` | 同上 (Rust の `is_dev`) | `config.js`、`assetLoader.js`、`firebase.js`、`gameEvents.js`、`itemsHelper.js`、`index.jsx` |
+| `store.getValue` / `setValue` / `hasValue` / `deleteValue` | throw (`ERR_TAURI_SYNC_UNSUPPORTED`)。非同期版 `*Async` を追加 | `ContextProvider.jsx` (getValue)、`common/context/index.js` (setValue)、`common/audio/index.js` (getValue / setValue)、`ClearDataButton.jsx` (hasValue / deleteValue) |
+| `fs.exists` / `list` / `read` | throw。`existsAsync` / `listAsync` / `readAsync` を使う | `Game.jsx` の `list(commonEntitiesDir)` |
+| `fs.remove` | throw。`removeAsync` を使う | `ClearDataButton.jsx` |
+| `fs.readFileSync` | throw。`readFile` を使う | `context_provider/system.js` (`/proc/cpuinfo`) |
+| `exec.pathExistsSync` | throw。`fs.existsAsync` を使う | `ValidationHelper.isExecutableValid` (Windows Store アプリの `fs.stat` 問題は未検証) |
+| `devtools.openDevTools` / `toggleDevTools` | 同期の `void` を維持。Rust コマンドを呼び、失敗 (release ビルド) は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
+
+`exec.exec` (シェル文字列) の扱いは 2.3 章のとおり。
+
+### 3.3 モジュールごとの差異
+
+- `paths`: `getAppDataPath` は `configDir()` (Electron の `appData` と同じ場所)。`getUserDataPath` は `<appData>/terminalquest` (Electron の `userData` と同じ。既存のセーブファイルの位置を保つための互換値)。`getAppVersion` と `getGamePackageVersion` は `getVersion()` を返す。`tauri.conf.json` の `version` が `public/package.json` を指すため、後者の定義と一致する。ファイルは読まない。開発時に Electron のバージョンが返る (Electron の `getAppVersion`) ことは再現しない。
+- `dialog`: 確認ダイアログは `kind: 'info'` (Tauri に question 種別が無い)。`buttonLabel` は無視する。ディレクトリ選択は plugin が fs の実行時 scope に追加する (`recursive: true`)。キャンセルは `undefined`。
+- `store`: `config.json` を plugin の保存先 (`$APPDATA/<identifier>`) に作る。Electron の `userData/config.json` からの移行はしない。書き込みのたびに `save()` する。
+- `fs`: plugin のエラー文字列を `Error` に変換し、存在しないパスは `code: 'ENOENT'` を付ける (他の Node エラーコードは再現しない)。`readFile` (エンコーディング無し) は `Buffer` ではなく `Uint8Array`。UTF-8 以外のエンコーディングは明示的に失敗する。`stat` / `lstat` は `isFile` / `isDirectory` / `isSymbolicLink` / `size` / `mtime` / `mtimeMs` だけを持つ。`listAsync` はパス必須。`copyAsync` は上書き無しで既存の対象があれば `EEXIST`。
+- `shell`: `openExternal` は http(s) のみ、`openPath` はユーザーデータ配下のみ (capability scope)。
+- `exec`: `run` / `commandExists` は 2 章の command を呼ぶ。失敗時の `Error` は `code` / `killed` / `signal` / `stdout` / `stderr` / `kind` を持つ。シェル文字列の `exec` は `"<パス>" <引数>` の形だけを解釈する。引数に使える文字は `A-Z a-z 0-9 _ @ % + = : , . / -` のみで、それ以外 (クォート、空白、`;` `|` `$` など) と、先頭が `"` でない文字列は、何も実行せずに拒否する。
+- `devtools`: Rust コマンドは呼び出し元のウィンドウに作用する (アプリは 1 ウィンドウ)。debug ビルドのみ。release ビルドでは `devtools` feature を有効にしていない (macOS で非公開 API を使うため) ので拒否する。
+- `env`: `is_dev` は Rust の `cfg!(debug_assertions)`。
+
+### 3.4 追加の Rust command と権限
+
+`is_dev`、`open_devtools`、`toggle_devtools` (`src-tauri/src/lib.rs`)。`build.rs` の app manifest に登録し、`platform.json` の `allow-is-dev` / `allow-open-devtools` / `allow-toggle-devtools` で `main` ウィンドウに許可した。
+
+### 3.5 テスト
+
+`npm test`: `src/test/app/platform/tauri/` (Tauri JS API は `vi.mock` と `@tauri-apps/api/mocks` の `mockIPC` で差し替え)。各モジュールの契約、同期メンバーの throw、公開名の一致、Vite の選択 (Electron ビルドは Electron 実装、`--mode tauri` は Tauri 実装を bundle) を検査する。
+
+## 4. 未解決事項
+
+- 呼び出し元の非同期化 (3.2 章の表)。`initPlatform()` を呼ぶエントリは未作成 (Phase 11)。
+- 同梱ファイル (`public/content` など) の読み取り。Tauri は `frontendDist` を埋め込むだけで、`fs` から読めるリソースにはしていない。`staticFilePath` も `file:` URL 前提である。
+- ダイアログで選んだディレクトリの scope は再起動で失われる (1.4 章)。
+- 許可プログラムの scope が実際に Rust へ届くことは、実機で確認していない (下記の手順 5)。
+
+## 5. 手元で確認すること (利用者が実行する)
+
+エージェントは GUI もアプリも起動していない。確認したのは `cargo check` / `clippy` / `test`、`npm ci`、`npm run build:all`、`npm test` と、`vite build --mode tauri` の出力の中身まで。
+
+```sh
+npm ci
+cd src-tauri && cargo test && cargo clippy --all-targets && cd ..
+npm run build:all && git status --short   # Electron のビルド結果 (public/index.js) は変更前と同一
+npm test
+```
+
+1. Electron の確認: `npm start` が従来どおり動く (platform 層のコードは Electron 側を使い続ける)。
+2. Tauri の起動: `npm run tauri -- dev`。起動時に capability や plugin 設定のエラー (`Permission ... not found`、scope の解釈エラー) が出ないこと。フロントはまだ Electron 専用なので、空白画面は想定内 (#58 と同じ)。
+3. 開発者ツール (WebView を右クリックの Inspect、または `Cmd+Option+I`) のコンソールで、次を実行する。`window.__TAURI__` は `tauri.conf.json` の `withGlobalTauri` が無効のため使えない。代わりに `window.__TAURI_INTERNALS__.invoke` を使う。
+   - 許可された実行: `await __TAURI_INTERNALS__.invoke('run_command', { program: 'git', args: ['--version'] })` が `{ code: 0, stdout: 'git version ...', stderr: '' }` を返す。
+   - 拒否: `await __TAURI_INTERNALS__.invoke('run_command', { program: 'ls', args: [] })` が `kind: 'notAllowed'` で reject される。`program: '/bin/sh'`、`'./git'` も同様に拒否される (後者は `invalidArgument`)。
+   - 存在しない: `program: 'python3.99'` は許可パターンに合うので `kind: 'spawn'`、`code: 'ENOENT'`。
+   - 存在確認: `invoke('command_exists', { name: 'git' })` が `true`。`name: 'ls'` は `notAllowed`。
+   - タイムアウト: `invoke('run_command', { program: 'node', args: ['-e', 'setTimeout(()=>{}, 5000)'], timeoutMs: 300 })` が `kind: 'timeout'`。
+   - macOS / Linux の GUI アプリは PATH が短いことがあり (Homebrew の `/opt/homebrew/bin` が無いなど)、PATH 解決の `git` / `node` が `ENOENT` になることがある。その場合は絶対パスを渡して動くことを確認し、結果を報告する。
+4. 権限: `invoke('plugin:fs|read_text_file', { path: '/etc/hosts' })` が forbidden path で拒否される。`invoke('plugin:opener|open_url', { url: 'file:///etc/hosts' })` も拒否される。
+5. 権限の scope が Rust に届いていること: 手順 3 の `git --version` が成功し、`ls` が `notAllowed` で拒否されれば届いている (届いていなければ、全拒否になるので `git` も `notAllowed` になる)。
+6. devtools: `invoke('is_dev')` が debug ビルドで `true`。
