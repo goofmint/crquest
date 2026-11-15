@@ -7,9 +7,7 @@ const platformDir = path.join(root, 'src/js/app/platform');
 const MODULES = ['paths', 'dialog', 'store', 'fs', 'shell', 'exec', 'devtools', 'env', 'init'];
 
 // Additional exports of Tauri modules that the Electron module does not have.
-const TAURI_ONLY = {
-  store: ['deleteValueAsync', 'getValueAsync', 'hasValueAsync', 'setValueAsync'],
-};
+const TAURI_ONLY = {};
 
 function exportedNames(file) {
   const source = fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');

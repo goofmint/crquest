@@ -11,7 +11,8 @@ import {
 import {
   syncContext
 } from './sync';
-import { setValue } from '../../platform/store';
+import { setValueAsync } from '../../platform/store';
+import { reportFailure } from '../reportFailure';
 
 export const context = React.createContext({});
 export const emitter = new EventEmitter();
@@ -74,7 +75,12 @@ export function setContext(newContext) {
     emitter.emit('contextUpdate', validatedNewContext);
     Object.entries(validatedNewContext).forEach(([key, value]) => {
       emitter.emit(`contextUpdate:${key}`, value);
-      if (getSavedFields().includes(key)) setValue(key, value);
+      if (getSavedFields().includes(key)) {
+        // Not awaited: the event/write order of the loop stays as before.
+        setValueAsync(key, value).catch(error =>
+          reportFailure(`Could not save "${key}"`, error)
+        );
+      }
     });
 
     syncContext(validatedNewContext);

@@ -214,6 +214,19 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - 依存: なし (Electron 上でも検証できる)。W1〜W3 の完了を待たずに進められる。
 - Electron リスク: 中。永続化のタイミングが同期から非同期に変わる (`setContext` の `setState` コールバック内、`audio.saveState`)。`src/test/app/common/audio.test.js` と `ClearDataButton.test.js` を先に拡張して挙動を固定する。
 
+実施結果 (#135):
+
+- `platform/store.js` (Electron) は `getValueAsync` / `setValueAsync` / `hasValueAsync` / `deleteValueAsync` のみを公開する。`async` 関数の本体で `await` を挟まずに electron-store を呼ぶので、書き込みは呼び出し時点で実行され、例外は rejection になる。Tauri 実装と契約は同じ。
+- 同期 API (`getValue` 等) は呼び出し元が無くなったので、Electron と Tauri の両方の契約から削除した (Tauri の `unsupportedSync` も不要になった)。
+- 呼び出し元の変更: `ContextProvider.jsx` (保存済みフィールドを schema 順に 1 件ずつ `await`)、`common/context/index.js` (`setValueAsync` を `await` せずに同じ位置で呼び、失敗は報告)、`common/audio/index.js` (`checkLoaded` が `loadState` を待ってから `onload`、`saveState` は失敗を報告)、`ClearDataButton.jsx` (削除を 1 件ずつ `await` し、完了後にコードファイル削除と DB 削除)。
+- 初回描画: `ContextProvider.componentDidMount` は元から async で、最初の描画は既定の state、保存値の復元は初期 state を作るパイプラインの中だった。したがって読み込みを `await` に変えるだけで、最終的な state と `setState` の位置は変わらない。audio は `onload` を `loadState` の完了後に呼ぶ (マイクロタスク 1 回分遅れるだけ)。
+- 失敗の扱い: `common/reportFailure.js` がコンソールとダイアログに出す。読み込み失敗 (context、audio) は報告後に止まる (context は再 throw、audio は `onload` を呼ばない)。既定値への置き換えはしない。
+- 挙動が変わる点: 書き込み失敗は、以前は `setState` コールバック内の同期例外だったが、報告のダイアログに変わる。
+- 検証できないこと: 実機 (Electron / Tauri) での動作。テストは store をモックしている。
+
+残り: Tauri 実機での設定の永続化確認 (W11)。Tauri の保存先は Electron の `config.json` と別 (R7)。
+
+
 ### W5. 静的パスと URL の集約 (B3、D5)
 
 - 内容: (1) `fs_utils.js` の `staticFilePath` を Tauri では `getResourceDirPath()` を基準にする。Electron 実装は現状のまま。(2) 「絶対パス -> URL」の関数 (例: `platform/assets.js`、`toAssetUrl(absolutePath)`) を新設し、Electron 実装は `file-url`、Tauri 実装は D5 に従う。(3) 呼び出し元を置き換える: `Conversation.jsx:271`、`SpriteSheet.jsx:16`、`useAssetLoader.jsx:22,31,52`、`fs_utils.js:27`、`EntityConfigService.js:271,273`、`Game.jsx:166-212`、`DynamicLevel.js:66-81`、`audio/index.js:171,202,236`、`AvatarSelector.jsx:60`。(4) Worker の URL (`code_runner.js:11`、`ValidationHelper.js:265,348`) は Tauri では相対 URL にする。(5) asset プロトコル (`src-tauri/Cargo.toml` の `protocol-asset`、`tauri.conf.json` の `app.security.assetProtocol`、capability)。

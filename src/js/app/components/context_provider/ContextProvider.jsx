@@ -1,5 +1,6 @@
 import React from 'react';
-import { getValue } from '../../platform/store';
+import { getValueAsync } from '../../platform/store';
+import { reportFailure } from '../../common/reportFailure';
 import {
   context,
   getContext,
@@ -97,13 +98,19 @@ export default class ContextProvider extends React.Component {
      */
     const initialState = await pipeAsync(
       async state => ({ ...state, items: await loadItemsFromDisk() }),
-      state => {
-        getSavedFields().forEach(key => {
-          const savedValue = getValue(key);
-          if (savedValue) {
-            state[key] = savedValue;
+      async state => {
+        // Sequential, in schema order: the first failure stops the startup.
+        try {
+          for (const key of getSavedFields()) {
+            const savedValue = await getValueAsync(key);
+            if (savedValue) {
+              state[key] = savedValue;
+            }
           }
-        });
+        } catch (error) {
+          await reportFailure('Could not load the saved game data', error);
+          throw error;
+        }
 
         return state;
       },

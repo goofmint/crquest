@@ -1,22 +1,24 @@
 import React from 'react';
 import { remove } from '../platform/fs';
 import db from '../common/database';
-import { hasValue, deleteValue } from '../platform/store';
+import { hasValueAsync, deleteValueAsync } from '../platform/store';
 import { showConfirm } from '../platform/dialog';
 import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
+import { reportFailure } from '../common/reportFailure';
 
-function clearStoreValues() {
+// Sequential, in schema order: the first failure stops the clearing.
+async function clearStoreValues() {
   const schemaDescription = describeSchema();
 
-  Object.entries(schemaDescription.fields).forEach(([fieldKey, field]) => {
-    if (hasValue(fieldKey)) {
+  for (const [fieldKey, field] of Object.entries(schemaDescription.fields)) {
+    if (await hasValueAsync(fieldKey)) {
       if (!field.meta || (field.meta && !field.meta.persistOnClearProgess)) {
-        deleteValue(fieldKey);
+        await deleteValueAsync(fieldKey);
       }
     }
-  })
+  }
 }
 
 export default class ClearDataButton extends React.Component {
@@ -50,7 +52,12 @@ export default class ClearDataButton extends React.Component {
     console.log('clearing data...');
 
     // Clear data stored on disk
-    clearStoreValues();
+    try {
+      await clearStoreValues();
+    } catch (error) {
+      await reportFailure('Could not clear the saved game data', error);
+      throw error;
+    }
 
     // Delete saved user code
     remove(config.codeStoragePath);

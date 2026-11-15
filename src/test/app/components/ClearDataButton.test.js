@@ -7,10 +7,10 @@ vi.mock('../../../js/app/common/database', () => ({
   default: { delete: vi.fn() },
 }));
 vi.mock('../../../js/app/platform/store', () => ({
-  hasValue: vi.fn(),
-  deleteValue: vi.fn(),
+  hasValueAsync: vi.fn(),
+  deleteValueAsync: vi.fn(),
 }));
-vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn() }));
+vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn(), showAlert: vi.fn() }));
 vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
   default: { codeStoragePath: '/code' },
@@ -21,15 +21,17 @@ vi.mock('../../../js/app/common/context/schema', () => ({
 
 import { remove } from '../../../js/app/platform/fs';
 import db from '../../../js/app/common/database';
-import { hasValue, deleteValue } from '../../../js/app/platform/store';
-import { showConfirm } from '../../../js/app/platform/dialog';
+import { hasValueAsync as hasValue, deleteValueAsync as deleteValue } from '../../../js/app/platform/store';
+import { showConfirm, showAlert } from '../../../js/app/platform/dialog';
 import ClearDataButton from '../../../js/app/components/ClearDataButton';
 
 // jsdom's window.location.reload cannot be replaced, so the reload itself (which
 // jsdom reports as a "not implemented: navigation" console error) is not asserted.
 beforeEach(() => {
   vi.clearAllMocks();
-  hasValue.mockReturnValue(true);
+  hasValue.mockResolvedValue(true);
+  deleteValue.mockResolvedValue(undefined);
+  showAlert.mockResolvedValue(undefined);
   db.delete.mockResolvedValue(undefined);
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -92,6 +94,41 @@ describe('ClearDataButton.clearUserData', () => {
     expect(showConfirm).toHaveBeenCalledTimes(1);
     resolveFirst(false);
     await first;
+    expect(deleteValue).not.toHaveBeenCalled();
+  });
+
+  test('awaits each deletion before removing the code file and dropping the database', async () => {
+    showConfirm.mockResolvedValue(true);
+    const order = [];
+    let finishDelete;
+    deleteValue.mockImplementation(
+      () => new Promise(resolve => { finishDelete = () => { order.push('deleted'); resolve(); }; })
+    );
+    remove.mockImplementation(() => order.push('remove'));
+    const done = makeInstance().clearUserData();
+    await vi.waitFor(() => expect(deleteValue).toHaveBeenCalled());
+    expect(remove).not.toHaveBeenCalled();
+    finishDelete();
+    await done;
+    expect(order).toEqual(['deleted', 'remove']);
+  });
+
+  test('reports a store failure, stops, and does not remove files or drop the database', async () => {
+    showConfirm.mockResolvedValue(true);
+    const failure = new Error('disk full');
+    deleteValue.mockRejectedValue(failure);
+    await expect(makeInstance().clearUserData()).rejects.toBe(failure);
+    expect(console.error).toHaveBeenCalledWith(expect.any(String), failure);
+    expect(showAlert).toHaveBeenCalledTimes(1);
+    expect(showAlert.mock.calls[0][0]).toContain('disk full');
+    expect(remove).not.toHaveBeenCalled();
+    expect(db.delete).not.toHaveBeenCalled();
+  });
+
+  test('skips keys that are not stored', async () => {
+    showConfirm.mockResolvedValue(true);
+    hasValue.mockResolvedValue(false);
+    await makeInstance().clearUserData();
     expect(deleteValue).not.toHaveBeenCalled();
   });
 });
