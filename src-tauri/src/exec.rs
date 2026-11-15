@@ -406,8 +406,9 @@ fn max_buffer_failure(
 }
 
 /// Result once the direct child has exited. The output may still have grown
-/// past the limit (descendants can keep writing), in which case the whole
-/// process tree is torn down like in the polling loop.
+/// past the limit (descendants can keep writing). Every failure on this path
+/// (over the limit, unreadable output, signal exit) tears the process tree
+/// down, so that no path leaves a surviving process behind.
 fn conclude(
     program: &str,
     child: &mut std::process::Child,
@@ -416,25 +417,47 @@ fn conclude(
     err: &CaptureFile,
     max_buffer: usize,
 ) -> Result<RunOutput, RunFailure> {
+    let result = collect_output(program, status, out, err, max_buffer);
+    if result.is_err() {
+        kill_tree(child);
+    }
+    result
+}
+
+/// Reads one stream for a successful result: up to `max_buffer + 1` bytes, so
+/// that data appended after the length check is still seen as over the limit.
+fn read_final(
+    program: &str,
+    name: &'static str,
+    capture: &CaptureFile,
+    others: (&CaptureFile, &CaptureFile),
+    max_buffer: usize,
+) -> Result<Vec<u8>, RunFailure> {
+    let data = capture
+        .read(max_buffer.saturating_add(1))
+        .map_err(|e| capture_failure(program, &e))?;
+    if data.len() > max_buffer {
+        return Err(max_buffer_failure(name, others.0, others.1, max_buffer));
+    }
+    Ok(data)
+}
+
+fn collect_output(
+    program: &str,
+    status: std::process::ExitStatus,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> Result<RunOutput, RunFailure> {
     match exceeded_stream(out, err, max_buffer) {
         Ok(None) => {}
-        Ok(Some(name)) => {
-            kill_tree(child);
-            return Err(max_buffer_failure(name, out, err, max_buffer));
-        }
-        Err(e) => {
-            kill_tree(child);
-            return Err(capture_failure(program, &e));
-        }
+        Ok(Some(name)) => return Err(max_buffer_failure(name, out, err, max_buffer)),
+        Err(e) => return Err(capture_failure(program, &e)),
     }
     match status.code() {
         Some(code) => {
-            let stdout = out
-                .read(max_buffer)
-                .map_err(|e| capture_failure(program, &e))?;
-            let stderr = err
-                .read(max_buffer)
-                .map_err(|e| capture_failure(program, &e))?;
+            let stdout = read_final(program, "stdout", out, (out, err), max_buffer)?;
+            let stderr = read_final(program, "stderr", err, (out, err), max_buffer)?;
             Ok(RunOutput {
                 code,
                 stdout: String::from_utf8_lossy(&stdout).into_owned(),
@@ -815,6 +838,69 @@ mod tests {
             assert!(r.killed);
             assert!(r.stdout.len() <= 10);
             // kill_tree reaped it; without the teardown it would still run.
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn final_read_over_limit_is_a_max_buffer_failure_and_tears_down() {
+            use std::os::unix::process::CommandExt;
+            // Length check passes (<= 10) but the read sees more: emulate with a
+            // limit of 10 and 11 bytes only in stderr read via read_final.
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, mut err_file) = CaptureFile::create("stderr").unwrap();
+            std::io::Write::write_all(&mut err_file, &[b'e'; 11]).unwrap();
+            let r = read_final("prog", "stderr", &err, (&out, &err), 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(r.killed);
+            // Through conclude (a still-running stand-in) the tree is torn down.
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let (out2, _g1) = CaptureFile::create("stdout").unwrap();
+            let r = conclude("prog", &mut child, status, &out2, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn final_read_failure_tears_down_and_keeps_the_error() {
+            use std::os::unix::process::CommandExt;
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            // The length can still be read, but opening the file fails (mode 000).
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&err.path, std::fs::Permissions::from_mode(0o000)).unwrap();
+            if std::fs::File::open(&err.path).is_ok() {
+                return; // running as root: the permission cannot be enforced
+            }
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::Spawn);
+            assert!(r.message.contains("captured output"));
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn signal_exit_after_conclude_tears_down_too() {
+            use std::os::unix::process::{CommandExt, ExitStatusExt};
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = std::process::ExitStatus::from_raw(9);
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::Signal);
             assert!(child.try_wait().unwrap().is_some());
         }
 
