@@ -1,19 +1,18 @@
-import { isDev } from '../platform/env';
-import ua from 'universal-analytics';
 import { getAppVersion } from '../platform/paths';
+
+// No analytics service is called: Universal Analytics was shut down in 2023
+// and the hit-sending code was already disabled. pageview/event are kept as
+// no-ops because the UI and bundled content call them (see
+// docs/migration/analytics-firebase.md).
 
 // Session tracking singleton
 let sessionTrackingStarted = false;
-
-let userAgent;
-let UA_ID;
 
 // Functionality to be exposed to module consumers
 const analytics = {
   initializeAnalytics,
   appVersion: undefined,
   analyticsId: undefined,
-  visitor: undefined,
   pageview,
   event,
 };
@@ -27,23 +26,7 @@ function initializeAnalytics(state) {
 
   // Get app version - will be electron version in dev, actual app version in prod
   analytics.appVersion = getAppVersion();
-  userAgent = `${window.navigator.userAgent} // ${analytics.appVersion}`;
-
   analytics.analyticsId = guid;
-
-  // Determine where to send data based on dev/prod build
-  const UA_DEV = 'UA-135538733-1';
-  const UA_PROD = 'UA-135538733-2';
-  UA_ID = isDev() ? UA_DEV : UA_PROD;
-
-  // Create a visitor object to track analytics events
-  analytics.visitor = ua(UA_ID, guid);
-
-  // Set global properties to be sent with every hit
-  analytics.visitor.set('ds', 'desktop');
-  analytics.visitor.set('ua', userAgent);
-  analytics.visitor.set('an', 'N/A');
-  analytics.visitor.set('av', analytics.appVersion);
 }
 
 // Helper function to track a "page view" event - this allows us to cheat a bit
