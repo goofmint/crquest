@@ -208,17 +208,18 @@ impl CaptureFile {
         Ok((CaptureFile { path }, file))
     }
 
-    fn len(&self) -> u64 {
-        std::fs::metadata(&self.path).map(|m| m.len()).unwrap_or(0)
+    fn len(&self) -> std::io::Result<u64> {
+        std::fs::metadata(&self.path).map(|m| m.len())
     }
 
-    /// At most `limit` bytes of the captured output.
-    fn read(&self, limit: usize) -> Vec<u8> {
+    /// At most `limit` bytes of the captured output. A file that cannot be
+    /// opened or read is an error, never "empty output".
+    fn read(&self, limit: usize) -> std::io::Result<Vec<u8>> {
         let mut buf = Vec::new();
-        if let Ok(file) = std::fs::File::open(&self.path) {
-            let _ = file.take(limit as u64).read_to_end(&mut buf);
-        }
-        buf
+        std::fs::File::open(&self.path)?
+            .take(limit as u64)
+            .read_to_end(&mut buf)?;
+        Ok(buf)
     }
 }
 
@@ -293,31 +294,23 @@ pub fn run(program: &str, args: &[String], options: &RunOptions) -> Result<RunOu
     // The Command holds the child's ends of the files; release them in the parent.
     drop(command);
 
-    let finish_failure = |kind: FailureKind, message: String| {
-        let mut f = failure(kind, message);
-        f.stdout = String::from_utf8_lossy(&out_capture.read(max_buffer)).into_owned();
-        f.stderr = String::from_utf8_lossy(&err_capture.read(max_buffer)).into_owned();
-        f.killed = matches!(kind, FailureKind::Timeout | FailureKind::MaxBuffer);
-        f
-    };
-    let exceeded = || {
-        if out_capture.len() > max_buffer as u64 {
-            Some("stdout")
-        } else if err_capture.len() > max_buffer as u64 {
-            Some("stderr")
-        } else {
-            None
-        }
-    };
-
     let started = Instant::now();
     let status = loop {
-        if let Some(name) = exceeded() {
-            kill_tree(&mut child);
-            return Err(finish_failure(
-                FailureKind::MaxBuffer,
-                format!("{name} maxBuffer length exceeded"),
-            ));
+        match exceeded_stream(&out_capture, &err_capture, max_buffer) {
+            Ok(None) => {}
+            Ok(Some(name)) => {
+                kill_tree(&mut child);
+                return Err(max_buffer_failure(
+                    name,
+                    &out_capture,
+                    &err_capture,
+                    max_buffer,
+                ));
+            }
+            Err(e) => {
+                kill_tree(&mut child);
+                return Err(capture_failure(program, &e));
+            }
         }
         match child.try_wait() {
             Ok(Some(status)) => break status,
@@ -330,30 +323,131 @@ pub fn run(program: &str, args: &[String], options: &RunOptions) -> Result<RunOu
         if let Some(timeout_ms) = options.timeout_ms {
             if timeout_ms > 0 && started.elapsed() >= Duration::from_millis(timeout_ms) {
                 kill_tree(&mut child);
-                return Err(finish_failure(
+                return Err(failure_with_output(
                     FailureKind::Timeout,
                     format!("Command timed out after {timeout_ms} ms: {program}"),
+                    program,
+                    &out_capture,
+                    &err_capture,
+                    max_buffer,
                 ));
             }
         }
         thread::sleep(POLL_INTERVAL);
     };
 
-    if let Some(name) = exceeded() {
-        return Err(finish_failure(
-            FailureKind::MaxBuffer,
-            format!("{name} maxBuffer length exceeded"),
-        ));
+    conclude(
+        program,
+        &mut child,
+        status,
+        &out_capture,
+        &err_capture,
+        max_buffer,
+    )
+}
+
+fn capture_failure(program: &str, error: &std::io::Error) -> RunFailure {
+    let mut f = spawn_failure(program, error);
+    f.message = format!("failed to read the captured output of {program}: {error}");
+    f
+}
+
+/// Which stream is over the limit. A capture file that cannot be inspected is
+/// an error.
+fn exceeded_stream(
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> std::io::Result<Option<&'static str>> {
+    if out.len()? > max_buffer as u64 {
+        Ok(Some("stdout"))
+    } else if err.len()? > max_buffer as u64 {
+        Ok(Some("stderr"))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Failure that carries the (truncated) output captured so far. When the
+/// output cannot be read, that read failure is reported instead.
+fn failure_with_output(
+    kind: FailureKind,
+    message: String,
+    program: &str,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> RunFailure {
+    let (stdout, stderr) = match (out.read(max_buffer), err.read(max_buffer)) {
+        (Ok(o), Ok(e)) => (o, e),
+        (Err(e), _) | (_, Err(e)) => return capture_failure(program, &e),
+    };
+    let mut f = failure(kind, message);
+    f.stdout = String::from_utf8_lossy(&stdout).into_owned();
+    f.stderr = String::from_utf8_lossy(&stderr).into_owned();
+    f.killed = matches!(kind, FailureKind::Timeout | FailureKind::MaxBuffer);
+    f
+}
+
+fn max_buffer_failure(
+    name: &str,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> RunFailure {
+    failure_with_output(
+        FailureKind::MaxBuffer,
+        format!("{name} maxBuffer length exceeded"),
+        "",
+        out,
+        err,
+        max_buffer,
+    )
+}
+
+/// Result once the direct child has exited. The output may still have grown
+/// past the limit (descendants can keep writing), in which case the whole
+/// process tree is torn down like in the polling loop.
+fn conclude(
+    program: &str,
+    child: &mut std::process::Child,
+    status: std::process::ExitStatus,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> Result<RunOutput, RunFailure> {
+    match exceeded_stream(out, err, max_buffer) {
+        Ok(None) => {}
+        Ok(Some(name)) => {
+            kill_tree(child);
+            return Err(max_buffer_failure(name, out, err, max_buffer));
+        }
+        Err(e) => {
+            kill_tree(child);
+            return Err(capture_failure(program, &e));
+        }
     }
     match status.code() {
-        Some(code) => Ok(RunOutput {
-            code,
-            stdout: String::from_utf8_lossy(&out_capture.read(max_buffer)).into_owned(),
-            stderr: String::from_utf8_lossy(&err_capture.read(max_buffer)).into_owned(),
-        }),
-        None => Err(finish_failure(
+        Some(code) => {
+            let stdout = out
+                .read(max_buffer)
+                .map_err(|e| capture_failure(program, &e))?;
+            let stderr = err
+                .read(max_buffer)
+                .map_err(|e| capture_failure(program, &e))?;
+            Ok(RunOutput {
+                code,
+                stdout: String::from_utf8_lossy(&stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&stderr).into_owned(),
+            })
+        }
+        None => Err(failure_with_output(
             FailureKind::Signal,
             format!("Command was terminated by a signal: {program}"),
+            program,
+            out,
+            err,
+            max_buffer,
         )),
     }
 }
@@ -684,6 +778,44 @@ mod tests {
             assert!(path.exists());
             drop(capture);
             assert!(!path.exists());
+        }
+
+        #[test]
+        fn unreadable_capture_file_is_an_error_not_empty_output() {
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            std::fs::remove_file(&out.path).unwrap();
+            assert!(out.len().is_err());
+            assert!(out.read(10).is_err());
+            assert!(exceeded_stream(&out, &err, 10).is_err());
+            let f = failure_with_output(FailureKind::Timeout, "t".into(), "prog", &out, &err, 10);
+            assert_eq!(f.kind, FailureKind::Spawn);
+            assert!(f.message.contains("captured output"));
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let mut child = Command::new("/bin/sleep").arg("0").spawn().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10);
+            assert_eq!(r.unwrap_err().kind, FailureKind::Spawn);
+        }
+
+        #[test]
+        fn over_limit_after_exit_tears_down_the_process_tree() {
+            use std::os::unix::process::CommandExt;
+            let (out, mut out_file) = CaptureFile::create("stdout").unwrap();
+            let (err, _f) = CaptureFile::create("stderr").unwrap();
+            std::io::Write::write_all(&mut out_file, &[b'a'; 100]).unwrap();
+            // Still running: stands in for a descendant that outlives the exit.
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(r.killed);
+            assert!(r.stdout.len() <= 10);
+            // kill_tree reaped it; without the teardown it would still run.
+            assert!(child.try_wait().unwrap().is_some());
         }
 
         #[test]
