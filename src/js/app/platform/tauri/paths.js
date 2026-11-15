@@ -8,6 +8,11 @@
  *   (`terminalquest`; main.js does not call `setName`), so the existing save
  *   file location is kept. Hard-coded on purpose: it is a compatibility
  *   constant, not a setting.
+ * - `getResourceDirPath()`: the bundle resource directory (`resourceDir()`),
+ *   read by `initPlatform()`. It is the Electron `staticFilePath('.')`
+ *   counterpart: `content/`, `levels/` and `avatars/` sit directly under it
+ *   (`bundle.resources` in tauri.conf.json, docs/migration/tauri-resources.md).
+ *   Synchronous; throws before initialization.
  * - `getAppVersion()`: the Tauri app version (tauri.conf.json `version`).
  *   Differs from Electron in dev, where Electron reports its own version.
  * - `getGamePackageVersion()`: tauri.conf.json takes `version` from
@@ -41,6 +46,13 @@ export function getAppDataPath() {
 
 export function getUserDataPath() {
   return joinPath(getAppDataPath(), USER_DATA_DIR_NAME);
+}
+
+export function getResourceDirPath() {
+  return assertNonEmptyString(
+    getPlatformState('paths.getResourceDirPath').resourceDirPath,
+    'resourceDir()'
+  );
 }
 
 export function getAppVersion() {

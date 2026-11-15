@@ -25,6 +25,11 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": {
+      "../public/content/": "content/",
+      "../public/levels/": "levels/",
+      "../public/avatars/parts/": "avatars/parts/"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

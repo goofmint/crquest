@@ -23,6 +23,11 @@
  *   remote.app.getPath('appData'), unmodified.
  * @property {() => string} getUserDataPath
  *   remote.app.getPath('userData'), unmodified.
+ * @property {() => string} getResourceDirPath
+ *   Absolute path of the directory that holds the game content read from
+ *   disk at runtime (`content/`, `levels/`, `avatars/`): the directory of the
+ *   loaded page, i.e. `staticFilePath('.')` (public/). Tauri: the bundle
+ *   resource directory (`bundle.resources`, docs/migration/tauri-resources.md).
  * @property {() => string} getAppVersion
  *   remote.app.getVersion() (the Electron version in dev, the app version
  *   when packaged).
@@ -61,6 +66,10 @@ export function getUserDataPath() {
     getApp().getPath('userData'),
     "remote.app.getPath('userData')"
   );
+}
+
+export function getResourceDirPath() {
+  return assertNonEmptyString(staticFilePath('.'), "staticFilePath('.')");
 }
 
 export function getAppVersion() {
