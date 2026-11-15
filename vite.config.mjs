@@ -32,6 +32,7 @@ const platformModules = [
   'shell',
   'exec',
   'devtools',
+  'menu',
   'env',
   'init',
 ];

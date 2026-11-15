@@ -95,7 +95,7 @@ git grep -n -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'
 
 - 開発モード判定（`electron-is-dev`）: 7 行すべて。`isDev` を返す API が契約にない。
 - code runner の `BrowserWindow` / IPC（`code_runner.js:7-8, 20, 28, 35, 50`）: `BrowserWindow.getAllWindows`、`new BrowserWindow`、`remote.getCurrentWindow`、`ipcRenderer.on('code_runner:log')`。`exec` 契約は子プロセス実行用で、ウィンドウ生成と IPC は対象外。
-- メニュー構築（`index.js:93-166`）: `remote.Menu` / `MenuItem` によるアプリケーションメニューの取得と項目追加。契約にメニュー API がない。
+- メニュー構築（`index.js:93-166`）: `remote.Menu` / `MenuItem` によるアプリケーションメニューの取得と項目追加。契約にメニュー API がない。(解消済み: #134 で `platform/menu.js` の `addHelpMenuItems` に移した。)
 - `shell.openItem`（`index.js:130, 139`）: `platform/shell.js` に `openItem` は未実装（`shell.js` のコメントに記載）。`index.js:8` の `shell` 直接取得が残る理由。
 - fs の同期 API（`system.js:25` の `readFileSync`、`ValidationHelper.js:236` の `existsSync`）と `fs.promises.readFile`（`ValidationHelper.js:309`）: 契約済みの `platform/fs` が同等の API を持つかは移行時に確認が必要。
 
