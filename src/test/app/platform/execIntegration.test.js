@@ -43,11 +43,12 @@ describe('platform exec with real processes', () => {
   });
 
   test.skipIf(process.platform === 'win32')('run rejects on a signal exit and keeps the output written before it', async () => {
-    // The child finishes writing, then ends itself with a signal: no timing involved.
+    // The child ends itself with a signal once its write completed: no timing involved.
     await expect(
       run(NODE, [
         '-e',
-        'console.log("started"); process.kill(process.pid, "SIGTERM")',
+        // Signal only after the write has been flushed (pipe writes may be async)
+        'process.stdout.write("started\\n", () => process.kill(process.pid, "SIGTERM"))',
       ])
     ).rejects.toMatchObject({ stdout: 'started\n' });
   });
