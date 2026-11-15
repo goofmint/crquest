@@ -102,9 +102,12 @@ describe('--mode tauri output', () => {
 
   test('other Node modules fail explicitly instead of being empty objects', () => {
     const game = files['tauri-game.js'];
-    for (const name of ['fs', 'electron', 'stream']) {
+    for (const name of ['fs', 'stream']) {
       expect(game).toContain(`The Node module \\"${name}\\" is not available in the Tauri build`);
     }
+    // Nothing in the game requires `electron` any more (W3: the menu moved to
+    // platform/menu), so no stub for it is needed.
+    expect(game).not.toContain('The Node module \\"electron\\" is not available');
     // fs and child_process are never replaced by something that looks like them
     expect(game).not.toContain('node_modules/browserify-fs');
   });
