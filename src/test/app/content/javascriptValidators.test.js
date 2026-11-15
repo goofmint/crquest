@@ -17,10 +17,25 @@ vi.mock('../../../js/app/common/context', () => ({
   getContext: vi.fn(() => ({ levelName: 'javascript' })),
 }));
 
+// The validators that call the learner's functions and classes run them in a
+// Web Worker (public/code_runner/worker.js); staticFileUrl needs the page URL
+// of the Electron renderer, so the worker script is located directly.
+vi.mock('../../../js/app/common/fs_utils', async () => {
+  const nodePath = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  return {
+    staticFileUrl: relativePath =>
+      pathToFileURL(
+        nodePath.resolve(__dirname, '..', '..', '..', '..', 'public', relativePath)
+      ).href,
+  };
+});
+
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import ValidationHelper from '../../../js/app/components/hack_interface/validator/ValidationHelper';
+import { NodeWorker } from '../../utils/nodeWorker';
 
 // The validators run the learner's script with `helper.env.TQ_NODE_EXE`; the
 // tests use the `node` found on the PATH (process.execPath is not Node when
@@ -62,6 +77,13 @@ const READY_WORLD_STATE = {
 };
 
 let workspace;
+
+beforeAll(() => {
+  vi.stubGlobal('Worker', NodeWorker);
+});
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
 
 beforeEach(() => {
   workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-javascript-'));
@@ -107,7 +129,9 @@ const run = async (objective, options) => {
 };
 
 // Objectives that evaluate the learner's file in the validator
-// (pullVarsFromUserCodeLocalScope): file name, a correct solution, wrong code.
+// (pullVarsFromUserCodeLocalScope, or evaluateInUserCodeLocalScope in a Worker
+// for the ones that call the learner's functions or classes; the latter have
+// their own cases in javascriptFunctionValidators.test.js): file name, a correct solution, wrong code.
 const VARIABLE_OBJECTIVES = [
   {
     objective: 'js_declare_variable',

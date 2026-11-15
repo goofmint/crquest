@@ -13,6 +13,16 @@
 //   host   -> worker  { type: 'pull', code: string, keys: string[], env: { [name]: string } }
 //   worker -> host    { type: 'vars', vars: { [key]: value, _error?: Error } }
 //                     { type: 'vars-error', error: { name, message, stack } }
+// Test-case evaluation (validators, ValidationHelper.evaluateInUserCodeLocalScope);
+// also accepted exactly once per worker, in place of 'run':
+//   host   -> worker  { type: 'evaluate', code: string, test: string, args: JSON value, env: { [name]: string } }
+//   worker -> host    { type: 'result', value }
+//                     { type: 'result-error', error: { name, message, stack } }
+// `test` is the source text of a function expression. It is evaluated in the
+// same script as `code`, right after it, so it sees the top-level variables,
+// functions and classes of the user's code, and is called with `args`. It may
+// return a Promise. Its (awaited) result must be structured-cloneable, else
+// 'result-error' is sent; so is an error thrown by `code` or `test`.
 // 'vars' values must be structured-cloneable; a requested variable that is not
 // (a function, a class, a symbol, an object containing one) is reported with
 // 'vars-error', never silently dropped or converted.
@@ -27,6 +37,9 @@
   const MESSAGE_PULL = 'pull';
   const MESSAGE_VARS = 'vars';
   const MESSAGE_VARS_ERROR = 'vars-error';
+  const MESSAGE_EVALUATE = 'evaluate';
+  const MESSAGE_RESULT = 'result';
+  const MESSAGE_RESULT_ERROR = 'result-error';
   const PULL_HOLDER = '__TQ';
   const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
   const SOURCE_URL = 'script.js';
@@ -418,12 +431,16 @@
     }
   }
 
-  function postVarsError(error) {
+  // `primitiveName` is the `name` reported for a thrown value that has none
+  // (`throw 'text'`, `throw null`). An empty name makes the host's
+  // `String(error)` the bare message, as when the former vm based runner threw
+  // the value itself.
+  function postVarsError(error, type = MESSAGE_VARS_ERROR, primitiveName = 'Error') {
     const isObject = error !== null && error !== undefined;
     scope.postMessage({
-      type: MESSAGE_VARS_ERROR,
+      type,
       error: {
-        name: isObject && error.name ? String(error.name) : 'Error',
+        name: isObject && error.name ? String(error.name) : primitiveName,
         message: thrownMessage(error),
         stack: isObject ? cleanStack(error.stack) : '',
       },
@@ -483,6 +500,55 @@
     }
   }
 
+  // Runs `code`, then calls the function expression `test` (source text) with
+  // `args` in the same script, so that `test` can use the top-level `let`,
+  // `const`, `class` and function declarations of `code`. The result (a
+  // Promise is awaited) is posted back after checking it can be cloned.
+  function evaluate(code, test, args, env) {
+    if (typeof test !== 'string' || test.trim() === '') {
+      throw new TypeError('"test" must be the source text of a function');
+    }
+    installEnv(env);
+    installReplaceAllPolyfill();
+
+    const holder = Object.create(null);
+    holder.args = args;
+    Object.defineProperty(scope, PULL_HOLDER, {
+      value: holder,
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    });
+
+    // The newline after `test` keeps a trailing line comment in it from
+    // swallowing the call.
+    const source =
+      `${code};\n` +
+      `${PULL_HOLDER}.result = (${test}\n)(${PULL_HOLDER}.args);\n` +
+      `//# sourceURL=${SOURCE_URL}`;
+
+    let returned;
+    try {
+      (0, eval)(source);
+      returned = holder.result;
+    } catch (e) {
+      postVarsError(e, MESSAGE_RESULT_ERROR, '');
+      return;
+    }
+
+    Promise.resolve(returned).then(
+      value => {
+        try {
+          assertCloneable('The result of the test function', value);
+          scope.postMessage({ type: MESSAGE_RESULT, value });
+        } catch (e) {
+          postVarsError(e, MESSAGE_RESULT_ERROR, '');
+        }
+      },
+      e => postVarsError(e, MESSAGE_RESULT_ERROR, '')
+    );
+  }
+
   function reportProtocolError(message) {
     scope.console.error({ message, stack: '' });
   }
@@ -492,7 +558,9 @@
     if (
       data === null ||
       typeof data !== 'object' ||
-      (data.type !== MESSAGE_RUN && data.type !== MESSAGE_PULL)
+      (data.type !== MESSAGE_RUN &&
+        data.type !== MESSAGE_PULL &&
+        data.type !== MESSAGE_EVALUATE)
     ) {
       reportProtocolError(
         `Code runner worker received an unknown message: ${
@@ -512,6 +580,13 @@
         postVarsError(new TypeError('Code runner worker: "code" must be a string'));
         return;
       }
+      if (data.type === MESSAGE_EVALUATE) {
+        postVarsError(
+          new TypeError('Code runner worker: "code" must be a string'),
+          MESSAGE_RESULT_ERROR
+        );
+        return;
+      }
       reportProtocolError('Code runner worker: "code" must be a string');
       return;
     }
@@ -519,12 +594,16 @@
     try {
       if (data.type === MESSAGE_PULL) {
         pull(data.code, data.keys, data.env);
+      } else if (data.type === MESSAGE_EVALUATE) {
+        evaluate(data.code, data.test, data.args, data.env);
       } else {
         run(data.code, data.env);
       }
     } catch (e) {
       if (data.type === MESSAGE_PULL) {
         postVarsError(e);
+      } else if (data.type === MESSAGE_EVALUATE) {
+        postVarsError(e, MESSAGE_RESULT_ERROR, '');
       } else {
         reportProtocolError(`Code runner worker: ${e.message}`);
       }

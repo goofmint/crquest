@@ -23,14 +23,45 @@ module.exports = async (helper) => {
     }
 
     const userCode = await helper.fs.readAsync(programPath);
-    const tq = await helper.pullVarsFromUserCodeLocalScope(
-      userCode,
-      ['calculateMass']
-    );
+    // The learner's code and the test cases run in a Web Worker (functions and
+    // classes cannot leave it), so the checks below run there and only their
+    // outcome comes back. See docs/migration/validation-helper-worker.md.
+    const tq = await helper.evaluateInUserCodeLocalScope(userCode, () => {
+      const isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      };
+      let target;
+      try {
+        target = calculateMass;
+      } catch (error) {
+        return { readError: { name: error.name, text: `${error}` } };
+      }
+      if (!isFunction(target)) {
+        return { outcome: 'not-function' };
+      }
 
-    if (tq._error) {
-      console.log(tq._error);
-      if (tq._error.name === "ReferenceError") {
+      try {
+        const result = target([]);
+        const result2 = target(["farts", "burps", "toots"]);
+
+        if (result === undefined || result === null) {
+          return { outcome: 'no-value' };
+        }
+        if (isNaN(result)) {
+          return { outcome: 'not-number' };
+        }
+        if (result !== 0 || result2 !== 15) {
+          return { outcome: 'wrong-value' };
+        }
+      } catch (ee) {
+        return { outcome: 'call-error', error: `${ee}` };
+      }
+      return { outcome: 'ok' };
+    });
+
+    if (tq.readError) {
+      console.log(tq.readError.text);
+      if (tq.readError.name === "ReferenceError") {
         return helper.fail(`
           It looks like a <span class="highlight">calculateMass</span> 
           function was not defined in your
@@ -44,13 +75,13 @@ module.exports = async (helper) => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
+          ${tq.readError.text}
         `);
       }
     }
 
     // Check type of the function
-    if (!isFunction(tq.calculateMass)) {
+    if (tq.outcome === 'not-function') {
       let message = `
         We found a variable called 
         <span class="highlight">calculateMass</span>, but it's not a
@@ -61,44 +92,40 @@ module.exports = async (helper) => {
       return helper.fail(message);
     }
 
-    // Check functionality
-    try {
-      const result = tq.calculateMass([]);
-      const result2 = tq.calculateMass(["farts", "burps", "toots"]);
-
-      if (result === undefined || result === null) {
-        return helper.fail(`
+    if (tq.outcome === 'no-value') {
+      return helper.fail(`
           It looks like your function is not yet returning a value. The final
           line of code in your function before the "}" should use the
           <span class="highlight">return</span> keyword to pass back a value of
           some kind as a result of executing the function. See the example code
           in the Help section.
         `);
-      }
+    }
 
-      if (isNaN(result)) {
-        return helper.fail(`
+    if (tq.outcome === 'not-number') {
+      return helper.fail(`
           It looks like your function is not returning a number. Your
           function must return a number, which is the total length of all
           strings in the input array.
         `);
-      }
+    }
 
-      if (result !== 0 || result2 !== 15) {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-value') {
+      return helper.fail(`
           Your function returned a number, but not the number we were looking 
           for. Check the Help and Objective tabs to ensure you are returning
           the right numeric value.
         `);
-      }
-    } catch (ee) {
+    }
+
+    if (tq.outcome === 'call-error') {
       return helper.fail(`
         There was an error executing your calculateMass function. Please 
         ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${ee}</span>
+        <span class="highlight">${tq.error}</span>
       `);
     }
 

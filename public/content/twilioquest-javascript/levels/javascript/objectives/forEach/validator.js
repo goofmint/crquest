@@ -23,14 +23,46 @@ module.exports = async helper => {
     }
 
     const userCode = await helper.fs.readAsync(programPath);
-    const tq = await helper.pullVarsFromUserCodeLocalScope(
-      userCode,
-      ['scan']
-    );
+    // The learner's code and the test cases run in a Web Worker (functions and
+    // classes cannot leave it), so the checks below run there and only their
+    // outcome comes back. See docs/migration/validation-helper-worker.md.
+    const tq = await helper.evaluateInUserCodeLocalScope(userCode, () => {
+      const isFunction = function(obj) {
+        return !!(obj && obj.constructor && obj.call && obj.apply);
+      };
+      let target;
+      try {
+        target = scan;
+      } catch (error) {
+        return { readError: { name: error.name, text: `${error}` } };
+      }
+      if (!isFunction(target)) {
+        return { outcome: 'not-function' };
+      }
 
-    if (tq._error) {
-      console.log(tq._error);
-      if (tq._error.name === 'ReferenceError') {
+      try {
+        const result = target([]);
+        const result2 = target(['contraband', 'contraband', 'contraband']);
+        const result3 = target(['contraband', 'a', 'contraband', 'b']);
+
+        if (result === undefined || result === null) {
+          return { outcome: 'no-value' };
+        }
+        if (isNaN(result)) {
+          return { outcome: 'not-number' };
+        }
+        if (result !== 0 || result2 !== 3 || result3 !== 2) {
+          return { outcome: 'wrong-value' };
+        }
+      } catch (ee) {
+        return { outcome: 'call-error', error: `${ee}` };
+      }
+      return { outcome: 'ok' };
+    });
+
+    if (tq.readError) {
+      console.log(tq.readError.text);
+      if (tq.readError.name === 'ReferenceError') {
         return helper.fail(`
           It looks like a <span class="highlight">scan</span> 
           function was not defined in your
@@ -44,13 +76,13 @@ module.exports = async helper => {
         return helper.fail(`
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
+          ${tq.readError.text}
         `);
       }
     }
 
     // Check type of the function
-    if (!isFunction(tq.scan)) {
+    if (tq.outcome === 'not-function') {
       let message = `
         We found a variable called 
         <span class="highlight">scan</span>, but it's not a
@@ -61,46 +93,40 @@ module.exports = async helper => {
       return helper.fail(message);
     }
 
-    // Check functionality
-    try {
-      const result = tq.scan([]);
-      const result2 = tq.scan(['contraband', 'contraband', 'contraband']);
-      const result3 = tq.scan(['contraband', 'a', 'contraband', 'b']);
-
-      if (result === undefined || result === null) {
-        return helper.fail(`
+    if (tq.outcome === 'no-value') {
+      return helper.fail(`
           It looks like your function is not yet returning a value. The final
           line of code in your function before the "}" should use the
           <span class="highlight">return</span> keyword to pass back a value of
           some kind as a result of executing the function. See the example code
           in the Help section.
         `);
-      }
+    }
 
-      if (isNaN(result)) {
-        return helper.fail(`
+    if (tq.outcome === 'not-number') {
+      return helper.fail(`
           It looks like your function is not returning a number. Your
           function must return a number, the number of times the string
           "contraband" appeared in the input array.
         `);
-      }
+    }
 
-      if (result !== 0 || result2 !== 3 || result3 !== 2) {
-        return helper.fail(`
+    if (tq.outcome === 'wrong-value') {
+      return helper.fail(`
           Your function returned a number, but not the value we were looking 
           for. Your function should examine every item in the input array, and
           return the total number of times the string "contraband" appeared.
         `);
-      }
+    }
 
-    } catch(ee) {
+    if (tq.outcome === 'call-error') {
       return helper.fail(`
         There was an error executing your scan function. Please 
         ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${ee}</span>
+        <span class="highlight">${tq.error}</span>
       `);
     }
 

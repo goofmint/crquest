@@ -19,6 +19,13 @@ vi.mock('../../../../../js/app/platform/exec', () => ({
 vi.mock('../../../../../js/app/platform/paths', () => ({
   getAppDataPath: vi.fn(),
 }));
+vi.mock('../../../../../js/app/common/fs_utils', () => ({
+  staticFileUrl: vi.fn(relativePath => `file:///static/${relativePath}`),
+}));
+vi.mock('../../../../../js/app/common/codeRunnerWorker', async importOriginal => ({
+  ...(await importOriginal()),
+  evaluateInWorker: vi.fn(),
+}));
 vi.mock('../../../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
@@ -42,6 +49,11 @@ import ValidationHelper from '../../../../../js/app/components/hack_interface/va
 import * as platformFs from '../../../../../js/app/platform/fs';
 import * as platformExec from '../../../../../js/app/platform/exec';
 import * as platformPaths from '../../../../../js/app/platform/paths';
+import { staticFileUrl } from '../../../../../js/app/common/fs_utils';
+import {
+  evaluateInWorker,
+  WORKER_RELATIVE_PATH,
+} from '../../../../../js/app/common/codeRunnerWorker';
 
 const makeHelper = () =>
   new ValidationHelper(
@@ -272,5 +284,69 @@ describe('pullVarsFromUserCodeLocalScope', () => {
       'mission'
     );
     expect(vars.answer).toBe(42);
+  });
+});
+
+describe('evaluateInUserCodeLocalScope', () => {
+  const testFn = ({ n }) => n;
+
+  beforeEach(() => {
+    staticFileUrl.mockReturnValue('file:///static/code_runner/worker.js');
+  });
+
+  test('runs the code and the test function in the code runner worker', async () => {
+    evaluateInWorker.mockResolvedValue({ ok: true });
+    const result = await makeHelper().evaluateInUserCodeLocalScope('const n = 1;', testFn, {
+      n: 1,
+    });
+    expect(result).toEqual({ ok: true });
+    expect(staticFileUrl).toHaveBeenCalledWith(WORKER_RELATIVE_PATH);
+    expect(evaluateInWorker).toHaveBeenCalledWith({
+      workerUrl: 'file:///static/code_runner/worker.js',
+      code: 'const n = 1;',
+      test: testFn,
+      args: { n: 1 },
+    });
+  });
+
+  test('passes {} when there are no args', async () => {
+    evaluateInWorker.mockResolvedValue(1);
+    await makeHelper().evaluateInUserCodeLocalScope('', testFn);
+    expect(evaluateInWorker.mock.calls[0][0].args).toEqual({});
+  });
+
+  test('propagates the rejection of the worker', async () => {
+    evaluateInWorker.mockRejectedValue(new Error('boom'));
+    await expect(
+      makeHelper().evaluateInUserCodeLocalScope('', testFn)
+    ).rejects.toThrow('boom');
+  });
+
+  test('does not use vm or the host: pullVars stays on vm', async () => {
+    evaluateInWorker.mockResolvedValue(1);
+    const vars = await makeHelper().pullVarsFromUserCodeLocalScope('var a = 3;', ['a']);
+    expect(vars.a).toBe(3);
+    expect(evaluateInWorker).not.toHaveBeenCalled();
+  });
+
+  test('evaluateInQuestIdeUserCodeLocalScope reads the saved code and delegates', async () => {
+    platformFs.readFile.mockResolvedValue('var answer = 42;');
+    evaluateInWorker.mockResolvedValue(42);
+    const result = await makeHelper().evaluateInQuestIdeUserCodeLocalScope(
+      testFn,
+      { n: 2 },
+      'obj',
+      'mission'
+    );
+    expect(result).toBe(42);
+    expect(platformFs.readFile).toHaveBeenCalledWith(
+      expect.stringContaining('mission'),
+      'utf8'
+    );
+    expect(evaluateInWorker.mock.calls[0][0]).toMatchObject({
+      code: 'var answer = 42;',
+      test: testFn,
+      args: { n: 2 },
+    });
   });
 });
