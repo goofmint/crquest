@@ -30,10 +30,12 @@ const KNOWN_DISALLOWED_REQUIRES = [
   // Build-time script (not loaded at runtime, see content-layout.md): it needs
   // fs and is kept for provenance only.
   'twilioquest-base/scripts/extendTilesetIds.js: fs',
-  // Learner-facing example code shown in the QuestIDE (it is executed in the
-  // code runner, not loaded by the game). It needs a Node API the planned Web
-  // Worker does not offer: product decision pending, see
-  // content-twilioquest-api-academy.md (section 5).
+  // Learner-facing example code shown in the QuestIDE: it is content for the
+  // learner, not host code, and the game never loads it. The learner's own
+  // `require("fs").promises.readdir` is provided to the validator's Web Worker by
+  // the `fs` mock of evaluateInQuestIdeUserCodeLocalScope (validator.js of the
+  // objective); the QuestIDE runner's Worker has no `require`, a known gap, see
+  // validation-helper-worker.md and content-twilioquest-api-academy.md.
   'twilioquest-api-academy/levels/lovelace_tower/objectives/api-02-async-await/example.js: fs',
 ];
 

@@ -53,7 +53,8 @@ Issue #31。`twilioquest-api-academy@3.0.2` (`public/package-lock.json` が解�
 
 ## 5. 既知のフォローアップ (プロダクトオーナーに要判断)
 
-- **api-02 の学習者向けコード**: `example.js` と `walkthrough.md` は学習者に `const { readdir } = require("fs").promises;` を書かせる。この学習者コードは QuestIDE で実行されるため、予定されている Web Worker 実行では `fs` を使えない。学習者向けの課題を黙って変えないため、本チケットではこのままにした (`code-runner-behavior.md` のコード実行側の対応表に従う後続対応: `fs.promises.readdir` 相当の提供、または課題の書き換え)。同様に api-03/04/05 は `fetch` を使い、api-05 は `helper.fetchOverride` を使う (これらの validator は変更不要で、`require` は `assert` のみ)。
+- **api-02 の学習者向けコード**: `example.js` と `walkthrough.md` は学習者に `const { readdir } = require("fs").promises;` を書かせる。この学習者コードは QuestIDE で実行されるため、予定されている Web Worker 実行では `fs` を使えない。学習者向けの課題を黙って変えないため、本チケットではこのままにした (`code-runner-behavior.md` のコード実行側の対応表に従う後続対応: `fs.promises.readdir` 相当の提供、または課題の書き換え)。同様に api-03/04/05 は `fetch` を使い、api-05 は `helper.fetchOverride` を使っていた。
+- **#120 (3 段目) での更新**: validator (api-01 / 02 / 04 / 05) は Worker 方式に載せ替えた (`validation-helper-worker.md`)。検証の Worker には `fs` (`require("fs").promises.readdir` がテスト用ディレクトリだけを返す) と、api-05 の偽 `fetch` (`fetchOverride` を validator に移したもの。`ValidationHelper.fetchOverride` は削除) を入れるので、HACK の合否は従来どおり。QuestIDE の試し実行 (`code_runner`) は `require` も偽 `fetch` も無いままで、`example.js` は `ReferenceError` になる (上の決定事項は未解決)。
 - **実在しない認証情報**: `twilio_api_setup` が形式だけを見るため、形式を満たすダミーの値でも進行できる。値は `env` に保存され、`gameEvents.js` の分析イベントに `accountSid` として送られる (従来も入力値をそのまま送っていた)。他の拡張機能 (取り込み前の `twilioquest-twilio-vr` など) が実在する認証情報を使って Twilio を呼ぶ場合、ダミー値では失敗する。
 - `twilio` / `compare-versions` 以外の依存の見直し、`tq-npc` の動的 require は本チケットの範囲外 (`content-layout.md` 参照)。
 
