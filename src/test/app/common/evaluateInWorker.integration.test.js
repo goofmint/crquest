@@ -240,6 +240,44 @@ describe('evaluateInWorker errors', () => {
     expect(awaited.message).toMatch(/cannot be returned/);
   });
 
+  it('serializes the result once: getters run a single time', async () => {
+    const counted = await evaluate({
+      code: 'let n = 0;',
+      test: () => ({
+        get count() {
+          n += 1;
+          return n;
+        },
+      }),
+    });
+    expect(counted.count).toBe(1);
+
+    const failsLater = await evaluate({
+      code: 'let n = 0;',
+      test: () => ({
+        get value() {
+          n += 1;
+          if (n > 1) throw new Error('second read');
+          return n;
+        },
+      }),
+    });
+    expect(failsLater.value).toBe(1);
+  });
+
+  it('reports an error thrown by a getter of the result as that error', async () => {
+    const error = await evaluate({
+      code: '',
+      test: () => ({
+        get bad() {
+          throw new RangeError('getter');
+        },
+      }),
+    }).catch(e => e);
+    expect(error.name).toBe('RangeError');
+    expect(error.message).toBe('getter');
+  });
+
   it('times out an infinite loop in the user code and in the test, killing the worker', async () => {
     const started = Date.now();
     const inCode = await evaluate({
