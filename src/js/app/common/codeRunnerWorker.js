@@ -344,12 +344,12 @@ function assertJsonValue(value, path, ancestors) {
 const NATIVE_CODE = /\{\s*\[native code\]\s*\}\s*$/;
 
 // Source text of the function that runs in the worker
-function testSource(test) {
+function testSource(test, label = 'test') {
   if (typeof test === 'function') {
     const source = Function.prototype.toString.call(test);
     if (NATIVE_CODE.test(source)) {
       throw new TypeError(
-        'evaluateInWorker: test must be a plain function, not a native or bound function'
+        `evaluateInWorker: ${label} must be a plain function, not a native or bound function`
       );
     }
     return source;
@@ -358,8 +358,56 @@ function testSource(test) {
     return test;
   }
   throw new TypeError(
-    'evaluateInWorker: test must be a function or the source text of one'
+    `evaluateInWorker: ${label} must be a function or the source text of one`
   );
+}
+
+const MOCK_KEYS = ['fetch', 'fs'];
+
+// `mocks` stand in for host services inside the worker (see worker.js): only
+// `fetch` (a factory function or its source text) and `fs` (a read-only
+// listing of directories) exist; anything else is an error, never ignored.
+// Returns the message form (sources as strings) or undefined.
+function normalizeMocks(mocks) {
+  if (mocks === undefined) {
+    return undefined;
+  }
+  if (!isPlainObject(mocks)) {
+    throw new TypeError('evaluateInWorker: mocks must be a plain object');
+  }
+  Object.keys(mocks).forEach(key => {
+    if (MOCK_KEYS.indexOf(key) === -1) {
+      throw new TypeError(
+        `evaluateInWorker: unknown mock "${key}" (supported: ${MOCK_KEYS.join(', ')})`
+      );
+    }
+  });
+  const normalized = {};
+  if (mocks.fetch !== undefined) {
+    normalized.fetch = testSource(mocks.fetch, 'mocks.fetch');
+  }
+  if (mocks.fs !== undefined) {
+    const { fs } = mocks;
+    if (
+      !isPlainObject(fs) ||
+      Object.keys(fs).some(key => key !== 'directories') ||
+      !isPlainObject(fs.directories)
+    ) {
+      throw new TypeError(
+        'evaluateInWorker: mocks.fs must be { directories: { [path]: string[] } }'
+      );
+    }
+    Object.keys(fs.directories).forEach(directory => {
+      const names = fs.directories[directory];
+      if (!Array.isArray(names) || !names.every(name => typeof name === 'string')) {
+        throw new TypeError(
+          `evaluateInWorker: mocks.fs.directories[${JSON.stringify(directory)}] must be an array of strings`
+        );
+      }
+    });
+    normalized.fs = { directories: fs.directories };
+  }
+  return normalized;
 }
 
 /**
@@ -390,6 +438,13 @@ function testSource(test) {
  * @param {function|string} options.test function (or its source text) that runs in the worker
  * @param {*} [options.args] JSON compatible data handed to `test`
  * @param {Object<string, string>} [options.env] exposed as `process.env`
+ * @param {{fetch?: function|string, fs?: {directories: Object<string, string[]>}}} [options.mocks]
+ *   stand-ins installed in the worker BEFORE `code` runs. `fetch` is a factory
+ *   `realFetch => fetchLike` (self-contained like `test`; a function or its
+ *   source text) whose result replaces the global `fetch`; `fs` makes
+ *   `require('fs').promises.readdir(path)` (also `require('fs/promises')`)
+ *   resolve the listed directories and reject with ENOENT otherwise. Unknown
+ *   keys reject.
  * @param {number} [options.timeoutMs]
  * @param {function(string): Worker} [options.createWorker]
  * @returns {Promise<*>}
@@ -400,6 +455,7 @@ export function evaluateInWorker({
   test,
   args = {},
   env = {},
+  mocks,
   timeoutMs = PULL_VARS_TIMEOUT_MS,
   createWorker = createDefaultWorker,
 } = {}) {
@@ -410,19 +466,25 @@ export function evaluateInWorker({
     return Promise.reject(new TypeError('evaluateInWorker: code must be a string'));
   }
   let source;
+  let normalizedMocks;
   try {
     source = testSource(test);
     assertJsonValue(args, '', []);
     assertValidRun(code, env);
+    normalizedMocks = normalizeMocks(mocks);
   } catch (e) {
     return Promise.reject(e);
+  }
+  const message = { type: MESSAGE_EVALUATE, code, test: source, args, env };
+  if (normalizedMocks !== undefined) {
+    message.mocks = normalizedMocks;
   }
 
   return exchangeWithWorker({
     workerUrl,
     createWorker,
     timeoutMs,
-    message: { type: MESSAGE_EVALUATE, code, test: source, args, env },
+    message,
     successType: MESSAGE_RESULT,
     errorType: MESSAGE_RESULT_ERROR,
     readSuccess: data => ('value' in data ? { value: data.value } : null),
