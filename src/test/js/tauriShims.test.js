@@ -22,13 +22,17 @@ describe('tauri_shims/url', () => {
     'file:///Users/me/with%20space/%E3%82%B2%E3%83%BC%E3%83%A0/index.html',
     'file:///',
   ])('fileURLToPath matches Node for %s', href => {
-    expect(fileURLToPath(href)).toBe(nodeFileURLToPath(href));
-    expect(fileURLToPath(new URL(href))).toBe(nodeFileURLToPath(href));
+    expect(fileURLToPath(href)).toBe(
+      nodeFileURLToPath(href, { windows: false })
+    );
+    expect(fileURLToPath(new URL(href))).toBe(
+      nodeFileURLToPath(href, { windows: false })
+    );
   });
 
   test('fileURLToPath round-trips a POSIX path', () => {
     const file = '/Users/me/a b/c#d.txt';
-    expect(fileURLToPath(pathToFileURL(file))).toBe(file);
+    expect(fileURLToPath(pathToFileURL(file, { windows: false }))).toBe(file);
   });
 
   test('fileURLToPath rejects what Node rejects', () => {
