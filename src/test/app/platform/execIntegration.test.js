@@ -35,12 +35,21 @@ describe('platform exec with real processes', () => {
     });
   });
 
-  test('run rejects on a timeout and keeps the captured output', async () => {
+  test('run rejects as killed when the process exceeds the timeout', async () => {
+    // Asserts nothing about stdout: it would depend on how fast the child starts.
     await expect(
-      run(NODE, ['-e', 'console.log("started"); setInterval(() => {}, 1000)'], {
-        timeout: 500,
-      })
-    ).rejects.toMatchObject({ killed: true, stdout: 'started\n' });
+      run(NODE, ['-e', 'setInterval(() => {}, 1000)'], { timeout: 500 })
+    ).rejects.toMatchObject({ killed: true });
+  });
+
+  test.skipIf(process.platform === 'win32')('run rejects on a signal exit and keeps the output written before it', async () => {
+    // The child finishes writing, then ends itself with a signal: no timing involved.
+    await expect(
+      run(NODE, [
+        '-e',
+        'console.log("started"); process.kill(process.pid, "SIGTERM")',
+      ])
+    ).rejects.toMatchObject({ stdout: 'started\n' });
   });
 
   test('exec resolves stdout and stderr of a shell command', async () => {
