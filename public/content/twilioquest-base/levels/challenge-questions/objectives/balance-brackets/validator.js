@@ -1,37 +1,48 @@
-const assert = require("assert");
-
-const assertTestCase = (testFunction) => (input, expected) => {
-  const testResult = testFunction(input);
-
-  assert.strictEqual(
-    testResult,
-    expected,
-    `Expected "${expected}" from input "${input}", but received "${testResult}".`
-  );
-};
-
 module.exports = async function (helper) {
-  let context;
-
   try {
-    context = await helper.pullVarsFromQuestIdeUserCodeLocalScope(
-      ["balanceBrackets"],
+    // The learner's code and the test cases run in a Web Worker (functions
+    // cannot leave it), so the checks run there and a failed check is thrown as
+    // an error. See docs/migration/validation-helper-worker.md.
+    await helper.evaluateInQuestIdeUserCodeLocalScope(
+      () => {
+        const fail = (message) => {
+          throw new Error(message);
+        };
+
+        const assertTestCase = (testFunction) => (input, expected) => {
+          const testResult = testFunction(input);
+          const message = `Expected "${expected}" from input "${input}", but received "${testResult}".`;
+
+          if (!Object.is(testResult, expected)) {
+            fail(message);
+          }
+        };
+
+        let learnerFunction;
+        try {
+          learnerFunction = balanceBrackets;
+        } catch (error) {
+          learnerFunction = undefined;
+        }
+
+        if (!learnerFunction) {
+          fail("The function balanceBrackets is not defined!");
+        }
+
+        const test = assertTestCase(learnerFunction);
+
+        test(["{", "}"], true);
+        test(["[", "(", "]", ")"], false);
+        test([], true);
+        test(["{", "[", "}"], false);
+        test(["]", "(", ")", "["], false);
+        test(["(", ")", "[", "(", "{", "}", ")", "]"], true);
+
+        return { outcome: "ok" };
+      },
+      {},
       "balance-brackets"
     );
-
-    assert(
-      context.balanceBrackets,
-      "The function balanceBrackets is not defined!"
-    );
-
-    const test = assertTestCase(context.balanceBrackets);
-
-    test(["{", "}"], true);
-    test(["[", "(", "]", ")"], false);
-    test([], true);
-    test(["{", "[", "}"], false);
-    test(["]", "(", ")", "["], false);
-    test(["(", ")", "[", "(", "{", "}", ")", "]"], true);
   } catch (err) {
     helper.fail(err);
     return;

@@ -8,7 +8,7 @@ Issue #39 (`code_runner.js` の Worker 化)、#26 / #40 (`pullVars` の `vm` 非
 | --- | --- |
 | #39 runner の差し替え | 完了 |
 | #27 `evalQuestIdeUserCode` | 削除済み (完了) |
-| #26 / #40 `pullVars` の Worker 化 | **段階的に進行中 (3 段階の 1 段目)**。`pullVars*` は従来どおり `vm` のまま。1 段目で「テストケースを Worker 内で実行してデータだけ返す」API (`evaluateInUserCodeLocalScope`) を追加し、`twilioquest-javascript` の 10 件を載せ替えた。残りは 4 章 |
+| #26 / #40 `pullVars` の Worker 化 | **段階的に進行中 (3 段階の 2 段目まで完了)**。`pullVars*` は従来どおり `vm` のまま。1 段目で「テストケースを Worker 内で実行してデータだけ返す」API (`evaluateInUserCodeLocalScope`) を追加し、`twilioquest-javascript` の 10 件を載せ替えた。2 段目で `twilioquest-base` の 10 件と `twilioquest-javascript` の `instantiation` / `js_split_west_laser` を載せ替えた (合計 22 件)。残りは 4 章 |
 
 ## 1. #39: code_runner.js の差し替え (完了)
 
@@ -21,11 +21,11 @@ Issue #39 (`code_runner.js` の Worker 化)、#26 / #40 (`pullVars` の `vm` 非
 
 `grep` の結果、定義以外の呼び出しは `src` にも `public/content` にも無い。ホストでの `eval` は Worker 化の方針と Tauri の CSP に反するため**削除**した (テストで不在を確認)。副作用だけが必要なら `pullVarsFromQuestIdeUserCodeLocalScope([], objective, mission)` を使う。
 
-## 3. #26 / #40: テストケースを Worker に渡す API (1 段目)
+## 3. #26 / #40: テストケースを Worker に渡す API (1 段目 / 2 段目)
 
 ### 方針
 
-24 個のバリデータは、ユーザーコードが返した関数・クラスをホストで同期的に呼んで検証している。Worker 境界は structured clone なので関数・クラスは渡せない。そこで逆にして、**テストケース (検証関数) を Worker に渡し、Worker の中でユーザーコードと一緒に実行して、データだけを受け取る**。判定ロジック (どの結果なら合格か) も Worker 内に置き、ホストにはどの失敗か (`outcome`) とメッセージに必要な文字列だけを返す。ユーザーコードは Worker の中でしか実行されない (ホストでは実行しない)。
+関数・クラスを呼ぶバリデータ (実際は `twilioquest-javascript` 12 件、`twilioquest-base` 10 件、`twilioquest-api-academy` 4 件の 26 件) は、ユーザーコードが返した関数・クラスをホストで同期的に呼んで検証している。Worker 境界は structured clone なので関数・クラスは渡せない。そこで逆にして、**テストケース (検証関数) を Worker に渡し、Worker の中でユーザーコードと一緒に実行して、データだけを受け取る**。判定ロジック (どの結果なら合格か) も Worker 内に置き、ホストにはどの失敗か (`outcome`) とメッセージに必要な文字列だけを返す。ユーザーコードは Worker の中でしか実行されない (ホストでは実行しない)。
 
 ### API
 
@@ -80,7 +80,20 @@ if (tq.outcome === 'wrong-value') return helper.fail(`...`);
   - Worker の最上位は本物のグローバルオブジェクトなので、`Object.defineProperty(globalThis, 'scan', { get() { throw ... } })` のような読み出しの例外は「検証で問題が起きた」になる (`vm` のコンテキストではそもそも読めず `ReferenceError` 扱いだった)。
   - 学習者の関数は `this` が `tq` オブジェクトではなく `undefined` (非 strict ならグローバル) で呼ばれる。
   - 学習者のコードから `require` / `window` / `process` (実環境の) / `fetchOverride` は見えない。これらの課題で使うものは無い。
-- データだけを返す `js_declare_variable`, `js_declare_variable_multiple`, `arrays` は載せ替えていない。これらは `pullVarsFromUserCodeLocalScope` のまま (3 段目で `pullVars` を Worker の `pull` に接続すれば、コードの変更なしで動く。値が clone できない場合だけ明示エラーになる)。**`instantiation` (`tq.construct(...)`) と `js_split_west_laser` (`new tq.Ducktypium(...)`) も関数・クラスを呼んでおり、24 件の一覧から漏れている** (実際は 26 件)。この PR の範囲外なので未変換で、`vm` を外す前に必ず載せ替える (4 章)。
+- データだけを返す `js_declare_variable`, `js_declare_variable_multiple`, `arrays` は載せ替えていない。これらは `pullVarsFromUserCodeLocalScope` のまま (3 段目で `pullVars` を Worker の `pull` に接続すれば、コードの変更なしで動く。値が clone できない場合だけ明示エラーになる)。
+- `instantiation` (`tq.construct(...)`) と `js_split_west_laser` (`new tq.Ducktypium(...)`) は 1 段目では漏れていたが、2 段目で載せ替えた (次節)。
+
+### 載せ替えた validator (2 段目: 12 件)
+
+`twilioquest-base` (QuestIDE、`evaluateInQuestIdeUserCodeLocalScope`、保存済みコードは従来どおり `helper.getQuestIdeUserCode` 経由で読む): `sum-array`, `flatten-array`, `reverse-words`, `check-for-palindrome`, `balance-brackets`, `remove-duplicate-characters`, `difference-max-min`, `03-debugging-1`, `03-debugging-2`, `03-debugging-3`。`twilioquest-javascript` (`evaluateInUserCodeLocalScope`): `instantiation`, `js_split_west_laser`。
+
+- `instantiation` と `js_split_west_laser` は 1 段目と同じパターン (`outcome` を返し、ホストが従来と同じメッセージを出す)。
+- `twilioquest-base` の 10 件は `assert` を使っていた。Worker には `require` が無いので、`assert(x, message)` / `assert.strictEqual(a, b, message)` は `Object.is` による比較と `throw new Error(message)` に置き換えた (`strictEqual` は `Object.is` 相当)。失敗は Worker 内で投げた `Error` が reject として返り、従来どおり外側の `catch (err) { helper.fail(err); }` が `err.message` を表示する。学習者の関数が投げた例外も同じ経路で、メッセージは従来と同じ。
+  - 変数が読み出せない、または偽 (`0`、`''`、`null`) のときは従来どおり `The function X is not defined!` (どんな読み出し例外も無視する)。関数でない値を渡したときの `testFunction is not a function` も、呼び出す関数の仮引数名を従来と同じ `testFunction` にして保っている。
+  - `flatten-array` は `helper.areArrayContentsEqual` と `helper.formatByType` を使っていたので Worker 内に同じ実装を置いた。文字列としての比較を先に行う従来の挙動 (要素が違う配列は `One or more array elements ...` で失敗する) も同じ。
+  - `03-debugging-1/2/3` は `lodash.isequal` を使っていた。Worker に `require` が無いので、同じ判定 (SameValueZero、ボックス化されたプリミティブ、配列、自身の列挙可能キー (Symbol を含む) とコンストラクタの比較) の `isEqual` を `testFn` 内に置いた。ランダムな値 30 万組 (クラスのインスタンス、`Object.create(null)`、`Number` / `String` / `Date` / `RegExp` / `Map`、`arguments`、`NaN`、`-0` を含む) で `lodash.isequal` と結果が一致することを確認した (循環参照は `JSON.stringify` が先に投げるので比較まで届かない)。
+- 変更前後の同一性: 新しいテスト (`src/test/app/content/baseValidators.test.js`、`javascriptFunctionValidators.test.js`) の全ケースを、変更前 (`vm` 版) の実装でも実行して同じ結果になることを確認した。唯一の差は検証に使った Node 26 の `assert.strictEqual` で、カスタムメッセージの後ろに `\n\n<実際> !== <期待>\n` を付ける。Electron 11 の Node 12 では付かない (メッセージのみ) ので、この PR の結果が本来の挙動と一致する。
+- 挙動の差 (軽微): 1 段目に挙げたものに加えて、学習者のコードの無限ループは 10 秒で Worker ごと終了し、`Error` として `helper.fail` に渡る (従来はアプリが固まった)。関数が文字列以外の `Error` でない値 (数値やオブジェクト) を投げた場合、表示される `message` は Worker 経由の `Error` のものになり、従来 (`undefined`) とは異なりうる。
 
 ### 土台として残したもの (未配線)
 
@@ -101,9 +114,11 @@ if (tq.outcome === 'wrong-value') return helper.fail(`...`);
 
 ### 残り
 
-- 2 段目: `twilioquest-base` (`sum-array`, `flatten-array`, `reverse-words`, `check-for-palindrome`, `balance-brackets`, `remove-duplicate-characters`, `difference-max-min`, `03-debugging-1/2/3`) と `twilioquest-api-academy` (`api-01-local-function`, `api-02-async-await`, `api-04-remote-and-local`, `api-05-get-patch`) を `evaluateInQuestIdeUserCodeLocalScope` に載せ替える。api-academy は非同期 (`await`) と `fetch` を使う。Worker 内の `fetch` は標準のもので `fetchOverride` (`api-05-get-patch` の偽サーバー) が効かないため、偽 `fetch` を `testFn` の中で再現するか、`env` / `args` で渡す設計が必要。`QuestIDE` のユーザーコードが `fs` / `Buffer` / `http` を使う場合 (下記) も同様に未解決。
-- `instantiation` (`construct` 関数) と `js_split_west_laser` (`Ducktypium` クラス) (`twilioquest-javascript`) は、関数・クラスを呼ぶのに 24 件の一覧に無い。2 段目に含めて、上のパターンで載せ替える。載せ替えずに 3 段目へ進むと壊れる。
-- 3 段目: すべて載せ替えたら `ValidationHelper` の `pullVars*` を `pullVarsInWorker` に接続し、`vm` を削除する。**Tauri 化の前に `vm` は必ず外す** (Tauri に Node の `vm` は無い)。それまでは Electron の挙動を変えない。
+- `grep -rn "pullVarsFrom" public/content src` の結果、`pullVars*` を呼ぶのは次のものだけ。
+  - データだけを読むもの (3 段目で `pull` に接続する。コード変更は不要): `twilioquest-javascript` の `js_declare_variable`, `js_declare_variable_multiple`, `arrays`。
+  - 3 段目で載せ替える `twilioquest-api-academy` の `api-01-local-function`, `api-02-async-await`, `api-04-remote-and-local`, `api-05-get-patch`。非同期 (`await`) と `fetch` を使う。Worker 内の `fetch` は標準のもので `fetchOverride` (`api-05-get-patch` の偽サーバー) が効かないため、偽 `fetch` を `testFn` の中で再現するか、`env` / `args` で渡す設計が必要。`QuestIDE` のユーザーコードが `fs` / `Buffer` / `http` を使う場合 (下記) も同様に未解決。
+  - `ValidationHelper` 自身 (定義と `pullVarsFromQuestIdeUserCodeLocalScope` から `pullVarsFromUserCodeLocalScope` への委譲)。
+- 3 段目: api-academy を載せ替えたら `ValidationHelper` の `pullVars*` を `pullVarsInWorker` に接続し、`vm` を削除する。**Tauri 化の前に `vm` は必ず外す** (Tauri に Node の `vm` は無い)。それまでは Electron の挙動を変えない。
 
 ### QuestIDE のユーザーコードが `fs` / `Buffer` / `http` を使う場合 (範囲外)
 
