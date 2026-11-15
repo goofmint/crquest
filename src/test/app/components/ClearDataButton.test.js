@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 
-vi.mock('../../../js/app/platform/fs', () => ({ remove: vi.fn() }));
+vi.mock('../../../js/app/platform/fs', () => ({ removeAsync: vi.fn() }));
 vi.mock('../../../js/app/common/database', () => ({
   __esModule: true,
   default: { delete: vi.fn() },
@@ -24,7 +24,7 @@ vi.mock('../../../js/app/common/context/schema', () => ({
   describeSchema: vi.fn(() => ({ fields: { a: {}, b: { meta: { persistOnClearProgess: true } } } })),
 }));
 
-import { remove } from '../../../js/app/platform/fs';
+import { removeAsync as remove } from '../../../js/app/platform/fs';
 import db from '../../../js/app/common/database';
 import { hasValueAsync as hasValue, deleteValueAsync as deleteValue } from '../../../js/app/platform/store';
 import { suppressPersistence, resumePersistence, flushPendingSaves } from '../../../js/app/common/context';
@@ -36,6 +36,7 @@ import ClearDataButton from '../../../js/app/components/ClearDataButton';
 beforeEach(() => {
   vi.clearAllMocks();
   flushPendingSaves.mockResolvedValue(undefined);
+  remove.mockResolvedValue(undefined);
   hasValue.mockResolvedValue(true);
   deleteValue.mockResolvedValue(undefined);
   showAlert.mockResolvedValue(undefined);
@@ -111,7 +112,7 @@ describe('ClearDataButton.clearUserData', () => {
     deleteValue.mockImplementation(
       () => new Promise(resolve => { finishDelete = () => { order.push('deleted'); resolve(); }; })
     );
-    remove.mockImplementation(() => order.push('remove'));
+    remove.mockImplementation(async () => void order.push('remove'));
     const done = makeInstance().clearUserData();
     await vi.waitFor(() => expect(deleteValue).toHaveBeenCalled());
     expect(remove).not.toHaveBeenCalled();
@@ -199,6 +200,21 @@ describe('ClearDataButton.clearUserData', () => {
     const instance = makeInstance();
     await instance.clearUserData();
     await instance.clearUserData();
+    expect(db.delete).toHaveBeenCalledTimes(1);
+  });
+
+  test('a failing file removal resumes persistence, reports, skips the reload path and can be retried', async () => {
+    showConfirm.mockResolvedValue(true);
+    const failure = new Error('EACCES');
+    remove.mockRejectedValueOnce(failure).mockResolvedValue(undefined);
+    const instance = makeInstance();
+    await expect(instance.clearUserData()).rejects.toBe(failure);
+    expect(resumePersistence).toHaveBeenCalledTimes(1);
+    expect(showAlert).toHaveBeenCalledTimes(1);
+    expect(showAlert.mock.calls[0][0]).toContain('EACCES');
+    expect(db.delete).not.toHaveBeenCalled();
+    await instance.clearUserData();
+    expect(suppressPersistence).toHaveBeenCalledTimes(2);
     expect(db.delete).toHaveBeenCalledTimes(1);
   });
 });

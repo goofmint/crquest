@@ -1,5 +1,5 @@
 import React from 'react';
-import { remove } from '../platform/fs';
+import { removeAsync } from '../platform/fs';
 import db from '../common/database';
 import { hasValueAsync, deleteValueAsync } from '../platform/store';
 import { showConfirm } from '../platform/dialog';
@@ -85,14 +85,14 @@ export default class ClearDataButton extends React.Component {
     try {
       await flushPendingSaves();
       await clearStoreValues();
+      // Delete saved user code (a missing path is a no-op, as with the former
+      // synchronous remove)
+      await removeAsync(config.codeStoragePath);
     } catch (error) {
       resumePersistence();
       await reportFailure('Could not clear the saved game data', error);
       throw error;
     }
-
-    // Delete saved user code
-    remove(config.codeStoragePath);
 
     // Drop IndexedDB database and reload browser window
     db.delete()
