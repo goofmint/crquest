@@ -48,6 +48,17 @@ describe('build-time selection (vite.config.mjs)', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
+  async function bundleFiles(mode) {
+    const result = await build({
+      configFile: path.join(root, 'vite.config.mjs'),
+      mode,
+      logLevel: 'silent',
+      build: { write: false },
+    });
+    const outputs = Array.isArray(result) ? result.flatMap(r => r.output) : result.output;
+    return Object.fromEntries(outputs.map(o => [o.fileName, o.code]));
+  }
+
   async function bundle(mode) {
     const result = await build({
       configFile: path.join(root, 'vite.config.mjs'),
@@ -59,6 +70,23 @@ describe('build-time selection (vite.config.mjs)', () => {
     return outputs.find(o => o.fileName === 'index.js').code;
   }
 
+  test('--mode tauri: the entry has no external require, the game is a separate chunk', async () => {
+    const files = await bundleFiles('tauri');
+    expect(Object.keys(files).filter(f => f.endsWith('.js')).sort()).toEqual([
+      'index.js',
+      'tauri-game.js',
+    ]);
+    const requires = [...files['index.js'].matchAll(/\brequire\(("[^"]*")\)/g)].map(m => m[1]);
+    expect(requires).toEqual(['"./tauri-game.js"']);
+    expect(files['index.js']).toContain('await initPlatform()');
+    expect(files['tauri-game.js']).toContain('require("react")');
+  }, 60000);
+
+  test('the default (Electron) build is a single index.js', async () => {
+    const files = await bundleFiles('production');
+    expect(Object.keys(files).filter(f => f.endsWith('.js'))).toEqual(['index.js']);
+  }, 60000);
+
   test('the default (Electron) build bundles the Electron implementation', async () => {
     const code = await bundle('production');
     expect(code).not.toContain('ERR_TAURI_SYNC_UNSUPPORTED');
@@ -67,7 +95,8 @@ describe('build-time selection (vite.config.mjs)', () => {
   }, 60000);
 
   test('--mode tauri bundles platform/tauri/* and the Tauri JS APIs', async () => {
-    const code = await bundle('tauri');
+    // The entry and the game chunk together (see the chunk test above).
+    const code = Object.values(await bundleFiles('tauri')).join('\n');
     expect(code).toContain('ERR_TAURI_SYNC_UNSUPPORTED');
     expect(code).toContain('src/js/app/platform/tauri/store.js');
     expect(code).not.toContain('require("electron-store")');

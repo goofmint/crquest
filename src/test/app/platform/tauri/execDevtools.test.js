@@ -153,11 +153,18 @@ describe('pathExistsSync', () => {
 });
 
 describe('devtools', () => {
-  test('dispatch the Rust commands and return undefined synchronously', async () => {
+  test('dispatch the Rust commands and resolve with their result', async () => {
     const calls = backend(() => null);
-    expect(openDevTools()).toBeUndefined();
-    expect(toggleDevTools()).toBeUndefined();
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await expect(openDevTools()).resolves.toBeNull();
+    await expect(toggleDevTools()).resolves.toBeNull();
     expect(calls.map(c => c.cmd)).toEqual(['open_devtools', 'toggle_devtools']);
+  });
+
+  test('a refusal (release build) rejects with an Error', async () => {
+    backend(() => {
+      throw 'DevTools are not available in release builds';
+    });
+    await expect(toggleDevTools()).rejects.toThrow('DevTools are not available in release builds');
+    await expect(openDevTools()).rejects.toBeInstanceOf(Error);
   });
 });

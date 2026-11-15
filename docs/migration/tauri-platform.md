@@ -129,7 +129,7 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 - `vite build` (`npm run build:js` / `build:all` / `npm start`): 従来どおり Electron 実装。プラグインは何もせず、出力 `public/index.js` は変更前とバイト単位で同一であることを確認済み。
 - `vite build --mode tauri` (`npm run build:js:tauri`): `platform/<名前>` への相対 import を `platform/tauri/<名前>` に差し替え、`@tauri-apps/*` を external にせず bundle する。
-- `build:all` と `tauri.conf.json` の `beforeBuildCommand` には接続していない。Electron 専用の `require` を使う他のコードが残っており (Phase 11)、Tauri 向け bundle 全体はまだ動かないため。`build:js:tauri` は `public/index.js` を上書きする点に注意 (出力先を変えたいときは `npx vite build --mode tauri --outDir <dir>`)。
+- `build:all` には接続していない (`tauri.conf.json` の before コマンドは #64 から `build:tauri` で、`build:js:tauri` を使う)。Electron 専用の `require` を使う他のコードが残っており (Phase 11)、Tauri 向け bundle 全体はまだ動かないため。`build:js:tauri` は `public/index.js` を上書きする点に注意 (出力先を変えたいときは `npx vite build --mode tauri --outDir <dir>`)。
 
 ### 3.2 同期 API の扱い (一覧)
 
@@ -144,7 +144,7 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 | `fs.remove` | throw。`removeAsync` を使う | `ClearDataButton.jsx` |
 | `fs.readFileSync` | throw。`readFile` を使う | `context_provider/system.js` (`/proc/cpuinfo`) |
 | `exec.pathExistsSync` | throw。`fs.existsAsync` を使う | `ValidationHelper.isExecutableValid` (Windows Store アプリの `fs.stat` 問題は未検証) |
-| `devtools.openDevTools` / `toggleDevTools` | 同期の `void` を維持。Rust コマンドを呼び、失敗 (release ビルド) は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
+| `devtools.openDevTools` / `toggleDevTools` | `Promise<void>` を返す (#64、`tauri-shell.md`)。Rust コマンドを呼び、失敗 (release ビルド) は reject する。await しない呼び出し元は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
 
 `exec.exec` (シェル文字列) の扱いは 2.3 章のとおり。
 

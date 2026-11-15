@@ -14,6 +14,8 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(rootDir, 'src');
 const publicDir = path.join(rootDir, 'public');
 const entry = path.join(srcDir, 'js', 'index.jsx');
+// Tauri build only: initializes the platform layer, then loads `entry`.
+const tauriEntry = path.join(srcDir, 'js', 'tauriIndex.jsx');
 const htmlSource = path.join(srcDir, 'index.html');
 const localConfigPath = path.join(srcDir, 'js', 'app', 'config', 'local_config.js');
 const LOCAL_CONFIG_MISSING_ID = '\0local-config-missing';
@@ -146,10 +148,24 @@ function selectPlatformImplementation() {
       sourcemap: false,
       cssCodeSplit: false,
       rolldownOptions: {
-        input: entry,
+        input: platformTarget === 'tauri' ? tauriEntry : entry,
         external: isExternal,
         output: {
           format: 'cjs',
+          // Tauri build only: the game (everything index.jsx pulls in) is a
+          // separate chunk that the entry loads after `await initPlatform()`.
+          // Its externals (react, node builtins, ...) are `require`d at the
+          // top of whichever file contains them, and a Tauri webview has no
+          // `require`; keeping them out of the entry file means the entry
+          // (platform init, link and DevTools handlers) still runs.
+          ...(platformTarget === 'tauri'
+            ? {
+                // A fixed name (listed in tasks/clean_build_output.js); the
+                // only chunk is the dynamic import of index.jsx.
+                chunkFileNames: chunk =>
+                  chunk.isDynamicEntry ? 'tauri-game.js' : '[name]-[hash].js',
+              }
+            : {}),
           entryFileNames: 'index.js',
           // Keep the bundle's top-level bindings out of the global scope of the
           // classic <script> (other scripts such as ace/phaser define globals),
