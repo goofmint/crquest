@@ -160,6 +160,20 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - Electron リスク: なし (`platformTarget === 'tauri'` のときだけ)。`public/index.js` の SHA-256 が変更前と同一であること。
 - 備考: ビルドを通すには W2 も必要 (Node 組み込みが解決できない)。W1 単独の PR では「Node 組み込みだけが未解決」であることをテストで確認する。
 
+#### W1 の実施結果 (#132)
+
+`vite build --mode tauri` を実際に実行して出力を検査した結果である (変更前の出力は `cjs`、`tauri-game.js` から `./index.js` を `require` する循環があり、react などの外部モジュールが `require` で残っていた)。
+
+- 出力形式: ES モジュール。`public/index.js` (入口、約 31 KB。`@tauri-apps/*` と `platform/tauri/*` と `tauriIndex.jsx`) と `public/tauri-game.js` (ゲーム本体と全パッケージ) の 2 ファイル。banner/footer の関数ラップは Tauri では付けない (関数内に `import`/`export` を置けないため)。
+- 境界: 入口の `await initPlatform()` の後に `import("./tauri-game.js")` がある。入口にはゲーム側のモジュール (`config.js` など) が入らず、`tauri-game.js` への参照はこの動的 import だけである。ゲーム側のチャンクは初期化前には取得も評価もされない。`inlineDynamicImports` は使っていない (ゲームが入口に巻き上がり、この順序が崩れるため)。入口と共有するモジュール (platform/tauri) は入口に残り、ゲーム側が入口から import する。
+- `src/index.html`: Tauri のときだけ `index.js` を `<script type="module">` で読む (出力に ES モジュールの `import`/`export` があるため)。ace、phaser、firebase は従来どおり古典 `<script>` で先に実行される。Electron の `index.html` は変更なし。
+- 裸の import はすべてバンドルする。`src/` からの import は `public/node_modules` を先に探し、無ければルートの `node_modules` (`@tauri-apps/*` など) にフォールバックする (`resolvePackagesFromPublic`)。出力で `pug` が `public/node_modules/pug` (3.x) から取り込まれることを確認した (何も指定しないとルートの pug 2 になる)。
+- Node 組み込みと `electron` は `tauriUnavailableModules` が、どのプロパティにアクセスしても `The Node module "x" is not available in the Tauri build` を投げるモジュールに置き換える (Vite 既定の空オブジェクトだと `x is not a function` という無関係な失敗になる)。モジュールの読み込み自体は失敗しない (pug などが読み込み時に `require('fs')` だけして、実行経路によっては使わないため)。W2 で `path` などの代替を入れるまでは `path` / `events` / `util` / `assert` / `url` / `process` もこの扱いである (`fs`、`child_process`、`electron` は W2 以降もこのまま)。
+- 出力に残る `require` は、コメント内の例、lodash の `freeModule.require` (存在確認つき)、pug の `__require(trPath)` (jstransformer の動的 require。W8) のみである。実行可能なコードに `require("<パッケージ>")` は無い。
+- Electron の出力: ベースラインは `origin/main` を別の worktree で `npm ci && npm run build:all` した結果。変更後に同じ条件でビルドし、`public/index.js` / `index.html` / `index.css` の SHA-256 が一致した (`build:tauri` の後は `build:all` で作り直してから比較した)。
+- 未解決 (W1 の範囲外): `index.jsx` の `DOMContentLoaded` は、動的 import の後に登録されるため発火済みで呼ばれない (W3、B6)。`index.jsx` の `require('electron')` は上記のとおり読み込み時に明示的に失敗する (W3)。Windows の webview での確認は未実施。
+- テスト: `src/test/app/platform/tauri/tauriBundle.test.js` が実際のビルド出力 (メモリ上) に対して上記を検査する。`selection.test.js` は新しい出力形式に更新した。`tasks/clean_build_output.js` の `tauri-game.js` はそのまま必要である。
+
 ### W2. Node 組み込みの Tauri 向け代替 (B2、D4)
 
 - 内容: Tauri ビルドのとき `path` / `events` / `util` / `assert` / `url` / `process` を Vite プラグインでブラウザ向け実装に差し替える。`fs_utils.js` の `fileURLToPath` は W5 で扱う。依存の追加 (`events`、`path-browserify`、`util`、`assert` など。ルート `package.json` と lock)。

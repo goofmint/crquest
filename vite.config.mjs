@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { builtinModules } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
@@ -40,9 +41,10 @@ const platformModules = [
 // public/node_modules). Only the app's own sources are bundled.
 function isExternal(id) {
   return !(
-    // Tauri build only (see platformTarget): the Tauri JS APIs have no
-    // runtime `require`, so they are bundled.
-    (platformTarget === 'tauri' && id.startsWith('@tauri-apps/')) ||
+    // Tauri build only (see platformTarget): a Tauri webview has no `require`
+    // and no `node_modules`, so every package is bundled (see
+    // resolvePackagesFromPublic for where they are resolved from).
+    platformTarget === 'tauri' ||
     id.startsWith('.') ||
     path.isAbsolute(id) ||
     id.startsWith('\0') ||
@@ -50,6 +52,101 @@ function isExternal(id) {
     id.startsWith('@oxc-project/runtime/')
   );
 }
+
+// Tauri build only. Node builtins (and `electron`) do not exist in a Tauri
+// webview. Without this plugin Vite would replace them with an empty object,
+// so a call would fail with an unrelated "x is not a function". Here each of
+// them becomes a module whose every property access throws a clear error
+// (loading the module itself does not, because bundled packages such as pug
+// `require('fs')` at load time without using it on every code path).
+const UNAVAILABLE_PREFIX = '\0tauri-unavailable:';
+const nodeBuiltins = new Set(builtinModules.filter(name => !name.startsWith('_')));
+
+function unavailableModuleName(source) {
+  const name = source.startsWith('node:') ? source.slice('node:'.length) : source;
+  if (name === 'electron' || nodeBuiltins.has(name)) return name;
+  return null;
+}
+
+function tauriUnavailableModules() {
+  return {
+    name: 'terminalquest:tauri-unavailable-modules',
+    enforce: 'pre',
+    resolveId(source) {
+      if (platformTarget !== 'tauri') return null;
+      const name = unavailableModuleName(source);
+      if (!name) return null;
+      return UNAVAILABLE_PREFIX + name;
+    },
+    load(id) {
+      if (!id.startsWith(UNAVAILABLE_PREFIX)) return null;
+      const name = id.slice(UNAVAILABLE_PREFIX.length);
+      const message = `The Node module "${name}" is not available in the Tauri build`;
+      return [
+        `var name = ${JSON.stringify(name)};`,
+        'module.exports = new Proxy({}, {',
+        '  get(target, property) {',
+        // Bundler interop probes (symbols, __esModule, then) are not uses
+        "    if (typeof property === 'symbol' || property === '__esModule' || property === 'then') {",
+        '      return undefined;',
+        '    }',
+        `    throw new Error(${JSON.stringify(message)} + ' (accessed ' + String(property) + ')');`,
+        '  },',
+        '});',
+      ].join('\n');
+    },
+  };
+}
+
+// Tauri build only. Bare imports from the app's sources resolve from
+// public/node_modules first, which is where Electron's runtime `require`
+// finds them (e.g. pug 3 there, pug 2 in the root node_modules). Packages that
+// exist only in the root (@tauri-apps/*) fall back to the default resolution.
+function resolvePackagesFromPublic() {
+  return {
+    name: 'terminalquest:resolve-packages-from-public',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      if (platformTarget !== 'tauri' || !importer) return null;
+      if (source.startsWith('.') || path.isAbsolute(source) || source.startsWith('\0')) {
+        return null;
+      }
+      if (!importer.startsWith(srcDir + path.sep)) return null;
+      if (unavailableModuleName(source)) return null;
+      const resolved = await this.resolve(
+        source,
+        path.join(publicDir, 'package.json'),
+        { ...options, skipSelf: true }
+      );
+      return resolved && !resolved.external ? resolved : null;
+    },
+  };
+}
+
+const electronOutput = {
+  format: 'cjs',
+  // Keep the bundle's top-level bindings out of the global scope of the
+  // classic <script> (other scripts such as ace/phaser define globals),
+  // and keep strict mode, which ES modules had implicitly.
+  banner: "(function () {\n'use strict';",
+  footer: '})();',
+};
+
+// A Tauri webview has no `require`, so the output is ES modules: index.js (the
+// entry, loaded by <script type="module">) and tauri-game.js (the game,
+// everything that src/js/index.jsx pulls in). The entry loads the game with
+// `await import('./index.jsx')` after `await initPlatform()` (tauriIndex.jsx),
+// so the game chunk is not even fetched, let alone evaluated, before the
+// platform layer is initialized. Modules used by both stay in the entry; the
+// game chunk imports them from it. `inlineDynamicImports` would hoist the game
+// into the entry and break that order, and the output must not be wrapped in a
+// function (static imports/exports cannot appear there).
+const tauriOutput = {
+  format: 'es',
+  // A fixed name (listed in tasks/clean_build_output.js); the only chunk is
+  // the dynamic import of index.jsx.
+  chunkFileNames: chunk => (chunk.isDynamicEntry ? 'tauri-game.js' : '[name]-[hash].js'),
+};
 
 // Which platform layer implementation is bundled: `vite build` (Electron, the
 // default) or `vite build --mode tauri`.
@@ -106,6 +203,18 @@ function selectPlatformImplementation() {
     };
   }
 
+  // Tauri build only: index.js is an ES module (see build.rolldownOptions), so
+  // the page loads it with type="module". The other scripts (ace, phaser,
+  // firebase) stay classic scripts and run first, as before.
+  function moduleScriptHtml() {
+    const html = fs.readFileSync(htmlSource, 'utf8');
+    const classic = '<script src="index.js"></script>';
+    if (!html.includes(classic)) {
+      throw new Error(`${htmlSource} has no ${classic}`);
+    }
+    return html.replace(classic, '<script type="module" src="index.js"></script>');
+  }
+
   // src/index.html is the page loaded by main.js (public/index.html). It is a
   // static file (classic <script>/<link> tags that must not be processed by
   // Vite), so it is copied to the output unchanged.
@@ -119,7 +228,7 @@ function selectPlatformImplementation() {
         this.emitFile({
           type: 'asset',
           fileName: 'index.html',
-          source: fs.readFileSync(htmlSource),
+          source: platformTarget === 'tauri' ? moduleScriptHtml() : fs.readFileSync(htmlSource),
         });
       },
     };
@@ -136,6 +245,8 @@ function selectPlatformImplementation() {
       // resolved at runtime from public/node_modules like every bare import)
       react({ jsxRuntime: 'automatic' }),
       selectPlatformImplementation(),
+      tauriUnavailableModules(),
+      resolvePackagesFromPublic(),
       optionalLocalConfig(),
       emitIndexHtml(),
     ],
@@ -151,27 +262,10 @@ function selectPlatformImplementation() {
         input: platformTarget === 'tauri' ? tauriEntry : entry,
         external: isExternal,
         output: {
-          format: 'cjs',
-          // Tauri build only: the game (everything index.jsx pulls in) is a
-          // separate chunk that the entry loads after `await initPlatform()`.
-          // Its externals (react, node builtins, ...) are `require`d at the
-          // top of whichever file contains them, and a Tauri webview has no
-          // `require`; keeping them out of the entry file means the entry
-          // (platform init, link and DevTools handlers) still runs.
-          ...(platformTarget === 'tauri'
-            ? {
-                // A fixed name (listed in tasks/clean_build_output.js); the
-                // only chunk is the dynamic import of index.jsx.
-                chunkFileNames: chunk =>
-                  chunk.isDynamicEntry ? 'tauri-game.js' : '[name]-[hash].js',
-              }
-            : {}),
+          // Electron: CommonJS in a classic <script>, wrapped by the banner/footer.
+          // Tauri: ES modules (see the comment at `tauriOutput`).
+          ...(platformTarget === 'tauri' ? tauriOutput : electronOutput),
           entryFileNames: 'index.js',
-          // Keep the bundle's top-level bindings out of the global scope of the
-          // classic <script> (other scripts such as ace/phaser define globals),
-          // and keep strict mode, which ES modules had implicitly.
-          banner: "(function () {\n'use strict';",
-          footer: '})();',
         },
       },
     },

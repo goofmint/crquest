@@ -70,16 +70,17 @@ describe('build-time selection (vite.config.mjs)', () => {
     return outputs.find(o => o.fileName === 'index.js').code;
   }
 
-  test('--mode tauri: the entry has no external require, the game is a separate chunk', async () => {
+  test('--mode tauri: ES modules, the entry and the game are separate chunks', async () => {
     const files = await bundleFiles('tauri');
     expect(Object.keys(files).filter(f => f.endsWith('.js')).sort()).toEqual([
       'index.js',
       'tauri-game.js',
     ]);
-    const requires = [...files['index.js'].matchAll(/\brequire\(("[^"]*")\)/g)].map(m => m[1]);
-    expect(requires).toEqual(['"./tauri-game.js"']);
+    // No static import of the game: it is loaded only by the dynamic import
+    // that follows `await initPlatform()` (see tauriBundle.test.js).
+    expect(files['index.js']).not.toMatch(/^import .* from ["']\.\/tauri-game\.js["']/m);
     expect(files['index.js']).toContain('await initPlatform()');
-    expect(files['tauri-game.js']).toContain('require("react")');
+    expect(files['index.js']).toContain('import("./tauri-game.js")');
   }, 60000);
 
   test('the default (Electron) build is a single index.js', async () => {
