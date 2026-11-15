@@ -3921,6 +3921,7 @@ dependencies = [
 name = "terminalquest"
 version = "3.12.1"
 dependencies = [
+ "serde",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

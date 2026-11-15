@@ -265,6 +265,52 @@
         }
       ]
     },
-    "os:allow-platform"
+    "os:allow-platform",
+    {
+      "identifier": "allow-run-command",
+      "allow": [
+        {
+          "program": "git"
+        },
+        {
+          "program": "node"
+        },
+        {
+          "program": "npm"
+        },
+        {
+          "program": "python"
+        },
+        {
+          "program": "python3"
+        },
+        {
+          "program": "python3.*"
+        }
+      ]
+    },
+    {
+      "identifier": "allow-command-exists",
+      "allow": [
+        {
+          "program": "git"
+        },
+        {
+          "program": "node"
+        },
+        {
+          "program": "npm"
+        },
+        {
+          "program": "python"
+        },
+        {
+          "program": "python3"
+        },
+        {
+          "program": "python3.*"
+        }
+      ]
+    }
   ]
 }
