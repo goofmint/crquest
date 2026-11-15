@@ -2,12 +2,9 @@
  * Platform store module (Tauri). Same exports as ../store.js, on
  * @tauri-apps/plugin-store.
  *
- * `getValue` / `setValue` / `hasValue` / `deleteValue` are synchronous in the
- * Electron contract (electron-store) and cannot be implemented on Tauri's
- * asynchronous store: they throw `ERR_TAURI_SYNC_UNSUPPORTED`. Their callers
- * (ContextProvider.jsx, common/context, common/audio, ClearDataButton.jsx)
- * must be changed to the async variants below before the app can run on
- * Tauri. The variants are additional exports of this module only.
+ * The contract is asynchronous only (`getValueAsync` / `setValueAsync` /
+ * `hasValueAsync` / `deleteValueAsync`); the synchronous API was removed in W4
+ * (#135) from both implementations.
  *
  * The store file is `config.json` under the app data directory chosen by the
  * plugin (`$APPDATA/<identifier>`). It is opened lazily by the first
@@ -15,7 +12,7 @@
  * (corrupt JSON, permissions) rejects and is not cached. Writes are saved immediately.
  */
 import { load } from '@tauri-apps/plugin-store';
-import { rejectAsError, unsupportedSync } from './errors';
+import { rejectAsError } from './errors';
 
 const STORE_FILE = 'config.json';
 
@@ -55,24 +52,6 @@ function getStore() {
     });
   }
   return storePromise;
-}
-
-const INSTEAD = 'Use the matching *Async function.';
-
-export function getValue() {
-  throw unsupportedSync('store', 'getValue', INSTEAD);
-}
-
-export function setValue() {
-  throw unsupportedSync('store', 'setValue', INSTEAD);
-}
-
-export function hasValue() {
-  throw unsupportedSync('store', 'hasValue', INSTEAD);
-}
-
-export function deleteValue() {
-  throw unsupportedSync('store', 'deleteValue', INSTEAD);
 }
 
 /** Resolves the stored value, or `undefined` when the key does not exist. */

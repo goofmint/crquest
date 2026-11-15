@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import path from 'path';
 import { listAsync } from '../../platform/fs';
-import { getValue, setValue } from '../../platform/store';
+import { getValueAsync, setValueAsync } from '../../platform/store';
+import { reportFailure } from '../reportFailure';
 import { staticFilePath } from '../fs_utils';
 import { toAssetUrl, toAssetSrc } from '../../platform/assets';
 import TrackPlayer from './TrackPlayer';
@@ -78,11 +79,19 @@ class AudioManager {
     return this.sfx.loaded && this.music.loaded;
   }
 
-  checkLoaded(key) {
+  async checkLoaded(key) {
     if (this.areAllPlayersLoaded()) {
       this.loaded = true;
 
-      this.loadState();
+      // onload is called only after the saved state has been applied; when the
+      // saved state cannot be read, the failure is reported and onload is not
+      // called (no default state is substituted).
+      try {
+        await this.loadState();
+      } catch (error) {
+        await reportFailure('Could not load the saved audio settings', error);
+        return;
+      }
 
       this.onload();
     }
@@ -108,8 +117,8 @@ class AudioManager {
     this.music.upateTracksMuteStatus();
   }
 
-  loadState() {
-    let audioState = getValue('audio');
+  async loadState() {
+    let audioState = await getValueAsync('audio');
 
     if (!audioState) {
       audioState = DEFAULT_AUDIO_STATE;
@@ -128,8 +137,12 @@ class AudioManager {
     });
   }
 
-  saveState() {
-    setValue('audio', this.getState());
+  async saveState() {
+    try {
+      await setValueAsync('audio', this.getState());
+    } catch (error) {
+      await reportFailure('Could not save the audio settings', error);
+    }
   }
 
   getState() {

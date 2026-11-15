@@ -11,7 +11,41 @@ import {
 import {
   syncContext
 } from './sync';
-import { setValue } from '../../platform/store';
+import { setValueAsync } from '../../platform/store';
+import { reportFailure } from '../reportFailure';
+
+// Saves triggered by setContext are applied one after another, in call order
+// (an asynchronous store may otherwise apply a later value first). A failed
+// save does not block the later ones; its caller still gets the error.
+let saveChain = Promise.resolve();
+let persistenceSuppressed = false;
+
+function enqueueSave(key, value) {
+  const save = saveChain.then(() => setValueAsync(key, value));
+  saveChain = save.catch(() => {});
+  return save;
+}
+
+/**
+ * Resolves when every save queued so far has finished (successfully or not).
+ */
+export function flushPendingSaves() {
+  return saveChain;
+}
+
+/**
+ * While suppressed, setContext skips persisting saved fields (explicitly, and
+ * logged with console.warn). The in-memory context, the events and
+ * syncContext are unchanged. Used while the game data is being erased, so
+ * that deleted keys are not written again before the reload.
+ */
+export function suppressPersistence() {
+  persistenceSuppressed = true;
+}
+
+export function resumePersistence() {
+  persistenceSuppressed = false;
+}
 
 export const context = React.createContext({});
 export const emitter = new EventEmitter();
@@ -74,7 +108,16 @@ export function setContext(newContext) {
     emitter.emit('contextUpdate', validatedNewContext);
     Object.entries(validatedNewContext).forEach(([key, value]) => {
       emitter.emit(`contextUpdate:${key}`, value);
-      if (getSavedFields().includes(key)) setValue(key, value);
+      if (getSavedFields().includes(key)) {
+        if (persistenceSuppressed) {
+          console.warn(`Not saving "${key}": the game data is being erased`);
+        } else {
+          // Not awaited: the event order of the loop stays as before.
+          enqueueSave(key, value).catch(error =>
+            reportFailure(`Could not save "${key}"`, error)
+          );
+        }
+      }
     });
 
     syncContext(validatedNewContext);

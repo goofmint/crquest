@@ -22,16 +22,12 @@ async function loadModule() {
 
 beforeEach(() => mocks.load.mockReset());
 
-describe('synchronous members', () => {
-  test.each(['getValue', 'setValue', 'hasValue', 'deleteValue'])('%s throws explicitly', async name => {
+describe('contract', () => {
+  test('the synchronous API is not exported', async () => {
     const mod = await loadModule();
-    expect(() => mod[name]('k', 1)).toThrow(/not available on Tauri/);
-    try {
-      mod[name]('k');
-    } catch (error) {
-      expect(error.code).toBe('ERR_TAURI_SYNC_UNSUPPORTED');
+    for (const name of ['getValue', 'setValue', 'hasValue', 'deleteValue']) {
+      expect(mod[name]).toBeUndefined();
     }
-    expect(mocks.load).not.toHaveBeenCalled();
   });
 });
 
