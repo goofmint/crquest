@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { builtinModules } from 'node:module';
+import { builtinModules, createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
@@ -54,11 +54,12 @@ function isExternal(id) {
 }
 
 // Tauri build only. Node builtins (and `electron`) do not exist in a Tauri
-// webview. Without this plugin Vite would replace them with an empty object,
-// so a call would fail with an unrelated "x is not a function". Here each of
-// them becomes a module whose every property access throws a clear error
-// (loading the module itself does not, because bundled packages such as pug
-// `require('fs')` at load time without using it on every code path).
+// webview. Six of them have a browser implementation (below); every other one
+// becomes a module whose every property access throws a clear error. Without
+// this plugin Vite would replace them with an empty object, so a call would
+// fail with an unrelated "x is not a function". Loading such a module does not
+// throw, because bundled packages such as pug `require('fs')` at load time
+// without using it on every code path.
 const UNAVAILABLE_PREFIX = '\0tauri-unavailable:';
 const nodeBuiltins = new Set(builtinModules.filter(name => !name.startsWith('_')));
 
@@ -68,6 +69,24 @@ function unavailableModuleName(source) {
   return null;
 }
 
+// Browser implementations of Node builtins in the Tauri build (W2,
+// docs/migration/tauri-runtime.md). Everything that is not listed here and not
+// a builtin of the same name fails explicitly. `fs`, `child_process` and
+// `electron` are never provided: the platform layer replaces them.
+const requireFromRoot = createRequire(path.join(rootDir, 'package.json'));
+const tauriBuiltinReplacements = {
+  // Well-known packages (root devDependencies). `path-browserify` is POSIX
+  // only (decision D4 (a)).
+  path: requireFromRoot.resolve('path-browserify'),
+  events: requireFromRoot.resolve('events/events.js'),
+  util: requireFromRoot.resolve('util/util.js'),
+  assert: requireFromRoot.resolve('assert/build/assert.js'),
+  // Small in-repo shims: the npm `url` has no fileURLToPath, and the npm
+  // `process` would report the OS as 'browser'.
+  url: path.join(srcDir, 'js', 'tauri_shims', 'url.js'),
+  process: path.join(srcDir, 'js', 'tauri_shims', 'process.js'),
+};
+
 function tauriUnavailableModules() {
   return {
     name: 'terminalquest:tauri-unavailable-modules',
@@ -76,7 +95,7 @@ function tauriUnavailableModules() {
       if (platformTarget !== 'tauri') return null;
       const name = unavailableModuleName(source);
       if (!name) return null;
-      return UNAVAILABLE_PREFIX + name;
+      return tauriBuiltinReplacements[name] ?? UNAVAILABLE_PREFIX + name;
     },
     load(id) {
       if (!id.startsWith(UNAVAILABLE_PREFIX)) return null;

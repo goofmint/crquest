@@ -82,12 +82,31 @@ describe('--mode tauri output', () => {
     expect(entry.match(/tauri-game\.js/g)).toHaveLength(1);
   });
 
-  test('Node modules fail explicitly instead of being empty objects', () => {
+  test('path, events, util, assert and url are browser implementations (W2)', () => {
     const game = files['tauri-game.js'];
-    for (const name of ['fs', 'path', 'events']) {
-      expect(game).toContain(`// \\0tauri-unavailable:${name}`);
+    for (const file of [
+      'node_modules/path-browserify/index.js',
+      'node_modules/events/events.js',
+      'node_modules/util/util.js',
+      'node_modules/assert/build/assert.js',
+      'node_modules/url/url.js',
+      'src/js/tauri_shims/url.js',
+    ]) {
+      expect(game).toContain(`// ${file}`);
     }
-    expect(game).toContain('is not available in the Tauri build');
+    for (const name of ['path', 'events', 'util', 'assert', 'url', 'process']) {
+      expect(game).not.toContain(`The Node module "${name}" is not available`);
+      expect(game).not.toContain(`The Node module \\"${name}\\" is not available`);
+    }
+  });
+
+  test('other Node modules fail explicitly instead of being empty objects', () => {
+    const game = files['tauri-game.js'];
+    for (const name of ['fs', 'electron', 'stream']) {
+      expect(game).toContain(`The Node module \\"${name}\\" is not available in the Tauri build`);
+    }
+    // fs and child_process are never replaced by something that looks like them
+    expect(game).not.toContain('node_modules/browserify-fs');
   });
 
   test('the page loads the entry as a module, after the classic scripts', () => {

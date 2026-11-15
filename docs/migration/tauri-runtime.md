@@ -9,7 +9,7 @@ Tauri 2 の webview (`require` なし、`remote` なし、同期 fs / dialog な
 
 ## 1. 現状の整理
 
-Tauri ビルド (`npm run build:js:tauri` = `vite build --mode tauri`) は、`src/js/tauriIndex.jsx` (入口) が `await initPlatform()` のあと `import('./index.jsx')` でゲーム本体を読む構成になっている (`tauriIndex.jsx:11-16`)。`platform/<名前>` の import は `platform/tauri/<名前>` に差し替わり、`@tauri-apps/*` だけがバンドルされる (`vite.config.mjs:41-52, 61-80`)。それ以外の裸の import (react、jimp、pug など) と Node 組み込みは external のままで、出力に `require("...")` として残る。
+Tauri ビルド (`npm run build:js:tauri` = `vite build --mode tauri`) は、`src/js/tauriIndex.jsx` (入口) が `await initPlatform()` のあと `import('./index.jsx')` でゲーム本体を読む構成になっている (`tauriIndex.jsx:11-16`)。`platform/<名前>` の import は `platform/tauri/<名前>` に差し替わり、`@tauri-apps/*` だけがバンドルされる (`vite.config.mjs:41-52, 61-80`)。それ以外の裸の import (react、jimp、pug など) と Node 組み込みは external のままで、出力に `require("...")` として残る (これは調査時点の状態。W1 と W2 で解消した: 4 章の各「実施結果」を参照)。
 
 `#64` (tauri-shell) 以降、`platform/tauri/*` (fs、store、dialog、exec、paths、env、shell、devtools) と Rust 側 (`src-tauri/src/lib.rs`: `run_command`、`command_exists`、`is_dev`、devtools、終了確認) は揃っている。残っているのは、レンダラー側のアプリコードと Tauri ビルドの構成である。
 
@@ -182,6 +182,23 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - Electron リスク: なし (Tauri モードのみ)。
 - 備考: `moduleAllowlist.js` が公開する `path`/`util`/`assert` は拡張コンテンツが使うので、`moduleAllowlist.test.js` に相当する確認を Tauri 版でも行う。
 
+#### W2 の実施結果 (#133)
+
+`vite.config.mjs` の `tauriBuiltinReplacements` (Tauri モードだけ。Electron のビルドには何も足さない) が、バンドル対象のすべての import (アプリのコードとパッケージの両方。`node:` 接頭辞つきも) に対して次の差し替えを行う。
+
+| 組み込み | Tauri での実装 | 理由 |
+| --- | --- | --- |
+| `path` | `path-browserify` (POSIX のみ。D4 の (a)) | 定番の小さなパッケージ。Windows のパス意味論は W12 |
+| `events` | `events` 3.x | 同上 (ルートの lock に 1.1.1 が `aws-sdk` の依存として入っていたため、直接依存として 3.3 を追加し、`aws-sdk` 側は入れ子になった) |
+| `util` / `assert` | `util` 0.12 / `assert` 2.x | `moduleAllowlist.js` が拡張コンテンツに渡すのと同じ API |
+| `url` | 自前 `src/js/tauri_shims/url.js` | 旧 API (`parse`/`format`/`resolve`) は npm `url` 0.11、`URL` / `URLSearchParams` は webview のもの、`fileURLToPath` は Node の POSIX 版と同じ挙動 (非 `file:` と host つきは Node と同じく例外)。npm `url` には `fileURLToPath` が無い |
+| `process` | 自前 `src/js/tauri_shims/process.js` | `env`、`nextTick` (microtask)、`browser`、`versions` など読み込み時に読まれるものだけ。npm `process` は OS 名を `'browser'` と偽るため使わない。`platform` は `undefined` (W7 が `platform/env` 経由に置き換える) |
+
+- 追加した依存は `path-browserify`、`events`、`util`、`assert`、`url` (ルートの devDependencies。ビルド時にバンドルされるのみ)。`public/package-lock.json` は変更していない。`system.js` の未使用の `import { platform } from 'process'` は、Electron の出力を 1 バイトも変えないため触っていない (Tauri では未使用として除かれ、シムの `platform` は参照されない)。
+- 差し替えないもの: `fs`、`child_process`、`electron` は W1 のとおり、プロパティにアクセスすると `The Node module "x" is not available in the Tauri build` を投げる (これらは `platform/*` が受け持つ)。`stream`、`buffer`、`zlib`、`http(s)`、`querystring` (jimp、pngjs、phin が使う。W9) も同様である。グローバルの `process` は定義しない: `system.js:57` と `ValidationHelper.js:59` の `process.platform` は webview で `ReferenceError` になる (W7)。`path.resolve` に絶対パスが無いと、path-browserify が `process.cwd()` を呼んで失敗する (W5。`resolve` の呼び出しは約 3 か所)。`fs_utils.js` の `fileURLToPath(new URL('.', document.baseURI))` は、Tauri の `tauri://` では `The URL must be of scheme file` で失敗する (W5)。
+- 確認: 出力に 5 つの実装 (`node_modules/path-browserify`、`events`、`util`、`assert`、`url` と `tauri_shims/url.js`) が入り、5 つとも「利用不可」のスタブには置き換わっていないこと (`tauriBundle.test.js`)。`moduleAllowlist.js` を Tauri モードでビルドして、`require`・`process`・`Buffer` が無い `vm` コンテキストで実行し、`path` / `assert` / `util` が動くこと (`tauriBuiltins.test.js`)。シムの単体テスト (`src/test/js/tauriShims.test.js`: `fileURLToPath` は Node と同じ結果)。
+- マイルストーン 0 の確認コマンド (`require("` の検査) は、ES モジュール出力になったので `grep -n '^import\|require("' public/index.js public/tauri-game.js | head` に読み替える (入口の `import` は `./index.js` への相対 import のみ)。
+
 ### W3. 入口とメニューの切り離し (B5、B6)
 
 - 内容: (1) `index.jsx:8` の `require('electron')` と `index.jsx:88-162` のメニュー構築を `platform/menu.js` に移す (Electron 実装は現在のコードをそのまま移す)。(2) `platform/tauri/menu.js` は D2 の決定に従う (起動マイルストーンでは追加なし)。(3) `DOMContentLoaded` を `document.readyState` で判定する (B6)。(4) `vite.config.mjs` の `platformModules` に `menu` を加え、`selection.test.js` の一致検査 (`Tauri platform parity`) を満たす。
@@ -299,8 +316,8 @@ npm start                                    # Electron が従来どおり起動
 
 ```sh
 npm run build:js:tauri
-grep -n 'require("' public/index.js | head   # react などの外部モジュールや ./tauri-game.js への require が残っていないこと
-ls public/*.js                               # index.js (と、あれば tauri-game.js)
+grep -n '^import' public/index.js public/tauri-game.js   # 相対 import (./index.js) のみで、パッケージ名の import / require("パッケージ") が無いこと
+ls public/*.js                               # index.js と tauri-game.js
 ```
 
 ### マイルストーン 1 (W1〜W5、W7: タイトル画面)
