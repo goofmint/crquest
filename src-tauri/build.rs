@@ -1,3 +1,14 @@
 fn main() {
-    tauri_build::build()
+    // App commands are listed so that each one gets an `allow-*` permission
+    // and can only be called from windows whose capability grants it.
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
+        tauri_build::AppManifest::new().commands(&[
+            "run_command",
+            "command_exists",
+            "is_dev",
+            "open_devtools",
+            "toggle_devtools",
+        ]),
+    ))
+    .expect("failed to run tauri-build");
 }

@@ -1,0 +1,943 @@
+//! Command execution for the platform layer (`run_command` / `command_exists`).
+//!
+//! Semantics follow `src/js/app/platform/exec.js` (Electron): the program is
+//! started WITHOUT a shell, a non-zero exit is data, and spawn failures,
+//! signal kills, timeouts and `maxBuffer` overruns are failures. This module
+//! has no dependency on Tauri so that it can be unit tested.
+//!
+//! Security model (see docs/migration/tauri-platform.md): the allowlist is a
+//! list of program-name patterns that comes from the capability scope
+//! (`src-tauri/capabilities/platform.json`). A program is accepted when its
+//! file stem (extension `.exe` / `.cmd` removed, ASCII case-insensitive)
+//! matches a pattern. A bare name is resolved through PATH by the OS; a name
+//! with a directory part must be an absolute path to an existing file.
+
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+/// Node's `child_process.execFile` default `maxBuffer` (Node 12): 1 MiB per stream.
+pub const DEFAULT_MAX_BUFFER: usize = 1024 * 1024;
+
+const POLL_INTERVAL: Duration = Duration::from_millis(10);
+
+/// One entry of the capability scope: `{ "program": "<pattern>" }`.
+/// `*` in a pattern matches any run of characters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProgramEntry {
+    pub program: String,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct RunOptions {
+    pub cwd: Option<String>,
+    /// Like Node's `env` option: when present it REPLACES the environment.
+    pub env: Option<HashMap<String, String>>,
+    pub timeout_ms: Option<u64>,
+    pub max_buffer: Option<usize>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct RunOutput {
+    pub code: i32,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum FailureKind {
+    /// The program is not permitted by the scope.
+    NotAllowed,
+    /// The request itself is malformed (empty name, relative path, bad cwd).
+    InvalidArgument,
+    /// The process could not be started (`code` is `ENOENT`, `EACCES`, ...).
+    Spawn,
+    /// The timeout elapsed and the process was killed.
+    Timeout,
+    /// stdout or stderr exceeded `maxBuffer` and the process was killed.
+    MaxBuffer,
+    /// The process was terminated by a signal.
+    Signal,
+}
+
+/// Serialized to the frontend as the rejection value of `invoke`.
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RunFailure {
+    pub kind: FailureKind,
+    /// Node-style error code for `Spawn` (`ENOENT`, `EACCES`, `EPERM`, `UNKNOWN`).
+    pub code: Option<String>,
+    pub message: String,
+    pub stdout: String,
+    pub stderr: String,
+    /// True when this side killed the process (timeout / maxBuffer).
+    pub killed: bool,
+}
+
+fn failure(kind: FailureKind, message: impl Into<String>) -> RunFailure {
+    RunFailure {
+        kind,
+        code: None,
+        message: message.into(),
+        stdout: String::new(),
+        stderr: String::new(),
+        killed: false,
+    }
+}
+
+/// `*` wildcard match, ASCII case-insensitive.
+fn wildcard_match(pattern: &str, text: &str) -> bool {
+    let p: Vec<char> = pattern.to_ascii_lowercase().chars().collect();
+    let t: Vec<char> = text.to_ascii_lowercase().chars().collect();
+    let (mut pi, mut ti) = (0, 0);
+    let mut star: Option<(usize, usize)> = None;
+    while ti < t.len() {
+        if pi < p.len() && p[pi] == '*' {
+            star = Some((pi, ti));
+            pi += 1;
+        } else if pi < p.len() && p[pi] == t[ti] {
+            pi += 1;
+            ti += 1;
+        } else if let Some((sp, st)) = star {
+            pi = sp + 1;
+            ti = st + 1;
+            star = Some((sp, st + 1));
+        } else {
+            return false;
+        }
+    }
+    while pi < p.len() && p[pi] == '*' {
+        pi += 1;
+    }
+    pi == p.len()
+}
+
+/// File name without directory and without a trailing `.exe`. `.cmd` and
+/// `.bat` are deliberately not stripped (they are rejected): cmd.exe would
+/// re-parse the arguments.
+fn program_stem(program: &str) -> String {
+    let file_name = program.rsplit(['/', '\\']).next().unwrap_or(program);
+    let lower = file_name.to_ascii_lowercase();
+    for ext in [".exe"] {
+        if lower.ends_with(ext) {
+            return file_name[..file_name.len() - ext.len()].to_string();
+        }
+    }
+    file_name.to_string()
+}
+
+fn has_directory_part(program: &str) -> bool {
+    program.contains('/') || program.contains('\\')
+}
+
+/// Checks `program` against the scope patterns. An empty pattern list denies
+/// everything (a missing scope must never mean "allow all").
+pub fn authorize_program(program: &str, patterns: &[String]) -> Result<(), RunFailure> {
+    if program.trim().is_empty() || program.contains('\0') {
+        return Err(failure(
+            FailureKind::InvalidArgument,
+            "program must be a non-empty string",
+        ));
+    }
+    if has_directory_part(program) && !Path::new(program).is_absolute() {
+        return Err(failure(
+            FailureKind::InvalidArgument,
+            format!("program path must be absolute: {program}"),
+        ));
+    }
+    let stem = program_stem(program);
+    if patterns.iter().any(|p| wildcard_match(p, &stem)) {
+        Ok(())
+    } else {
+        Err(failure(
+            FailureKind::NotAllowed,
+            format!("program is not allowed: {program}"),
+        ))
+    }
+}
+
+fn io_error_code(error: &std::io::Error) -> &'static str {
+    match error.kind() {
+        std::io::ErrorKind::NotFound => "ENOENT",
+        std::io::ErrorKind::PermissionDenied => "EACCES",
+        _ => "UNKNOWN",
+    }
+}
+
+/// A temporary file that receives one output stream of the child. It is
+/// removed when dropped.
+///
+/// The child writes to files instead of pipes: no reader thread exists, so
+/// nothing can stay blocked on a pipe that a surviving grandchild keeps open
+/// after a timeout or `maxBuffer` kill, and the size is observable while the
+/// process runs.
+struct CaptureFile {
+    path: PathBuf,
+}
+
+impl CaptureFile {
+    fn create(stream: &str) -> std::io::Result<(CaptureFile, std::fs::File)> {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let name = format!(
+            "terminalquest-{}-{}-{}-{}",
+            std::process::id(),
+            COUNTER.fetch_add(1, Ordering::Relaxed),
+            nanos,
+            stream
+        );
+        let path = std::env::temp_dir().join(name);
+        let mut open = std::fs::OpenOptions::new();
+        open.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            open.mode(0o600);
+        }
+        let file = open.open(&path)?;
+        Ok((CaptureFile { path }, file))
+    }
+
+    fn len(&self) -> std::io::Result<u64> {
+        std::fs::metadata(&self.path).map(|m| m.len())
+    }
+
+    /// At most `limit` bytes of the captured output. A file that cannot be
+    /// opened or read is an error, never "empty output".
+    fn read(&self, limit: usize) -> std::io::Result<Vec<u8>> {
+        let mut buf = Vec::new();
+        std::fs::File::open(&self.path)?
+            .take(limit as u64)
+            .read_to_end(&mut buf)?;
+        Ok(buf)
+    }
+}
+
+impl Drop for CaptureFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+/// Kills the child and, on Unix, its whole process group (the child is started
+/// as a group leader), so that descendants cannot keep writing to the capture
+/// files after a timeout or `maxBuffer` kill. On Windows only the child is
+/// killed.
+fn kill_tree(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        // SAFETY: plain syscall with the pid of a child we spawned as a group leader.
+        unsafe {
+            libc::killpg(child.id() as libc::pid_t, libc::SIGKILL);
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
+fn spawn_failure(program: &str, error: &std::io::Error) -> RunFailure {
+    let code = io_error_code(error);
+    let mut f = failure(
+        FailureKind::Spawn,
+        format!("spawn {program} {code}: {error}"),
+    );
+    f.code = Some(code.to_string());
+    f
+}
+
+/// Runs `program` with `args` without a shell. `program` must already have
+/// been authorized.
+pub fn run(program: &str, args: &[String], options: &RunOptions) -> Result<RunOutput, RunFailure> {
+    let max_buffer = options.max_buffer.unwrap_or(DEFAULT_MAX_BUFFER);
+    let (out_capture, out_file) =
+        CaptureFile::create("stdout").map_err(|e| spawn_failure(program, &e))?;
+    let (err_capture, err_file) =
+        CaptureFile::create("stderr").map_err(|e| spawn_failure(program, &e))?;
+
+    let mut command = Command::new(program);
+    command
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::from(out_file))
+        .stderr(Stdio::from(err_file));
+    if let Some(cwd) = &options.cwd {
+        if !Path::new(cwd).is_dir() {
+            let mut f = failure(
+                FailureKind::Spawn,
+                format!("spawn {program} ENOENT (cwd does not exist: {cwd})"),
+            );
+            f.code = Some("ENOENT".to_string());
+            return Err(f);
+        }
+        command.current_dir(cwd);
+    }
+    if let Some(env) = &options.env {
+        command.env_clear().envs(env);
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
+
+    let mut child = command.spawn().map_err(|e| spawn_failure(program, &e))?;
+    // The Command holds the child's ends of the files; release them in the parent.
+    drop(command);
+
+    let started = Instant::now();
+    let status = loop {
+        match exceeded_stream(&out_capture, &err_capture, max_buffer) {
+            Ok(None) => {}
+            Ok(Some(name)) => {
+                kill_tree(&mut child);
+                return Err(max_buffer_failure(
+                    name,
+                    &out_capture,
+                    &err_capture,
+                    max_buffer,
+                ));
+            }
+            Err(e) => {
+                kill_tree(&mut child);
+                return Err(capture_failure(program, &e));
+            }
+        }
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) => {}
+            Err(e) => {
+                kill_tree(&mut child);
+                return Err(spawn_failure(program, &e));
+            }
+        }
+        if let Some(timeout_ms) = options.timeout_ms {
+            if timeout_ms > 0 && started.elapsed() >= Duration::from_millis(timeout_ms) {
+                kill_tree(&mut child);
+                return Err(failure_with_output(
+                    FailureKind::Timeout,
+                    format!("Command timed out after {timeout_ms} ms: {program}"),
+                    program,
+                    &out_capture,
+                    &err_capture,
+                    max_buffer,
+                ));
+            }
+        }
+        thread::sleep(POLL_INTERVAL);
+    };
+
+    conclude(
+        program,
+        &mut child,
+        status,
+        &out_capture,
+        &err_capture,
+        max_buffer,
+    )
+}
+
+fn capture_failure(program: &str, error: &std::io::Error) -> RunFailure {
+    let mut f = spawn_failure(program, error);
+    f.message = format!("failed to read the captured output of {program}: {error}");
+    f
+}
+
+/// Which stream is over the limit. A capture file that cannot be inspected is
+/// an error.
+fn exceeded_stream(
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> std::io::Result<Option<&'static str>> {
+    if out.len()? > max_buffer as u64 {
+        Ok(Some("stdout"))
+    } else if err.len()? > max_buffer as u64 {
+        Ok(Some("stderr"))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Failure that carries the (truncated) output captured so far. When the
+/// output cannot be read, that read failure is reported instead.
+fn failure_with_output(
+    kind: FailureKind,
+    message: String,
+    program: &str,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> RunFailure {
+    let (stdout, stderr) = match (out.read(max_buffer), err.read(max_buffer)) {
+        (Ok(o), Ok(e)) => (o, e),
+        (Err(e), _) | (_, Err(e)) => return capture_failure(program, &e),
+    };
+    let mut f = failure(kind, message);
+    f.stdout = String::from_utf8_lossy(&stdout).into_owned();
+    f.stderr = String::from_utf8_lossy(&stderr).into_owned();
+    f.killed = matches!(kind, FailureKind::Timeout | FailureKind::MaxBuffer);
+    f
+}
+
+fn max_buffer_failure(
+    name: &str,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> RunFailure {
+    failure_with_output(
+        FailureKind::MaxBuffer,
+        format!("{name} maxBuffer length exceeded"),
+        "",
+        out,
+        err,
+        max_buffer,
+    )
+}
+
+/// Result once the direct child has exited. The output may still have grown
+/// past the limit (descendants can keep writing). Every failure on this path
+/// (over the limit, unreadable output, signal exit) tears the process tree
+/// down, so that no path leaves a surviving process behind.
+fn conclude(
+    program: &str,
+    child: &mut std::process::Child,
+    status: std::process::ExitStatus,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> Result<RunOutput, RunFailure> {
+    let result = collect_output(program, status, out, err, max_buffer);
+    if result.is_err() {
+        kill_tree(child);
+    }
+    result
+}
+
+/// Reads one stream for a successful result: up to `max_buffer + 1` bytes, so
+/// that data appended after the length check is still seen as over the limit.
+fn read_final(
+    program: &str,
+    name: &'static str,
+    capture: &CaptureFile,
+    others: (&CaptureFile, &CaptureFile),
+    max_buffer: usize,
+) -> Result<Vec<u8>, RunFailure> {
+    let data = capture
+        .read(max_buffer.saturating_add(1))
+        .map_err(|e| capture_failure(program, &e))?;
+    if data.len() > max_buffer {
+        return Err(max_buffer_failure(name, others.0, others.1, max_buffer));
+    }
+    Ok(data)
+}
+
+fn collect_output(
+    program: &str,
+    status: std::process::ExitStatus,
+    out: &CaptureFile,
+    err: &CaptureFile,
+    max_buffer: usize,
+) -> Result<RunOutput, RunFailure> {
+    match exceeded_stream(out, err, max_buffer) {
+        Ok(None) => {}
+        Ok(Some(name)) => return Err(max_buffer_failure(name, out, err, max_buffer)),
+        Err(e) => return Err(capture_failure(program, &e)),
+    }
+    match status.code() {
+        Some(code) => {
+            let stdout = read_final(program, "stdout", out, (out, err), max_buffer)?;
+            let stderr = read_final(program, "stderr", err, (out, err), max_buffer)?;
+            Ok(RunOutput {
+                code,
+                stdout: String::from_utf8_lossy(&stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&stderr).into_owned(),
+            })
+        }
+        None => Err(failure_with_output(
+            FailureKind::Signal,
+            format!("Command was terminated by a signal: {program}"),
+            program,
+            out,
+            err,
+            max_buffer,
+        )),
+    }
+}
+
+fn is_executable_file(path: &Path) -> bool {
+    let Ok(meta) = std::fs::metadata(path) else {
+        return false;
+    };
+    if !meta.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        meta.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
+}
+
+/// PATH lookup (`command -v` / `where` equivalent for executables on disk).
+pub fn find_in_path(name: &str, path_var: &OsStr, path_ext: &[String]) -> Option<PathBuf> {
+    for dir in std::env::split_paths(path_var) {
+        if dir.as_os_str().is_empty() {
+            continue;
+        }
+        let plain = dir.join(name);
+        if is_executable_file(&plain) {
+            return Some(plain);
+        }
+        for ext in path_ext {
+            let candidate = dir.join(format!("{name}{ext}"));
+            if is_executable_file(&candidate) {
+                return Some(candidate);
+            }
+        }
+    }
+    None
+}
+
+/// `command_exists`: `name` must be a bare, allowed program name.
+pub fn command_exists(
+    name: &str,
+    patterns: &[String],
+    path_var: &OsStr,
+    path_ext: &[String],
+) -> Result<bool, RunFailure> {
+    authorize_program(name, patterns)?;
+    if has_directory_part(name) {
+        return Err(failure(
+            FailureKind::InvalidArgument,
+            "command_exists requires a bare command name, not a path",
+        ));
+    }
+    Ok(find_in_path(name, path_var, path_ext).is_some())
+}
+
+/// Windows executable extensions to try (`PATHEXT`); empty elsewhere.
+pub fn system_path_ext() -> Vec<String> {
+    if cfg!(windows) {
+        std::env::var("PATHEXT")
+            .unwrap_or_else(|_| ".EXE;.CMD".to_string())
+            .split(';')
+            .filter(|e| !e.is_empty())
+            .map(|e| e.to_ascii_lowercase())
+            .collect()
+    } else {
+        Vec::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn patterns() -> Vec<String> {
+        ["git", "node", "npm", "python", "python3", "python3.*"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn wildcard_basics() {
+        assert!(wildcard_match("git", "GIT"));
+        assert!(wildcard_match("python3.*", "python3.11"));
+        assert!(!wildcard_match("python3.*", "python3"));
+        assert!(!wildcard_match("git", "gitk"));
+        assert!(wildcard_match("*", "anything"));
+    }
+
+    #[test]
+    fn stem_strips_directory_and_extension() {
+        assert_eq!(program_stem("/usr/bin/git"), "git");
+        assert_eq!(program_stem("C:\\Program Files\\Git\\bin\\git.EXE"), "git");
+        assert_eq!(program_stem("npm.cmd"), "npm.cmd");
+        assert_eq!(program_stem("npm.bat"), "npm.bat");
+    }
+
+    #[test]
+    fn allows_listed_names_with_version_suffix() {
+        assert!(authorize_program("python3.12", &patterns()).is_ok());
+        assert!(authorize_program("GIT", &patterns()).is_ok());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn allows_absolute_unix_paths() {
+        assert!(authorize_program("/opt/homebrew/bin/node", &patterns()).is_ok());
+        assert!(authorize_program("/usr/bin/python3.11", &patterns()).is_ok());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn allows_absolute_windows_paths() {
+        assert!(authorize_program("C:\\Python312\\python.exe", &patterns()).is_ok());
+        assert!(authorize_program("C:\\Program Files\\Git\\cmd\\git.EXE", &patterns()).is_ok());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_relative_unix_paths() {
+        let kind = |p: &str| authorize_program(p, &patterns()).unwrap_err().kind;
+        assert_eq!(kind("./git"), FailureKind::InvalidArgument);
+        assert_eq!(kind("bin/git"), FailureKind::InvalidArgument);
+        assert_eq!(kind("/bin/sh"), FailureKind::NotAllowed);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn rejects_relative_and_unlisted_windows_paths() {
+        let kind = |p: &str| authorize_program(p, &patterns()).unwrap_err().kind;
+        assert_eq!(kind(".\\git"), FailureKind::InvalidArgument);
+        assert_eq!(kind("bin\\git.exe"), FailureKind::InvalidArgument);
+        assert_eq!(
+            kind("C:\\Windows\\System32\\cmd.exe"),
+            FailureKind::NotAllowed
+        );
+        assert_eq!(kind("C:\\tools\\npm.cmd"), FailureKind::NotAllowed);
+    }
+
+    #[test]
+    fn allows_bare_names() {
+        assert!(authorize_program("git", &patterns()).is_ok());
+    }
+
+    #[test]
+    fn rejects_everything_else() {
+        let kind = |p: &str| authorize_program(p, &patterns()).unwrap_err().kind;
+        assert_eq!(kind("sh"), FailureKind::NotAllowed);
+        assert_eq!(kind("rm"), FailureKind::NotAllowed);
+        assert_eq!(kind("git;rm"), FailureKind::NotAllowed);
+        assert_eq!(kind("npm.bat"), FailureKind::NotAllowed);
+        assert_eq!(kind("python-evil"), FailureKind::NotAllowed);
+        assert_eq!(kind(""), FailureKind::InvalidArgument);
+        assert_eq!(kind("  "), FailureKind::InvalidArgument);
+    }
+
+    #[test]
+    fn empty_scope_denies_all() {
+        assert_eq!(
+            authorize_program("git", &[]).unwrap_err().kind,
+            FailureKind::NotAllowed
+        );
+    }
+
+    #[test]
+    fn command_exists_rejects_unlisted_names() {
+        let path = std::env::var_os("PATH").unwrap_or_default();
+        assert_eq!(
+            command_exists("sh", &patterns(), &path, &[])
+                .unwrap_err()
+                .kind,
+            FailureKind::NotAllowed
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn command_exists_rejects_unix_paths() {
+        let path = std::env::var_os("PATH").unwrap();
+        assert_eq!(
+            command_exists("/bin/sh", &patterns(), &path, &[])
+                .unwrap_err()
+                .kind,
+            FailureKind::NotAllowed
+        );
+        assert_eq!(
+            command_exists("/usr/bin/git", &patterns(), &path, &[])
+                .unwrap_err()
+                .kind,
+            FailureKind::InvalidArgument
+        );
+        assert_eq!(
+            command_exists("sh", &patterns(), &path, &[])
+                .unwrap_err()
+                .kind,
+            FailureKind::NotAllowed
+        );
+    }
+
+    #[cfg(unix)]
+    mod unix {
+        use super::*;
+        use std::os::unix::fs::PermissionsExt;
+
+        fn sh(script: &str, options: &RunOptions) -> Result<RunOutput, RunFailure> {
+            run("/bin/sh", &["-c".to_string(), script.to_string()], options)
+        }
+
+        #[test]
+        fn captures_output_and_zero_exit() {
+            let out = sh("echo out; echo err 1>&2", &RunOptions::default()).unwrap();
+            assert_eq!(out.code, 0);
+            assert_eq!(out.stdout, "out\n");
+            assert_eq!(out.stderr, "err\n");
+        }
+
+        #[test]
+        fn non_zero_exit_is_data() {
+            let out = sh("echo partial; exit 3", &RunOptions::default()).unwrap();
+            assert_eq!(out.code, 3);
+            assert_eq!(out.stdout, "partial\n");
+        }
+
+        #[test]
+        fn no_shell_interpretation_of_arguments() {
+            let out = run(
+                "/bin/echo",
+                &["$HOME; echo injected".to_string()],
+                &RunOptions::default(),
+            )
+            .unwrap();
+            assert_eq!(out.stdout, "$HOME; echo injected\n");
+        }
+
+        #[test]
+        fn missing_program_is_enoent() {
+            let err = run("/nonexistent/program", &[], &RunOptions::default()).unwrap_err();
+            assert_eq!(err.kind, FailureKind::Spawn);
+            assert_eq!(err.code.as_deref(), Some("ENOENT"));
+        }
+
+        #[test]
+        fn non_executable_file_is_eacces() {
+            let dir = std::env::temp_dir().join(format!("tq-exec-eacces-{}", std::process::id()));
+            std::fs::create_dir_all(&dir).unwrap();
+            let file = dir.join("plain");
+            std::fs::write(&file, "x").unwrap();
+            std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
+            let err = run(file.to_str().unwrap(), &[], &RunOptions::default()).unwrap_err();
+            std::fs::remove_dir_all(&dir).unwrap();
+            assert_eq!(err.kind, FailureKind::Spawn);
+            assert_eq!(err.code.as_deref(), Some("EACCES"));
+        }
+
+        #[test]
+        fn cwd_is_applied_and_missing_cwd_fails() {
+            let options = RunOptions {
+                cwd: Some("/".to_string()),
+                ..Default::default()
+            };
+            assert_eq!(sh("pwd", &options).unwrap().stdout, "/\n");
+            let bad = RunOptions {
+                cwd: Some("/nonexistent/dir".to_string()),
+                ..Default::default()
+            };
+            assert_eq!(sh("pwd", &bad).unwrap_err().code.as_deref(), Some("ENOENT"));
+        }
+
+        #[test]
+        fn env_replaces_the_environment() {
+            let mut env = HashMap::new();
+            env.insert("TQ_ONLY".to_string(), "yes".to_string());
+            let options = RunOptions {
+                env: Some(env),
+                ..Default::default()
+            };
+            let out = sh("echo \"$TQ_ONLY:${HOME:-unset}\"", &options).unwrap();
+            assert_eq!(out.stdout, "yes:unset\n");
+        }
+
+        #[test]
+        fn timeout_kills_and_keeps_partial_output() {
+            let options = RunOptions {
+                timeout_ms: Some(200),
+                ..Default::default()
+            };
+            let err = sh("echo started; sleep 5", &options).unwrap_err();
+            assert_eq!(err.kind, FailureKind::Timeout);
+            assert!(err.killed);
+            assert_eq!(err.stdout, "started\n");
+        }
+
+        #[test]
+        fn timeout_returns_even_if_a_grandchild_keeps_the_output_open() {
+            let options = RunOptions {
+                timeout_ms: Some(200),
+                ..Default::default()
+            };
+            let started = Instant::now();
+            let err = sh("sleep 3 & echo started; sleep 3", &options).unwrap_err();
+            assert_eq!(err.kind, FailureKind::Timeout);
+            assert_eq!(err.stdout, "started\n");
+            assert!(started.elapsed() < Duration::from_secs(2));
+        }
+
+        #[test]
+        fn max_buffer_returns_even_if_a_grandchild_keeps_the_output_open() {
+            let options = RunOptions {
+                max_buffer: Some(1024),
+                timeout_ms: Some(10_000),
+                ..Default::default()
+            };
+            let started = Instant::now();
+            let err = sh("(sleep 3 &) ; yes aaaaaaaa", &options).unwrap_err();
+            assert_eq!(err.kind, FailureKind::MaxBuffer);
+            assert!(started.elapsed() < Duration::from_secs(2));
+            assert!(err.stdout.len() <= 1024);
+        }
+
+        #[test]
+        fn capture_file_is_removed_on_drop() {
+            let (capture, _file) = CaptureFile::create("stdout").unwrap();
+            let path = capture.path.clone();
+            assert!(path.exists());
+            drop(capture);
+            assert!(!path.exists());
+        }
+
+        #[test]
+        fn unreadable_capture_file_is_an_error_not_empty_output() {
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            std::fs::remove_file(&out.path).unwrap();
+            assert!(out.len().is_err());
+            assert!(out.read(10).is_err());
+            assert!(exceeded_stream(&out, &err, 10).is_err());
+            let f = failure_with_output(FailureKind::Timeout, "t".into(), "prog", &out, &err, 10);
+            assert_eq!(f.kind, FailureKind::Spawn);
+            assert!(f.message.contains("captured output"));
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let mut child = Command::new("/bin/sleep").arg("0").spawn().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10);
+            assert_eq!(r.unwrap_err().kind, FailureKind::Spawn);
+        }
+
+        #[test]
+        fn over_limit_after_exit_tears_down_the_process_tree() {
+            use std::os::unix::process::CommandExt;
+            let (out, mut out_file) = CaptureFile::create("stdout").unwrap();
+            let (err, _f) = CaptureFile::create("stderr").unwrap();
+            std::io::Write::write_all(&mut out_file, &[b'a'; 100]).unwrap();
+            // Still running: stands in for a descendant that outlives the exit.
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(r.killed);
+            assert!(r.stdout.len() <= 10);
+            // kill_tree reaped it; without the teardown it would still run.
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn final_read_over_limit_is_a_max_buffer_failure_and_tears_down() {
+            use std::os::unix::process::CommandExt;
+            // Length check passes (<= 10) but the read sees more: emulate with a
+            // limit of 10 and 11 bytes only in stderr read via read_final.
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, mut err_file) = CaptureFile::create("stderr").unwrap();
+            std::io::Write::write_all(&mut err_file, &[b'e'; 11]).unwrap();
+            let r = read_final("prog", "stderr", &err, (&out, &err), 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(r.killed);
+            // Through conclude (a still-running stand-in) the tree is torn down.
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let (out2, _g1) = CaptureFile::create("stdout").unwrap();
+            let r = conclude("prog", &mut child, status, &out2, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::MaxBuffer);
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn final_read_failure_tears_down_and_keeps_the_error() {
+            use std::os::unix::process::CommandExt;
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            // The length can still be read, but opening the file fails (mode 000).
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&err.path, std::fs::Permissions::from_mode(0o000)).unwrap();
+            if std::fs::File::open(&err.path).is_ok() {
+                return; // running as root: the permission cannot be enforced
+            }
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = Command::new("/usr/bin/true").status().unwrap();
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::Spawn);
+            assert!(r.message.contains("captured output"));
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn signal_exit_after_conclude_tears_down_too() {
+            use std::os::unix::process::{CommandExt, ExitStatusExt};
+            let (out, _f1) = CaptureFile::create("stdout").unwrap();
+            let (err, _f2) = CaptureFile::create("stderr").unwrap();
+            let mut child = Command::new("/bin/sleep")
+                .arg("30")
+                .process_group(0)
+                .spawn()
+                .unwrap();
+            let status = std::process::ExitStatus::from_raw(9);
+            let r = conclude("prog", &mut child, status, &out, &err, 10).unwrap_err();
+            assert_eq!(r.kind, FailureKind::Signal);
+            assert!(child.try_wait().unwrap().is_some());
+        }
+
+        #[test]
+        fn max_buffer_kills_the_process() {
+            let options = RunOptions {
+                max_buffer: Some(1024),
+                timeout_ms: Some(10_000),
+                ..Default::default()
+            };
+            let err = sh("yes aaaaaaaa", &options).unwrap_err();
+            assert_eq!(err.kind, FailureKind::MaxBuffer);
+            assert!(err.killed);
+        }
+
+        #[test]
+        fn signal_exit_is_a_failure() {
+            let err = sh("kill -9 $$", &RunOptions::default()).unwrap_err();
+            assert_eq!(err.kind, FailureKind::Signal);
+            assert!(!err.killed);
+        }
+
+        #[test]
+        fn path_lookup_finds_executables_only() {
+            let dir = std::env::temp_dir().join(format!("tq-exec-path-{}", std::process::id()));
+            std::fs::create_dir_all(&dir).unwrap();
+            let exe = dir.join("git");
+            std::fs::write(&exe, "#!/bin/sh\n").unwrap();
+            std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+            let node = dir.join("node");
+            std::fs::write(&node, "x").unwrap();
+            std::fs::set_permissions(&node, std::fs::Permissions::from_mode(0o644)).unwrap();
+            let path = std::env::join_paths([&dir]).unwrap();
+            assert!(command_exists("git", &patterns(), &path, &[]).unwrap());
+            assert!(!command_exists("node", &patterns(), &path, &[]).unwrap());
+            assert!(!command_exists("npm", &patterns(), &path, &[]).unwrap());
+            std::fs::remove_dir_all(&dir).unwrap();
+        }
+    }
+}

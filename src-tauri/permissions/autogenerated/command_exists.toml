@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-command-exists"
+description = "Enables the command_exists command without any pre-configured scope."
+commands.allow = ["command_exists"]
+
+[[permission]]
+identifier = "deny-command-exists"
+description = "Denies the command_exists command without any pre-configured scope."
+commands.deny = ["command_exists"]
