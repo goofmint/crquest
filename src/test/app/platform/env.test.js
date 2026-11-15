@@ -21,3 +21,17 @@ describe('isDev', () => {
     expect(mod.isDev()).toBe(true);
   });
 });
+
+describe('getPlatform (Electron)', () => {
+  const original = Object.getOwnPropertyDescriptor(process, 'platform');
+  afterEach(() => Object.defineProperty(process, 'platform', original));
+
+  test('is process.platform, read on every call', async () => {
+    const { getPlatform } = await loadEnv(false);
+    expect(getPlatform()).toBe(process.platform);
+    for (const value of ['darwin', 'win32', 'linux']) {
+      Object.defineProperty(process, 'platform', { ...original, value });
+      expect(getPlatform()).toBe(value);
+    }
+  });
+});
