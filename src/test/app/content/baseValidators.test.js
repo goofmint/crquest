@@ -556,6 +556,16 @@ const DEBUGGING_VALIDATORS = [
         diffMessage([RESERVOIRS[2]], [RESERVOIRS[2]]),
       ],
       [
+        'returns a sparse array whose hole is compared as undefined',
+        'const monitorReservoirs = () => new Array(1);',
+        diffMessage([RESERVOIRS[2]], [null]),
+      ],
+      [
+        'returns an array with a hole in the middle',
+        'const monitorReservoirs = r => { const a = [r[2]]; a[2] = r[2]; return a; };',
+        diffMessage([RESERVOIRS[2]], [RESERVOIRS[2], null, RESERVOIRS[2]]),
+      ],
+      [
         'returns a result that cannot be shown',
         'const monitorReservoirs = () => { const o = {}; o.o = o; return o; };',
         /circular structure/i,
@@ -572,6 +582,11 @@ const DEBUGGING_VALIDATORS = [
         'sums the rads',
         "const sumRadLevels = r => r.reduce((t, x) => t + Number(x.radiation.radsCountCurrent), 0);",
         true,
+      ],
+      [
+        'returns a sparse array',
+        'const sumRadLevels = () => new Array(1);',
+        diffMessage(989, [null]),
       ],
       [
         'returns a Number object (equal to the number)',

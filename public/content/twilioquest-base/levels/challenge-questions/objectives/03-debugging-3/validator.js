@@ -53,11 +53,19 @@ module.exports = async function (helper) {
             case "[object String]":
             case "[object RegExp]":
               return value == other + "";
-            case "[object Array]":
-              return (
-                value.length === other.length &&
-                value.every((item, index) => isEqual(item, other[index]))
-              );
+            case "[object Array]": {
+              if (value.length !== other.length) {
+                return false;
+              }
+              // An index loop, not every(): a hole of a sparse array is read
+              // as undefined (every() skips holes)
+              for (let index = 0; index < value.length; index++) {
+                if (!isEqual(value[index], other[index])) {
+                  return false;
+                }
+              }
+              return true;
+            }
             case "[object Object]": {
               const valueKeys = ownKeys(value);
               const otherKeys = ownKeys(other);
