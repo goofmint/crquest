@@ -106,6 +106,15 @@ fn toggle_devtools() -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .manage(close::CloseConfirmation::default())
+        .setup(|_app| {
+            #[cfg(target_os = "macos")]
+            close::install_quit_menu(_app)?;
+            Ok(())
+        })
+        .on_menu_event(|_app, _event| {
+            #[cfg(target_os = "macos")]
+            close::on_menu_event(_app, _event.id().as_ref());
+        })
         .on_window_event(|window, event| {
             if window.label() != close::MAIN_WINDOW_LABEL {
                 return;

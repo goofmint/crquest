@@ -63,6 +63,25 @@ describe('external links', () => {
     expect(mocks.openExternal).toHaveBeenCalledWith('http://example.com/?');
   });
 
+  test('a click on an element inside the link opens the link', () => {
+    mocks.openExternal.mockResolvedValue(undefined);
+    const doc = makeDoc();
+    const link = addLink(doc, 'https://example.com/x');
+    const span = doc.createElement('span');
+    link.appendChild(span);
+    const event = click(span);
+    expect(event.defaultPrevented).toBe(true);
+    expect(mocks.openExternal).toHaveBeenCalledWith('https://example.com/x?');
+  });
+
+  test('a click on an element outside any link is left alone', () => {
+    const doc = makeDoc();
+    const div = doc.createElement('div');
+    doc.body.appendChild(div);
+    expect(click(div).defaultPrevented).toBe(false);
+    expect(mocks.openExternal).not.toHaveBeenCalled();
+  });
+
   test.each(['#top', '/relative', 'mailto:a@example.com', 'file:///etc/hosts', 'ftp://example.com/'])(
     '%s is left alone',
     href => {

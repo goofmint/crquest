@@ -18,6 +18,7 @@ const GENERATED_PATHS = [
   'index.js.map',
   'index.css',
   'index.css.map',
+  'tauri-game.js',
   'app',
   'test',
 ];

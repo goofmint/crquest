@@ -5,7 +5,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use tauri::{Manager, Window};
+use tauri::{Manager, Runtime, Window};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 /// Label of the only window (`app.windows[0].label` in tauri.conf.json).
@@ -37,15 +37,18 @@ impl CloseConfirmation {
     }
 }
 
-/// Asks whether to quit. Call after `prevent_close()`; the window is destroyed
-/// only when the user chooses OK.
-pub fn confirm_close(window: &Window) {
-    let confirmation = window.state::<CloseConfirmation>();
+/// Asks whether to quit and runs `on_confirmed` only when the user chooses
+/// OK. Does nothing while a dialog is already open.
+fn ask_to_quit<R: Runtime, M: Manager<R>>(
+    manager: &M,
+    on_confirmed: impl FnOnce() + Send + 'static,
+) {
+    let confirmation = manager.state::<CloseConfirmation>();
     if !confirmation.begin() {
         return;
     }
-    let target = window.clone();
-    window
+    let app = manager.app_handle().clone();
+    manager
         .dialog()
         .message(DIALOG_MESSAGE)
         .title(DIALOG_TITLE)
@@ -55,13 +58,66 @@ pub fn confirm_close(window: &Window) {
             CANCEL_LABEL.to_string(),
         ))
         .show(move |quit| {
-            target.state::<CloseConfirmation>().finish();
+            app.state::<CloseConfirmation>().finish();
             if quit {
-                if let Err(error) = target.destroy() {
-                    eprintln!("failed to close the window: {error}");
-                }
+                on_confirmed();
             }
         });
+}
+
+/// Window close (close button, Cmd+W, Alt+F4). Call after `prevent_close()`;
+/// the window is destroyed only when the user chooses OK.
+pub fn confirm_close<R: Runtime>(window: &Window<R>) {
+    let target = window.clone();
+    ask_to_quit(window, move || {
+        if let Err(error) = target.destroy() {
+            eprintln!("failed to close the window: {error}");
+        }
+    });
+}
+
+#[cfg(target_os = "macos")]
+const QUIT_MENU_ID: &str = "quit-with-confirmation";
+
+/// macOS: the standard Quit item (Cmd+Q, app menu) calls `terminate:`, which
+/// the runtime only reports after the fact (`RunEvent::Exit`): it emits neither
+/// `CloseRequested` nor a cancelable `ExitRequested`, so it would bypass the
+/// confirmation. The app menu's Quit is replaced by an item that asks first.
+/// The Dock's Quit also calls `terminate:` and cannot be intercepted.
+#[cfg(target_os = "macos")]
+pub fn install_quit_menu<R: Runtime>(
+    app: &tauri::App<R>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use tauri::menu::{Menu, MenuItemBuilder};
+
+    let handle = app.handle();
+    let menu = Menu::default(handle)?;
+    let app_submenu = menu
+        .items()?
+        .into_iter()
+        .next()
+        .and_then(|item| item.as_submenu().cloned())
+        .ok_or("the app menu is missing")?;
+    // Menu::default puts the predefined Quit item last in the app submenu.
+    let quit = app_submenu.items()?.pop().ok_or("the app menu is empty")?;
+    app_submenu.remove(&quit)?;
+    app_submenu.append(
+        &MenuItemBuilder::with_id(QUIT_MENU_ID, format!("Quit {DIALOG_TITLE}"))
+            .accelerator("CmdOrCtrl+Q")
+            .build(handle)?,
+    )?;
+    app.set_menu(menu)?;
+    Ok(())
+}
+
+/// Handles the replaced Quit item: confirm, then exit (no window close is
+/// involved, so there is no second prompt).
+#[cfg(target_os = "macos")]
+pub fn on_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, id: &str) {
+    if id == QUIT_MENU_ID {
+        let handle = app.clone();
+        ask_to_quit(app, move || handle.exit(0));
+    }
 }
 
 #[cfg(test)]

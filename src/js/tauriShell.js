@@ -8,7 +8,8 @@ import { showAlert } from './app/platform/dialog';
 import { openExternal } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
 
-// Same predicate as the link handler in index.jsx (Electron). Opening is
+// Same selector as the link handler in index.jsx (Electron), also matched
+// from child elements. Opening is
 // limited to http(s) by the opener capability scope as well.
 const EXTERNAL_LINK_SELECTOR = 'a[href^="http"]';
 
@@ -36,11 +37,14 @@ export function installExternalLinkHandler(doc) {
   doc.addEventListener(
     'click',
     event => {
-      if (!event.target.matches(EXTERNAL_LINK_SELECTOR)) {
+      // closest(): a click on an element inside the link (<span>, <img>)
+      // counts as a click on the link.
+      const link = event.target.closest(EXTERNAL_LINK_SELECTOR);
+      if (!link) {
         return;
       }
       event.preventDefault();
-      const url = normalizeExternalUrl(event.target.href);
+      const url = normalizeExternalUrl(link.href);
       openExternal(url).catch(error =>
         reportFailure(`Opening ${url}`, error)
       );

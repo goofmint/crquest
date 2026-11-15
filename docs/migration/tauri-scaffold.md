@@ -13,7 +13,7 @@
 ## 判断事項
 
 - `frontendDist` は `../public`。Vite は `public/` に出力する (`docs/migration/vite-build.md`)。`devUrl` は無く、`tauri dev` は CLI 内蔵サーバーで `public/` を配信する。
-- `beforeDevCommand` / `beforeBuildCommand` は `npm run build:all` (dev 側は `wait: true`)。`npm run tauri -- dev` を実行すると `build:all` が走る (`clean` が `public/` の生成物を消す点は従来の `npm start` と同じ)。
+- `beforeDevCommand` / `beforeBuildCommand` は `npm run build:tauri` (dev 側は `wait: true`。#64 で `build:all` から変更。css と `build:js:tauri` を作る)。`npm run tauri -- dev` を実行すると `build:tauri` が走る (`clean` が `public/` の生成物を消す点は従来の `npm start` と同じ)。
 - `version` は `../public/package.json` を参照 (ゲームのバージョンの正本、現在 3.12.1)。`cargo check` で解決できることを確認済み。`Cargo.toml` の version は 3.12.1 を手書きしており、`tauri.conf.json` 側が優先される。
 - `identifier` は `com.terminalquest.desktop` (新規に決めた値。`.app` 終わりは macOS の拡張子と衝突するため避けた)。
 - `csp` は `null` (`tauri init` の既定)。Electron は `nodeIntegration` 前提のため、現行フロントはそのままでは Tauri で動かない。これは #60 以降の範囲。

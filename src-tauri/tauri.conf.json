@@ -5,8 +5,8 @@
   "identifier": "com.terminalquest.desktop",
   "build": {
     "frontendDist": "../public",
-    "beforeDevCommand": { "script": "npm run build:all", "wait": true },
-    "beforeBuildCommand": "npm run build:all"
+    "beforeDevCommand": { "script": "npm run build:tauri", "wait": true },
+    "beforeBuildCommand": "npm run build:tauri"
   },
   "app": {
     "windows": [

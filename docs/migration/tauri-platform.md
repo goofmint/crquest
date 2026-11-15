@@ -129,7 +129,7 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 - `vite build` (`npm run build:js` / `build:all` / `npm start`): 従来どおり Electron 実装。プラグインは何もせず、出力 `public/index.js` は変更前とバイト単位で同一であることを確認済み。
 - `vite build --mode tauri` (`npm run build:js:tauri`): `platform/<名前>` への相対 import を `platform/tauri/<名前>` に差し替え、`@tauri-apps/*` を external にせず bundle する。
-- `build:all` と `tauri.conf.json` の `beforeBuildCommand` には接続していない。Electron 専用の `require` を使う他のコードが残っており (Phase 11)、Tauri 向け bundle 全体はまだ動かないため。`build:js:tauri` は `public/index.js` を上書きする点に注意 (出力先を変えたいときは `npx vite build --mode tauri --outDir <dir>`)。
+- `build:all` には接続していない (`tauri.conf.json` の before コマンドは #64 から `build:tauri` で、`build:js:tauri` を使う)。Electron 専用の `require` を使う他のコードが残っており (Phase 11)、Tauri 向け bundle 全体はまだ動かないため。`build:js:tauri` は `public/index.js` を上書きする点に注意 (出力先を変えたいときは `npx vite build --mode tauri --outDir <dir>`)。
 
 ### 3.2 同期 API の扱い (一覧)
 

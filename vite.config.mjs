@@ -152,9 +152,20 @@ function selectPlatformImplementation() {
         external: isExternal,
         output: {
           format: 'cjs',
-          // The Tauri entry loads the game with a dynamic import; keep it in
-          // the single index.js (no effect on the Electron build).
-          ...(platformTarget === 'tauri' ? { codeSplitting: false } : {}),
+          // Tauri build only: the game (everything index.jsx pulls in) is a
+          // separate chunk that the entry loads after `await initPlatform()`.
+          // Its externals (react, node builtins, ...) are `require`d at the
+          // top of whichever file contains them, and a Tauri webview has no
+          // `require`; keeping them out of the entry file means the entry
+          // (platform init, link and DevTools handlers) still runs.
+          ...(platformTarget === 'tauri'
+            ? {
+                // A fixed name (listed in tasks/clean_build_output.js); the
+                // only chunk is the dynamic import of index.jsx.
+                chunkFileNames: chunk =>
+                  chunk.isDynamicEntry ? 'tauri-game.js' : '[name]-[hash].js',
+              }
+            : {}),
           entryFileNames: 'index.js',
           // Keep the bundle's top-level bindings out of the global scope of the
           // classic <script> (other scripts such as ace/phaser define globals),
