@@ -6,17 +6,17 @@ import {
 } from '../../../../js/app/common/assetLoader';
 import loadItemsFromDisk from '../../../../js/app/components/context_provider/loadItemsFromDisk';
 
-jest.mock('../../../../js/app/platform/fs', () => ({
-  existsAsync: jest.fn(),
+vi.mock('../../../../js/app/platform/fs', () => ({
+  existsAsync: vi.fn(),
 }));
-jest.mock('../../../../js/app/common/assetLoader', () => ({
-  readDirectory: jest.fn(),
-  readFile: jest.fn(),
-  resolveAbsolutePath: jest.fn(),
+vi.mock('../../../../js/app/common/assetLoader', () => ({
+  readDirectory: vi.fn(),
+  readFile: vi.fn(),
+  resolveAbsolutePath: vi.fn(),
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   resolveAbsolutePath.mockImplementation(async p => `/abs/${p}`);
 });
 

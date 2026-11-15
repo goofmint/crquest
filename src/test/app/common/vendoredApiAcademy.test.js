@@ -110,7 +110,7 @@ describe('inside_perimeter / twilio_api_setup (format check only)', () => {
   const authToken = 'fedcba9876543210'.repeat(2);
 
   const run = validationFields => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     validate({ validationFields }, callback);
     return callback;
   };
@@ -156,8 +156,8 @@ describe('inside_perimeter / hopper_key', () => {
   const validate = requireValidator('inside_perimeter', 'hopper_key');
   const makeHelper = answers => ({
     getNormalizedInput: key => (answers[key] || '').trim().toLowerCase(),
-    fail: jest.fn(),
-    success: jest.fn(),
+    fail: vi.fn(),
+    success: vi.fn(),
   });
 
   test('succeeds with the right answers (no helper.env needed)', async () => {
@@ -191,8 +191,8 @@ describe('inside_perimeter / lovelace_key (message SID format check only)', () =
   const makeHelper = answers => ({
     getNormalizedInput: key => (answers[key] || '').trim().toLowerCase(),
     validationFields: { answer3: answers.answer3 },
-    fail: jest.fn(),
-    success: jest.fn(),
+    fail: vi.fn(),
+    success: vi.fn(),
   });
 
   test('succeeds with the right answers and an SM or MM message SID', async () => {
@@ -230,12 +230,12 @@ describe('lovelace_tower / api-02-async-await (helper.fs.readdir)', () => {
   );
 
   const makeHelper = findLastFileInDir => ({
-    fs: { readdir: jest.fn(fsPlatform.readdir) },
-    pullVarsFromQuestIdeUserCodeLocalScope: jest.fn(async () => ({
+    fs: { readdir: vi.fn(fsPlatform.readdir) },
+    pullVarsFromQuestIdeUserCodeLocalScope: vi.fn(async () => ({
       findLastFileInDir,
     })),
-    fail: jest.fn(),
-    success: jest.fn(),
+    fail: vi.fn(),
+    success: vi.fn(),
   });
 
   test('succeeds when the learner function returns the last entry (listed via helper.fs.readdir)', async () => {
@@ -294,7 +294,7 @@ describe('progression that depends on the Twilio-related objectives', () => {
   test('the env names the ghost NPC check looks for are the ones twilio_api_setup stores', () => {
     const events = jetpack.read(path.join(insidePerimeter, 'events.js'));
     const validate = requireValidator('inside_perimeter', 'twilio_api_setup');
-    const callback = jest.fn();
+    const callback = vi.fn();
     validate(
       {
         validationFields: {

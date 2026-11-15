@@ -1,5 +1,8 @@
 // Pins the behavior of third-party libraries that were upgraded in #51
 // (dexie, uuid, showdown, immutability-helper).
+// Electron provided a real IndexedDB; Node/jsdom has none, so fake-indexeddb
+// supplies it. It must be installed before Dexie is loaded.
+import 'fake-indexeddb/auto';
 import { Converter } from 'showdown';
 import update from 'immutability-helper';
 import { v4 } from 'uuid';

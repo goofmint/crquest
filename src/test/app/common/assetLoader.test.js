@@ -20,10 +20,10 @@ import { staticFilePath } from '../../../js/app/common/fs_utils';
 import { isDev } from '../../../js/app/platform/env';
 import { isModuleCached } from '../../../js/app/common/moduleLoader';
 
-jest.mock('../../../js/app/common/context');
-jest.mock('../../../js/app/common/fs_utils');
-jest.mock('../../../js/app/config/config');
-jest.mock('../../../js/app/platform/env', () => ({ isDev: jest.fn() }));
+vi.mock('../../../js/app/common/context');
+vi.mock('../../../js/app/common/fs_utils');
+vi.mock('../../../js/app/config/config');
+vi.mock('../../../js/app/platform/env', () => ({ isDev: vi.fn() }));
 
 import mockContextFactory from '../../utils/mockContextFactory';
 import mockConfigFactory from '../../utils/mockConfigFactory';
@@ -54,7 +54,7 @@ const consoleErrorFunction = console.error;
 
 beforeEach(() => {
   // mock console error
-  console.error = jest.fn();
+  console.error = vi.fn();
 });
 
 afterEach(() => {
@@ -296,7 +296,7 @@ describe('bundled extension ownership', () => {
 
 describe('requireFromExtension', () => {
   test('should throw an exception if no modulePath is provided', async () => {
-    expect(async () => {
+    await expect(async () => {
       const foo = await requireFromExtension();
     }).rejects.toThrow();
   });

@@ -105,16 +105,16 @@ const createHelper = ({
   const helper = {
     env,
     validationFields,
-    success: jest.fn(),
-    fail: jest.fn(),
-    getAppDataPath: jest.fn(() => APP_DATA),
-    isExecutableValid: jest.fn().mockResolvedValue(executableValid),
+    success: vi.fn(),
+    fail: vi.fn(),
+    getAppDataPath: vi.fn(() => APP_DATA),
+    isExecutableValid: vi.fn().mockResolvedValue(executableValid),
     fs: {
-      existsAsync: jest.fn(async p => (p in fsEntries ? fsEntries[p] : existsDefault)),
-      readAsync: jest.fn(async () => 'print("hi")'),
-      writeAsync: jest.fn(async () => undefined),
+      existsAsync: vi.fn(async p => (p in fsEntries ? fsEntries[p] : existsDefault)),
+      readAsync: vi.fn(async () => 'print("hi")'),
+      writeAsync: vi.fn(async () => undefined),
     },
-    exec: jest.fn(async () => defaultExec),
+    exec: vi.fn(async () => defaultExec),
   };
   execResults.forEach(result => {
     if (result instanceof Error) {
@@ -129,12 +129,12 @@ const createHelper = ({
 const ok = stdout => ({ code: 0, stdout, stderr: '' });
 
 beforeEach(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('scripts/objectiveValidation (child_process / fs-jetpack / electron -> helper)', () => {
@@ -190,7 +190,7 @@ describe('scripts/objectiveValidation (child_process / fs-jetpack / electron -> 
   test('executeScript: rejects with a NiceError after 30 seconds', async () => {
     const helper = createHelper();
     helper.exec.mockReturnValue(new Promise(() => {}));
-    const timeout = jest
+    const timeout = vi
       .spyOn(global, 'setTimeout')
       .mockImplementation(callback => {
         callback();
@@ -227,7 +227,7 @@ describe('scripts/objectiveValidation (child_process / fs-jetpack / electron -> 
   test('executePythonCode: rejects with a NiceError after 5 seconds', async () => {
     const helper = createHelper();
     helper.exec.mockReturnValue(new Promise(() => {}));
-    const timeout = jest
+    const timeout = vi
       .spyOn(global, 'setTimeout')
       .mockImplementation(callback => {
         callback();

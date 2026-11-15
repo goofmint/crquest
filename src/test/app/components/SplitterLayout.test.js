@@ -24,8 +24,10 @@ function renderLikeQuestIDE(onSizeChange) {
 }
 
 describe('react-splitter-layout on React 19', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   test('renders both panes and a separator with the injected styles', () => {
-    const { container } = renderLikeQuestIDE(jest.fn());
+    const { container } = renderLikeQuestIDE(vi.fn());
     const layout = container.querySelector('.splitter-layout');
     expect(layout).toHaveClass('splitter', 'splitter-layout-vertical');
     expect(container.querySelector('#code-editor')).toBeInTheDocument();
@@ -37,7 +39,7 @@ describe('react-splitter-layout on React 19', () => {
   });
 
   test('starts at the initial secondary size and reports it', () => {
-    const onSizeChange = jest.fn();
+    const onSizeChange = vi.fn();
     const { container } = renderLikeQuestIDE(onSizeChange);
     const consolePane = container.querySelector('#console').parentElement;
     expect(consolePane.style.height).toBe('30%');
@@ -45,7 +47,20 @@ describe('react-splitter-layout on React 19', () => {
   });
 
   test('dragging the separator resizes the secondary pane', () => {
-    const onSizeChange = jest.fn();
+    // jsdom does not lay elements out (every rect is 0x0), so give the layout
+    // the geometry from renderLikeQuestIDE (400x500 with a 4px splitter);
+    // the splitter's own drag arithmetic is what is under test.
+    const rectOf = (width, height) => ({
+      left: 0, top: 0, right: width, bottom: height, x: 0, y: 0, width, height,
+    });
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+      function () {
+        if (this.classList.contains('splitter-layout')) return rectOf(400, 500);
+        if (this.getAttribute('role') === 'separator') return rectOf(400, 4);
+        return rectOf(0, 0);
+      }
+    );
+    const onSizeChange = vi.fn();
     const { container } = renderLikeQuestIDE(onSizeChange);
     const consolePane = container.querySelector('#console').parentElement;
     const separator = container.querySelector('[role="separator"]');

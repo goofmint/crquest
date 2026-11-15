@@ -50,7 +50,7 @@ const makeHelper = ({
       stat: fs.promises.stat,
       lstat: fs.promises.lstat,
     },
-    exec: exec || jest.fn(),
+    exec: exec || vi.fn(),
     getNormalizedInput: key => fields[key] || '',
     getFilePathPartsArray: filePath => filePath.split(path.sep),
     formatPathPartsForOs: (...parts) => parts.join(path.sep),
@@ -271,7 +271,7 @@ describe('fs-08-hidden', () => {
 
   test('win32: passes when powershell lists the file', async () => {
     fs.writeFileSync(path.join(dir, 'sneaky.txt'), '');
-    const exec = jest.fn().mockResolvedValue({
+    const exec = vi.fn().mockResolvedValue({
       code: 0,
       stdout: 'a\r\nsneaky.txt\r\n',
       stderr: '',
@@ -292,21 +292,21 @@ describe('fs-08-hidden', () => {
 
   test('win32: fails when the file is not hidden, and reports a failed command', async () => {
     fs.writeFileSync(path.join(dir, 'sneaky.txt'), '');
-    let exec = jest
+    let exec = vi
       .fn()
       .mockResolvedValue({ code: 0, stdout: 'other.txt\r\n', stderr: '' });
     let ctx = makeHelper({ env: env(), platform: 'win32', exec });
     await validate(ctx.helper);
     expect(ctx.result.fail).toMatch(/"attrib" command with the "\+h" option/);
 
-    exec = jest.fn().mockResolvedValue({ code: 1, stdout: '', stderr: 'boom' });
+    exec = vi.fn().mockResolvedValue({ code: 1, stdout: '', stderr: 'boom' });
     ctx = makeHelper({ env: env(), platform: 'win32', exec });
     await validate(ctx.helper);
     expect(ctx.result.fail).toMatch(
       /An error occurred[\s\S]*Command failed[\s\S]*boom/
     );
 
-    exec = jest
+    exec = vi
       .fn()
       .mockRejectedValue(new Error('spawn powershell.exe ENOENT'));
     ctx = makeHelper({ env: env(), platform: 'win32', exec });

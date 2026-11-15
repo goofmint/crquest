@@ -3,12 +3,12 @@ import { createCodeRunnerWorker, pullVarsInWorker } from '../../../js/app/common
 // Fake Worker recording what the host does with it
 function createFakeWorkerFactory() {
   const workers = [];
-  const factory = jest.fn(url => {
+  const factory = vi.fn(url => {
     const listeners = {};
     const worker = {
       url,
-      postMessage: jest.fn(),
-      terminate: jest.fn(),
+      postMessage: vi.fn(),
+      terminate: vi.fn(),
       addEventListener: (type, handler) => {
         listeners[type] = handler;
       },
@@ -118,8 +118,8 @@ describe('createCodeRunnerWorker', () => {
           postMessage: () => {
             throw new Error('clone failed');
           },
-          terminate: jest.fn(),
-          addEventListener: jest.fn(),
+          terminate: vi.fn(),
+          addEventListener: vi.fn(),
         };
         workers.push(worker);
         return worker;
@@ -274,9 +274,9 @@ describe('createCodeRunnerWorker', () => {
       const instances = [];
       global.Worker = function(url) {
         instances.push(url);
-        this.addEventListener = jest.fn();
-        this.postMessage = jest.fn();
-        this.terminate = jest.fn();
+        this.addEventListener = vi.fn();
+        this.postMessage = vi.fn();
+        this.terminate = vi.fn();
       };
       const runner = createCodeRunnerWorker({ workerUrl: 'file:///w.js' });
       runner.runCode('x', {});
@@ -358,9 +358,9 @@ describe('pullVarsInWorker', () => {
 
   it('rejects when postMessage throws', async () => {
     const { factory } = createFakeWorkerFactory();
-    const failing = jest.fn(() => ({
+    const failing = vi.fn(() => ({
       addEventListener: () => {},
-      terminate: jest.fn(),
+      terminate: vi.fn(),
       postMessage: () => {
         throw new Error('post failed');
       },

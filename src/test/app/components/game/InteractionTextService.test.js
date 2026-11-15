@@ -3,18 +3,20 @@ import levelLoader from '../../../../js/app/common/levelLoader';
 import TiledService from '../../../../js/app/common/tiled';
 import InteractionTextService from '../../../../js/app/components/game/InteractionTextService';
 
-jest.mock('../../../../js/app/platform/fs', () => ({
-  readAsync: jest.fn(),
+vi.mock('../../../../js/app/platform/fs', () => ({
+  readAsync: vi.fn(),
 }));
-jest.mock('../../../../js/app/common/fs_utils', () => ({
-  staticFilePath: jest.fn(relativePath => `/static/${relativePath}`),
+vi.mock('../../../../js/app/common/fs_utils', () => ({
+  staticFilePath: vi.fn(relativePath => `/static/${relativePath}`),
 }));
-jest.mock('../../../../js/app/common/levelLoader', () => ({
-  getLevel: jest.fn(),
+vi.mock('../../../../js/app/common/levelLoader', () => ({
+  default: { getLevel: vi.fn() },
 }));
-jest.mock('../../../../js/app/common/tiled', () => ({
-  getTilesetFromGid: jest.fn(),
-  convertPhaserGidToTiledId: jest.fn(),
+vi.mock('../../../../js/app/common/tiled', () => ({
+  default: {
+    getTilesetFromGid: vi.fn(),
+    convertPhaserGidToTiledId: vi.fn(),
+  },
 }));
 
 const FLAVOR_TEXT = {
@@ -23,7 +25,7 @@ const FLAVOR_TEXT = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   InteractionTextService.defaultTextList = [];
   InteractionTextService.tiledIdMaps = {};
   InteractionTextService.currentLevelTextList = [];

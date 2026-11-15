@@ -17,9 +17,9 @@ import bundledExtensionModules from '../../../js/app/config/bundledExtensionModu
 import vendoredExtensionModules from '../../../js/app/config/vendoredExtensionModules.json';
 import mockConfigFactory from '../../utils/mockConfigFactory';
 
-jest.mock('../../../js/app/common/context');
-jest.mock('../../../js/app/common/fs_utils');
-jest.mock('../../../js/app/config/config');
+vi.mock('../../../js/app/common/context');
+vi.mock('../../../js/app/common/fs_utils');
+vi.mock('../../../js/app/config/config');
 
 const PUBLIC_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'public');
 const NAME = 'owls-nest-extension';

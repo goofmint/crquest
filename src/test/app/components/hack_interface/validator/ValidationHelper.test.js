@@ -1,41 +1,41 @@
-jest.mock('../../../../../js/app/platform/fs', () => ({
-  readFile: jest.fn(),
-  readdir: jest.fn(),
-  stat: jest.fn(),
-  lstat: jest.fn(),
-  existsAsync: jest.fn(),
-  listAsync: jest.fn(),
-  readAsync: jest.fn(),
-  writeAsync: jest.fn(),
-  copyAsync: jest.fn(),
-  removeAsync: jest.fn(),
+vi.mock('../../../../../js/app/platform/fs', () => ({
+  readFile: vi.fn(),
+  readdir: vi.fn(),
+  stat: vi.fn(),
+  lstat: vi.fn(),
+  existsAsync: vi.fn(),
+  listAsync: vi.fn(),
+  readAsync: vi.fn(),
+  writeAsync: vi.fn(),
+  copyAsync: vi.fn(),
+  removeAsync: vi.fn(),
 }));
-jest.mock('../../../../../js/app/platform/exec', () => ({
-  exec: jest.fn(),
-  run: jest.fn(),
-  commandExists: jest.fn(),
-  pathExistsSync: jest.fn(),
+vi.mock('../../../../../js/app/platform/exec', () => ({
+  exec: vi.fn(),
+  run: vi.fn(),
+  commandExists: vi.fn(),
+  pathExistsSync: vi.fn(),
 }));
-jest.mock('../../../../../js/app/platform/paths', () => ({
-  getAppDataPath: jest.fn(),
+vi.mock('../../../../../js/app/platform/paths', () => ({
+  getAppDataPath: vi.fn(),
 }));
-jest.mock('../../../../../js/app/common/analytics', () => ({
+vi.mock('../../../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
 }));
-jest.mock('../../../../../js/app/common/world', () => ({
+vi.mock('../../../../../js/app/common/world', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
-jest.mock('../../../../../js/app/config/config', () => ({
+vi.mock('../../../../../js/app/config/config', () => ({
   __esModule: true,
   default: {
     codeStoragePath: '/code',
     codeStorageFileName: 'code.js',
   },
 }));
-jest.mock('../../../../../js/app/common/context', () => ({
-  getContext: jest.fn(() => ({ levelName: 'current-level' })),
+vi.mock('../../../../../js/app/common/context', () => ({
+  getContext: vi.fn(() => ({ levelName: 'current-level' })),
 }));
 
 import ValidationHelper from '../../../../../js/app/components/hack_interface/validator/ValidationHelper';
@@ -46,11 +46,11 @@ import * as platformPaths from '../../../../../js/app/platform/paths';
 const makeHelper = () =>
   new ValidationHelper(
     { context: {}, env: {}, validationFields: { a: ' B ' } },
-    jest.fn(),
+    vi.fn(),
     {}
   );
 
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 
 describe('Twilio helpers are removed', () => {
   test.each([

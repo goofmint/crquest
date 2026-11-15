@@ -1,11 +1,11 @@
-jest.mock('child_process', () => ({ exec: jest.fn(), execFile: jest.fn() }));
-jest.mock('fs', () => ({ existsSync: jest.fn() }));
+vi.mock('child_process', () => ({ exec: vi.fn(), execFile: vi.fn() }));
+vi.mock('fs', () => ({ existsSync: vi.fn() }));
 
-const childProcess = require('child_process');
-const nodeFs = require('fs');
-const platformExec = require('../../../js/app/platform/exec');
+import * as childProcess from 'child_process';
+import * as nodeFs from 'fs';
+import * as platformExec from '../../../js/app/platform/exec';
 
-afterEach(() => jest.resetAllMocks());
+afterEach(() => vi.resetAllMocks());
 
 describe('exec (shell string)', () => {
   test('resolves { stdout, stderr } and passes command and options through', async () => {

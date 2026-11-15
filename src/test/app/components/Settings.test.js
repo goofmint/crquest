@@ -1,34 +1,34 @@
 import React from 'react';
 import { render, act } from '@testing-library/react';
 
-jest.mock('electron', () => ({ remote: {} }));
-jest.mock('../../../js/app/platform/paths', () => ({
-  getGamePackageVersion: jest.fn(),
+vi.mock('electron', () => ({ remote: {} }));
+vi.mock('../../../js/app/platform/paths', () => ({
+  getGamePackageVersion: vi.fn(),
 }));
-jest.mock('../../../js/app/common/analytics', () => ({
+vi.mock('../../../js/app/common/analytics', () => ({
   __esModule: true,
-  default: { pageview: jest.fn(), analyticsId: 'guid' },
+  default: { pageview: vi.fn(), analyticsId: 'guid' },
 }));
-jest.mock('../../../js/app/common/listener', () => ({ __esModule: true, default: {} }));
-jest.mock('../../../js/app/common/context', () => ({
-  setContext: jest.fn(),
-  getContext: jest.fn(),
+vi.mock('../../../js/app/common/listener', () => ({ __esModule: true, default: {} }));
+vi.mock('../../../js/app/common/context', () => ({
+  setContext: vi.fn(),
+  getContext: vi.fn(),
 }));
-jest.mock('../../../js/app/components/ClearDataButton', () => () => null);
-jest.mock('../../../js/app/components/AvatarSelector', () => () => null);
-jest.mock('../../../js/app/components/menu/settings/EnvironmentVariables', () => () => null);
-jest.mock('../../../js/app/components/menu/settings/AdventureTeams', () => ({
+vi.mock('../../../js/app/components/ClearDataButton', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/AvatarSelector', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/EnvironmentVariables', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/AdventureTeams', () => ({
   JoinTeam: () => null,
   CurrentTeam: () => null,
 }));
-jest.mock('../../../js/app/components/menu/settings/Operations', () => ({
+vi.mock('../../../js/app/components/menu/settings/Operations', () => ({
   JoinOperation: () => null,
   CurrentOperation: () => null,
 }));
-jest.mock('../../../js/app/components/menu/settings/AudioTab', () => () => null);
-jest.mock('../../../js/app/components/menu/settings/UnlocksTab', () => () => null);
-jest.mock('../../../js/app/components/menu/settings/Credits', () => () => null);
-jest.mock('../../../js/app/components/menu/settings/Extensions', () => () => null);
+vi.mock('../../../js/app/components/menu/settings/AudioTab', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/UnlocksTab', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/Credits', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/Extensions', () => ({ default: () => null }));
 
 import Settings from '../../../js/app/components/menu/settings/Settings';
 import { getGamePackageVersion } from '../../../js/app/platform/paths';
@@ -40,7 +40,7 @@ const versionText = (container) =>
 describe('Settings game version', () => {
   let errorSpy;
   beforeEach(() => {
-    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
   afterEach(() => {
     errorSpy.mockRestore();
@@ -69,7 +69,7 @@ describe('Settings game version', () => {
     getGamePackageVersion.mockReturnValue(new Promise((r) => { resolveVersion = r; }));
     const ref = React.createRef();
     const { unmount } = render(<Settings ref={ref} />);
-    const setState = jest.spyOn(ref.current, 'setState');
+    const setState = vi.spyOn(ref.current, 'setState');
     unmount();
     resolveVersion('1.2.3');
     await act(flush);

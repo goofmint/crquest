@@ -1,7 +1,7 @@
 import analytics from '../../../js/app/common/analytics';
 
-jest.mock('../../../js/app/platform/paths', () => ({
-  getAppVersion: jest.fn(() => '9.9.9'),
+vi.mock('../../../js/app/platform/paths', () => ({
+  getAppVersion: vi.fn(() => '9.9.9'),
 }));
 
 test('analytics API composition', async () => {

@@ -96,18 +96,18 @@ const createHelper = ({
   const helper = {
     env,
     validationFields,
-    success: jest.fn(),
-    fail: jest.fn(),
+    success: vi.fn(),
+    fail: vi.fn(),
     getNormalizedInput: (key, { lowerCase = true } = {}) => {
       const value = (validationFields[key] || '').trim();
       return lowerCase ? value.toLowerCase() : value;
     },
-    isExecutableValid: jest.fn().mockResolvedValue(executableValid),
+    isExecutableValid: vi.fn().mockResolvedValue(executableValid),
     fs: {
-      existsAsync: jest.fn(async p => (p in fsEntries ? fsEntries[p].type : false)),
-      readAsync: jest.fn(async p => fsEntries[p].content),
+      existsAsync: vi.fn(async p => (p in fsEntries ? fsEntries[p].type : false)),
+      readAsync: vi.fn(async p => fsEntries[p].content),
     },
-    exec: jest.fn(),
+    exec: vi.fn(),
   };
   execResults.forEach(result => {
     if (result instanceof Error) {
@@ -127,7 +127,7 @@ const response = (status, body, statusText = '') => ({
 });
 
 beforeEach(() => {
-  global.fetch = jest.fn();
+  global.fetch = vi.fn();
 });
 afterEach(() => {
   delete global.fetch;

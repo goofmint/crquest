@@ -1,5 +1,7 @@
-const path = require('path');
-const fs = require('../../../js/app/platform/fs');
+import nodeFs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import * as fs from '../../../js/app/platform/fs';
 
 const FIXTURES = path.resolve(__dirname, '..', '..', 'fixtures');
 const FIXTURE_DIR = path.join(FIXTURES, 'platform');
@@ -90,7 +92,7 @@ describe('synchronous additions', () => {
     const text = fs.readFileSync(FIXTURE_JSON, { encoding: 'utf8' });
     expect(typeof text).toBe('string');
     expect(JSON.parse(text)).toEqual(
-      JSON.parse(require('fs').readFileSync(FIXTURE_JSON, 'utf8'))
+      JSON.parse(nodeFs.readFileSync(FIXTURE_JSON, 'utf8'))
     );
   });
 
@@ -101,8 +103,7 @@ describe('synchronous additions', () => {
   });
 
   test('remove (detached from jetpack) deletes a directory synchronously', () => {
-    const nodeFs = require('fs');
-    const dir = nodeFs.mkdtempSync(path.join(require('os').tmpdir(), 'crq-rm-'));
+    const dir = nodeFs.mkdtempSync(path.join(os.tmpdir(), 'crq-rm-'));
     nodeFs.writeFileSync(path.join(dir, 'a.txt'), 'x');
     const { remove } = fs;
     remove(dir);

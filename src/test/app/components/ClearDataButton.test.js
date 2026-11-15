@@ -1,38 +1,38 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 
-jest.mock('../../../js/app/platform/fs', () => ({ remove: jest.fn() }));
-jest.mock('../../../js/app/common/database', () => ({
+vi.mock('../../../js/app/platform/fs', () => ({ remove: vi.fn() }));
+vi.mock('../../../js/app/common/database', () => ({
   __esModule: true,
-  default: { delete: jest.fn() },
+  default: { delete: vi.fn() },
 }));
-jest.mock('../../../js/app/platform/store', () => ({
-  hasValue: jest.fn(),
-  deleteValue: jest.fn(),
+vi.mock('../../../js/app/platform/store', () => ({
+  hasValue: vi.fn(),
+  deleteValue: vi.fn(),
 }));
-jest.mock('../../../js/app/platform/dialog', () => ({ showConfirm: jest.fn() }));
-jest.mock('../../../js/app/config/config', () => ({
+vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn() }));
+vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
   default: { codeStoragePath: '/code' },
 }));
-jest.mock('../../../js/app/common/context/schema', () => ({
-  describeSchema: jest.fn(() => ({ fields: { a: {}, b: { meta: { persistOnClearProgess: true } } } })),
+vi.mock('../../../js/app/common/context/schema', () => ({
+  describeSchema: vi.fn(() => ({ fields: { a: {}, b: { meta: { persistOnClearProgess: true } } } })),
 }));
 
-const { remove } = require('../../../js/app/platform/fs');
-const db = require('../../../js/app/common/database').default;
-const { hasValue, deleteValue } = require('../../../js/app/platform/store');
-const { showConfirm } = require('../../../js/app/platform/dialog');
-const ClearDataButton = require('../../../js/app/components/ClearDataButton').default;
+import { remove } from '../../../js/app/platform/fs';
+import db from '../../../js/app/common/database';
+import { hasValue, deleteValue } from '../../../js/app/platform/store';
+import { showConfirm } from '../../../js/app/platform/dialog';
+import ClearDataButton from '../../../js/app/components/ClearDataButton';
 
 // jsdom's window.location.reload cannot be replaced, so the reload itself (which
 // jsdom reports as a "not implemented: navigation" console error) is not asserted.
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   hasValue.mockReturnValue(true);
   db.delete.mockResolvedValue(undefined);
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
