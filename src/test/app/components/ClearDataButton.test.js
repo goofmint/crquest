@@ -163,4 +163,42 @@ describe('ClearDataButton.clearUserData', () => {
     expect(suppressPersistence).toHaveBeenCalledTimes(1);
     expect(resumePersistence).toHaveBeenCalledTimes(1);
   });
+
+  test('ignores a re-click during the erase (after the dialogs closed)', async () => {
+    showConfirm.mockResolvedValue(true);
+    let finishDelete;
+    deleteValue.mockReturnValue(new Promise(resolve => { finishDelete = resolve; }));
+    const instance = makeInstance();
+    const first = instance.clearUserData();
+    await vi.waitFor(() => expect(deleteValue).toHaveBeenCalledTimes(1));
+    await instance.clearUserData();
+    expect(showConfirm).toHaveBeenCalledTimes(2);
+    expect(suppressPersistence).toHaveBeenCalledTimes(1);
+    expect(deleteValue).toHaveBeenCalledTimes(1);
+    finishDelete();
+    await first;
+    // after a successful erase the guard stays set until the reload
+    await instance.clearUserData();
+    expect(showConfirm).toHaveBeenCalledTimes(2);
+  });
+
+  test('after a failed erase, persistence is resumed once and a retry can run', async () => {
+    showConfirm.mockResolvedValue(true);
+    deleteValue.mockRejectedValueOnce(new Error('first')).mockResolvedValue(undefined);
+    const instance = makeInstance();
+    await expect(instance.clearUserData()).rejects.toThrow('first');
+    expect(resumePersistence).toHaveBeenCalledTimes(1);
+    await instance.clearUserData();
+    expect(suppressPersistence).toHaveBeenCalledTimes(2);
+    expect(resumePersistence).toHaveBeenCalledTimes(1);
+    expect(db.delete).toHaveBeenCalledTimes(1);
+  });
+
+  test('a cancelled erase can be started again', async () => {
+    showConfirm.mockResolvedValueOnce(false).mockResolvedValue(true);
+    const instance = makeInstance();
+    await instance.clearUserData();
+    await instance.clearUserData();
+    expect(db.delete).toHaveBeenCalledTimes(1);
+  });
 });

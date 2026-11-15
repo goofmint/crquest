@@ -240,6 +240,10 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - 保存の直列化: `setContext` が起こす `setValueAsync` は `common/context/index.js` のキューで 1 件ずつ、呼び出し順に実行する (非同期の store が後の値を先に適用しないため)。失敗した保存は後続を止めず、各呼び出しが自分のエラーを `reportFailure` に渡す。Electron でも書き込み順は変わらない (開始が 1 マイクロタスク遅れる)。
 - 消去中の書き込み抑止: `ClearDataButton` は 2 回の確認のあと、`suppressPersistence()` で保存フィールドの永続化だけを止める。メモリ上の context、イベント、`syncContext` は変えず、抑止した書き込みは `console.warn` に出す (黙って捨てない)。キューにある保存を `flushPendingSaves()` で終わらせてから削除する。成功時はリロードまで抑止したまま、失敗時は `resumePersistence()` で再開する。キャンセル時は抑止しない。
 
+- 消去の多重実行防止: `ClearDataButton` は最初のクリックからリロードまで消去を 1 つだけ許す (キャンセルまたは失敗でだけ解除し、再試行できる)。これで、先の消去の最中に後の消去が失敗して `resumePersistence()` を呼び、削除済みのキーが書き戻される経路は無い。
+
+Electron の追加確認 (手動): 設定や進捗を変更した直後にアプリを終了し、再起動して進捗が復元されること。Erase Game Data の実行中に連打しても 1 回だけ動き、リロード後にデータが空であること。
+
 残り: Tauri 実機での設定の永続化確認 (W11)。Tauri の保存先は Electron の `config.json` と別 (R7)。
 
 

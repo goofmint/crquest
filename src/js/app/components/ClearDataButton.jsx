@@ -47,10 +47,30 @@ export default class ClearDataButton extends React.Component {
     }
   }
 
+  // Only one erase at a time, from the first click until the reload: the flag
+  // is released when the user cancels or the erase fails (so it can be retried),
+  // and stays set after a successful erase (the window reloads).
   async clearUserData() {
+    if (this.erasing) {
+      return;
+    }
+    this.erasing = true;
+    let retryable = true;
+    try {
+      retryable = !(await this.runErase());
+    } finally {
+      if (retryable) {
+        this.erasing = false;
+      }
+    }
+  }
+
+  // Resolves true when the erase went through (reload pending), false when it
+  // was cancelled. Throws when it failed.
+  async runErase() {
     if (!(await this.confirmClear())) {
       console.log('aborting data clear...');
-      return;
+      return false;
     }
 
     // Upon confirmation, delete all user data and reload the window
@@ -86,6 +106,8 @@ export default class ClearDataButton extends React.Component {
       .finally(() => {
         window.location.reload();
       });
+
+    return true;
   }
 
   render() {
