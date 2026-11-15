@@ -269,9 +269,15 @@ W1 -> W2 (ビルドが `require` なしで完成する) -> W3 (`remote` 除去�
 ```sh
 npm ci
 npm test
-shasum -a 256 public/index.js > /tmp/index.js.before   # 変更前の SHA-256 を保存 (build:all の前。public/index.js が無ければ先に一度ビルドする)
+# Electron 出力のハッシュ確認 (比較の基準は「変更前のリビジョン」で作る):
+#   1. 変更前のコミット (base または origin/main) を別の worktree に checkout し、npm ci && npm run build:all を実行して
+#      shasum -a 256 public/index.js > /tmp/index.js.before を保存する
+#   2. 変更後のリビジョンで同じ条件 (npm run build:all、同じ NODE_ENV) でビルドし直し、下の確認を行う
+#   (現在のリビジョンをビルドして基準にしてはいけない。変更後の出力を自分自身と比べることになる)
 npm run build:all && git status --short                # 追跡対象の出力に変更が無いこと
 shasum -a 256 -c /tmp/index.js.before                  # public/index.js が変更前と同一であること (このファイルは .gitignore 対象で git status に出ない)
+# 注意: npm run build:tauri / build:js:tauri / tauri dev も public/index.js を上書きする。Tauri のビルドのあとは、
+# 必ず npm run build:all で Electron の出力を作り直してから比較する
 npm start                                    # Electron が従来どおり起動し、タイトル画面からゲームが始められる
 ```
 
