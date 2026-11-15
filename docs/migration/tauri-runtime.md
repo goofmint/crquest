@@ -233,6 +233,22 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - Electron リスク: 中。呼び出し元を共通関数に置き換えるため。Electron 実装は現在の出力と同一の文字列を返すことをテストで固定する (`fs_utils.test.js`、`useAssetLoader` など)。
 - 要確認: ダイアログで選んだディレクトリが asset プロトコルの scope にも自動で追加されるか (`tauri-plugin-dialog` の挙動)。追加されない場合は W9 で scope を足す。
 
+#### W5 の実施結果 (#136)
+
+- 新設: `platform/assets.js` (Electron) と `platform/tauri/assets.js` (`vite.config.mjs` の `platformModules` と選択テストに `assets` を追加)。API は 4 つで、両実装で同名である。`getStaticRootPath()`、`getStaticFileUrl(相対パス)`、`toAssetUrl(絶対パス)`、`toAssetSrc(絶対パス)`。
+- Electron 実装は従来の文字列をそのまま返す。`getStaticRootPath` は `fileURLToPath(new URL('.', document.baseURI))` (`fs_utils.js` から移しただけ)、`toAssetUrl` は `file-url`、`toAssetSrc` は入力のパス (生パスのまま Howler・Phaser・`<img>` に渡す現状を保つ。`undefined` は `undefined`)、`getStaticFileUrl` は `fileUrl(path.resolve(root, 相対パス))`。
+- Tauri 実装 (種類ごと):
+  - `staticFilePath` の基準: `getResourceDirPath()` (`path.resolve(resourceDir, 相対パス)`。基準が絶対パスなので path-browserify の `process.cwd()` 呼び出しは起きない。`config.js` の 2 か所の `resolve` も絶対パス引数で問題ない。テストで固定)。
+  - `$RESOURCE` 配下のファイル (`levels/common/music`・`sfx`、`content/`、`avatars/parts`): `frontendDist` に同じ相対パスで埋め込まれているため、ページ相対 URL にする (D5 (2))。asset プロトコルに依存しないので、起動に必須の音声はこの経路で通る。
+  - それ以外の絶対パス (ユーザーデータ、ユーザー拡張): `convertFileSrc` (asset プロトコル)。
+  - `avatars/avatarN.png`、`code_runner/worker.js` (`getStaticFileUrl`): ページ相対 URL。絶対パスと `..` は throw する。
+- asset プロトコル: `tauri.conf.json` の `app.security.assetProtocol` を有効にし、scope は `$RESOURCE/**`、`$CONFIG/terminalquest/**`、`$CONFIG/TerminalQuest/**` だけ (fs の capability と同じ範囲)。`Cargo.toml` の `tauri` に `protocol-asset` feature を追加した。capability の追加は不要 (asset プロトコルは scope だけで制御される)。
+- 置き換えた呼び出し元: `fs_utils.js` (`fileURLToPath` と `file-url` を除去)、`audio/index.js` (sfx・music は `toAssetUrl(staticFilePath(...))`、ボイスオーバーは `toAssetSrc`)、`Conversation.jsx`、`SpriteSheet.jsx` (URL かどうかを `file:` 固定ではなくスキームで判定)、`useAssetLoader.jsx`、`Game.jsx` (spritesheets・tilesets)、`EntityConfigService.js` (Phaser の画像)、`loadItemsFromDisk.js` (アイテム画像)、`levelLoader.js` (ミッションアイコン)。`AvatarSelector.jsx`、`code_runner.js`、`ValidationHelper.js` は `staticFileUrl` 経由で、コード変更なしで Tauri 実装に切り替わる。
+- Electron との同一性: 上記のとおり関数ごとに従来と同じ式で、`src/test/app/platform/assets.test.js` が `file-url` / 生パス / 旧 `staticFileUrl(絶対パス)` との一致を固定する。既存の `fs_utils.test.js` は無変更で通る。Electron バンドルに Tauri のコード (`convertFileSrc`) は入らない。
+- 検証: `npm ci`、`npm run build:all`、`npm run build:tauri` の後に `npm run build:all`、`npm test` (1500 件超) 、`cargo check` / `clippy` / `fmt --check` / `test` が通る。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): ゲームが起動し、BGM と効果音が鳴る。拡張機能 (外部拡張を有効にした場合) の画像、ミッションアイコン、インベントリのアイテム画像、アバター選択画面の画像、会話の顔画像、ナビマップが従来どおり出る。Tauri (`npm run tauri -- dev`): タイトル画面が描画される (音声の読み込みが完了する)。DevTools の Network に `levels/common/music/*.mp3` が 200 で出る。
+- 残り: `avatarRenderer.js` の `Jimp.read(staticFilePath(...))` (W9)、`tiled.js` / `levelLoader.js` が読むレベルの map・画像 (W8、W9 以降)、`HackInterface.jsx` などのディスク読み取り、ダイアログで選んだ拡張機能ディレクトリが asset プロトコルの scope に入るかの実機確認 (R2。入らない場合は W9/W10 で `asset_protocol_scope` を足す)、Windows のパス (W12)。dev でのリソースの相対 URL (`frontendDist` の埋め込み) は実機でのみ確認できる。
+
 ### W6. 同期 fs / exec の置き換え (B4)
 
 - 内容: `Game.jsx:228` の `list` を `listAsync` に、`ClearDataButton.jsx:56` の `remove` を `removeAsync` に、`ValidationHelper.js:173` の `pathExistsSync` を `existsAsync` に、`system.js:25` の `readFileSync` を非同期の読み取りに替える (`isPi` と `initializeSystemInfo` を `async` に)。Tauri では `/proc/cpuinfo` が fs scope 外なので、Linux 判定の扱いを決める (D6: Raspberry Pi 判定を Tauri では行わないと記録する、または scope を足す)。

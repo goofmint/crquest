@@ -35,6 +35,7 @@ const platformModules = [
   'menu',
   'env',
   'init',
+  'assets',
 ];
 
 // Everything that is not a project file is resolved at runtime by Electron's

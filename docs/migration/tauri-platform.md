@@ -167,6 +167,10 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 
 `npm test`: `src/test/app/platform/tauri/` (Tauri JS API は `vi.mock` と `@tauri-apps/api/mocks` の `mockIPC` で差し替え)。各モジュールの契約、同期メンバーの throw、公開名の一致、Vite の選択 (Electron ビルドは Electron 実装、`--mode tauri` は Tauri 実装を bundle) を検査する。
 
+### 3.6 assets (#136)
+
+`platform/assets.js` / `platform/tauri/assets.js`: 静的パスと URL の構築 (`getStaticRootPath`、`getStaticFileUrl`、`toAssetUrl`、`toAssetSrc`)。詳細は `tauri-runtime.md` の W5。
+
 ## 4. 未解決事項
 
 - 呼び出し元の非同期化 (3.2 章の表)。`initPlatform()` を呼ぶエントリは未作成 (Phase 11)。

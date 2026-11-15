@@ -2,7 +2,8 @@ import { useState } from 'react';
 import path from 'path';
 import { listAsync } from '../../platform/fs';
 import { getValue, setValue } from '../../platform/store';
-import { staticFilePath, staticFileUrl } from '../fs_utils';
+import { staticFilePath } from '../fs_utils';
+import { toAssetUrl, toAssetSrc } from '../../platform/assets';
 import TrackPlayer from './TrackPlayer';
 import { readDirectory, resolveAbsolutePath } from '../assetLoader';
 import levelLoader from '../levelLoader';
@@ -168,7 +169,7 @@ class AudioManager {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);
-        const fileUrl = staticFileUrl(`${sfxDirPath}/${fileName}`);
+        const fileUrl = toAssetUrl(staticFilePath(`levels/common/sfx/${fileName}`));
 
         sfxFileUrls[baseName] = sfxFileUrls[baseName]
           ? [...sfxFileUrls[baseName], fileUrl]
@@ -199,7 +200,7 @@ class AudioManager {
       const fileExtension = path.extname(fileName);
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);
-        const fileUrl = staticFileUrl(`${musicDirPath}/${fileName}`);
+        const fileUrl = toAssetUrl(staticFilePath(`levels/common/music/${fileName}`));
 
         musicFileUrls[baseName] = musicFileUrls[baseName]
           ? [...musicFileUrls[baseName], fileUrl]
@@ -233,7 +234,9 @@ class AudioManager {
       if (SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)) {
         const baseName = path.basename(fileName, fileExtension);
         const relativeFilePath = path.join(voiceOverDirPath, fileName);
-        const fileUrl = await resolveAbsolutePath(relativeFilePath);
+        const fileUrl = toAssetSrc(
+          await resolveAbsolutePath(relativeFilePath)
+        );
 
         // Initialize sound file url for our base name,
         // or add this file url to the existing list

@@ -1,6 +1,7 @@
 import path from 'path';
 import * as yup from 'yup';
 import { staticFilePath, staticFileUrl } from './fs_utils';
+import { toAssetSrc } from '../platform/assets';
 import db from './database';
 import config from '../config/config';
 import { getContext } from './context';
@@ -343,11 +344,11 @@ class LevelLoader {
 
     if (levelInfo.mission_icon) {
       const missionIconPath = path.join('images', levelInfo.mission_icon);
-      missionInfo.icon = await resolveAbsolutePath(missionIconPath);
+      missionInfo.icon = toAssetSrc(await resolveAbsolutePath(missionIconPath));
     } else {
       // use default mission icon
       const missionIconPath = path.join('images', 'mission_icon.png');
-      missionInfo.icon = await resolveAbsolutePath(missionIconPath);
+      missionInfo.icon = toAssetSrc(await resolveAbsolutePath(missionIconPath));
     }
 
     // Allow configuration of custom nav map sprite
