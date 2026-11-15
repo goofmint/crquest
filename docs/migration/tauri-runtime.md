@@ -24,9 +24,9 @@ Tauri ビルド (`npm run build:js:tauri` = `vite build --mode tauri`) は、`sr
 | `vite.config.mjs:150-176` | 出力形式は `cjs`。動的 import のチャンクは `tauri-game.js` で、入口 `index.js` は `require("./tauri-game.js")` で読む (既存テストがこれを固定している: `selection.test.js:80`)。webview に `require` は無いので、入口が最初にゲームを読む時点で `require is not defined` になる。これが #131 本文の症状である。 |
 | `selection.test.js:82` | `tauri-game.js` の先頭付近に `require("react")` が残ることを期待している (外部の裸の import は `require` のまま)。 |
 | `vite.config.mjs:41-52` | `isExternal` は `@tauri-apps/*` 以外の裸の指定子をすべて external にする。Tauri ではすべてバンドルが必要。 |
-| 解決元 | 裸の import のパッケージは `public/package.json` に宣言されている (react、jimp、pug、dexie、howler など)。ルート `package.json` には無い。Electron は実行時に `public/node_modules` から `require` するので問題にならなかったが、バンドルする場合は Vite の解決元がルートの `node_modules` になるため、`public/node_modules` を探索対象に加える必要がある (ルートの `node_modules` にたまたま `react` などの一部があることに頼ってはいけない)。 |
+| 解決元 | 裸の import のパッケージは `public/package.json` に宣言されている (react、jimp、pug、dexie、howler など)。ルート `package.json` にも一部の同名パッケージがあり、バージョンが異なるものがある (例: `pug` はルートが `^2.0.4`、`public/package.json:32` が `^3.0.2`)。Electron は実行時に `public/node_modules` の版を `require` する。バンドルでは Vite の解決元がルートの `node_modules` になるため、何も指定しないと、ルートにあるパッケージはルートの版 (`pug` 2 など) が選ばれ、無いものは解決できない。したがって `public/node_modules` を **先に** 探索させ、Electron と同じ版を取り込む必要がある。 |
 
-必要なこと: Tauri のときだけ、(a) 出力を `require` 不要の単一ファイル (IIFE、`inlineDynamicImports`) にする (動的 import は `initPlatform` 後に評価するために残す)、(b) 裸の import をバンドルする、(c) `public/node_modules` を解決対象に加える。`clean_build_output.js` の `GENERATED_PATHS` (`tauri-game.js`) は不要になれば更新する。
+必要なこと: Tauri のときだけ、(a) `require` を使わない出力形式にする。ただし、ゲーム本体の評価が `await initPlatform()` の後になる境界 (`tauriIndex.jsx:11-16`) は維持する (`config.js` が読み込み時に `paths` を読むため。`tauri/state.js` は初期化前に throw する)。`inlineDynamicImports` / 単一ファイル化は、動的 import 先が入口の評価時に先に実行される恐れがあるので、境界を保てると確認できるまで採用しない (ES モジュール + コード分割 + `<script type="module">` などを比較する)、(b) 裸の import をバンドルする、(c) `public/node_modules` を解決対象に加える。`clean_build_output.js` の `GENERATED_PATHS` (`tauri-game.js`) は不要になれば更新する。
 
 ### B2. Node 組み込みモジュール (S1)
 
@@ -154,7 +154,7 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 
 ### W1. Tauri ビルドの出力形式と依存解決 (B1)
 
-- 内容: `--mode tauri` のとき、IIFE の単一ファイルにし (`inlineDynamicImports`)、裸の import をバンドルし、`public/node_modules` を解決対象に加える。`selection.test.js` の期待 (`tauri-game.js`、`require("react")`) を更新する。
+- 内容: `--mode tauri` のとき、裸の import をバンドルし、`public/node_modules` を **優先して** 解決する (ルートの `pug` 2 などが入らず、`public/package.json` の版が入る)。`require` を使わない出力形式にしつつ、`await initPlatform()` のあとに `import('./index.jsx')` が評価される境界を維持する (単一ファイル化と `inlineDynamicImports` は、この境界を保てると確認できるまで使わない)。`selection.test.js:80,82` の期待 (`./tauri-game.js` の `require`、`require("react")`) は出力形式に合わせて更新し、境界 (初期化前にゲーム本体が評価されないこと) と、`pug` などの解決先 (ビルド出力の検査) をテストで確認する。
 - 規模: 約 4 ファイル (`vite.config.mjs`、`selection.test.js`、`tasks/clean_build_output.js` とそのテスト、`.gitignore` に変更があれば)。
 - 依存: なし (最初に着手)。
 - Electron リスク: なし (`platformTarget === 'tauri'` のときだけ)。`public/index.js` の SHA-256 が変更前と同一であること。
@@ -269,7 +269,9 @@ W1 -> W2 (ビルドが `require` なしで完成する) -> W3 (`remote` 除去�
 ```sh
 npm ci
 npm test
-npm run build:all && git status --short      # Electron の出力が変わっていない (public/index.js の SHA-256 が変更前と同一)
+shasum -a 256 public/index.js > /tmp/index.js.before   # 変更前の SHA-256 を保存 (build:all の前。public/index.js が無ければ先に一度ビルドする)
+npm run build:all && git status --short                # 追跡対象の出力に変更が無いこと
+shasum -a 256 -c /tmp/index.js.before                  # public/index.js が変更前と同一であること (このファイルは .gitignore 対象で git status に出ない)
 npm start                                    # Electron が従来どおり起動し、タイトル画面からゲームが始められる
 ```
 
@@ -280,8 +282,6 @@ npm run build:js:tauri
 grep -n 'require("' public/index.js | head   # react などの外部モジュールや ./tauri-game.js への require が残っていないこと
 ls public/*.js                               # index.js (と、あれば tauri-game.js)
 ```
-
-- `npm run tauri -- dev` を起動し、webview の開発者ツール (`Cmd+Option+I`) のコンソールに `require is not defined` が出ない。
 
 ### マイルストーン 1 (W1〜W5、W7: タイトル画面)
 
