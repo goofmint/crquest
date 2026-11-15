@@ -28,6 +28,18 @@ describe('platform paths', () => {
     expect(remote.app.getVersion).not.toHaveBeenCalled();
   });
 
+  it('getResourceDirPath is the static root (staticFilePath(\'.\'))', async () => {
+    const paths = await loadPaths({ remote: makeRemote({}), fixtureDir: 'with-version' });
+    expect(paths.getResourceDirPath()).toBe(path.join(FIXTURES, 'with-version.json'));
+    expect(paths.staticFilePath).toHaveBeenCalledWith('.');
+  });
+
+  it('getResourceDirPath throws when the static root is empty', async () => {
+    const paths = await loadPaths({ remote: makeRemote({}), fixtureDir: 'with-version' });
+    paths.staticFilePath.mockReturnValue('');
+    expect(() => paths.getResourceDirPath()).toThrow(/non-empty string/);
+  });
+
   it('returns appData, userData and app version from remote.app', async () => {
     const remote = makeRemote({ appData: '/a', userData: '/u', version: '9.9.9' });
     const paths = await loadPaths({ remote, fixtureDir: 'with-version' });
