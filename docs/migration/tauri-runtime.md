@@ -207,6 +207,17 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 - Electron リスク: 低〜中。`index.jsx` を触る。メニュー構築は移すだけで、項目・順序・タイミング (`Menu.setApplicationMenu` を最後に呼ぶ) を変えない。`document.readyState` の判定は、Electron では常に `loading` の間に評価されるので従来どおり。
 - 代替案: `index.jsx` を触らず、Tauri 専用の入口 (`tauriGame.jsx`) に描画ロジックを複製する。Electron のリスクは無いが重複が約 60 行ある。
 
+#### W3 の実施結果 (#134)
+
+- メニュー: `index.jsx` から `require('electron')` / `remote` / `Menu` / `MenuItem` を除いた。`index.jsx` は項目の定義 (`{ label, click }` の配列。dev のときだけ Spector.js の 2 項目を末尾に追加) を作り、`platform/menu.js` の `addHelpMenuItems(items)` に渡す。Electron 実装は元のコードを移したもので、Help サブメニューの取得、"Toggle Developer Tools" が既にあれば追加しない判定、項目の追加順、最後の `Menu.setApplicationMenu` の順序と呼び出し時点 (ゲーム本体の評価中、描画の前) を変えていない。
+- Tauri 実装 `platform/tauri/menu.js`: D2 の決定どおり、何もしない関数である (コメントで明示)。JS からアプリケーションメニューを置き換えると、`close.rs` が作る macOS のメニュー (Cmd+Q の終了確認) を壊すため、W10 まで追加しない。DevTools は `tauriShell.js` のショートカットで使える。
+- `DOMContentLoaded`: `src/js/app/common/documentReady.js` の `onDocumentReady(document, callback)` が、`readyState === 'loading'` のときだけイベントを待ち、それ以外は即座に実行する。Electron では常に `loading` の間に評価されるので従来どおり、Tauri (動的 import の後) では即座に描画の準備が進む。
+- `vite.config.mjs` の `platformModules` に `menu` を追加した (Tauri のビルドでは `platform/menu` が `platform/tauri/menu` に差し替わる)。
+- Electron の出力: `index.jsx` が変わるのでバンドルはバイト単位では一致しない。変更前 (HEAD) と変更後の `public/index.js` を diff し、差分が次だけであることを確認した。(1) `index.jsx` 内の `Menu` がなくなったことによる React コンポーネントの内部名 `Menu$1` -> `Menu` の変更 (意味は同じ)、(2) `remote.Menu` の処理が `platform/menu.js` に移ったこと、(3) `document.addEventListener("DOMContentLoaded", ...)` が `onDocumentReady(document, ...)` になったこと。`require("electron")` はバンドル冒頭に 1 回だけ残る (`platform/devtools.js` などと共有)。
+- テスト: `src/test/app/platform/menu.test.js` (Electron 実装。`remote` をモック: 項目の順序、`setApplicationMenu` が最後、既存項目があるときは追加しない、Help が無いときは例外)、`src/test/app/platform/tauri/menu.test.js` (Tauri 実装は何も呼ばない)、`src/test/app/common/documentReady.test.js` (`loading` / `interactive` / `complete`、`index.jsx` に `electron` / `remote` が無いこと)。`selection.test.js` の一致検査に `menu` を追加した。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): Help メニューに "Toggle Developer Tools"、"Sync Bundled Assets"、"Open User Data"、"Open Save File" の 4 項目がこの順で並び (dev のときは続けて "Show Spector.js UI"、"Capture Frame with Spector.js")、従来どおり動く。Tauri (`npm run tauri -- dev`): 起動してタイトル画面が描画されること (ただし W4/W5 が未完了だと音声の読み込みで止まる可能性がある)。Help メニューの追加項目は出ない (D2。W10 で実装)。macOS で Cmd+Q の確認ダイアログが従来どおり出る。
+- 残り: メニュー項目の Tauri 実装は W10。Windows の webview での確認は未実施。
+
 ### W4. store を使う呼び出し元の非同期化 (B4、D1)
 
 - 内容: Electron の `platform/store.js` に `getValueAsync` / `setValueAsync` / `hasValueAsync` / `deleteValueAsync` を足す (同期実装を包む)。`ContextProvider.jsx:102`、`audio/index.js:111,131`、`common/context/index.js:77`、`ClearDataButton.jsx:14,16` を `*Async` に切り替える。失敗は握りつぶさずコンソールとダイアログに出す。

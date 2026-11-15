@@ -119,7 +119,7 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 | Electron (従来) | Tauri 実装 |
 | --- | --- |
-| `src/js/app/platform/{paths,dialog,store,fs,shell,exec,devtools,env}.js` | `src/js/app/platform/tauri/<同名>.js` |
+| `src/js/app/platform/{paths,dialog,store,fs,shell,exec,devtools,menu,env}.js` | `src/js/app/platform/tauri/<同名>.js` |
 | `src/js/app/platform/init.js` (新規。何もしない `initPlatform()`) | `src/js/app/platform/tauri/init.js` |
 | (なし) | `tauri/errors.js` (エラー変換)、`tauri/state.js` (`initPlatform` が読んだ値) |
 

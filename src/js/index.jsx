@@ -5,11 +5,12 @@ import audioManager from './app/common/audio/index';
 import { isDev } from './app/platform/env';
 import { syncBundledAssets } from './app/common/assetLoader';
 import extendYup from './app/common/extendYup';
-const { remote } = require('electron');
 import config from './app/config/config';
 import { showAlert } from './app/platform/dialog';
 import { openExternal, openPath } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
+import { addHelpMenuItems } from './app/platform/menu';
+import { onDocumentReady } from './app/common/documentReady';
 
 extendYup();
 
@@ -86,80 +87,55 @@ if (isDev()) {
 }
 
 // Add Menu Items once game launches
-const { Menu, MenuItem } = remote;
-const applicationMenu = Menu.getApplicationMenu();
-const helpMenuItem = applicationMenu.items.find(
-  menuItem => menuItem.role === 'help'
-);
+const helpMenuItems = [
+  {
+    label: 'Toggle Developer Tools',
+    click: () => {
+      console.warn(DEVTOOLS_WARNING);
+      toggleDevTools();
+    },
+  },
+  {
+    label: 'Sync Bundled Assets',
+    click: async () => {
+      console.log('Syncing bundled assets...');
+      await syncBundledAssets();
+      console.log('Bundled assets synced!');
+    },
+  },
+  {
+    label: 'Open User Data',
+    click: () => {
+      openPath(config.userDataPath);
+    },
+  },
+  {
+    label: 'Open Save File',
+    click: () => {
+      openPath(config.saveFilePath);
+    },
+  },
+];
 
-const devToolsLabel = 'Toggle Developer Tools';
-const devToolsItem = helpMenuItem.submenu.items.find(
-  item => item.label === devToolsLabel
-);
-
-if (!devToolsItem) {
-  helpMenuItem.submenu.append(
-    new MenuItem({
-      label: devToolsLabel,
+if (isDev()) {
+  helpMenuItems.push(
+    {
+      label: 'Show Spector.js UI',
       click: () => {
-        console.warn(DEVTOOLS_WARNING);
-        toggleDevTools();
+        spector.displayUI();
       },
-    })
-  );
-
-  helpMenuItem.submenu.append(
-    new MenuItem({
-      label: 'Sync Bundled Assets',
-      click: async () => {
-        console.log('Syncing bundled assets...');
-        await syncBundledAssets();
-        console.log('Bundled assets synced!');
-      },
-    })
-  );
-
-  helpMenuItem.submenu.append(
-    new MenuItem({
-      label: 'Open User Data',
+    },
+    {
+      label: 'Capture Frame with Spector.js',
       click: () => {
-        openPath(config.userDataPath);
+        console.log('Spector.js capture starting...');
+        spector.startCapture(document.querySelector('canvas'));
       },
-    })
+    }
   );
-
-  helpMenuItem.submenu.append(
-    new MenuItem({
-      label: 'Open Save File',
-      click: () => {
-        openPath(config.saveFilePath);
-      },
-    })
-  );
-
-  if (isDev()) {
-    helpMenuItem.submenu.append(
-      new MenuItem({
-        label: 'Show Spector.js UI',
-        click: () => {
-          spector.displayUI();
-        },
-      })
-    );
-
-    helpMenuItem.submenu.append(
-      new MenuItem({
-        label: 'Capture Frame with Spector.js',
-        click: () => {
-          console.log('Spector.js capture starting...');
-          spector.startCapture(document.querySelector('canvas'));
-        },
-      })
-    );
-  }
 }
 
-Menu.setApplicationMenu(applicationMenu);
+addHelpMenuItems(helpMenuItems);
 
 const appDependencies = {
   dom: {
@@ -183,7 +159,7 @@ function attemptAppRender() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+onDocumentReady(document, () => {
   appDependencies.dom.loaded = true;
 
   attemptAppRender();

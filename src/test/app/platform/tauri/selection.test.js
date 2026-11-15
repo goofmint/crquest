@@ -4,7 +4,7 @@ import { build } from 'vite';
 
 const root = path.resolve(__dirname, '../../../../..');
 const platformDir = path.join(root, 'src/js/app/platform');
-const MODULES = ['paths', 'dialog', 'store', 'fs', 'shell', 'exec', 'devtools', 'env', 'init'];
+const MODULES = ['paths', 'dialog', 'store', 'fs', 'shell', 'exec', 'devtools', 'menu', 'env', 'init'];
 
 // Additional exports of Tauri modules that the Electron module does not have.
 const TAURI_ONLY = {};
