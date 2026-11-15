@@ -25,10 +25,18 @@ describe('dexie database', () => {
   test('stores rows and enforces the unique compound index', async () => {
     await db.open();
     await db.completedObjectives.clear();
-    const row = { objectiveName: 'o', missionName: 'm', completedOn: 1, xp: 5 };
-    const id = await db.completedObjectives.add(row);
+    const makeRow = () => ({
+      objectiveName: 'o',
+      missionName: 'm',
+      completedOn: 1,
+      xp: 5,
+    });
+    const id = await db.completedObjectives.add(makeRow());
     expect(typeof id).toBe('number');
-    await expect(db.completedObjectives.add(row)).rejects.toBeDefined();
+    // A fresh row without an id, so only the compound unique index can fail
+    await expect(db.completedObjectives.add(makeRow())).rejects.toMatchObject({
+      name: 'ConstraintError',
+    });
     expect(await db.completedObjectives.count()).toBe(1);
     await db.completedObjectives.clear();
   });
