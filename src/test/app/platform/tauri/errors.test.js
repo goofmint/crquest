@@ -18,6 +18,10 @@ describe('toError', () => {
     expect(toError('The system cannot find the path specified. (os error 3)').code).toBe('ENOENT');
   });
 
+  test('detects a non-directory as ENOTDIR', () => {
+    expect(toError('Not a directory (os error 20)').code).toBe('ENOTDIR');
+  });
+
   test('does not invent a code for other failures', () => {
     const error = toError('forbidden path: /etc/passwd');
     expect(error.message).toBe('forbidden path: /etc/passwd');

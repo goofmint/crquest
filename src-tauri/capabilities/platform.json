@@ -237,6 +237,7 @@
     "store:allow-has",
     "store:allow-delete",
     "store:allow-save",
+    "store:allow-reload",
     {
       "identifier": "opener:allow-open-url",
       "allow": [

@@ -36,7 +36,7 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 | `fs:allow-copy-file` / `remove` | WRITE | `copyAsync` / `removeAsync` / `ClearDataButton` の `remove` (セーブデータ削除) |
 | `dialog:allow-open` | なし (コマンド単位) | 拡張ディレクトリ選択 (`showDirectoryDialog`) |
 | `dialog:allow-message` | なし | 確認 / 警告ダイアログ (`showConfirm` / `showAlert`)。plugin の `confirm` / `message` はこのコマンドを使う |
-| `store:allow-load` / `get` / `set` / `has` / `delete` / `save` | なし (store は resource id 経由で、パス scope を持たない) | `platform/store`。`clear` / `reset` / `entries` / `keys` / `values` / `length` / `reload` / `get_store` は使わないので付けない |
+| `store:allow-load` / `get` / `set` / `has` / `delete` / `save` / `reload` | なし (store は resource id 経由で、パス scope を持たない) | `platform/store`。`reload` は読み込み失敗の検出に使う (3.3 章)。`clear` / `reset` / `entries` / `keys` / `values` / `length` / `get_store` は使わないので付けない |
 | `opener:allow-open-url` | `https://*`、`http://*` | 外部リンク (`openExternal`)。`file:` や独自スキームは許可しない |
 | `opener:allow-open-path` | WRITE と同じ 2 つのディレクトリ | メニュー "Open User Data" / "Open Save File" (`openPath`) |
 | `os:allow-platform` | なし | 他の os 権限 (arch, version, locale, hostname など) は付けない |
@@ -75,7 +75,8 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 - シェルは使わない (`std::process::Command`)。引数は 1 つずつ渡るので、クォートやインジェクションの問題が無い。
 - `env` を渡すと環境全体を置き換える (Node の `env` オプションと同じ)。
 - 標準入力は閉じる (`/dev/null`)。
-- Node の `timeout` は SIGTERM、こちらは強制終了 (Unix は SIGKILL) である。SIGTERM を握りつぶす子プロセスも止まる。孫プロセスは止めない。
+- 出力はパイプではなく一時ファイル (権限 0600、終了時に削除) に書かせる。読み取りスレッドが無いので、孫プロセスが出力を握ったままでも、タイムアウトや `maxBuffer` 超過で確実に戻る。サイズは 10 ms ごとに確認する (超過分の書き込みが少し進むことがある)。失敗時に返す出力は `maxBuffer` バイトまでに切る。
+- Node の `timeout` は SIGTERM、こちらは強制終了 (Unix は SIGKILL) である。SIGTERM を握りつぶす子プロセスも止まる。Unix では子をプロセスグループのリーダーとして起動し、グループごと kill する (孫が書き続けない)。Windows は子プロセスだけを kill する。
 - 出力は UTF-8 として解釈する (不正なバイトは U+FFFD)。
 - `command_exists` は Rust 側の PATH 探索 (実行可能なファイルがあるか。Windows は `PATHEXT` を試す) で、`/bin/sh -c 'command -v'` / `where` は呼ばない。シェルの組み込みコマンドやエイリアスは見つけない。
 
@@ -90,7 +91,7 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 照合の規則は次のとおり。
 
-- 照合対象は、ディレクトリ部と末尾の `.exe` / `.cmd` を除いたファイル名 (大文字小文字は区別しない)。`.bat` は除かない (= 拒否される)。
+- 照合対象は、ディレクトリ部と末尾の `.exe` を除いたファイル名 (大文字小文字は区別しない)。`.cmd` / `.bat` は除かない (= 拒否される。cmd.exe が引数を再解釈する問題 (BatBadBut 系) を避けるため)。このため Windows の `npm.cmd` は実行できない。代替は `node` で npm の CLI スクリプト (`npm-cli.js`) を直接実行することで、実装はしていない。
 - ディレクトリ部のある `program` は絶対パスのみ。`./git` や `bin/git` は拒否する。
 - ディレクトリ部の無い名前は OS の PATH 解決に任せる。
 - したがって、学習者が設定で指定する実行ファイルのパス (`TQ_PYTHON_EXE`、`TQ_GIT_EXE`、`isExecutableValid` で検証する node など。いずれも `public/content` の validator が `helper.exec(path, args)` に渡す) は、ファイル名が上のパターンに合えば動く (例: `/opt/homebrew/bin/python3.11`、`C:\Program Files\Git\cmd\git.exe`)。`py.exe`、`python-3.12` や `pypy`、`pwsh` など、別名の実行ファイルは拒否される。拒否されて困る場合はパターンを capability に追加する。
@@ -151,8 +152,8 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 
 - `paths`: `getAppDataPath` は `configDir()` (Electron の `appData` と同じ場所)。`getUserDataPath` は `<appData>/terminalquest` (Electron の `userData` と同じ。既存のセーブファイルの位置を保つための互換値)。`getAppVersion` と `getGamePackageVersion` は `getVersion()` を返す。`tauri.conf.json` の `version` が `public/package.json` を指すため、後者の定義と一致する。ファイルは読まない。開発時に Electron のバージョンが返る (Electron の `getAppVersion`) ことは再現しない。
 - `dialog`: 確認ダイアログは `kind: 'info'` (Tauri に question 種別が無い)。`buttonLabel` は無視する。ディレクトリ選択は plugin が fs の実行時 scope に追加する (`recursive: true`)。キャンセルは `undefined`。
-- `store`: `config.json` を plugin の保存先 (`$APPDATA/<identifier>`) に作る。Electron の `userData/config.json` からの移行はしない。書き込みのたびに `save()` する。
-- `fs`: plugin のエラー文字列を `Error` に変換し、存在しないパスは `code: 'ENOENT'` を付ける (他の Node エラーコードは再現しない)。`readFile` (エンコーディング無し) は `Buffer` ではなく `Uint8Array`。UTF-8 以外のエンコーディングは明示的に失敗する。`stat` / `lstat` は `isFile` / `isDirectory` / `isSymbolicLink` / `size` / `mtime` / `mtimeMs` だけを持つ。`listAsync` はパス必須。`copyAsync` は上書き無しで既存の対象があれば `EEXIST`。
+- `store`: `config.json` を plugin の保存先 (`$APPDATA/<identifier>`) に作る。plugin の `load()` は読み込み中のエラー (壊れた JSON、権限) をすべて無視して空のストアを返し、次の `save` で上書きしてしまう。そのため `load()` の直後に `reload({ ignoreDefaults: true })` で読み直し、ファイルが無い場合 (初回) だけを許容し、それ以外は reject する (開いたストアは `close()` し、失敗は保持しない)。Electron の `userData/config.json` からの移行はしない。書き込みのたびに `save()` する。
+- `fs`: plugin のエラー文字列を `Error` に変換し、存在しないパスは `code: 'ENOENT'` を付ける (他の Node エラーコードは再現しない)。`readFile` (エンコーディング無し) は `Buffer` ではなく `Uint8Array`。UTF-8 以外のエンコーディングは明示的に失敗する。`stat` / `lstat` は `isFile` / `isDirectory` / `isSymbolicLink` / `size` / `mtime` / `mtimeMs` だけを持つ。`listAsync` はパス必須。`copyAsync` は上書き無しで既存の対象 (ファイルもディレクトリも) があれば `EEXIST`。コピー先がコピー元自身またはその内側なら、何も作らずに reject する (パスは字句的に比較し、大文字小文字は区別しない)。`existsAsync` / `listAsync` / `readAsync` / `removeAsync` は `ENOENT` だけを「存在しない」と扱い、他のエラーは伝播する。
 - `shell`: `openExternal` は http(s) のみ、`openPath` はユーザーデータ配下のみ (capability scope)。
 - `exec`: `run` / `commandExists` は 2 章の command を呼ぶ。失敗時の `Error` は `code` / `killed` / `signal` / `stdout` / `stderr` / `kind` を持つ。シェル文字列の `exec` は `"<パス>" <引数>` の形だけを解釈する。引数に使える文字は `A-Z a-z 0-9 _ @ % + = : , . / -` のみで、それ以外 (クォート、空白、`;` `|` `$` など) と、先頭が `"` でない文字列は、何も実行せずに拒否する。
 - `devtools`: Rust コマンドは呼び出し元のウィンドウに作用する (アプリは 1 ウィンドウ)。debug ビルドのみ。release ビルドでは `devtools` feature を有効にしていない (macOS で非公開 API を使うため) ので拒否する。

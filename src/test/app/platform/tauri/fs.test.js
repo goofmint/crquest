@@ -1,6 +1,5 @@
 const mocks = vi.hoisted(() => ({
   copyFile: vi.fn(),
-  exists: vi.fn(),
   lstat: vi.fn(),
   mkdir: vi.fn(),
   readDir: vi.fn(),
@@ -29,7 +28,11 @@ function useVirtualFs(files = {}, dirs = ['/']) {
   const fileMap = new Map(Object.entries(files));
   const dirSet = new Set(dirs);
   const isThere = p => fileMap.has(p) || dirSet.has(p);
-  mocks.exists.mockImplementation(async p => isThere(p));
+  mocks.lstat.mockImplementation(async p => {
+    if (fileMap.has(p)) return info('file');
+    if (dirSet.has(p)) return info('dir');
+    throw 'No such file or directory (os error 2)';
+  });
   mocks.stat.mockImplementation(async p => {
     if (fileMap.has(p)) return info('file');
     if (dirSet.has(p)) return info('dir');
@@ -119,15 +122,42 @@ describe('Node fs.promises family', () => {
 
 describe('jetpack family', () => {
   test('existsAsync: false / dir / file / other', async () => {
-    mocks.exists.mockResolvedValueOnce(false);
+    mocks.stat.mockRejectedValueOnce('No such file or directory (os error 2)');
     await expect(fs.existsAsync('/n')).resolves.toBe(false);
-    mocks.exists.mockResolvedValue(true);
     mocks.stat.mockResolvedValueOnce(info('dir'));
     await expect(fs.existsAsync('/d')).resolves.toBe('dir');
     mocks.stat.mockResolvedValueOnce(info('file'));
     await expect(fs.existsAsync('/f')).resolves.toBe('file');
     mocks.stat.mockResolvedValueOnce(info('other'));
     await expect(fs.existsAsync('/o')).resolves.toBe('other');
+  });
+
+  test('only ENOENT means missing: other errors propagate from every function', async () => {
+    const denied = 'Permission denied (os error 13)';
+    mocks.stat.mockRejectedValue(denied);
+    mocks.lstat.mockRejectedValue(denied);
+    await expect(fs.existsAsync('/p')).rejects.toThrow('Permission denied');
+    await expect(fs.listAsync('/p')).rejects.toThrow('Permission denied');
+    await expect(fs.removeAsync('/p')).rejects.toThrow('Permission denied');
+    mocks.readTextFile.mockRejectedValue(denied);
+    mocks.readFile.mockRejectedValue(denied);
+    await expect(fs.readAsync('/p')).rejects.toThrow('Permission denied');
+    await expect(fs.readAsync('/p', 'buffer')).rejects.toThrow('Permission denied');
+    await expect(fs.readAsync('/p', 'json')).rejects.toThrow('Permission denied');
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  test('readAsync: a file that disappears (ENOENT from the read) is undefined', async () => {
+    mocks.readTextFile.mockRejectedValue('No such file or directory (os error 2)');
+    await expect(fs.readAsync('/gone')).resolves.toBeUndefined();
+    mocks.readFile.mockRejectedValue('No such file or directory (os error 2)');
+    await expect(fs.readAsync('/gone', 'buffer')).resolves.toBeUndefined();
+  });
+
+  test('listAsync maps a plugin "Not a directory" failure to ENOTDIR', async () => {
+    mocks.stat.mockResolvedValue(info('dir'));
+    mocks.readDir.mockRejectedValue('Not a directory (os error 20)');
+    await expect(fs.listAsync('/x')).rejects.toMatchObject({ code: 'ENOTDIR' });
   });
 
   test('listAsync: undefined when missing, names for a directory, ENOTDIR for a file', async () => {
@@ -169,6 +199,7 @@ describe('jetpack family', () => {
     const { fileMap } = useVirtualFs({ '/s': 'data', '/t': 'old' });
     await expect(fs.copyAsync('/nope', '/x')).rejects.toMatchObject({ code: 'ENOENT' });
     await expect(fs.copyAsync('/s', '/t')).rejects.toMatchObject({ code: 'EEXIST' });
+    expect(mocks.copyFile).not.toHaveBeenCalled();
     await fs.copyAsync('/s', '/t', { overwrite: true });
     expect(fileMap.get('/t')).toBe('data');
     await fs.copyAsync('/s', '/new');
@@ -180,6 +211,37 @@ describe('jetpack family', () => {
     await fs.copyAsync('/src', '/dst');
     expect(fileMap.get('/dst/a')).toBe('1');
     expect(fileMap.get('/dst/sub/b')).toBe('2');
+  });
+
+  test('copyAsync: an existing destination directory is refused without overwrite, with no mutation', async () => {
+    const { fileMap } = useVirtualFs({ '/src/a': '1', '/dst/old': 'x' }, ['/', '/src', '/dst']);
+    await expect(fs.copyAsync('/src', '/dst')).rejects.toMatchObject({ code: 'EEXIST' });
+    expect(mocks.mkdir).not.toHaveBeenCalled();
+    expect(mocks.copyFile).not.toHaveBeenCalled();
+    await fs.copyAsync('/src', '/dst', { overwrite: true });
+    expect(fileMap.get('/dst/a')).toBe('1');
+    expect(fileMap.get('/dst/old')).toBe('x');
+  });
+
+  test.each([
+    ['/src', '/src'],
+    ['/src', '/src/'],
+    ['/src', '/src/inner'],
+    ['/src', '/src/inner/deeper'],
+    ['/src/', '/src/../src/x'],
+    ['C:\\Src', 'c:\\src\\inner'],
+  ])('copyAsync rejects %s -> %s before touching anything', async (from, to) => {
+    useVirtualFs({}, ['/', '/src']);
+    await expect(fs.copyAsync(from, to, { overwrite: true })).rejects.toThrow(/onto itself or into itself/);
+    expect(mocks.mkdir).not.toHaveBeenCalled();
+    expect(mocks.copyFile).not.toHaveBeenCalled();
+    expect(mocks.stat).not.toHaveBeenCalled();
+  });
+
+  test('copyAsync allows a sibling whose name starts with the source name', async () => {
+    const { fileMap } = useVirtualFs({ '/src/a': '1' }, ['/', '/src']);
+    await fs.copyAsync('/src', '/src2');
+    expect(fileMap.get('/src2/a')).toBe('1');
   });
 
   test('removeAsync: no-op for a missing path, recursive otherwise', async () => {

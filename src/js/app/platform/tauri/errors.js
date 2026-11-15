@@ -12,6 +12,8 @@
 const NOT_FOUND_PATTERN =
   /os error (2|3)\b|No such file or directory|cannot find the (file|path) specified/i;
 
+const NOT_DIRECTORY_PATTERN = /os error (20|267)\b|Not a directory|directory name is invalid/i;
+
 export function toError(reason) {
   if (reason instanceof Error) {
     return reason;
@@ -20,6 +22,8 @@ export function toError(reason) {
     const error = new Error(reason);
     if (NOT_FOUND_PATTERN.test(reason)) {
       error.code = 'ENOENT';
+    } else if (NOT_DIRECTORY_PATTERN.test(reason)) {
+      error.code = 'ENOTDIR';
     }
     return error;
   }

@@ -17,11 +17,13 @@
  *   size, mtime, mtimeMs }` (mtime is a Date; mtimeMs is NaN when unknown).
  * - `listAsync` requires a path (there is no working directory to default to).
  * - `copyAsync` copies files and directories recursively; without
- *   `overwrite: true` an existing target rejects with `code: 'EEXIST'`.
+ *   `overwrite: true` an existing target (file or directory) rejects with
+ *   `code: 'EEXIST'`, and a destination that is the source or inside it
+ *   rejects before anything is created. Only ENOENT counts as "missing" in
+ *   the jetpack-style functions; every other error propagates.
  */
 import {
   copyFile,
-  exists as pluginExists,
   lstat as pluginLstat,
   mkdir,
   readDir,
@@ -120,12 +122,23 @@ export async function lstat(path) {
 
 // --- fs-jetpack family (missing path is a normal value) -----------------
 
+// Only ENOENT means "missing". Every other error (permission, forbidden path,
+// I/O) propagates.
+async function orMissing(promise) {
+  try {
+    return await rejectAsError(promise);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
 export async function existsAsync(path) {
   assertPath(path);
-  if (!(await rejectAsError(pluginExists(path)))) {
-    return false;
-  }
-  const info = await rejectAsError(pluginStat(path));
+  const info = await orMissing(pluginStat(path));
+  if (info === undefined) return false;
   if (info.isDirectory) return 'dir';
   if (info.isFile) return 'file';
   return 'other';
@@ -154,14 +167,11 @@ export async function readAsync(path, returnAs = 'utf8') {
   if (!['utf8', 'buffer', 'json', 'jsonWithDates'].includes(returnAs)) {
     throw new Error(`Unknown return type: ${returnAs}`);
   }
-  if ((await existsAsync(path)) === false) {
-    return undefined;
-  }
   if (returnAs === 'buffer') {
-    return rejectAsError(pluginReadFile(path));
+    return orMissing(pluginReadFile(path));
   }
-  const text = await rejectAsError(readTextFile(path));
-  if (returnAs === 'utf8') {
+  const text = await orMissing(readTextFile(path));
+  if (text === undefined || returnAs === 'utf8') {
     return text;
   }
   try {
@@ -191,7 +201,31 @@ export async function writeAsync(path, data) {
   }
 }
 
-async function copyEntry(from, to, overwrite) {
+// Lexical normalization for the "destination inside source" check: forward
+// slashes, no trailing slash, `.` and `..` resolved, lower-cased (a
+// case-insensitive file system must not slip through; the cost is a
+// conservative rejection on case-sensitive ones).
+function comparablePath(path) {
+  const segments = [];
+  for (const segment of path.replace(/\\/g, '/').split('/')) {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') segments.pop();
+    else segments.push(segment);
+  }
+  return `/${segments.join('/')}`.toLowerCase();
+}
+
+function assertDestinationOutsideSource(from, to) {
+  const source = comparablePath(from);
+  const destination = comparablePath(to);
+  if (destination === source || destination.startsWith(`${source}/`)) {
+    throw new Error(
+      `Cannot copy "${from}" onto itself or into itself ("${to}")`
+    );
+  }
+}
+
+async function copyEntry(from, to) {
   const kind = await existsAsync(from);
   if (kind === false) {
     throw enoent(from);
@@ -199,12 +233,9 @@ async function copyEntry(from, to, overwrite) {
   if (kind === 'dir') {
     await rejectAsError(mkdir(to, { recursive: true }));
     for (const name of await readdir(from)) {
-      await copyEntry(joinPath(from, name), joinPath(to, name), overwrite);
+      await copyEntry(joinPath(from, name), joinPath(to, name));
     }
     return;
-  }
-  if (!overwrite && (await rejectAsError(pluginExists(to)))) {
-    throw alreadyExists(to);
   }
   await rejectAsError(mkdir(dirName(to), { recursive: true }));
   await rejectAsError(copyFile(from, to));
@@ -213,12 +244,23 @@ async function copyEntry(from, to, overwrite) {
 export async function copyAsync(from, to, options = {}) {
   assertPath(from);
   assertPath(to);
-  await copyEntry(from, to, options.overwrite === true);
+  assertDestinationOutsideSource(from, to);
+  const sourceKind = await existsAsync(from);
+  if (sourceKind === false) {
+    throw enoent(from);
+  }
+  // Same rule for a file and a directory destination: an existing target is
+  // an error unless `overwrite: true` (the check precedes any mutation).
+  if (options.overwrite !== true && (await existsAsync(to)) !== false) {
+    throw alreadyExists(to);
+  }
+  await copyEntry(from, to);
 }
 
 export async function removeAsync(path) {
   assertPath(path);
-  if (!(await rejectAsError(pluginExists(path)))) {
+  // lstat: a symbolic link (also a dangling one) is removed itself.
+  if ((await orMissing(pluginLstat(path))) === undefined) {
     return;
   }
   await rejectAsError(pluginRemove(path, { recursive: true }));

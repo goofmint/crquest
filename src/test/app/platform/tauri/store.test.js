@@ -10,6 +10,8 @@ function makeStore() {
     has: vi.fn(async key => data.has(key)),
     delete: vi.fn(async key => data.delete(key)),
     save: vi.fn(async () => {}),
+    reload: vi.fn(async () => {}),
+    close: vi.fn(async () => {}),
   };
 }
 
@@ -74,6 +76,45 @@ describe('async variants', () => {
     const mod = await loadModule();
     await expect(mod.setValueAsync('k', undefined)).rejects.toBeInstanceOf(TypeError);
     await expect(mod.setValueAsync('k', () => {})).rejects.toBeInstanceOf(TypeError);
+  });
+
+  test('reloads from disk with ignoreDefaults so read errors are reported', async () => {
+    const store = makeStore();
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+    await mod.getValueAsync('a');
+    expect(store.reload).toHaveBeenCalledWith({ ignoreDefaults: true });
+  });
+
+  test('a missing file on first run is tolerated', async () => {
+    const store = makeStore();
+    store.reload.mockRejectedValue('No such file or directory (os error 2)');
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+    await expect(mod.getValueAsync('a')).resolves.toBeUndefined();
+    expect(store.close).not.toHaveBeenCalled();
+  });
+
+  test('a corrupt or unreadable file rejects, closes the store and is not cached', async () => {
+    const bad = makeStore();
+    bad.reload.mockRejectedValue('expected value at line 1 column 1');
+    const good = makeStore();
+    mocks.load.mockResolvedValueOnce(bad).mockResolvedValueOnce(good);
+    const mod = await loadModule();
+    await expect(mod.setValueAsync('a', 1)).rejects.toThrow('expected value');
+    expect(bad.set).not.toHaveBeenCalled();
+    expect(bad.save).not.toHaveBeenCalled();
+    expect(bad.close).toHaveBeenCalledTimes(1);
+    await expect(mod.getValueAsync('a')).resolves.toBeUndefined();
+    expect(mocks.load).toHaveBeenCalledTimes(2);
+  });
+
+  test('concurrent first calls share one load', async () => {
+    const store = makeStore();
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+    await Promise.all([mod.getValueAsync('a'), mod.hasValueAsync('b')]);
+    expect(mocks.load).toHaveBeenCalledTimes(1);
   });
 
   test('a failed load is not cached', async () => {
