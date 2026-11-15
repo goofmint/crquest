@@ -666,11 +666,23 @@
 
     Promise.resolve(returned).then(
       value => {
+        // The real send is the clone check: cloning twice would run getters
+        // of the result twice.
         try {
-          assertCloneable('The result of the test function', value);
           scope.postMessage({ type: MESSAGE_RESULT, value });
         } catch (e) {
-          postVarsError(e, MESSAGE_RESULT_ERROR, '');
+          postVarsError(
+            e && e.name === 'DataCloneError'
+              ? new TypeError(
+                  `The result of the test function (${describeValue(value)}) cannot be ` +
+                    `returned from the code runner worker: only structured-cloneable ` +
+                    `values are supported (functions, classes and symbols are not): ` +
+                    safeMessage(e)
+                )
+              : e,
+            MESSAGE_RESULT_ERROR,
+            ''
+          );
         }
       },
       e => postVarsError(e, MESSAGE_RESULT_ERROR, '')
