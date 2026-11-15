@@ -1,0 +1,270 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "platform",
+  "description": "Least-privilege access for the platform layer (fs, dialog, store, opener, os). See docs/migration/tauri-platform.md",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-stat",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-lstat",
+      "allow": [
+        {
+          "path": "$RESOURCE"
+        },
+        {
+          "path": "$RESOURCE/**"
+        },
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-copy-file",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    "dialog:allow-open",
+    "dialog:allow-message",
+    "store:allow-load",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-has",
+    "store:allow-delete",
+    "store:allow-save",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://*"
+        },
+        {
+          "url": "http://*"
+        }
+      ]
+    },
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$CONFIG/terminalquest"
+        },
+        {
+          "path": "$CONFIG/terminalquest/**"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest"
+        },
+        {
+          "path": "$CONFIG/TerminalQuest/**"
+        }
+      ]
+    },
+    "os:allow-platform"
+  ]
+}
