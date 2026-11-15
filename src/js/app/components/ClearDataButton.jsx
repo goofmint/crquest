@@ -1,22 +1,29 @@
 import React from 'react';
-import { remove } from '../platform/fs';
+import { removeAsync } from '../platform/fs';
 import db from '../common/database';
-import { hasValue, deleteValue } from '../platform/store';
+import { hasValueAsync, deleteValueAsync } from '../platform/store';
 import { showConfirm } from '../platform/dialog';
 import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
+import { reportFailure } from '../common/reportFailure';
+import {
+  suppressPersistence,
+  resumePersistence,
+  flushPendingSaves,
+} from '../common/context';
 
-function clearStoreValues() {
+// Sequential, in schema order: the first failure stops the clearing.
+async function clearStoreValues() {
   const schemaDescription = describeSchema();
 
-  Object.entries(schemaDescription.fields).forEach(([fieldKey, field]) => {
-    if (hasValue(fieldKey)) {
+  for (const [fieldKey, field] of Object.entries(schemaDescription.fields)) {
+    if (await hasValueAsync(fieldKey)) {
       if (!field.meta || (field.meta && !field.meta.persistOnClearProgess)) {
-        deleteValue(fieldKey);
+        await deleteValueAsync(fieldKey);
       }
     }
-  })
+  }
 }
 
 export default class ClearDataButton extends React.Component {
@@ -40,20 +47,52 @@ export default class ClearDataButton extends React.Component {
     }
   }
 
+  // Only one erase at a time, from the first click until the reload: the flag
+  // is released when the user cancels or the erase fails (so it can be retried),
+  // and stays set after a successful erase (the window reloads).
   async clearUserData() {
+    if (this.erasing) {
+      return;
+    }
+    this.erasing = true;
+    let retryable = true;
+    try {
+      retryable = !(await this.runErase());
+    } finally {
+      if (retryable) {
+        this.erasing = false;
+      }
+    }
+  }
+
+  // Resolves true when the erase went through (reload pending), false when it
+  // was cancelled. Throws when it failed.
+  async runErase() {
     if (!(await this.confirmClear())) {
       console.log('aborting data clear...');
-      return;
+      return false;
     }
 
     // Upon confirmation, delete all user data and reload the window
     console.log('clearing data...');
 
     // Clear data stored on disk
-    clearStoreValues();
-
-    // Delete saved user code
-    remove(config.codeStoragePath);
+    // From here until the reload, setContext must not write saved fields back
+    // (see suppressPersistence). Saves already queued are finished first, so
+    // they cannot land after the deletion. Persistence is resumed only when
+    // clearing fails; on success the window reloads.
+    suppressPersistence();
+    try {
+      await flushPendingSaves();
+      await clearStoreValues();
+      // Delete saved user code (a missing path is a no-op, as with the former
+      // synchronous remove)
+      await removeAsync(config.codeStoragePath);
+    } catch (error) {
+      resumePersistence();
+      await reportFailure('Could not clear the saved game data', error);
+      throw error;
+    }
 
     // Drop IndexedDB database and reload browser window
     db.delete()
@@ -67,6 +106,8 @@ export default class ClearDataButton extends React.Component {
       .finally(() => {
         window.location.reload();
       });
+
+    return true;
   }
 
   render() {
