@@ -210,7 +210,7 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 #### W3 の実施結果 (#134)
 
 - メニュー: `index.jsx` から `require('electron')` / `remote` / `Menu` / `MenuItem` を除いた。`index.jsx` は項目の定義 (`{ label, click }` の配列。dev のときだけ Spector.js の 2 項目を末尾に追加) を作り、`platform/menu.js` の `addHelpMenuItems(items)` に渡す。Electron 実装は元のコードを移したもので、Help サブメニューの取得、"Toggle Developer Tools" が既にあれば追加しない判定、項目の追加順、最後の `Menu.setApplicationMenu` の順序と呼び出し時点 (ゲーム本体の評価中、描画の前) を変えていない。
-- Tauri 実装 `platform/tauri/menu.js`: D2 の決定どおり、何もしない関数である (コメントで明示)。JS からアプリケーションメニューを置き換えると、`close.rs` が作る macOS のメニュー (Cmd+Q の終了確認) を壊すため、W10 まで追加しない。DevTools は `tauriShell.js` のショートカットで使える。
+- Tauri 実装 `platform/tauri/menu.js` (W3 の時点。W10 で置き換え済み): D2 の決定どおり、何もしない関数である (コメントで明示)。JS からアプリケーションメニューを置き換えると、`close.rs` が作る macOS のメニュー (Cmd+Q の終了確認) を壊すため、W10 まで追加しない。DevTools は `tauriShell.js` のショートカットで使える。
 - `DOMContentLoaded`: `src/js/app/common/documentReady.js` の `onDocumentReady(document, callback)` が、`readyState === 'loading'` のときだけイベントを待ち、それ以外は即座に実行する。Electron では常に `loading` の間に評価されるので従来どおり、Tauri (動的 import の後) では即座に描画の準備が進む。
 - `vite.config.mjs` の `platformModules` に `menu` を追加した (Tauri のビルドでは `platform/menu` が `platform/tauri/menu` に差し替わる)。
 - Electron の出力: `index.jsx` が変わるのでバンドルはバイト単位では一致しない。変更前 (HEAD) と変更後の `public/index.js` を diff し、差分が次だけであることを確認した。(1) `index.jsx` 内の `Menu` がなくなったことによる React コンポーネントの内部名 `Menu$1` -> `Menu` の変更 (意味は同じ)、(2) `remote.Menu` の処理が `platform/menu.js` に移ったこと、(3) `document.addEventListener("DOMContentLoaded", ...)` が `onDocumentReady(document, ...)` になったこと。`require("electron")` はバンドル冒頭に 1 回だけ残る (`platform/devtools.js` などと共有)。
@@ -344,6 +344,26 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 規模: 約 8 ファイル (Rust、capability、`platform/tauri/menu.js`、テスト)。
 - 依存: W3、W5。
 - Electron リスク: なし (Tauri のみ)。
+
+#### W10 の実施結果 (#141)
+
+設計 (CodeRabbit の計画のうち、実コードと crate の版 (tauri 2.12.5、persisted-scope 2.4.3) で確認できたものを採用):
+
+- メニュー: `src-tauri/src/help_menu.rs`。macOS では `close::install_quit_menu` が設定したメニューの既存 Help サブメニュー (`HELP_SUBMENU_ID`) に、無効状態の項目を追加する (`set_menu` は呼ばないので `quit-with-confirmation` はそのまま)。Windows / Linux では Tauri 2.12.5 の Builder が既定メニューを作らない (`app.rs` の既定メニューは macOS のみ) ので、Help だけのメニューを設定する (メニューバーに Help だけが出る。以前は何も無かった)。項目は Electron と同じ順序と文言 (Toggle Developer Tools、Sync Bundled Assets、Open User Data、Open Save File)。
+- クリック: `on_menu_event` が項目 ID を `help-menu-click` イベント (宛先 `main`) として転送する。JS (`platform/tauri/menu.js`) は `listen` を先に呼び、完了してから `enable_help_menu` を呼ぶので、listener が無い状態でクリックされることは無い (Vitest で呼び出し順を固定)。ID・ラベル・イベント名は Rust と JS で同じ文字列を使い、Vitest が両ファイルの一致を検査する。
+- 各項目: Sync は共通の `click` (`index.jsx` の配列) を再利用する。Toggle は `platform/devtools` を直接呼ぶ (debug ビルドのみ項目を作る。release の DevTools コマンドは常に失敗するため、Electron と違い release では項目を出さない)。Open User Data / Open Save File は、共通の callback が指す互換パス (`$CONFIG/terminalquest`、`config.saveFilePath`) が Tauri の実データの場所と異なるので使わない。実際の store (`$APPDATA/config.json`、`$APPDATA` はアプリ識別子を含む。`resolve_store_path` で確認) の置き場である app data ディレクトリと `config.json` を opener で開く (capability は `$APPDATA` と `$APPDATA/config.json` の 2 件だけ。`**` なし)。store が未作成 (まだ何も保存していない) なら OS のエラーをダイアログに出す。失敗はすべてコンソールとダイアログに出し、握りつぶさない。
+- 項目にしないもの: dev 専用の Spector.js 2 項目 (Tauri の webview での動作が未確認のため。`items` に含まれていても Tauri では無視する)。
+- scope の永続化: `tauri-plugin-persisted-scope` 2.4.3 (feature `protocol-asset`) を fs の後に登録。plugin-dialog の `open({ directory: true })` は fs の scope と asset プロトコルの scope の両方に追加する (ソースで確認) ので、どちらも復元される。永続化の対象・リスクは `tauri-platform.md` 1.4 章に記録した (`.persisted-scope*`、静的 scope の絶対パスも保存、取消し API なし、失敗を通知しない、renderer の store からの到達)。
+- 変更しないもの: Electron のコードすべて (`index.jsx`、`platform/menu.js`)、`close.rs`。
+- テスト: Rust `help_menu.rs` (ID / ラベルの一意性、`quit-with-confirmation` と衝突しない、debug / release の項目、ID 判定。`cargo test`)。Vitest `platform/tauri/menu.test.js` (Tauri API をモック: listen → enable の順序、listen / enable の失敗の通知、各項目の動作、store 未作成の通知、不明な ID、Rust との ID 一致)。`tauriBoot.test.js` (起動時に `plugin:event|listen` が `enable_help_menu` より前に呼ばれる。`tauriBootBootstrap.mjs` に 2 つの IPC 応答を追加)。
+- Electron の出力: `vite build` (Electron) の `public/index.js` の SHA-256 が変更前 (main be3d647) と同一であることを確認した (`npm run build:tauri` の後に `npm run build:all` で作り直して比較)。
+- 検証できていないこと (実機のみ): ネイティブメニューの表示、macOS の Cmd+Q の確認、Help の追加項目の動作、persisted-scope が実際に再起動後の読み取りを許可すること。
+- 手動確認 (ユーザーが実施。`npm run tauri -- dev`):
+  1. Help メニューに "Toggle Developer Tools"、"Sync Bundled Assets"、"Open User Data"、"Open Save File" がこの順で出て、起動直後から有効 (グレーアウトしない)。Windows / Linux ではメニューバーに Help だけがある。
+  2. "Toggle Developer Tools" で DevTools が開閉する。"Sync Bundled Assets" でコンソールに `Syncing bundled assets...` と `Bundled assets synced!` が出る。"Open User Data" で `~/Library/Application Support/com.terminalquest.desktop` (OS ごとの app data) がファイラで開く。"Open Save File" で同ディレクトリの `config.json` が既定のアプリで開く (一度も保存していないとエラーダイアログが出る)。
+  3. macOS: Cmd+Q と、アプリメニューの Quit "Quit TerminalQuest" で、従来どおり確認ダイアログが出る (Cancel で継続、OK で終了)。ウィンドウを閉じても確認が出る。
+  4. 設定画面で拡張機能のディレクトリ (静的 scope の外、例: `~/Documents/quest-ext`) を選び、拡張機能が読み込めることを確認する。アプリを終了して再起動し、再選択せずに同じ拡張機能のファイルと画像が読み込める (fs とアセット画像の両方)。`~/Library/Application Support/com.terminalquest.desktop/.persisted-scope` と `.persisted-scope-asset` ができている。
+  5. 選んでいないディレクトリ (例: `~/Desktop`) は再起動後も読めない (許可が広がっていない)。
 
 ### W11. コード実行・検証の実機確認と修正 (B3 の Worker、B8)
 

@@ -21,6 +21,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-os = "2"
+tauri-plugin-persisted-scope = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-store = "2"
 
 [target."cfg(unix)".dependencies]

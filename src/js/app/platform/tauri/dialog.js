@@ -5,7 +5,9 @@
  * Differences from Electron: the message box has no "question" type (the
  * confirm box uses kind 'info'), and a directory chooser has no button label
  * (`buttonLabel` is accepted and ignored). The chosen directory is added to
- * the fs plugin's runtime scope (recursively) by the plugin.
+ * the fs plugin's runtime scope (recursively) by the plugin, and to the asset
+ * protocol scope; tauri-plugin-persisted-scope restores both after a restart
+ * (docs/migration/tauri-platform.md).
  */
 import { confirm, message, open } from '@tauri-apps/plugin-dialog';
 import { rejectAsError } from './errors';

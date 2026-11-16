@@ -154,6 +154,9 @@ const ipcHandlers = {
   'plugin:app|version': () => APP_VERSION,
   'plugin:app|name': () => 'terminalquest',
   is_dev: () => false,
+  // The Help menu (platform/tauri/menu.js): listen first, then enable
+  'plugin:event|listen': () => 1,
+  enable_help_menu: () => null,
   'plugin:store|load': () => 1,
   // A first run: the store file does not exist yet, so the store is empty
   'plugin:store|reload': () => {

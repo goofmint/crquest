@@ -13,8 +13,7 @@
  */
 import { load } from '@tauri-apps/plugin-store';
 import { rejectAsError } from './errors';
-
-const STORE_FILE = 'config.json';
+import { STORE_FILE } from './storeFile';
 
 let storePromise;
 
