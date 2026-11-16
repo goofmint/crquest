@@ -1,4 +1,10 @@
-const { NAV_MAP_ARROW_KEY } = require("./config");
+const { STATE_KEY, NAV_MAP_ARROW_KEY } = require("./config");
+
+// In-progress guard (module scope, never persisted). events.js calls
+// handleTutorial without awaiting it, and levelDidLoad / mapDidLoad arrive back
+// to back, before hasSeenTutorial is set. Released in `finally` so a failed run
+// can be retried by a later event.
+let isTutorialRunning = false;
 
 /**
  * Handle scripting and interaction for the fog owl tutorial.
@@ -8,10 +14,19 @@ const { NAV_MAP_ARROW_KEY } = require("./config");
  * @param {object} worldState - current game world state (mutate to change)
  */
 async function handleTutorial(event, world, worldState) {
-  if (worldState.hasSeenTutorial) {
+  if (worldState.hasSeenTutorial || isTutorialRunning) {
     return;
   }
+  isTutorialRunning = true;
 
+  try {
+    await runTutorial(world, worldState);
+  } finally {
+    isTutorialRunning = false;
+  }
+}
+
+async function runTutorial(world, worldState) {
   await world.wait(1000);
 
   world.disablePlayerMovement();
@@ -52,6 +67,14 @@ async function handleTutorial(event, world, worldState) {
   world.showEntities(NAV_MAP_ARROW_KEY);
 
   worldState.hasSeenTutorial = true;
+
+  // Persist right away, on top of the latest state so that changes committed
+  // to this key while the tutorial was running are not overwritten.
+  world.setState(STATE_KEY, {
+    ...world.getState(STATE_KEY),
+    showNavMapArrow: true,
+    hasSeenTutorial: true,
+  });
 
   // Analytics won't exist if we're working on this locally
   world.analytics &&
