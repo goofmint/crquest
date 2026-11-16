@@ -170,12 +170,23 @@ mod tests {
                     "{allowed} must be allowed"
                 );
             }
+            // Other hidden directories: the default of `require_literal_leading_dot`
+            // is true on Unix and false on Windows (tauri scope/fs.rs), so a
+            // recursive allow of the parent hides them on Unix only. Not run on
+            // Windows by the author; the Windows branch states its default.
             for hidden in [".other", ".other/x.txt", ".git", ".git/config"] {
+                #[cfg(unix)]
                 assert!(
                     !scope.is_allowed(root.join(hidden)),
                     "{hidden} must not be allowed"
                 );
+                #[cfg(windows)]
+                assert!(
+                    scope.is_allowed(root.join(hidden)),
+                    "{hidden} is allowed by the Windows default"
+                );
             }
+        }
         }
 
         #[test]
@@ -215,7 +226,7 @@ mod tests {
         }
 
         #[test]
-        fn without_the_plugin_the_hidden_directory_is_denied() {
+        fn without_the_plugin_the_hidden_directory_follows_the_platform_default() {
             let f = fixture("baseline");
             let app = mock_builder()
                 .plugin(tauri_plugin_fs::init())
@@ -223,9 +234,14 @@ mod tests {
                 .unwrap();
             app.fs_scope().allow_directory(&f.root, true).unwrap();
             assert!(app.fs_scope().is_allowed(f.root.join("ext1/e.txt")));
-            assert!(!app
-                .fs_scope()
-                .is_allowed(f.root.join(".bundled/tilesets/t.png")));
+            let hidden_file = f.root.join(".bundled/tilesets/t.png");
+            // Unix default: `**` does not match a leading dot. Windows default
+            // (`require_literal_leading_dot` false): it does, so no plugin is
+            // needed there (not run on Windows by the author).
+            #[cfg(unix)]
+            assert!(!app.fs_scope().is_allowed(&hidden_file));
+            #[cfg(windows)]
+            assert!(app.fs_scope().is_allowed(&hidden_file));
             let _ = std::fs::remove_dir_all(&f.root);
         }
     }
