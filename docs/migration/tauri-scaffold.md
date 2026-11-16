@@ -1,5 +1,7 @@
 # Tauri 2 scaffold (#58)
 
+> この文書は #58 時点のスナップショットである (例: `csp` は `null`、`beforeDevCommand` は当時の値)。現行の設定と手順は `README.md` と `src-tauri/tauri.conf.json` を参照すること。
+
 `src-tauri/` を追加した。Electron は変更していない (`main.js`、`start`、`launch` は従来どおり)。#59 (plugin) / #60 (platform 切替) / #61 (command) は未着手である。
 
 ## 構成
