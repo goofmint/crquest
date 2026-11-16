@@ -328,7 +328,14 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 内容: `avatarRenderer.js:44-65` の `Jimp.read(staticFilePath(...))` を URL 入力にする (W5 の関数を使う)。ブラウザ向けの `jimp` が bundle できることの確認。動かなければ Canvas で合成する案を別途検討する (挙動変更になるため要相談)。
 - 規模: 約 3 ファイル。
 - 依存: W5。
-- 補足 (#154): Tauri ビルドの `jimp` は、起動を通すためにブラウザ用バンドルへ向けている。URL 入力への変更 (上記) は未実施。
+- 補足 (#154): Tauri ビルドの `jimp` は、起動を通すためにブラウザ用バンドルへ向けている (`vite.config.mjs` の `resolvePackagesFromPublic`)。
+- 実施結果 (#140):
+  - 変更: `avatarRenderer.js` の部品画像の入力を `toAssetSrc(staticFilePath('avatars/parts/...'))` にした (小さな関数 `partInput` 経由。部品名、分岐、着色、合成、PNG 出力、callback は変えていない)。Electron の `toAssetSrc` はパスをそのまま返すので、`Jimp.read` に渡る文字列は従来と同じ。Tauri はリソース配下のパスをページ基準の URL (`tauri://localhost/avatars/parts/body.png`) にする。`vite.config.mjs` は、jimp のブラウザ用バンドルが無いときに明示的なエラーでビルドを失敗させる (通常解決へのフォールバックは無い)。
+  - 確認したブラウザ用 jimp (0.16.1、`browser/lib/jimp.js`) の API: `Jimp.read(URL)` (XHR)、`color([{apply:'mix',...}])`、`composite`、`getBase64Async(Jimp.MIME_PNG)` は Node 版と同じ形で存在する。ファイルパスの読み込みは内蔵の空の `fs` で不可 (URL のみ)。画像の取得が HTTP 4xx のときは reject する (`HTTP Status 404 for url ...`)。
+  - テスト: `common/avatarRenderer.test.js` (Electron の契約: 読み込み入力と順序、着色パラメータ、合成順、PNG 出力。jimp は記録用のモック)、`platform/tauri/avatarTauriBundle.test.js` (実際の `--mode tauri` の設定でビルドした avatarRenderer を、`require` / `process` / `Buffer` が無い jsdom で実行し、部品画像を URL で要求し、ブラウザ用 jimp が合成した PNG が Electron 側 (Node 版 jimp、ファイルパス) の PNG と全画素で一致すること、5 通りの組み合わせ)、`selection.test.js` (Electron の出力に `require("jimp")` が残る)。
+  - Electron の出力 (`public/index.js`) の差分: `Jimp.read` の引数の式だけ (`staticFilePath("...")` が `partInput("...")` になり、`partInput` の定義 1 つが加わる)。
+  - 残り: 実際の Tauri の webview での確認 (下記)。`$RESOURCE` の部品画像が `frontendDist` から配信されるかは実機でのみ確認できる。Windows のパスは W12。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): 新規のセーブでオンボーディングに進み、カスタムアバターの作成画面で肌、目 (眼鏡を含む)、髪型 (髪なしを含む)、髪色を変えるたびにアバターが表示される。確定したあと、保存されたアバターがゲーム内 (ステータスやダイアログ) に表示される。Tauri (`npm run tauri -- dev`): 同じ操作で同じ表示になる。DevTools のコンソールに `HTTP Status` や `Could not load` のエラーが無く、Network に `avatars/parts/*.png` が 200 で出る。
 - Electron リスク: 低〜中 (Electron では従来のファイルパスの入力のまま)。
 
 ### W10. メニュー項目と拡張機能ディレクトリ (B5、B8)
@@ -368,7 +375,7 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 起動テストが本物のもの: ゲームの全コード、React、styled-components、ejs / pug / cheerio、`@tauri-apps/*` のコード、Phaser / ace / firebase (`public/lib` の本物のスクリプトを、`index.html` と同じく `index.js` の前に評価)、`public/` のゲームの内容 (レベル、アイテム、`content/`。リソースディレクトリの中身として読む)。
 - 起動テストが代用しているもの (Tauri の IPC の境界 `window.__TAURI_INTERNALS__.invoke` と環境): 起動時に呼ばれる Tauri のコマンド (パス、バージョン、`is_dev`、store、fs。想定外のコマンドは reject し、テストが失敗する)。store は空 (ファイルが無い初回起動)。fs プラグインは、リソースディレクトリ (`public/`) の読み取りだけ本物のファイルで、それ以外 (アプリデータ) は空のメモリ上の領域。音声ディレクトリ (`levels/common/music` と `sfx`) は空の一覧として返す (音声ゲートを通すため。音声ファイルは読み込まない)。IndexedDB は `fake-indexeddb` (jsdom には無く、webview にはある)。canvas の `getContext` は `null` (jsdom の制約)。
 - 起動テストが確認しないもの: 本物の WebView (WKWebView / WebView2 / WebKitGTK) での動作、音声の再生と読み込み、キー入力と Phaser の描画 (canvas)、タイトル画面から先 (オンボーディング、レベル)、実際の Tauri プラグインとケーパビリティの scope (IPC をモックしているため、scope 不足は検出できない)、asset プロトコル、CSS とレイアウト。したがって、起動テストが通っても下の手動確認は必要。
-- 既知の未解決 (今回の範囲外、設計判断が必要): ブラウザ用の jimp バンドルは URL かバッファから画像を読む。`avatarRenderer.js` の `Jimp.read(staticFilePath(...))` はファイルパスを渡すので、Tauri ではカスタムアバターの作成 (オンボーディング) がこのままでは動かない可能性が高い。W9 で、`toAssetUrl` を使った URL 入力にする変更が必要 (起動は妨げない)。`ejs` のファイル系機能 (`include` など) は Tauri で使えない (使うときに明示的に失敗する)。
+- 解消 (#140): ブラウザ用の jimp バンドルは URL かバッファから画像を読むため、`avatarRenderer.js` の入力を `toAssetSrc(staticFilePath(...))` にした (W9 の実施結果を参照)。`ejs` のファイル系機能 (`include` など) は Tauri で使えない (使うときに明示的に失敗する)。
 - ユーザーの手動確認 (Tauri):
 
 ```sh
@@ -476,7 +483,7 @@ npm run tauri -- build --debug
 - R1: `vite build --mode tauri` の出力は今回確認していない。W1 の着手時にまず現在の出力を生成し、`require(` が残る箇所を一覧にする (本書の B1〜B2 の根拠は設定ファイルとテストの内容)。
 - R2: asset プロトコルの scope と、dialog で選んだ拡張機能ディレクトリの関係 (W5、W10)。実機でしか確認できない。
 - R3: WKWebView の自動再生制限により、タイトル画面の音楽が鳴らない可能性 (起動の可否とは別問題として扱う)。
-- R4: `jimp` のブラウザ動作 (W9)。`cheerio` / `pug` は W8 で解消 (#139)。bundle には通っても実行時に失敗する場合の代替 (Canvas、`DOMParser`) は挙動変更を伴うため、事前に相談が必要。
+- R4: `jimp` のブラウザ動作 (W9): jsdom (Node のグローバル無し) での合成は Electron と全画素一致を確認済み (#140)。実際の webview での確認は未実施。`cheerio` / `pug` は W8 で解消 (#139)。bundle には通っても実行時に失敗する場合の代替 (Canvas、`DOMParser`) は挙動変更を伴うため、事前に相談が必要。
 - R5: W3、W4、W5 は Electron と共有するコードを触る。`index.jsx`、`audio/index.js`、`ContextProvider.jsx`、`fs_utils.js` は動作確認済みなので、挙動を固定するテストを先に足してから変更する。
 - R6: Windows のパス意味論 (`path.sep`、ドライブレター、`$CONFIG` scope の大文字小文字) は W12 まで未検証。
 - R7: Tauri の store と Electron の `userData/config.json` は別ファイルで、既存のセーブデータは引き継がれない (`tauri-platform.md` 1.4 章)。#63 / #65 の前に移行の要否を決める。

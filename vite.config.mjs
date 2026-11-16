@@ -154,7 +154,12 @@ function resolvePackagesFromPublic() {
       }
       if (!importer.startsWith(srcDir + path.sep)) return null;
       if (unavailableModuleName(source)) return null;
-      if (source === 'jimp') return jimpBrowserBundle;
+      if (source === 'jimp') {
+        if (!fs.existsSync(jimpBrowserBundle)) {
+          throw new Error(`The Tauri build needs ${jimpBrowserBundle} (jimp's browser bundle): run npm install`);
+        }
+        return jimpBrowserBundle;
+      }
       const resolved = await this.resolve(
         source,
         path.join(publicDir, 'package.json'),
