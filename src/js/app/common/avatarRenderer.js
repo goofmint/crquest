@@ -1,5 +1,12 @@
 import Jimp from 'jimp';
 import { staticFilePath } from './fs_utils';
+import { toAssetSrc } from '../platform/assets';
+
+// The part image as jimp's input: Electron reads the file path as it is, the
+// Tauri build (browser jimp) reads a URL.
+function partInput(relativePath) {
+  return toAssetSrc(staticFilePath(relativePath));
+}
 
 const avatarColors = {
   body: [
@@ -41,28 +48,28 @@ export const NUM_FEATURES = {
 
 export function generateDataURI({ ec, hs, sc, hc }, callback) {
   const imagePromises = [
-    Jimp.read(staticFilePath('avatars/parts/body.png')),
-    Jimp.read(staticFilePath('avatars/parts/face.png')),
-    Jimp.read(staticFilePath('avatars/parts/onesie.png')),
+    Jimp.read(partInput('avatars/parts/body.png')),
+    Jimp.read(partInput('avatars/parts/face.png')),
+    Jimp.read(partInput('avatars/parts/onesie.png')),
   ];
 
   // Grab the appropriate eye image
   if (ec !== NUM_FEATURES.ec - 1) {
-    imagePromises.push(Jimp.read(staticFilePath('avatars/parts/eyes.png')));
+    imagePromises.push(Jimp.read(partInput('avatars/parts/eyes.png')));
   } else {
-    imagePromises.push(Jimp.read(staticFilePath('avatars/parts/glasses.png')));
+    imagePromises.push(Jimp.read(partInput('avatars/parts/glasses.png')));
   }
 
   // Only grab hair stuff if "no hair" option isn't selected (it's the last one)
   if (hs !== NUM_FEATURES.hs - 1) {
     imagePromises.push(
-      Jimp.read(staticFilePath(`avatars/parts/hair${hs}.png`))
+      Jimp.read(partInput(`avatars/parts/hair${hs}.png`))
     );
 
     // Only grab hair overlays for styles have one
     if ([2, 3, 4, 5].includes(hs)) {
       imagePromises.push(
-        Jimp.read(staticFilePath(`avatars/parts/hair${hs}_overlay.png`))
+        Jimp.read(partInput(`avatars/parts/hair${hs}_overlay.png`))
       );
     }
   }
