@@ -328,6 +328,7 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 内容: `avatarRenderer.js:44-65` の `Jimp.read(staticFilePath(...))` を URL 入力にする (W5 の関数を使う)。ブラウザ向けの `jimp` が bundle できることの確認。動かなければ Canvas で合成する案を別途検討する (挙動変更になるため要相談)。
 - 規模: 約 3 ファイル。
 - 依存: W5。
+- 補足 (#154): Tauri ビルドの `jimp` は、起動を通すためにブラウザ用バンドルへ向けている。URL 入力への変更 (上記) は未実施。
 - Electron リスク: 低〜中 (Electron では従来のファイルパスの入力のまま)。
 
 ### W10. メニュー項目と拡張機能ディレクトリ (B5、B8)
@@ -350,6 +351,34 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 規模: 約 6〜10 ファイル。
 - 依存: W1〜W11。
 - Electron リスク: なし。
+
+### 起動時の失敗の修正と起動テスト (#154)
+
+- 症状: Tauri ビルドがローディング画面から進まず、コンソールに `TerminalQuest failed to start: Error: The Node module "fs" is not available in the Tauri build (accessed readFileSync)` が出る (`./local_config` の `Cannot find module` は `config.js` が捕まえて記録するだけのログで、原因ではない)。
+- 原因 (実際の出力 `public/tauri-game.js` と、後述の起動テストで確認): `tauriIndex.jsx` の `await import('./index.jsx')` が、ゲームのバンドルの評価中に失敗して reject される。W8 の「読み込み時に失敗スタブへ触る依存が他に無いか」の調査 (「残り」の項) が、会話の経路以外では未実施だった。見つかった読み込み時の失敗は 2 つ。
+  1. `ejs` (2.6.2、`ObjectiveDescription.jsx` が import) の `lib/ejs.js` が、読み込み時に `exports.fileLoader = fs.readFileSync;` を実行する。`fs` は失敗スタブなので、このプロパティ参照で投げる (ユーザーのコンソールの `accessed readFileSync`)。
+  2. `jimp` (0.16.1、`avatarRenderer.js` が import) の Node 用エントリが、読み込み時に `process` (`@jimp/core/es/request.js`)、続いて `stream` (`util.inherits(..., stream)`) に触る (`Buffer` も使う)。webview にはどれも無い。
+  `jstransformer` の `fs.readFile` (W8 で対応済み) 以外の `readFileSync` の参照は、関数の中 (呼び出し時) にあり、読み込みは妨げない (`pug` の `load.read`、`pug-runtime`、`ejs` の `fileLoader()` 関数など)。
+- 対応 (Tauri ビルドのみ、`vite.config.mjs`。Electron の出力は変えていない):
+  1. `patchTauriPackages` に `ejs/lib/ejs.js` を追加し、`exports.fileLoader = fs.readFileSync;` を、呼ばれたときに初めて `fs.readFileSync` を参照して委譲する関数に置き換える。読み込みは通り、`include` などのファイル機能を使ったときは失敗スタブの `accessed readFileSync` で明示的に失敗する (フォールバックは無い。リポジトリの EJS の使い方は文字列テンプレートだけで、ファイルを読まない)。
+  2. `resolvePackagesFromPublic` で、Tauri ビルドの `jimp` の import を、パッケージが配布している自己完結のブラウザ用バンドル (`jimp/browser/lib/jimp.js`) に向ける。
+  あわせて `patchTauriPackages` は、置換前の文字列が「ちょうど 1 回」見つからなければビルドを失敗させる (従来は 0 回のみ検査していた)。
+- 起動テスト (`src/test/app/platform/tauri/tauriBoot.test.js` と `src/test/utils/tauriBootBootstrap.mjs`): テストの中で `vite build --mode tauri` を一時ディレクトリに出力し、実際の分割 ES module (`index.js` と `tauri-game.js`) を、`--experimental-vm-modules` を付けた子 Node プロセス (`fork`) で、jsdom の window コンテキストに `vm.SourceTextModule` でリンクして評価する (`index.js` の動的 import も同じコンテキストで解決する)。このコンテキストには `require` / `process` / `Buffer` / `module` / `global` が無い (テストが確認する)。新規状態 (空の store、セーブなし、拡張機能フォルダなし) で、`#app .__loading` が消えて `.TitleScreen` が現れること、`console.error` と未処理の reject が無いことを検査する。ejs のパッチ前の状態に戻すと、このテストはユーザーが報告した `accessed readFileSync` で失敗する (確認済み)。
+- `jimp` をブラウザ用バンドルにした結果、`stream` / `events` / `url` の shim はバンドルに入らなくなった。`tauriBundle.test.js` はそれに合わせ、jimp のバンドル (browserify 形式で、内部の `require("assert")` は自前のモジュール表のキー) を `require` の検査から除き、バンドルされる W2 の実装の一覧から外した。
+- 起動テストが本物のもの: ゲームの全コード、React、styled-components、ejs / pug / cheerio、`@tauri-apps/*` のコード、Phaser / ace / firebase (`public/lib` の本物のスクリプトを、`index.html` と同じく `index.js` の前に評価)、`public/` のゲームの内容 (レベル、アイテム、`content/`。リソースディレクトリの中身として読む)。
+- 起動テストが代用しているもの (Tauri の IPC の境界 `window.__TAURI_INTERNALS__.invoke` と環境): 起動時に呼ばれる Tauri のコマンド (パス、バージョン、`is_dev`、store、fs。想定外のコマンドは reject し、テストが失敗する)。store は空 (ファイルが無い初回起動)。fs プラグインは、リソースディレクトリ (`public/`) の読み取りだけ本物のファイルで、それ以外 (アプリデータ) は空のメモリ上の領域。音声ディレクトリ (`levels/common/music` と `sfx`) は空の一覧として返す (音声ゲートを通すため。音声ファイルは読み込まない)。IndexedDB は `fake-indexeddb` (jsdom には無く、webview にはある)。canvas の `getContext` は `null` (jsdom の制約)。
+- 起動テストが確認しないもの: 本物の WebView (WKWebView / WebView2 / WebKitGTK) での動作、音声の再生と読み込み、キー入力と Phaser の描画 (canvas)、タイトル画面から先 (オンボーディング、レベル)、実際の Tauri プラグインとケーパビリティの scope (IPC をモックしているため、scope 不足は検出できない)、asset プロトコル、CSS とレイアウト。したがって、起動テストが通っても下の手動確認は必要。
+- 既知の未解決 (今回の範囲外、設計判断が必要): ブラウザ用の jimp バンドルは URL かバッファから画像を読む。`avatarRenderer.js` の `Jimp.read(staticFilePath(...))` はファイルパスを渡すので、Tauri ではカスタムアバターの作成 (オンボーディング) がこのままでは動かない可能性が高い。W9 で、`toAssetUrl` を使った URL 入力にする変更が必要 (起動は妨げない)。`ejs` のファイル系機能 (`include` など) は Tauri で使えない (使うときに明示的に失敗する)。
+- ユーザーの手動確認 (Tauri):
+
+```sh
+npm run build:tauri
+npm run tauri -- dev
+```
+
+  - タイトル画面 (ロゴと `press spacebar to start`) が表示され、ローディング画面で止まらない。
+  - F12 のコンソールに `fs is not available` (`The Node module "fs" is not available`)、`Buffer is not defined`、`process is not defined`、`TerminalQuest failed to start` が出ない (`./local_config` の `Cannot find module` のログは出てよい)。
+  - 確認後に `npm run build:all` で Electron の出力を作り直す (`npm run build:tauri` は `public/index.js` を上書きする)。
 
 ## 5. 順序と依存
 

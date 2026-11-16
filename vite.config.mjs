@@ -137,6 +137,12 @@ function tauriUnavailableModules() {
 // public/node_modules first, which is where Electron's runtime `require`
 // finds them (e.g. pug 3 there, pug 2 in the root node_modules). Packages that
 // exist only in the root (@tauri-apps/*) fall back to the default resolution.
+//
+// `jimp` (avatarRenderer) is the exception: its Node entry touches `process`
+// and `stream` while it is loaded (#154), and uses `Buffer`; a webview has none. The package ships a prebuilt browser bundle that is self-contained, and
+// that is what the Tauri build uses. (It reads images from URLs or buffers, not
+// from file system paths: see docs/migration/tauri-runtime.md.)
+const jimpBrowserBundle = path.join(publicDir, 'node_modules', 'jimp', 'browser', 'lib', 'jimp.js');
 function resolvePackagesFromPublic() {
   return {
     name: 'terminalquest:resolve-packages-from-public',
@@ -148,6 +154,7 @@ function resolvePackagesFromPublic() {
       }
       if (!importer.startsWith(srcDir + path.sep)) return null;
       if (unavailableModuleName(source)) return null;
+      if (source === 'jimp') return jimpBrowserBundle;
       const resolved = await this.resolve(
         source,
         path.join(publicDir, 'package.json'),
@@ -158,8 +165,9 @@ function resolvePackagesFromPublic() {
   };
 }
 
-// Tauri build only: two packages of the conversation renderer (pug 3) touch
-// something that a webview does not have, and are patched while bundling.
+// Tauri build only: packages touch something that a webview does not have
+// (pug 3 and jstransformer in the conversation renderer, ejs at load time), and
+// are patched while bundling.
 // Each patch fails the build when the text is not found (the package changed),
 // instead of silently shipping the unpatched code.
 //
@@ -186,6 +194,17 @@ const tauriPackagePatches = [
     from: "var fs = require('fs');",
     to: 'var fs = {};',
   },
+  // ejs/lib/ejs.js (used by ObjectiveDescription) runs
+  // `exports.fileLoader = fs.readFileSync;` when it is loaded. With the stub of
+  // the unavailable `fs` that property access throws and stops the whole game
+  // bundle from loading (#154). The default file loader becomes a function that
+  // reads `fs.readFileSync` only when it is called, so loading passes and an
+  // include/file template fails explicitly with the stub's error.
+  {
+    file: normalizePath(path.join(publicDir, 'node_modules', 'ejs', 'lib', 'ejs.js')),
+    from: 'exports.fileLoader = fs.readFileSync;',
+    to: 'exports.fileLoader = function () { return fs.readFileSync.apply(fs, arguments); };',
+  },
 ];
 
 function patchTauriPackages() {
@@ -196,10 +215,13 @@ function patchTauriPackages() {
       if (platformTarget !== 'tauri') return null;
       const patch = tauriPackagePatches.find(candidate => candidate.file === normalizePath(id));
       if (!patch) return null;
-      if (!code.includes(patch.from)) {
-        throw new Error(`${id} no longer contains the text that the Tauri build patches: ${patch.from}`);
+      // Exactly one occurrence: none means the package changed, several would
+      // mean that only the first is patched.
+      const occurrences = code.split(patch.from).length - 1;
+      if (occurrences !== 1) {
+        throw new Error(`${id} contains ${occurrences} (expected 1) occurrences of the text that the Tauri build patches: ${patch.from}`);
       }
-      return code.replace(patch.from, patch.to);
+      return code.replace(patch.from, () => patch.to);
     },
   };
 }
