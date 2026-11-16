@@ -256,6 +256,12 @@
       "identifier": "opener:allow-open-path",
       "allow": [
         {
+          "path": "$APPDATA"
+        },
+        {
+          "path": "$APPDATA/config.json"
+        },
+        {
           "path": "$CONFIG/terminalquest"
         },
         {
@@ -318,6 +324,7 @@
     },
     "allow-is-dev",
     "allow-open-devtools",
-    "allow-toggle-devtools"
+    "allow-toggle-devtools",
+    "allow-enable-help-menu"
   ]
 }

@@ -39,7 +39,8 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 | `dialog:allow-message` | なし | 確認 / 警告ダイアログ (`showConfirm` / `showAlert`)。plugin の `confirm` / `message` はこのコマンドを使う |
 | `store:allow-load` / `get` / `set` / `has` / `delete` / `save` / `reload` | なし (store は resource id 経由で、パス scope を持たない) | `platform/store`。`reload` は読み込み失敗の検出に使う (3.3 章)。`clear` / `reset` / `entries` / `keys` / `values` / `length` / `get_store` は使わないので付けない |
 | `opener:allow-open-url` | `https://*`、`http://*` | 外部リンク (`openExternal`)。`file:` や独自スキームは許可しない |
-| `opener:allow-open-path` | WRITE と同じ 2 つのディレクトリ | メニュー "Open User Data" / "Open Save File" (`openPath`) |
+| `opener:allow-open-path` | WRITE と同じ 2 つのディレクトリ、`$APPDATA` (ディレクトリそのもの)、`$APPDATA/config.json` (store ファイル。`/**` なし) | メニュー "Open User Data" / "Open Save File" (`platform/tauri/menu.js`、#141) |
+| `allow-enable-help-menu` | なし (引数なし) | Help メニュー項目の有効化 (`help_menu.rs`、#141) |
 | `os:allow-platform` | なし | 他の os 権限 (arch, version, locale, hostname など) は付けない |
 | `core:default` | (`default.json`) | #58 のまま |
 
@@ -47,7 +48,10 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 
 ### 1.4 既知の制約
 
-- ダイアログで選んだディレクトリは、plugin-dialog が実行時に fs の scope へ追加する (`recursive: true` を渡す)。このとき追加された scope は、このウィンドウに許可された fs コマンド全部 (書き込み系を含む) に効く。アプリを再起動すると失われる (`tauri-plugin-persisted-scope` は導入していない)。再起動後に拡張ディレクトリを読むには再選択が必要になる。永続化は後続の判断事項である。
+- ダイアログで選んだディレクトリは、plugin-dialog が実行時に fs の scope (`recursive: true`) と asset プロトコルの scope (再帰) の両方へ追加する。fs の scope は、このウィンドウに許可された fs コマンド全部 (書き込み系を含む) に効く。#141 で `tauri-plugin-persisted-scope` (feature `protocol-asset`、`tauri_plugin_fs::init()` の後に登録) を入れたので、この 2 つは再起動後に復元される。
+  - 永続化されるもの: fs の動的 scope と asset の scope の許可・禁止パターン全体。保存先は `$APPDATA/<identifier>` の `.persisted-scope` (fs) と `.persisted-scope-asset` (asset)。asset の scope は `tauri.conf.json` の静的な scope (`$RESOURCE/**` など) も含むので、それらも解決済みの絶対パスで保存される (インストール先が変わると古いパスが残るが、そのパスの下にしか効かない)。capability の scope (`platform.json`) は別物で、保存されない。`**` やホーム全体の許可は追加していない (許可されるのはユーザーが選んだディレクトリだけ)。
+  - リスク: (1) 選んだディレクトリは、取り消す API が無いので、アプリの設定を変えても許可が残る (消すには `.persisted-scope*` を削除する)。(2) 書き込み系の fs コマンドにも効くので、選んだディレクトリは再起動後も書き込み可能である。(3) plugin は保存・復元の失敗を通知しない (壊れたファイルは空として読み、復元できなかったパスは黙って許可されない。再選択で直る)。(4) 状態ファイルは `$APPDATA` にあり、renderer は store plugin で `$APPDATA` 配下の store を load / save できる (plugin は状態ファイル自身を fs の scope から禁止しているが、store 経由の到達は防げない。内容は bincode なので、JSON の store で偽造しにくいという程度の根拠である)。
+  - 設定画面の `extensions.directory` (パス) は従来どおり store に保存される。パスの保存は権限の復元ではなく、権限の復元はこの plugin が行う。
 - `$RESOURCE` はバンドルに `bundle.resources` で入れたファイルの置き場である。現在の `tauri.conf.json` は `frontendDist` を埋め込むだけで、`public/content` 等をリソースにしていない (配布構成は未決定。`tauri-scaffold.md` 参照)。そのため `$RESOURCE` の読み取り許可は、配布構成が決まるまで実質何も指さない。
 - store の保存先は plugin 既定の `$APPDATA/<identifier>` 配下で、Electron の `userData/config.json` とは別である。Electron からの移行は範囲外。
 
@@ -178,7 +182,7 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 
 - 呼び出し元の非同期化 (3.2 章の表)。`initPlatform()` を呼ぶエントリは未作成 (Phase 11)。
 - 同梱ファイル (`public/content` など) の読み取り。Tauri は `frontendDist` を埋め込むだけで、`fs` から読めるリソースにはしていない。`staticFilePath` も `file:` URL 前提である。
-- ダイアログで選んだディレクトリの scope は再起動で失われる (1.4 章)。
+- ダイアログで選んだディレクトリの scope は persisted-scope で復元される (1.4 章)。再起動後の実機確認は未実施 (`tauri-runtime.md` の W10)。
 - 許可プログラムの scope が実際に Rust へ届くことは、実機で確認していない (下記の手順 5)。
 
 ## 5. 手元で確認すること (利用者が実行する)

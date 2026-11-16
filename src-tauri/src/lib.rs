@@ -1,5 +1,7 @@
+mod bundled_scope;
 mod close;
 mod exec;
+mod help_menu;
 
 use std::collections::HashMap;
 use tauri::ipc::CommandScope;
@@ -106,14 +108,17 @@ fn toggle_devtools() -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .manage(close::CloseConfirmation::default())
-        .setup(|_app| {
+        .setup(|app| {
+            // The quit menu first (macOS): the Help items are added to its menu.
             #[cfg(target_os = "macos")]
-            close::install_quit_menu(_app)?;
+            close::install_quit_menu(app)?;
+            help_menu::install(app)?;
             Ok(())
         })
-        .on_menu_event(|_app, _event| {
+        .on_menu_event(|app, event| {
             #[cfg(target_os = "macos")]
-            close::on_menu_event(_app, _event.id().as_ref());
+            close::on_menu_event(app, event.id().as_ref());
+            help_menu::on_menu_event(app, event.id().as_ref());
         })
         .on_window_event(|window, event| {
             if window.label() != close::MAIN_WINDOW_LABEL {
@@ -125,6 +130,13 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_fs::init())
+        // Adds <dir>/.bundled next to every directory the user chose (the Sync
+        // Bundled Assets target). After fs, before persisted-scope, so that the
+        // restore at startup goes through it too.
+        .plugin(bundled_scope::init())
+        // Must come after the fs plugin: restores the fs and asset scopes that
+        // the dialog added (the extension directory) after a restart.
+        .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
@@ -134,7 +146,8 @@ pub fn run() {
             command_exists,
             is_dev,
             open_devtools,
-            toggle_devtools
+            toggle_devtools,
+            help_menu::enable_help_menu
         ])
         .run(tauri::generate_context!())
         .expect("error while running TerminalQuest");
