@@ -316,15 +316,15 @@
       const original = scope.console[logLevel];
       scope.console[logLevel] = function() {
         const args = Array.prototype.slice.call(arguments);
-        // Keep the worker's own devtools console working, as runner.js did.
+        // Keep the worker's own devtools console working.
         original.apply(scope.console, args);
         send(logLevel, args);
       };
     });
   }
 
-  // Same normalisation as runner.js `___cr___.uncaught`, but tolerant of
-  // `null` / `undefined` being thrown.
+  // Normalises the reason like `___cr___.uncaught` of the former Electron
+  // runner.js, but tolerant of `null` / `undefined` being thrown.
   function reportUncaught(reason) {
     const hasObject = reason !== null && reason !== undefined;
     let message = hasObject ? reason.message : undefined;
@@ -359,8 +359,8 @@
     });
   }
 
-  // Polyfill kept from runner.js; only installed when the runtime lacks it
-  // (Electron 11 / Chromium 87 and Tauri webviews already have it).
+  // Polyfill kept from the former Electron runner.js; only installed when the
+  // runtime lacks it (Tauri webviews already have it).
   function installReplaceAllPolyfill() {
     if (String.prototype.replaceAll) {
       return;
@@ -372,7 +372,7 @@
         ) {
           return this.replace(str, newStr);
         }
-        // Unlike the runner.js polyfill, a string pattern is matched literally,
+        // Unlike the former runner.js polyfill, a string pattern is matched literally,
         // as native replaceAll does.
         return this.replace(
           new RegExp(String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),

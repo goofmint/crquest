@@ -1,51 +1,29 @@
 /**
- * Platform layer contracts (Phase 1, task 1-1).
+ * Platform layer (Tauri).
  *
- * Purpose: the platform layer will eventually wrap every direct Electron /
- * Node.js access made by the renderer code (paths, dialogs, persistent store,
- * file system, shell, command execution, devtools) so that the backing runtime
- * can later be swapped (Electron 11 -> Tauri 2).
- *
- * This directory only DEFINES contracts as JSDoc. It contains no executable
- * statements and no imports, and nothing under src/js or src/test references
- * it yet. Each file ends with `export {};`, which only marks it as a module so
- * that the `import('./x').Type` references below resolve in editors. Adding it does not change runtime behavior. Implementations and the
- * migration of call sites are separate, later tickets.
- *
- * Baseline versions the contracts are written against (do not rely on APIs or
- * options that only exist in newer versions):
- * - Electron 11.5.0 (package.json: ^11.5.0, package-lock.json: 11.5.0)
- * - Node.js v12.18.3 (the Node bundled with Electron 11.5.0)
- * - electron-store 6.0.0 (public/package.json: ^6.0.0, public/package-lock.json:
- *   6.0.0; the renderer runtime dependencies live under public/)
- * - fs-jetpack 2.2.2 (public/package-lock.json; the root package.json resolves
- *   2.2.3, but that copy is only used by the build tasks, not the renderer)
+ * Wraps every access that the renderer code makes to the host: paths, dialogs,
+ * the persistent store, the file system, the shell, command execution,
+ * devtools, the help menu, environment values, resource URLs and conversation
+ * template rendering. The code lives in ./tauri/. Each file in this directory
+ * (`paths.js`, `fs.js`, ...) only re-exports the file of the same name there,
+ * so callers and tests keep importing `platform/<name>`.
  *
  * Shared conventions for every area:
- * - A synchronous method reports failure by throwing. An asynchronous method
- *   reports failure by returning a rejected Promise.
+ * - A synchronous function reports failure by throwing. An asynchronous
+ *   function reports failure by returning a rejected Promise.
  * - No fallbacks: a missing value is never replaced by a default.
- * - No logging, no retries, and no error normalization or translation. Errors
- *   raised by the underlying API (for example Node errors carrying `code`) are
- *   propagated unchanged.
- * - Results the underlying API defines as normal values (a missing key in the
- *   store is `undefined`, a cancelled open dialog resolves with
- *   `canceled: true`, a missing path in fs-jetpack is `undefined` / `false`)
- *   stay normal values.
- * - Error handling that exists in callers today (for example mapping `ENOENT`
- *   to `false`, logging then returning `undefined`, or converting errors to
+ * - No logging and no retries. Errors of the Tauri plugins are turned into
+ *   `Error` objects (with `code` where Node code reads it) by ./tauri/errors.js,
+ *   and nothing else is translated.
+ * - Results that the API defines as normal values (a missing key in the store
+ *   is `undefined`, a cancelled open dialog resolves with `canceled: true`, a
+ *   missing path in the fs functions is `undefined` / `false`) stay normal
+ *   values.
+ * - Error handling that exists in callers (for example mapping `ENOENT` to
+ *   `false`, logging then returning `undefined`, or converting errors to
  *   validation tuples) stays in the callers.
- *
- * @typedef {Object} Platform
- * @property {import('./paths').PlatformPaths} paths
- * @property {import('./dialog').PlatformDialog} dialog
- * @property {import('./store').PlatformStore} store
- * @property {import('./fs').PlatformFs} fs
- * @property {import('./shell').PlatformShell} shell
- * @property {import('./exec').PlatformExec} exec
- * @property {import('./devtools').PlatformDevtools} devtools
- * @property {import('./menu').PlatformMenu} menu
- * @property {import('./env').PlatformEnv} env
+ * - `initPlatform()` (init.js) must have completed before any other function
+ *   is called; the Tauri entry (tauriIndex.jsx) awaits it first.
  */
 
 export {};

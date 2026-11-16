@@ -1,7 +1,7 @@
 /*
 Creates the Tauri-only `frontendDist` (tauri-dist/, see src-tauri/tauri.conf.json):
 a copy of public/ without what the Tauri build does not serve to the page.
-public/ itself (the Electron page and its build output) is not touched.
+public/ itself (the page and its build output) is not touched.
 
 Left out:
 - content/ and levels/ (tauriResourceOnlyDirectories.json, about 47MB): they are

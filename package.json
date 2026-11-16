@@ -5,9 +5,8 @@
   "license": "MIT",
   "author": "TerminalQuest authors",
   "repository": "terminalquest/terminalquest",
-  "main": "main.js",
   "scripts": {
-    "start": "npm-run-all build:all -r --parallel launch watch:all",
+    "start": "tauri dev",
     "ci": "npm-run-all install:app release",
     "install:build": "npm install",
     "install:app": "cd ./public && npm install",
@@ -18,18 +17,12 @@
     "generateVoiceOvers": "node tasks/generate_voice_overs/index.js",
     "scaffold:mission": "node tasks/scaffold/index.js",
     "sync:missions": "node tasks/sync_missions/index.js",
-    "launch": "electron .",
     "clean": "node tasks/clean_build_output.js",
-    "build": "npm run build:all",
-    "build:all": "npm-run-all clean --parallel build:js build:css",
-    "build:js": "vite build",
+    "build": "npm run build:tauri",
     "build:js:tauri": "vite build --mode tauri",
     "build:tauri": "npm-run-all clean --parallel build:js:tauri build:css --serial stage:tauri",
     "stage:tauri": "node tasks/stage_tauri_frontend.js",
     "build:css": "sass src/scss/main.scss public/index.css --no-source-map",
-    "watch:all": "npm-run-all --parallel watch:js watch:css",
-    "watch:js": "vite build --watch --sourcemap",
-    "watch:css": "sass src/scss/main.scss public/index.css --no-source-map --watch",
     "test": "vitest run",
     "tauri": "tauri"
   },
@@ -45,9 +38,6 @@
     "cheerio": "^1.2.0",
     "csv-writer": "^1.6.0",
     "dotenv": "^18.0.10",
-    "electron": "^11.5.0",
-    "electron-context-menu": "^0.16.0",
-    "electron-devtools-installer": "^2.2.4",
     "firebase-admin": "^14.5.1",
     "fs-jetpack": "^5.1.0",
     "klaw": "^4.1.0",
@@ -81,13 +71,5 @@
     "version-sort": "^0.1.1",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
-  },
-  "allowScripts": {
-    "electron@11.5.0": true
-  },
-  "overrides": {
-    "extract-zip": {
-      "yauzl": "^3.4.0"
-    }
   }
 }

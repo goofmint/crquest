@@ -8,57 +8,21 @@ import react from '@vitejs/plugin-react';
 // The bundle must reference react/jsx-runtime, which exists in every React 19
 // build. With NODE_ENV=development in the caller's shell the React plugin would
 // emit react/jsx-dev-runtime instead, whose jsxDEV is undefined in React's
-// production build (the Electron renderer loads whichever build NODE_ENV picks).
+// production build (the bundle contains the production build of React).
 process.env.NODE_ENV = 'production';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(rootDir, 'src');
 const publicDir = path.join(rootDir, 'public');
-const entry = path.join(srcDir, 'js', 'index.jsx');
-// Tauri build only: initializes the platform layer, then loads `entry`.
+// Initializes the platform layer, then loads src/js/index.jsx (the game).
 const tauriEntry = path.join(srcDir, 'js', 'tauriIndex.jsx');
 const htmlSource = path.join(srcDir, 'index.html');
 const localConfigPath = path.join(srcDir, 'js', 'app', 'config', 'local_config.js');
 const LOCAL_CONFIG_MISSING_ID = '\0local-config-missing';
-const platformDir = path.join(srcDir, 'js', 'app', 'platform');
-const tauriPlatformDir = path.join(platformDir, 'tauri');
-// Electron implementations that have a Tauri counterpart in platform/tauri/
-// with the same file name (docs/migration/tauri-platform.md).
-const platformModules = [
-  'paths',
-  'dialog',
-  'store',
-  'fs',
-  'shell',
-  'exec',
-  'devtools',
-  'menu',
-  'env',
-  'init',
-  'assets',
-  'conversationTemplate',
-];
 
-// Everything that is not a project file is resolved at runtime by Electron's
-// renderer `require` (Node builtins, `electron`, and the packages installed in
-// public/node_modules). Only the app's own sources are bundled.
-function isExternal(id) {
-  return !(
-    // Tauri build only (see platformTarget): a Tauri webview has no `require`
-    // and no `node_modules`, so every package is bundled (see
-    // resolvePackagesFromPublic for where they are resolved from).
-    platformTarget === 'tauri' ||
-    id.startsWith('.') ||
-    path.isAbsolute(id) ||
-    id.startsWith('\0') ||
-    // Transform helpers (class fields for chrome87) are bundled, not required
-    id.startsWith('@oxc-project/runtime/')
-  );
-}
-
-// Tauri build only. Node builtins (and `electron`) do not exist in a Tauri
-// webview. Six of them have a browser implementation (below); every other one
-// becomes a module whose every property access throws a clear error. Without
+// Node builtins (and `electron`) do not exist in a Tauri webview. Six of them
+// have a browser implementation (below); every other one becomes a module whose
+// every property access throws a clear error. Without
 // this plugin Vite would replace them with an empty object, so a call would
 // fail with an unrelated "x is not a function". Loading such a module does not
 // throw, because bundled packages such as pug `require('fs')` at load time
@@ -106,7 +70,6 @@ function tauriUnavailableModules() {
     name: 'terminalquest:tauri-unavailable-modules',
     enforce: 'pre',
     resolveId(source, importer) {
-      if (platformTarget !== 'tauri') return null;
       if (source === 'resolve' && importer && normalizePath(importer) === runFilterFile) {
         return UNAVAILABLE_PREFIX + source;
       }
@@ -134,10 +97,10 @@ function tauriUnavailableModules() {
   };
 }
 
-// Tauri build only. Bare imports from the app's sources resolve from
-// public/node_modules first, which is where Electron's runtime `require`
-// finds them (e.g. pug 3 there, pug 2 in the root node_modules). Packages that
-// exist only in the root (@tauri-apps/*) fall back to the default resolution.
+// Bare imports from the app's sources resolve from public/node_modules first,
+// where the renderer's dependencies are installed (e.g. pug 3 there, pug 2 in
+// the root node_modules). Packages that exist only in the root (@tauri-apps/*)
+// fall back to the default resolution.
 //
 // `jimp` (avatarRenderer) is the exception: its Node entry touches `process`
 // and `stream` while it is loaded (#154), and uses `Buffer`; a webview has none. The package ships a prebuilt browser bundle that is self-contained, and
@@ -149,7 +112,7 @@ function resolvePackagesFromPublic() {
     name: 'terminalquest:resolve-packages-from-public',
     enforce: 'pre',
     async resolveId(source, importer, options) {
-      if (platformTarget !== 'tauri' || !importer) return null;
+      if (!importer) return null;
       if (source.startsWith('.') || path.isAbsolute(source) || source.startsWith('\0')) {
         return null;
       }
@@ -171,7 +134,7 @@ function resolvePackagesFromPublic() {
   };
 }
 
-// Tauri build only: packages touch something that a webview does not have
+// Packages touch something that a webview does not have
 // (pug 3 and jstransformer in the conversation renderer, ejs at load time), and
 // are patched while bundling.
 // Each patch fails the build when the text is not found (the package changed),
@@ -218,7 +181,6 @@ function patchTauriPackages() {
     name: 'terminalquest:patch-tauri-packages',
     enforce: 'pre',
     transform(code, id) {
-      if (platformTarget !== 'tauri') return null;
       const patch = tauriPackagePatches.find(candidate => candidate.file === normalizePath(id));
       if (!patch) return null;
       // Exactly one occurrence: none means the package changed, several would
@@ -231,15 +193,6 @@ function patchTauriPackages() {
     },
   };
 }
-
-const electronOutput = {
-  format: 'cjs',
-  // Keep the bundle's top-level bindings out of the global scope of the
-  // classic <script> (other scripts such as ace/phaser define globals),
-  // and keep strict mode, which ES modules had implicitly.
-  banner: "(function () {\n'use strict';",
-  footer: '})();',
-};
 
 // A Tauri webview has no `require`, so the output is ES modules: index.js (the
 // entry, loaded by <script type="module">) and tauri-game.js (the game,
@@ -256,34 +209,6 @@ const tauriOutput = {
   // the dynamic import of index.jsx.
   chunkFileNames: chunk => (chunk.isDynamicEntry ? 'tauri-game.js' : '[name]-[hash].js'),
 };
-
-// Which platform layer implementation is bundled: `vite build` (Electron, the
-// default) or `vite build --mode tauri`.
-let platformTarget = 'electron';
-
-// In the Tauri build every import of platform/<name> (Electron
-// implementation) is redirected to platform/tauri/<name>. The Electron build
-// has no such redirect, so its bundle is unchanged.
-function selectPlatformImplementation() {
-  return {
-      name: 'terminalquest:select-platform',
-      enforce: 'pre',
-      resolveId(source, importer) {
-        if (platformTarget !== 'tauri' || !importer || !source.startsWith('.')) {
-          return null;
-        }
-        const target = path.resolve(path.dirname(importer), source);
-        const name = path.basename(target).replace(/\.js$/, '');
-        if (
-          path.dirname(target) !== platformDir ||
-          !platformModules.includes(name)
-        ) {
-          return null;
-        }
-        return path.join(tauriPlatformDir, `${name}.js`);
-      },
-    };
-  }
 
   // config.js does `require('./local_config')` for the optional, git-ignored
   // src/js/app/config/local_config.js. Bundle it when present; when absent make
@@ -312,8 +237,8 @@ function selectPlatformImplementation() {
     };
   }
 
-  // Tauri build only: index.js is an ES module (see build.rolldownOptions), so
-  // the page loads it with type="module". The other scripts (ace, phaser,
+  // index.js is an ES module (see build.rolldownOptions), so the page loads it
+  // with type="module". The other scripts (ace, phaser,
   // firebase) stay classic scripts and run first, as before.
   function moduleScriptHtml() {
     const html = fs.readFileSync(htmlSource, 'utf8');
@@ -324,9 +249,9 @@ function selectPlatformImplementation() {
     return html.replace(classic, '<script type="module" src="index.js"></script>');
   }
 
-  // src/index.html is the page loaded by main.js (public/index.html). It is a
-  // static file (classic <script>/<link> tags that must not be processed by
-  // Vite), so it is copied to the output unchanged.
+  // src/index.html is the page of the app (public/index.html). It is a static
+  // file (classic <script>/<link> tags that must not be processed by Vite), so
+  // it is copied to the output with only the entry script made a module.
   function emitIndexHtml() {
     return {
       name: 'terminalquest:index-html',
@@ -337,14 +262,21 @@ function selectPlatformImplementation() {
         this.emitFile({
           type: 'asset',
           fileName: 'index.html',
-          source: platformTarget === 'tauri' ? moduleScriptHtml() : fs.readFileSync(htmlSource),
+          source: moduleScriptHtml(),
         });
       },
     };
   }
 
+  // The only build is the Tauri one: `vite build --mode tauri` (npm run
+  // build:js:tauri). The Electron build was removed (docs/migration/tauri-runtime.md,
+  // "Electron removal"); another mode is a mistake, not something to fall back from.
   export default defineConfig(({ mode }) => {
-    platformTarget = mode === 'tauri' ? 'tauri' : 'electron';
+    if (mode !== 'tauri') {
+      throw new Error(
+        `vite.config.mjs only builds the Tauri frontend: run vite with --mode tauri (got mode "${mode}"); see npm run build:tauri`
+      );
+    }
     return {
     root: rootDir,
     publicDir: false,
@@ -353,7 +285,6 @@ function selectPlatformImplementation() {
       // React 19 requires the automatic JSX runtime (react/jsx-runtime is
       // resolved at runtime from public/node_modules like every bare import)
       react({ jsxRuntime: 'automatic' }),
-      selectPlatformImplementation(),
       tauriUnavailableModules(),
       resolvePackagesFromPublic(),
       patchTauriPackages(),
@@ -364,17 +295,17 @@ function selectPlatformImplementation() {
       outDir: publicDir,
       // public/ also holds static assets (images, lib, levels, content, ...)
       emptyOutDir: false,
-      target: 'chrome87', // Electron 11
+      // Electron 11's Chromium. Kept until the WebViews of every Tauri OS are
+      // checked for compatibility with a newer target.
+      target: 'chrome87',
       minify: false,
       sourcemap: false,
       cssCodeSplit: false,
       rolldownOptions: {
-        input: platformTarget === 'tauri' ? tauriEntry : entry,
-        external: isExternal,
+        input: tauriEntry,
         output: {
-          // Electron: CommonJS in a classic <script>, wrapped by the banner/footer.
-          // Tauri: ES modules (see the comment at `tauriOutput`).
-          ...(platformTarget === 'tauri' ? tauriOutput : electronOutput),
+          // ES modules (see the comment at `tauriOutput`).
+          ...tauriOutput,
           entryFileNames: 'index.js',
         },
       },

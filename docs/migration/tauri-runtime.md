@@ -483,6 +483,19 @@ npm run tauri -- dev
   - F12 のコンソールに `fs is not available` (`The Node module "fs" is not available`)、`Buffer is not defined`、`process is not defined`、`TerminalQuest failed to start` が出ない (`./local_config` の `Cannot find module` のログは出てよい)。
   - 確認後に `npm run build:all` で Electron の出力を作り直す (`npm run build:tauri` は `public/index.js` を上書きする)。
 
+### Electron の削除 (#65)
+
+判断: Electron シェルを削除し、Tauri だけにした。以降のコマンドは `README.md` を参照すること。本書の他の節は、当時の Electron 版が残っていた状態の記録である。
+
+- 削除したもの: `main.js`、`public/code_runner/runner.js` と `runner.html` (`main.js` の BrowserWindow が使っていた旧ランナー。`worker.js` は残す)、`platform/<名前>.js` の Electron 実装、Vite の `terminalquest:select-platform` プラグインと Electron 用の出力 (`cjs`、`require` による external 化)、`Validator.jsx` の未使用の `window.require`。
+- `platform/<名前>.js` (12 ファイル) は `export * from './tauri/<名前>';` だけの薄いモジュールにした。共通コードの import と、テストの `vi.mock('…/platform/<名前>')` はそのまま使える。`platform/tauri/` は変更していない。
+- `vite.config.mjs` は Tauri 専用である。`--mode tauri` 以外は明示的なエラーで失敗する (フォールバックは無い)。shim、失敗スタブ、パッケージの patch、`chrome87` の target は維持した (`chrome87` は Electron 11 由来の値で、各 OS の WebView での確認が取れるまで変えない)。
+- 依存: ルートの `electron`、`electron-context-menu`、`electron-devtools-installer` と、`package.json` の `main`、`allowScripts`、`overrides` (`extract-zip` はロックから消えた)。`public/` の `electron-is-dev`、`electron-store`、`file-url` (Electron 実装だけが使っていた)。ルートのロックは `lockfileVersion` 3、`public/package-lock.json` は 1 のままである。
+- script: `start` は `tauri dev`、`build` は `npm run build:tauri` にした。`launch`、`build:all`、`build:js`、`watch:*` は削除した。
+- テスト: Vitest は、これまで `platform/<名前>` の Electron 実装 (Node の fs など) で実ファイルを読んでいた。同じ読み方を保つため、`fs`、`exec`、`env`、`assets`、`paths`、`conversationTemplate` は `vitest.config.mjs` で `src/test/nodePlatform/` の Node 版に差し替える (他のモジュールは、これまでどおり各テストが `vi.mock` する)。Electron 実装そのものを検査していたテスト (`src/test/app/platform/*.test.js` の 12 ファイル) は実装と一緒に削除した。実行時に Electron 実装と比較していた Tauri のテストは、削除前の Electron 実装の出力を記録した固定データ (`src/test/fixtures/conversationTemplate/`、`src/test/fixtures/avatar/`) との比較に置き換えた。
+- Tauri のビルド出力: `public/index.js`、`index.html`、`index.css` は削除の前後で同一である。`tauri-game.js` の差は、再 export モジュールによる `init_env()` の呼び出し位置の変更と、`window.require;` の文の削除だけである。
+- 残した記述: `platform/tauri/*`、`src-tauri/` (Rust) のコメントにある「Electron では…」という説明は、比較の根拠の記録として変更していない。
+
 ## 5. 順序と依存
 
 ```

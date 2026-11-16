@@ -5,16 +5,16 @@
 // Buffer). Part images are requested as URLs, which a stand-in XMLHttpRequest
 // serves from the real files of public/avatars/parts (the webview serves them
 // from frontendDist). The resulting PNG data URI is compared pixel by pixel
-// with what the Electron build's jimp (Node entry, file paths) composites.
+// with the PNGs that the Electron build's jimp (Node entry, file paths)
+// composited before it was removed (#65), recorded in src/test/fixtures/avatar/.
 import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'vite';
 import { JSDOM } from 'jsdom';
 import Jimp from 'jimp';
-import { pathToFileURL } from 'node:url';
-import { generateDataURI } from '../../../../js/app/common/avatarRenderer';
 
 const root = path.resolve(__dirname, '../../../../..');
+const recordedDir = path.join(root, 'src', 'test', 'fixtures', 'avatar');
 const partsDir = path.join(root, 'public', 'avatars', 'parts');
 const RESOURCE = '/opt/TerminalQuest';
 const PAGE = 'tauri://localhost/index.html';
@@ -118,17 +118,6 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
     return Jimp.read(png);
   };
 
-  const electronUri = options =>
-    new Promise(resolve => {
-      const base = document.createElement('base');
-      base.href = pathToFileURL(`${path.join(root, 'public')}/index.html`).href;
-      document.head.appendChild(base);
-      generateDataURI(options, uri => {
-        base.remove();
-        resolve(uri);
-      });
-    });
-
   const cases = [
     { ec: 0, hs: 0, sc: 1, hc: 2 },
     { ec: 6, hs: 3, sc: 0, hc: 6 },
@@ -145,7 +134,7 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
     ).rejects.toThrow(/HTTP Status 404/);
   }, 20000);
 
-  test.each(cases)('composites %o to the same PNG as the Electron build', async options => {
+  test.each(cases)('composites %o to the same PNG as the recorded Electron build', async options => {
     const { window, requested } = createWindow();
     window.eval(code);
     window.avatarEntry.setPlatformState({
@@ -169,7 +158,10 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
     expect(requested).toEqual(names.map(n => `tauri://localhost/avatars/parts/${n}.png`));
 
     const tauri = await bitmapOf(uri);
-    const electron = await bitmapOf(await electronUri(options));
+    const recorded = fs.readFileSync(
+      path.join(recordedDir, `ec${options.ec}-hs${options.hs}-sc${options.sc}-hc${options.hc}.png`)
+    );
+    const electron = await Jimp.read(recorded);
     expect(tauri.bitmap.width).toBe(electron.bitmap.width);
     expect(tauri.bitmap.height).toBe(electron.bitmap.height);
     expect(Buffer.compare(tauri.bitmap.data, electron.bitmap.data)).toBe(0);

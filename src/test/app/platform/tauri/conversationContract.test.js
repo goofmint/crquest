@@ -1,14 +1,31 @@
-// Contract of platform/conversationTemplate.js (Electron), pinned before the
-// Tauri implementation was added (#139): it is `pug.renderFile(path, context)`
-// of the pug in public/node_modules, and Conversation.jsx parses the result
-// with cheerio. The Tauri implementation is compared with these results in
-// tauri/conversationTemplate.test.js.
+// Contract of platform/tauri/conversationTemplate.js: pug 3 of public/node_modules
+// renders the template read through the Tauri fs plugin, and Conversation.jsx
+// parses the result with cheerio. These readable expectations were pinned for
+// the Electron implementation (`pug.renderFile`, #139) and moved here when it
+// was removed (#65); tauri/conversationTemplate.test.js compares every template
+// of the repository with the results recorded from it.
+import nodeFs from 'node:fs';
 import path from 'node:path';
-import pug from 'pug';
 import cheerio from 'cheerio';
-import { renderConversationTemplate } from '../../../js/app/platform/conversationTemplate';
-import { createContext } from '../../utils/conversationScenarios';
-import { createFixtureDirectory, removeFixtureDirectory } from '../../utils/conversationFixtures';
+
+const plugin = vi.hoisted(() => ({ readTextFile: vi.fn() }));
+vi.mock('@tauri-apps/plugin-fs', () => plugin);
+
+import { renderConversationTemplate } from '../../../../js/app/platform/tauri/conversationTemplate';
+import { createContext } from '../../../utils/conversationScenarios';
+import { createFixtureDirectory, removeFixtureDirectory } from '../../../utils/conversationFixtures';
+
+beforeEach(() => {
+  plugin.readTextFile.mockReset();
+  plugin.readTextFile.mockImplementation(async file => {
+    try {
+      return nodeFs.readFileSync(file, 'utf8');
+    } catch (error) {
+      if (error.code === 'ENOENT') throw 'No such file or directory (os error 2)';
+      throw String(error.message);
+    }
+  });
+});
 
 // The selectors of ConversationBuilder.parse in Conversation.jsx
 function parse(conversationHtml) {
@@ -28,7 +45,7 @@ function parse(conversationHtml) {
   return { displayName, statement: { key: statementEl.attr('id'), text }, responses };
 }
 
-describe('renderConversationTemplate (Electron)', () => {
+describe('renderConversationTemplate (Tauri)', () => {
   let dir;
   const file = name => path.join(dir, name);
   const render = (name, state, extra) => {
@@ -41,12 +58,9 @@ describe('renderConversationTemplate (Electron)', () => {
   });
   afterAll(() => removeFixtureDirectory(dir));
 
-  test('is exactly pug.renderFile on the same file and context', async () => {
-    const a = createContext();
-    const b = createContext();
-    const expected = pug.renderFile(file('simple.pug'), a.context);
-    expect(await renderConversationTemplate(file('simple.pug'), b.context)).toBe(expected);
-    expect(expected).toBe(
+  test('renders the template with the context as its locals', async () => {
+    const { context } = createContext();
+    expect(await renderConversationTemplate(file('simple.pug'), context)).toBe(
       '<conversation display_name="Player"><statement id="hello">Hello Player, level 10</statement>' +
         '<responses><response id="one">First</response><response id="two">Second</response></responses></conversation>'
     );

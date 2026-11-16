@@ -32,10 +32,6 @@ const STATUS = {
   FAIL: '** FAILED **',
 };
 
-// NOTE: window.require must be used to "fool" webpack and just use
-// the unmodified Electron "require"
-const _require = window.require;
-
 export default class Validator extends React.Component {
   static propTypes = {
     hackObject: PropTypes.object,
