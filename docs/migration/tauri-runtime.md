@@ -313,6 +313,16 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 依存: W2、W5 (`resolveAbsolutePath` の扱い)。
 - Electron リスク: 低 (Electron でも `pug.render` + 文字列で同じ結果)。会話の出力が同一であることを既存の `.pug` 全件の比較テストで確認する。
 
+#### W8 の実施結果 (#139)
+
+- 設計: 新しい platform モジュール `platform/conversationTemplate.js` (`renderConversationTemplate(absolutePath, context)`、Promise で HTML を返す)。Electron 実装は従来どおり `pug.renderFile(absolutePath, context)` をそのまま呼ぶ (context が locals と pug のオプションを兼ね、pug が `context.filename` を書く挙動も同じ)。Tauri 実装 (`platform/tauri/conversationTemplate.js`) は、ルートの `.pug` を `platform/tauri/fs` の `readFile` (UTF-8) で読み、Pug 3 の `read` プラグインフックで `include` / `extends` を解決する。フックは同期なので、まだ読んでいないファイルを要求されたら、pug が解決したパスを持つ目印のエラーを投げ、そのファイルを非同期に読んで map に足し、コンパイルをやり直す (1 回ごとに 1 ファイル増えるので必ず終わる)。解決、ネスト、エラー位置は pug 自身が処理する。読み取りに失敗したファイルは同じ `code` (ENOENT) のエラーとして pug に投げ直させ、Electron と同じ ` at <file> line <n>` が付く。`Conversation.jsx` は `pug` の import をやめ、このモジュールを使う。`cheerio` は従来どおり直接 import している。
+- Tauri バンドルの調査 (実際のビルド出力と、Node のグローバルが無い `vm` コンテキストでの実行): pug と cheerio は `public/node_modules` の版 (pug 3.0.2、cheerio 1.0.0-rc.10) がバンドルされる。cheerio は `stream` / `buffer` / `zlib` に触れない (parse5 と htmlparser2 の同期 API のみ)。ただし pug の依存に Tauri で壊れる箇所が 3 つあり、W1/W2 の「読み込みは失敗しない」前提が成り立っていなかった。(1) `jstransformer/index.js` が読み込み時に `if (fs.readFile)` を評価し、`fs` の失敗スタブがここで投げる。pug を import する `Conversation.jsx` はゲームの読み込み時に評価されるので、このままだと Tauri でゲームが起動しない。(2) 同じく読み込み時に `resolve` パッケージが `fs.realpath` を読む。(3) `pug/lib/index.js` が `include` ごとに `Buffer.isBuffer(contents)` を呼び、webview には `Buffer` が無いので `include` を使う会話が ReferenceError になる。
+- 対応 (Tauri ビルドのみ、`vite.config.mjs`): `patchTauriPackages` が (1) `jstransformer` の `require('fs')` を `{}` に、(3) pug の `Buffer.isBuffer` 判定を文字列か否かの同等の判定に、バンドル時に置き換える (パッケージ側が想定している「`fs.readFile` が無い」分岐。置換前の文字列が見つからなければビルドを失敗させる)。(2) は `pug-filters/lib/run-filter.js` が読む `resolve` だけを、Node 組み込みと同じ失敗スタブにする (フィルターを使うときだけ呼ばれる)。pug のフィルター (`:name`) は Tauri では使えない (`unknown filter` のエラー。リポジトリの `.pug` には使っているものが無い)。Electron の出力は変えていない。DOMParser への置き換えは不要だったので行っていない (R4 の cheerio 部分は解消)。
+- 差分 (Tauri): ファイルは `platform/fs` 経由で読む (capability の scope が適用される)。ファイルが無いときのエラーは `code` と ` at <file> line <n>` が Electron と同じで、本文はプラグインのメッセージ。
+- テスト: `platform/conversationTemplate.test.js` (Electron の契約: 描画結果、`context.filename`、`setState` の副作用、include / extends / mixin、cheerio の解析結果、エラー)、`platform/tauri/conversationTemplate.test.js` (Tauri が Electron と同じ HTML / `filename` / `setState` 呼び出し / エラーを返すこと。リポジトリの全 `.pug` 111 件を、空の状態と「すべて設定済み」の状態、および描画された全 `response` の `lastResponse` で比較)、`platform/tauri/conversationBundle.test.js` (Tauri ビルドで作った実際のバンドルを、`require` / `process` / `Buffer` が無い `vm` で実行し、全 `.pug` が Electron と同じ結果になること、`include` が fs プラグインだけで読まれること)。`selection.test.js` は新モジュールを一致検査に含める。Vitest は `pug` / `cheerio` を `public/node_modules` の版へ向ける (ルートには pug 2 と cheerio rc.3 がある)。
+- 残り: Tauri 上の実機確認 (下記)、ゲーム全体のバンドルを実行したときの他の「読み込み時に失敗スタブへ触る」箇所 (会話以外の依存。今回調べたのは会話の経路だけ)、`resolveAbsolutePath` が返すパスの形 (W5) と asset の scope は W5 の結果に従う。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): NPC と会話し、ダイアログの文章、返答の選択肢、アバター画像が従来どおり出る。返答を選ぶと次の発言になり、選択肢を使い切って `<end conversation>` で閉じられる。`include` を使うのは JavaScript ミッションの科学者 (`scientist1.pug`)。Tauri (`npm run tauri -- dev`): 起動時に `The Node module "fs" is not available` / `Buffer is not defined` が出ないこと。同じ NPC との会話で、Electron と同じ文章と選択肢が出ること (DevTools のコンソールにエラーが無いこと)。
+
 ### W9. アバター (jimp) の Tauri 対応 (B7)
 
 - 内容: `avatarRenderer.js:44-65` の `Jimp.read(staticFilePath(...))` を URL 入力にする (W5 の関数を使う)。ブラウザ向けの `jimp` が bundle できることの確認。動かなければ Canvas で合成する案を別途検討する (挙動変更になるため要相談)。
@@ -437,7 +447,7 @@ npm run tauri -- build --debug
 - R1: `vite build --mode tauri` の出力は今回確認していない。W1 の着手時にまず現在の出力を生成し、`require(` が残る箇所を一覧にする (本書の B1〜B2 の根拠は設定ファイルとテストの内容)。
 - R2: asset プロトコルの scope と、dialog で選んだ拡張機能ディレクトリの関係 (W5、W10)。実機でしか確認できない。
 - R3: WKWebView の自動再生制限により、タイトル画面の音楽が鳴らない可能性 (起動の可否とは別問題として扱う)。
-- R4: `jimp` / `cheerio` / `pug` のブラウザ動作 (W8、W9)。bundle には通っても実行時に失敗する場合の代替 (Canvas、`DOMParser`) は挙動変更を伴うため、事前に相談が必要。
+- R4: `jimp` のブラウザ動作 (W9)。`cheerio` / `pug` は W8 で解消 (#139)。bundle には通っても実行時に失敗する場合の代替 (Canvas、`DOMParser`) は挙動変更を伴うため、事前に相談が必要。
 - R5: W3、W4、W5 は Electron と共有するコードを触る。`index.jsx`、`audio/index.js`、`ContextProvider.jsx`、`fs_utils.js` は動作確認済みなので、挙動を固定するテストを先に足してから変更する。
 - R6: Windows のパス意味論 (`path.sep`、ドライブレター、`$CONFIG` scope の大文字小文字) は W12 まで未検証。
 - R7: Tauri の store と Electron の `userData/config.json` は別ファイルで、既存のセーブデータは引き継がれない (`tauri-platform.md` 1.4 章)。#63 / #65 の前に移行の要否を決める。

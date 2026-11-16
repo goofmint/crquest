@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { builtinModules, createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // The bundle must reference react/jsx-runtime, which exists in every React 19
@@ -36,6 +36,7 @@ const platformModules = [
   'env',
   'init',
   'assets',
+  'conversationTemplate',
 ];
 
 // Everything that is not a project file is resolved at runtime by Electron's
@@ -89,12 +90,25 @@ const tauriBuiltinReplacements = {
   process: path.join(srcDir, 'js', 'tauri_shims', 'process.js'),
 };
 
+// pug-filters/lib/run-filter.js requires the npm package `resolve` (Node's
+// module resolution on the file system, to find jstransformer-* filters) and
+// only calls it when a template uses a filter. Its load-time access of `fs`
+// would throw, so it gets the same failing stub as a Node builtin; a template
+// with a filter then fails with an explicit error where it uses it.
+// (Vite passes module ids with forward slashes, also on Windows, hence normalizePath.)
+const runFilterFile = normalizePath(
+  path.join(publicDir, 'node_modules', 'pug-filters', 'lib', 'run-filter.js')
+);
+
 function tauriUnavailableModules() {
   return {
     name: 'terminalquest:tauri-unavailable-modules',
     enforce: 'pre',
-    resolveId(source) {
+    resolveId(source, importer) {
       if (platformTarget !== 'tauri') return null;
+      if (source === 'resolve' && importer && normalizePath(importer) === runFilterFile) {
+        return UNAVAILABLE_PREFIX + source;
+      }
       const name = unavailableModuleName(source);
       if (!name) return null;
       return tauriBuiltinReplacements[name] ?? UNAVAILABLE_PREFIX + name;
@@ -140,6 +154,52 @@ function resolvePackagesFromPublic() {
         { ...options, skipSelf: true }
       );
       return resolved && !resolved.external ? resolved : null;
+    },
+  };
+}
+
+// Tauri build only: two packages of the conversation renderer (pug 3) touch
+// something that a webview does not have, and are patched while bundling.
+// Each patch fails the build when the text is not found (the package changed),
+// instead of silently shipping the unpatched code.
+//
+// - pug/lib/index.js (compileBody's `read` wrapper) calls
+//   `Buffer.isBuffer(contents)` for every included file, and a webview has no
+//   `Buffer` global, so any template with an `include` would throw a
+//   ReferenceError. The check is replaced by an equivalent one for the two
+//   possible types (a string stays as it is, anything else is a Buffer-like
+//   and is converted with toString('utf8')).
+// - jstransformer/index.js (pug's filters) does `if (fs.readFile)` on
+//   `require('fs')` when it is loaded, which throws with the stub of the
+//   unavailable `fs` (see tauriUnavailableModules) and would stop the whole
+//   game bundle from loading. The package supports an `fs` without readFile
+//   (its else branch, which is what bundlers give it in a browser), so the
+//   `require('fs')` is replaced by an empty object.
+const tauriPackagePatches = [
+  {
+    file: normalizePath(path.join(publicDir, 'node_modules', 'pug', 'lib', 'index.js')),
+    from: "Buffer.isBuffer(contents)\n        ? contents.toString('utf8')\n        : contents",
+    to: "typeof contents === 'string'\n        ? contents\n        : contents.toString('utf8')",
+  },
+  {
+    file: normalizePath(path.join(publicDir, 'node_modules', 'jstransformer', 'index.js')),
+    from: "var fs = require('fs');",
+    to: 'var fs = {};',
+  },
+];
+
+function patchTauriPackages() {
+  return {
+    name: 'terminalquest:patch-tauri-packages',
+    enforce: 'pre',
+    transform(code, id) {
+      if (platformTarget !== 'tauri') return null;
+      const patch = tauriPackagePatches.find(candidate => candidate.file === normalizePath(id));
+      if (!patch) return null;
+      if (!code.includes(patch.from)) {
+        throw new Error(`${id} no longer contains the text that the Tauri build patches: ${patch.from}`);
+      }
+      return code.replace(patch.from, patch.to);
     },
   };
 }
@@ -268,6 +328,7 @@ function selectPlatformImplementation() {
       selectPlatformImplementation(),
       tauriUnavailableModules(),
       resolvePackagesFromPublic(),
+      patchTauriPackages(),
       optionalLocalConfig(),
       emitIndexHtml(),
     ],

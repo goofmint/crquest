@@ -1,7 +1,7 @@
 import React from 'react';
-import pug from 'pug';
 import cheerio from 'cheerio';
 import { toAssetUrl } from '../platform/assets';
+import { renderConversationTemplate } from '../platform/conversationTemplate';
 import { keypress } from 'keypress.js';
 import audioManager from '../common/audio/index';
 import sharedListener from '../common/listener';
@@ -221,7 +221,10 @@ class ConversationBuilder {
       );
     }
 
-    return pug.renderFile(absoluteConversationPath, this.context);
+    return await renderConversationTemplate(
+      absoluteConversationPath,
+      this.context
+    );
   }
 
   async parse(conversationHtml) {
