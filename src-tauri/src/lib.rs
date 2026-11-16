@@ -1,3 +1,4 @@
+mod bundled_scope;
 mod close;
 mod exec;
 mod help_menu;
@@ -129,6 +130,10 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_fs::init())
+        // Adds <dir>/.bundled next to every directory the user chose (the Sync
+        // Bundled Assets target). After fs, before persisted-scope, so that the
+        // restore at startup goes through it too.
+        .plugin(bundled_scope::init())
         // Must come after the fs plugin: restores the fs and asset scopes that
         // the dialog added (the extension directory) after a restart.
         .plugin(tauri_plugin_persisted_scope::init())

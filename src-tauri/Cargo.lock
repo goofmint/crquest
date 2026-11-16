@@ -3953,6 +3953,7 @@ dependencies = [
 name = "terminalquest"
 version = "3.12.1"
 dependencies = [
+ "glob",
  "libc",
  "serde",
  "tauri",
