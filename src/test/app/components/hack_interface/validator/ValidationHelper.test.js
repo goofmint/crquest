@@ -14,7 +14,7 @@ vi.mock('../../../../../js/app/platform/exec', () => ({
   exec: vi.fn(),
   run: vi.fn(),
   commandExists: vi.fn(),
-  pathExistsSync: vi.fn(),
+  pathExists: vi.fn(),
 }));
 vi.mock('../../../../../js/app/platform/env', () => ({
   getPlatform: vi.fn(() => process.platform),
@@ -185,7 +185,7 @@ describe('isExecutableValid', () => {
   });
 
   test('missing path', async () => {
-    platformExec.pathExistsSync.mockReturnValue(false);
+    platformExec.pathExists.mockResolvedValue(false);
     const [ok, message] = await makeHelper().isExecutableValid('/x/y', []);
     expect(ok).toBe(false);
     expect(message).toContain('The path you provided does not exist!');
@@ -193,8 +193,22 @@ describe('isExecutableValid', () => {
     expect(platformExec.exec).not.toHaveBeenCalled();
   });
 
+  test('passes the untrimmed original path to the existence check and the exec', async () => {
+    platformExec.pathExists.mockResolvedValue(true);
+    platformExec.exec.mockResolvedValue({ stdout: '', stderr: '' });
+    await makeHelper().isExecutableValid(' /a b/tool ', ['-v']);
+    expect(platformExec.pathExists).toHaveBeenCalledWith(' /a b/tool ');
+    expect(platformExec.exec).toHaveBeenCalledWith('" /a b/tool " -v');
+  });
+
+  test('a rejection of the existence check propagates (not reported as missing)', async () => {
+    platformExec.pathExists.mockRejectedValue(new Error('forbidden path'));
+    await expect(makeHelper().isExecutableValid('/p', [])).rejects.toThrow('forbidden path');
+    expect(platformExec.exec).not.toHaveBeenCalled();
+  });
+
   test('success runs the quoted path with space-joined args via the shell exec', async () => {
-    platformExec.pathExistsSync.mockReturnValue(true);
+    platformExec.pathExists.mockResolvedValue(true);
     platformExec.exec.mockResolvedValue({ stdout: '', stderr: '' });
     expect(
       await makeHelper().isExecutableValid('/usr/bin/node', ['--version', '-p'])
@@ -208,7 +222,7 @@ describe('isExecutableValid', () => {
     ['EPERM error', new Error('spawn EPERM')],
     ['Access is denied', new Error('Access is denied.')],
   ])('%s gives the not-executable message', async (_, err) => {
-    platformExec.pathExistsSync.mockReturnValue(true);
+    platformExec.pathExists.mockResolvedValue(true);
     platformExec.exec.mockRejectedValue(err);
     const [ok, message] = await makeHelper().isExecutableValid('/p', []);
     expect(ok).toBe(false);
@@ -217,7 +231,7 @@ describe('isExecutableValid', () => {
   });
 
   test('other errors give the generic message', async () => {
-    platformExec.pathExistsSync.mockReturnValue(true);
+    platformExec.pathExists.mockResolvedValue(true);
     platformExec.exec.mockRejectedValue(new Error('boom'));
     const [ok, message] = await makeHelper().isExecutableValid('/p', []);
     expect(ok).toBe(false);

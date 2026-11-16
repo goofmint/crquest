@@ -1,8 +1,14 @@
 import { mockIPC, clearMocks } from '@tauri-apps/api/mocks';
-import { commandExists, exec, pathExistsSync, run } from '../../../../js/app/platform/tauri/exec';
+import { commandExists, exec, pathExists, run } from '../../../../js/app/platform/tauri/exec';
 import { openDevTools, toggleDevTools } from '../../../../js/app/platform/tauri/devtools';
 
-afterEach(() => clearMocks());
+const fsMocks = vi.hoisted(() => ({ stat: vi.fn() }));
+vi.mock('@tauri-apps/plugin-fs', () => fsMocks);
+
+afterEach(() => {
+  clearMocks();
+  fsMocks.stat.mockReset();
+});
 
 function backend(handler) {
   const calls = [];
@@ -146,9 +152,28 @@ describe('exec (no shell)', () => {
   });
 });
 
-describe('pathExistsSync', () => {
-  test('throws explicitly', () => {
-    expect(() => pathExistsSync('/a')).toThrow(expect.objectContaining({ code: 'ERR_TAURI_SYNC_UNSUPPORTED' }));
+describe('pathExists', () => {
+  const info = kind => ({ isFile: kind === 'file', isDirectory: kind === 'dir', isSymlink: false, size: 1, mtime: null });
+
+  test('true for an existing file or directory, via stat of the path as given', async () => {
+    fsMocks.stat.mockResolvedValueOnce(info('file')).mockResolvedValueOnce(info('dir'));
+    await expect(pathExists('/a b/tool')).resolves.toBe(true);
+    await expect(pathExists('/a b')).resolves.toBe(true);
+    expect(fsMocks.stat).toHaveBeenNthCalledWith(1, '/a b/tool');
+  });
+
+  test('false when the path does not exist (ENOENT only)', async () => {
+    fsMocks.stat.mockRejectedValue('No such file or directory (os error 2)');
+    await expect(pathExists('/x')).resolves.toBe(false);
+  });
+
+  test('any other failure (for example a path outside the scope) rejects', async () => {
+    fsMocks.stat.mockRejectedValue('forbidden path: /x, maybe it is not allowed on the scope');
+    await expect(pathExists('/x')).rejects.toThrow(/forbidden path/);
+  });
+
+  test('has no synchronous variant', async () => {
+    expect((await import('../../../../js/app/platform/tauri/exec')).pathExistsSync).toBeUndefined();
   });
 });
 

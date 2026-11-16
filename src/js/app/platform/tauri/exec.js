@@ -17,11 +17,15 @@
  *   `run_command`; anything else rejects without running. A non-zero exit
  *   rejects like Node's `exec` (`Error: Command failed: ...`, with `code`,
  *   `stdout`, `stderr`).
- * - `pathExistsSync(path)`: synchronous, not available (throws
- *   `ERR_TAURI_SYNC_UNSUPPORTED`).
+ * - `pathExists(path)`: resolves `true` / `false` through an asynchronous
+ *   `stat` (platform/fs `existsAsync`). Only ENOENT means "does not exist":
+ *   any other failure rejects, in particular a path outside the fs read
+ *   scope (src-tauri/capabilities/platform.json), which is not silently
+ *   reported as missing. The Windows Store (`WindowsApps`) `stat` problem noted
+ *   in ../exec.js is not verified on Tauri.
  */
 import { invoke } from '@tauri-apps/api/core';
-import { unsupportedSync } from './errors';
+import { existsAsync } from './fs';
 
 const KILL_SIGNAL = 'SIGKILL';
 
@@ -117,10 +121,4 @@ export const exec = async (command, options = {}) => {
   return { stdout, stderr };
 };
 
-export const pathExistsSync = () => {
-  throw unsupportedSync(
-    'exec',
-    'pathExistsSync',
-    'Use platform/fs existsAsync (note: Node fs.existsSync was chosen over fs.stat for Windows Store apps, see ../exec.js).'
-  );
-};
+export const pathExists = async path => (await existsAsync(path)) !== false;

@@ -27,12 +27,13 @@
  *   Rejects if the lookup itself cannot be run or `name` is not a non-empty
  *   string.
  *
- * - `pathExistsSync(path)`: Node `fs.existsSync`. Deliberately NOT fs-jetpack
- *   `exists`: jetpack relies on `fs.stat`, which fails for Windows Store apps
- *   under `WindowsApps`
+ * - `pathExists(path)`: resolves `true` / `false` with Node `fs.existsSync`
+ *   semantics (never rejects; any error, including an invalid argument, is
+ *   `false`). Deliberately NOT fs-jetpack `exists` / `existsAsync`: jetpack
+ *   relies on `fs.stat`, which fails for Windows Store apps under
+ *   `WindowsApps`
  *   (https://github.com/nodejs/node/issues/33024,
  *   https://github.com/microsoft/vscode/issues/95828, as of 8/26/2020).
- *   Synchronous (blocks the event loop); migrate when the Tauri layer exists.
  *
  * No cancellation mechanism is defined beyond options that Node accepts.
  *
@@ -58,7 +59,7 @@
  * @property {(command: string, options?: PlatformExecOptions) => Promise<PlatformExecResult>} exec
  * @property {(program: string, args?: string[], options?: PlatformExecOptions) => Promise<PlatformRunResult>} run
  * @property {(name: string) => Promise<boolean>} commandExists
- * @property {(path: string) => boolean} pathExistsSync
+ * @property {(path: string) => Promise<boolean>} pathExists
  */
 
 import { exec as nodeExec, execFile as nodeExecFile } from 'child_process';
@@ -105,4 +106,4 @@ export const commandExists = async name => {
   return code === 0;
 };
 
-export const pathExistsSync = existsSync;
+export const pathExists = async path => existsSync(path);

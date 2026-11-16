@@ -18,21 +18,16 @@
  *    a missing source rejects with `code: 'ENOENT'`, and `removeAsync` of a
  *    missing path is a no-op. Synchronous methods block the event loop.
  *
- * Synchronous additions (call sites keep their sync semantics):
- * `remove` is jetpack's synchronous remove (return value unused; a missing
- * path is a no-op). `readFileSync` is Node's: with an encoding it returns a
- * string, and a missing file throws `ENOENT` (context_provider/system.js
- * relies on that throw).
- *
- * Exported names: `remove`, `readFileSync`, `stat`, `lstat`, `readFile`, `readdir` (Node), `exists`, `list`,
- * `read` (jetpack, sync), `existsAsync`, `listAsync`, `readAsync`,
- * `writeAsync`, `copyAsync`, `removeAsync` (jetpack, async).
+ * Exported names: `stat`, `lstat`, `readFile`, `readdir` (Node
+ * `fs.promises`), `existsAsync`, `listAsync`, `readAsync`, `writeAsync`,
+ * `copyAsync`, `removeAsync` (jetpack, async). There are no synchronous
+ * members: Tauri cannot provide them, so every caller uses the asynchronous
+ * forms.
  *
  * Differences from the earlier JSDoc-only contract: the contract also listed
- * `readFileSync`, `existsSync` and jetpack `remove`; they are not exported
- * here because their call sites (context_provider/system.js,
- * ValidationHelper.js, ClearDataButton.jsx) are not migrated yet. Also,
- * `readFile` is now the async `fs.promises` form only.
+ * synchronous `exists` / `list` / `read` / `remove` / `readFileSync` and
+ * `existsSync`; they are not exported (no caller is left). `readFile` is the
+ * async `fs.promises` form only.
  *
  * @typedef {Object} PlatformFs
  * @property {(path: string, options?: string | {encoding?: string}) => Promise<string | Buffer>} readFile
@@ -43,12 +38,6 @@
  *   Rejects on failure; `error.code` is preserved.
  * @property {(path: string) => Promise<import('fs').Stats>} lstat
  *   Like `stat`, but does not follow a symbolic link.
- * @property {(path: string) => false | 'dir' | 'file' | 'other'} exists
- *   Synchronous.
- * @property {(path?: string) => string[] | undefined} list
- *   Synchronous. `undefined` if the directory does not exist.
- * @property {(path: string, returnAs?: 'json' | 'utf8' | 'buffer' | 'jsonWithDates') => *} read
- *   Synchronous. `undefined` if the file does not exist.
  * @property {(path: string) => Promise<false | 'dir' | 'file' | 'other'>} existsAsync
  * @property {(path?: string) => Promise<string[] | undefined>} listAsync
  * @property {(path: string, returnAs?: 'json' | 'utf8' | 'buffer' | 'jsonWithDates') => Promise<*>} readAsync
@@ -56,25 +45,16 @@
  *   Creates missing parent directories.
  * @property {(from: string, to: string, options?: {overwrite?: boolean}) => Promise<void>} copyAsync
  * @property {(path: string) => Promise<void>} removeAsync
- * @property {(path: string) => void} remove
- *   Synchronous. Return value is not used by callers.
- * @property {(path: string, options?: string | {encoding?: string}) => string | Buffer} readFileSync
- *   Synchronous. String with an encoding. Throws `ENOENT` for a missing file.
  */
 
-import { promises as nodeFs, readFileSync as nodeReadFileSync } from 'fs';
+import { promises as nodeFs } from 'fs';
 import * as jetpack from 'fs-jetpack';
 
-export const readFileSync = nodeReadFileSync;
 export const stat = nodeFs.stat;
 export const lstat = nodeFs.lstat;
 export const readFile = nodeFs.readFile;
 export const readdir = nodeFs.readdir;
 
-export const exists = jetpack.exists;
-export const list = jetpack.list;
-export const read = jetpack.read;
-export const remove = jetpack.remove;
 export const existsAsync = jetpack.existsAsync;
 export const listAsync = jetpack.listAsync;
 export const readAsync = jetpack.readAsync;

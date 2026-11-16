@@ -1,4 +1,4 @@
-import { exec, run, commandExists, pathExistsSync } from '../../../js/app/platform/exec';
+import { exec, run, commandExists, pathExists } from '../../../js/app/platform/exec';
 
 // exec.test.js mocks child_process; these tests run real child processes (the
 // Node binary running the tests) to pin the behavior the callers depend on.
@@ -82,8 +82,8 @@ describe('platform exec with real processes', () => {
     }
   );
 
-  test('pathExistsSync reports existing and missing paths', () => {
-    expect(pathExistsSync(NODE)).toBe(true);
-    expect(pathExistsSync('/nonexistent/path-xyz')).toBe(false);
+  test('pathExists reports existing and missing paths', async () => {
+    expect(await pathExists(NODE)).toBe(true);
+    expect(await pathExists('/nonexistent/path-xyz')).toBe(false);
   });
 });

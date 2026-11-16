@@ -4,9 +4,8 @@
  * (src-tauri/capabilities/platform.json): a path outside them rejects.
  *
  * Differences from Electron / fs-jetpack:
- * - Synchronous members (`exists`, `list`, `read`, `remove`, `readFileSync`)
- *   cannot exist on Tauri: they throw `ERR_TAURI_SYNC_UNSUPPORTED` (use the
- *   `*Async` / promise forms).
+ * - There are no synchronous members (Electron has none either): use the
+ *   `*Async` / promise forms.
  * - Plugin errors are strings; they are rethrown as Error objects, and a
  *   missing path carries `code: 'ENOENT'` (see errors.js). Other Node error
  *   codes are not reproduced.
@@ -34,7 +33,7 @@ import {
   writeFile,
   writeTextFile,
 } from '@tauri-apps/plugin-fs';
-import { rejectAsError, unsupportedSync } from './errors';
+import { rejectAsError } from './errors';
 
 
 function assertPath(path) {
@@ -265,26 +264,3 @@ export async function removeAsync(path) {
   }
   await rejectAsError(pluginRemove(path, { recursive: true }));
 }
-
-// --- Synchronous members: not available ---------------------------------
-
-export function exists() {
-  throw unsupportedSync('fs', 'exists', 'Use existsAsync.');
-}
-
-export function list() {
-  throw unsupportedSync('fs', 'list', 'Use listAsync.');
-}
-
-export function read() {
-  throw unsupportedSync('fs', 'read', 'Use readAsync.');
-}
-
-export function remove() {
-  throw unsupportedSync('fs', 'remove', 'Use removeAsync.');
-}
-
-export function readFileSync() {
-  throw unsupportedSync('fs', 'readFileSync', 'Use readFile (asynchronous).');
-}
-

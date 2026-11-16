@@ -160,9 +160,9 @@ export default class ValidationHelper {
     }
 
     /**
-     * We're using fs here instead of jetpack.exists due to a bug in their
-     * implementation. Jetpack's function relies on fs.stat which does not
-     * work for Windows Store installed apps that land in the `WindowsApp`
+     * platform/exec pathExists uses Node fs.existsSync on Electron instead of
+     * jetpack.exists due to a bug in their implementation. Jetpack's function
+     * relies on fs.stat which does not work for Windows Store installed apps that land in the `WindowsApp`
      * directory.
      *
      * This looks like it will be fixed in some future version of Node.js.
@@ -171,7 +171,7 @@ export default class ValidationHelper {
      *                https://github.com/microsoft/vscode/issues/95828
      * This is true as of: 8/26/2020.
      */
-    if (!platformExec.pathExistsSync(path)) {
+    if (!(await platformExec.pathExists(path))) {
       return [
         false,
         `The path you provided does not exist!

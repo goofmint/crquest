@@ -1,7 +1,6 @@
 import {
   rejectAsError,
   toError,
-  unsupportedSync,
 } from '../../../../js/app/platform/tauri/errors';
 
 describe('toError', () => {
@@ -40,14 +39,5 @@ describe('rejectAsError', () => {
 
   test('turns a string rejection into an Error', async () => {
     await expect(rejectAsError(Promise.reject('boom'))).rejects.toBeInstanceOf(Error);
-  });
-});
-
-describe('unsupportedSync', () => {
-  test('names the member and carries a code', () => {
-    const error = unsupportedSync('fs', 'exists', 'Use existsAsync.');
-    expect(error.code).toBe('ERR_TAURI_SYNC_UNSUPPORTED');
-    expect(error.message).toContain('platform/fs.exists');
-    expect(error.message).toContain('Use existsAsync.');
   });
 });

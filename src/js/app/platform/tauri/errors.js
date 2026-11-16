@@ -38,18 +38,3 @@ export async function rejectAsError(promise) {
     throw toError(reason);
   }
 }
-
-/**
- * Error for members that are synchronous in the Electron contract and cannot
- * be implemented synchronously with Tauri's asynchronous plugins.
- * @param {string} module   e.g. 'fs'
- * @param {string} member   e.g. 'readFileSync'
- * @param {string} instead  what to use instead
- */
-export function unsupportedSync(module, member, instead) {
-  const error = new Error(
-    `platform/${module}.${member} is synchronous and is not available on Tauri. ${instead}`
-  );
-  error.code = 'ERR_TAURI_SYNC_UNSUPPORTED';
-  return error;
-}

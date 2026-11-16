@@ -31,6 +31,7 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 
 | permission | scope | 理由 |
 | --- | --- | --- |
+| `fs:allow-read-text-file` | READ + `/proc/cpuinfo` (単一ファイル、読み取りのみ) | Raspberry Pi 判定 (`context_provider/system.js` の `readFile('/proc/cpuinfo')`)。`/proc/**` は許可しない |
 | `fs:allow-read-text-file` / `read-file` / `read-dir` / `exists` / `stat` / `lstat` | READ | `platform/fs` の `readFile` `readdir` `stat` `lstat` `existsAsync` `listAsync` `readAsync`。同梱コンテンツ (リソース) とユーザーデータの読み取り |
 | `fs:allow-write-text-file` / `write-file` / `mkdir` | WRITE | `writeAsync` (親ディレクトリ作成を含む)。QuestIDE のコード保存、validator の `error.txt` |
 | `fs:allow-copy-file` / `remove` | WRITE | `copyAsync` / `removeAsync` / `ClearDataButton` の `remove` (セーブデータ削除) |
@@ -140,10 +141,8 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 | `paths.getAppDataPath` / `getUserDataPath` / `getAppVersion` | 同期のまま。`await initPlatform()` が値を読み、以降は同期で返す。未初期化は throw | `config.js` (モジュール読み込み時に呼ぶ)、`analytics.js`。エントリで `initPlatform()` を待ってからアプリを読み込む必要がある |
 | `env.isDev` | 同上 (Rust の `is_dev`) | `config.js`、`assetLoader.js`、`firebase.js`、`gameEvents.js`、`itemsHelper.js`、`index.jsx` |
 | `store.getValue` / `setValue` / `hasValue` / `deleteValue` | throw (`ERR_TAURI_SYNC_UNSUPPORTED`)。非同期版 `*Async` を追加 | `ContextProvider.jsx` (getValue)、`common/context/index.js` (setValue)、`common/audio/index.js` (getValue / setValue)、`ClearDataButton.jsx` (hasValue / deleteValue) |
-| `fs.exists` / `list` / `read` | throw。`existsAsync` / `listAsync` / `readAsync` を使う | `Game.jsx` の `list(commonEntitiesDir)` |
-| `fs.remove` | throw。`removeAsync` を使う | `ClearDataButton.jsx` |
-| `fs.readFileSync` | throw。`readFile` を使う | `context_provider/system.js` (`/proc/cpuinfo`) |
-| `exec.pathExistsSync` | throw。`fs.existsAsync` を使う | `ValidationHelper.isExecutableValid` (Windows Store アプリの `fs.stat` 問題は未検証) |
+| `fs.exists` / `list` / `read` / `remove` / `readFileSync`、`exec.pathExistsSync` | 契約から削除した (W6 #137)。Electron と Tauri の両方に存在しない。非同期の `existsAsync` / `listAsync` / `readAsync` / `removeAsync` / `readFile` を使う | なし |
+| `exec.pathExists(path)` (非同期、追加) | Electron: `fs.existsSync` の結果 (Windows Store の `fs.stat` 問題を避ける)。Tauri: `existsAsync` (stat)。ENOENT 以外の失敗 (scope 外のパスなど) は reject する | `ValidationHelper.isExecutableValid`。ユーザー指定の実行ファイルのパスは fs の read scope の外なので Tauri では reject になる (W11)。Windows Store アプリの `stat` は未検証 |
 | `devtools.openDevTools` / `toggleDevTools` | `Promise<void>` を返す (#64、`tauri-shell.md`)。Rust コマンドを呼び、失敗 (release ビルド) は reject する。await しない呼び出し元は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
 
 `exec.exec` (シェル文字列) の扱いは 2.3 章のとおり。

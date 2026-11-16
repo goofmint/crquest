@@ -254,9 +254,8 @@ describe('jetpack family', () => {
   });
 });
 
-describe('synchronous members', () => {
-  test.each(['exists', 'list', 'read', 'remove', 'readFileSync'])('%s throws explicitly', name => {
-    expect(() => fs[name]('/a')).toThrow(/not available on Tauri/);
-    expect(() => fs[name]('/a')).toThrow(expect.objectContaining({ code: 'ERR_TAURI_SYNC_UNSUPPORTED' }));
+describe('no synchronous members', () => {
+  test.each(['exists', 'list', 'read', 'remove', 'readFileSync'])('%s is not exported', name => {
+    expect(fs[name]).toBeUndefined();
   });
 });
