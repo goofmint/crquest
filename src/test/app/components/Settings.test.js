@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, act } from '@testing-library/react';
 
-vi.mock('electron', () => ({ remote: {} }));
 vi.mock('../../../js/app/platform/paths', () => ({
   getGamePackageVersion: vi.fn(),
 }));

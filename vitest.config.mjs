@@ -5,9 +5,35 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Test configuration (the app itself is built by vite.config.mjs, which is
-// intentionally NOT used here: it targets Electron's require()).
+// intentionally NOT used here: it only builds the Tauri frontend).
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const publicModules = path.join(rootDir, 'public', 'node_modules');
+const platformDir = path.join(rootDir, 'src', 'js', 'app', 'platform');
+const nodePlatformDir = path.join(rootDir, 'src', 'test', 'nodePlatform');
+
+// The platform modules (src/js/app/platform/<name>.js) re-export the Tauri
+// implementation, which needs a webview (Tauri IPC). Most tests of the shared
+// code run against the real files of the repository, so these modules are
+// replaced by the Node-backed ones in src/test/nodePlatform/ (the same exports).
+// A test that needs something else mocks the module with vi.mock, as before.
+// platform/tauri/* is not replaced: its own tests import it directly.
+const nodePlatformModules = ['fs', 'exec', 'env', 'assets', 'paths', 'conversationTemplate'];
+
+function nodePlatform() {
+  return {
+    name: 'terminalquest:node-platform',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      if (!importer || !source.startsWith('.')) return null;
+      const target = path.resolve(path.dirname(importer), source);
+      const name = path.basename(target).replace(/\.js$/, '');
+      if (path.dirname(target) !== platformDir || !nodePlatformModules.includes(name)) {
+        return null;
+      }
+      return path.join(nodePlatformDir, `${name}.js`);
+    },
+  };
+}
 
 // The renderer's dependencies (react, styled-components, yup, dexie, ...) are
 // installed in public/node_modules, not in the root node_modules. Resolve bare
@@ -47,7 +73,7 @@ function publicNodeModules() {
 }
 
 export default defineConfig({
-  plugins: [publicNodeModules(), react({ jsxRuntime: 'automatic' })],
+  plugins: [nodePlatform(), publicNodeModules(), react({ jsxRuntime: 'automatic' })],
   // The sources and tests are .js files that contain JSX
   oxc: { include: /\.[jt]sx?$/, lang: 'jsx' },
   resolve: {
