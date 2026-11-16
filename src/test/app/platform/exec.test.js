@@ -127,7 +127,14 @@ describe('commandExists', () => {
   });
 });
 
-test('pathExistsSync is fs.existsSync', () => {
-  nodeFs.existsSync.mockReturnValue(true);
-  expect(platformExec.pathExistsSync('/a')).toBe(true);
+describe('pathExists', () => {
+  test.each([true, false])('resolves fs.existsSync result %s for the path as given', async value => {
+    nodeFs.existsSync.mockReturnValue(value);
+    await expect(platformExec.pathExists('/a b')).resolves.toBe(value);
+    expect(nodeFs.existsSync).toHaveBeenCalledWith('/a b');
+  });
+
+  test('has no synchronous variant', () => {
+    expect(platformExec.pathExistsSync).toBeUndefined();
+  });
 });

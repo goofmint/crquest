@@ -88,7 +88,6 @@ describe('build-time selection (vite.config.mjs)', () => {
 
   test('the default (Electron) build bundles the Electron implementation', async () => {
     const code = await bundle('production');
-    expect(code).not.toContain('ERR_TAURI_SYNC_UNSUPPORTED');
     expect(code).not.toContain('platform/tauri/');
     expect(code).toContain('require("electron-store")');
   }, 60000);
@@ -96,7 +95,6 @@ describe('build-time selection (vite.config.mjs)', () => {
   test('--mode tauri bundles platform/tauri/* and the Tauri JS APIs', async () => {
     // The entry and the game chunk together (see the chunk test above).
     const code = Object.values(await bundleFiles('tauri')).join('\n');
-    expect(code).toContain('ERR_TAURI_SYNC_UNSUPPORTED');
     expect(code).toContain('src/js/app/platform/tauri/store.js');
     expect(code).not.toContain('require("electron-store")');
     expect(code).not.toContain('require("@tauri-apps');

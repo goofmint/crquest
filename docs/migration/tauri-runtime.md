@@ -72,10 +72,10 @@ Electron はページが `file:` URL なので、`document.baseURI` から絶対
 | `setValue('audio', ...)` | `audio/index.js:131` (`saveState`。`useAudioManager` の `syncAudioState` から) | 音量変更時 (S2) |
 | `setValue(key, value)` | `common/context/index.js:77` (`setContext` の `setState` コールバック内) | コンテキストが変わるたびに落ちる (S1。初期化直後の `setContext(initialState)` から) |
 | `hasValue` / `deleteValue` | `ClearDataButton.jsx:14,16` | データ消去 (S2) |
-| `remove(path)` | `ClearDataButton.jsx:56` | データ消去 (S2) |
-| `list(path)` | `Game.jsx:228` (`for (const entityKey of list(commonEntitiesDir))`、周囲は既に `async`) | レベル読み込み = fog_owl 到達 (S2、マイルストーン 2) |
-| `readFileSync('/proc/cpuinfo')` | `context_provider/system.js:25` (try/catch 内) | 例外は握られて `isPi()` が `false` になる。起動は止まらないが、Tauri の fs scope に `/proc` は無いため Linux では常に `false` (S2、挙動の確認事項) |
-| `pathExistsSync` | `ValidationHelper.js:173` (`isExecutableValid` は既に `async`: `ValidationHelper.js:156`) | 実行ファイルパス検証 (S2) |
+| `remove(path)` | `ClearDataButton.jsx:56` | データ消去 (S2)。W4 で `removeAsync` に置換済み |
+| `list(path)` | `Game.jsx:228` (`for (const entityKey of list(commonEntitiesDir))`、周囲は既に `async`) | レベル読み込み = fog_owl 到達 (S2、マイルストーン 2)。#150 で `listAsync` に置換済み |
+| `readFileSync('/proc/cpuinfo')` | `context_provider/system.js:25` (try/catch 内) | W6 (#137) で非同期の `readFile` に置換済み。Tauri の fs scope に `/proc/cpuinfo` を追加した |
+| `pathExistsSync` | `ValidationHelper.js:173` (`isExecutableValid` は既に `async`: `ValidationHelper.js:156`) | W6 (#137) で非同期の `pathExists` に置換済み |
 
 store の同期 API の扱いは判断事項 D1 を参照。Electron の `platform/store.js` には `*Async` が無い (`store.js:48-75`)。Tauri の `platform/tauri/store.js` にだけ `getValueAsync` 等がある。
 
@@ -279,6 +279,16 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 規模: 約 6 ファイル + テスト。
 - 依存: なし。W4 と同じファイル (`ClearDataButton.jsx`) を触るので、W4 のあとに行うか同じ PR にまとめる。
 - Electron リスク: 低 (置き換え先は Electron にも既存の非同期 API。`sync-api.md` の対象)。`Game.jsx` は `Promise.all` の順序とログ順を維持する。
+
+#### W6 の実施結果 (#137)
+
+- 監査: main では `Game.jsx` の `list` (#150) と `ClearDataButton.jsx` の `remove` (W4) は置換済みだった。アプリのコードに残っていた同期呼び出しは 2 か所で、`ValidationHelper.js` の `platformExec.pathExistsSync` と `system.js` の `readFileSync('/proc/cpuinfo')` である。`src/js` と `public/content` で `exists(` `list(` `read(` `remove(` `readFileSync` `pathExistsSync` を洗い出した (`public/content` の `exists(helper, ...)` は validator 自前の非同期関数で、fs ではない)。
+- 設計: (1) `platform/exec` に `pathExists(path): Promise<boolean>` を追加した。Electron は `async path => fs.existsSync(path)` で従来の判定そのまま (Windows Store の `WindowsApps` で jetpack/`fs.stat` が失敗する問題を避ける理由は `exec.js` のコメントに残した。`existsAsync` には置き換えていない)。Tauri は `existsAsync` (非同期 `stat`) で、ENOENT だけを `false` とし、scope 外のパスなど他の失敗は reject する (黙って `false` にしない)。(2) `system.js` は `readFile('/proc/cpuinfo', { encoding: 'utf8' })` を `await` し、`isPi` と `initializeSystemInfo` を `async` にした。従来どおり読み取り失敗は `try/catch` で `false` (Electron の現行挙動。欠損や権限エラーを同じに扱う)。`ContextProvider.jsx` は `pipeAsync` 内なので呼び出し側の変更は不要。(3) Tauri の capability に `fs:allow-read-text-file` の scope として `/proc/cpuinfo` だけを追加した (読み取りのみ、`**` なし)。
+- 同期メンバーの削除: 呼び出し元が無くなったので、`platform/fs` の `exists` / `list` / `read` / `remove` / `readFileSync` と `platform/exec` の `pathExistsSync` を Electron と Tauri の両方から削除した (W4 の store と同様)。Tauri の `unsupportedSync` と `ERR_TAURI_SYNC_UNSUPPORTED` も不要になったので削除した。API の一致は `selection.test.js` の一致検査が見る。
+- テスト: `system.test.js` (BCM 型番ごとの判定、部分一致・未列挙・`Hardware` 行なし・空は `false`、読み取り失敗は reject せず `false`、`os` がある場合は再判定しない、`pi` の上書き、元の state を変更しない、`utf8` で `/proc/cpuinfo` を読む)、`ValidationHelper.test.js` (トリムしない元のパスを `pathExists` と `exec` に渡す、`pathExists` の reject は伝播)、`platform/exec.test.js` と `execIntegration.test.js` (Electron の `pathExists`)、`platform/tauri/execDevtools.test.js` (Tauri の `pathExists`: 存在、ENOENT で `false`、他の失敗は reject)、`platform/fs.test.js` と `platform/tauri/fs.test.js` (同期メンバーが無い、`listAsync` と `readdir` の順序一致)。`system.js` の判定は変更前のコードでも同じテストが通ることを確認してから置換した。
+- 検証: `npm ci`、`npm run build:all`、`npm run build:tauri` の後に `npm run build:all`、`npm test`、`cargo check` / `clippy` / `fmt --check` / `test`。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): 起動する。実行ファイルを求める objective (例: Node のパスを入力する課題) で、存在しないパスを入れると "The path you provided does not exist!"、正しいパスで成功する。Windows Store 版のアプリのパスは Windows でのみ確認できる。Tauri (`npm run tauri -- dev`): 起動時のコンソールに `/proc/cpuinfo` や `ERR_TAURI_SYNC_UNSUPPORTED` に関するエラーが出ない。Linux で DevTools から新規セーブの `systemInfo.pi` が `false` (Raspberry Pi 以外) であること。
+- 残り: ユーザー指定の実行ファイルのパスは Tauri の fs read scope の外なので `pathExists` は reject する (実行ファイル scope と合わせて W11 で扱う)。Windows Store の `stat` の挙動の実機確認 (W11)。`Game.jsx` の共通エンティティ読み込みの抽出テストは今回の範囲外 (#150 で `listAsync` 化済み)。
 
 ### W7. OS 判定 (`process.platform`) の置き換え (B2)
 

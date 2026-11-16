@@ -1,4 +1,4 @@
-import { readFileSync } from '../../platform/fs';
+import { readFile } from '../../platform/fs';
 import { getPlatform } from '../../platform/env';
 
 function deepClone(object) {
@@ -6,7 +6,7 @@ function deepClone(object) {
 }
 
 // Thanks to github.com/fourcube for RPi detection
-function isPi() {
+async function isPi() {
   const PI_MODEL_NO = [
     // https://www.raspberrypi.org/documentation/hardware/raspberrypi/
     'BCM2708',
@@ -22,7 +22,7 @@ function isPi() {
   let cpuInfo;
 
   try {
-    cpuInfo = readFileSync('/proc/cpuinfo', { encoding: 'utf8' });
+    cpuInfo = await readFile('/proc/cpuinfo', { encoding: 'utf8' });
   } catch (e) {
     // if this fails, this is probably not a pi
     return false;
@@ -42,7 +42,7 @@ function isPi() {
   return PI_MODEL_NO.indexOf(model[0][1]) > -1;
 }
 
-function initializeSystemInfo(state) {
+async function initializeSystemInfo(state) {
   const { systemInfo } = state;
 
   const newState = deepClone(state);
@@ -55,7 +55,7 @@ function initializeSystemInfo(state) {
       // 'aix', 'darwin', 'freebsd', 'linux', 'openbsd', 'sunos', 'win32'
       // darwin === macOS, win32 === windows, other === linux
       os: getPlatform(),
-      pi: isPi(),
+      pi: await isPi(),
     };
   }
 

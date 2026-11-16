@@ -10,6 +10,9 @@
       "identifier": "fs:allow-read-text-file",
       "allow": [
         {
+          "path": "/proc/cpuinfo"
+        },
+        {
           "path": "$RESOURCE"
         },
         {
