@@ -23,9 +23,15 @@ function mockBackend({ configDir = '/home/u/.config', resourceDir = '/opt/Termin
   return calls;
 }
 
+beforeEach(() => {
+  // @tauri-apps/plugin-os reads this value, which the plugin injects at startup.
+  window.__TAURI_OS_PLUGIN_INTERNALS__ = { platform: 'linux' };
+});
+
 afterEach(() => {
   clearMocks();
   resetPlatformState();
+  delete window.__TAURI_OS_PLUGIN_INTERNALS__;
 });
 
 describe('before initPlatform', () => {

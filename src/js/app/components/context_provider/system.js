@@ -1,5 +1,5 @@
 import { readFileSync } from '../../platform/fs';
-import { platform } from 'process';
+import { getPlatform } from '../../platform/env';
 
 function deepClone(object) {
   return JSON.parse(JSON.stringify(object));
@@ -54,7 +54,7 @@ function initializeSystemInfo(state) {
       // https://nodejs.org/api/process.html#processplatform
       // 'aix', 'darwin', 'freebsd', 'linux', 'openbsd', 'sunos', 'win32'
       // darwin === macOS, win32 === windows, other === linux
-      os: process.platform,
+      os: getPlatform(),
       pi: isPi(),
     };
   }

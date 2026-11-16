@@ -6,6 +6,7 @@ import { getContext } from '../../../common/context';
 import * as platformFs from '../../../platform/fs';
 import * as platformExec from '../../../platform/exec';
 import * as platformPaths from '../../../platform/paths';
+import { getPlatform } from '../../../platform/env';
 import { staticFileUrl } from '../../../common/fs_utils';
 import {
   evaluateInWorker,
@@ -54,9 +55,9 @@ export default class ValidationHelper {
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
     this.fs = validatorFs;
-    // Operating system the game runs on (Node's process.platform values, e.g.
+    // Operating system the game runs on (Node's platform names, e.g.
     // 'win32', 'darwin', 'linux'), for validators that branch per OS.
-    this.platform = process.platform;
+    this.platform = getPlatform();
 
     // Process validation fields
     Object.keys(validationContext.validationFields).forEach(key => {
