@@ -2,7 +2,7 @@ import React from 'react';
 import cx from 'classnames';
 import path from 'path';
 import config from '../../config/config';
-import { list, existsAsync, readAsync } from '../../platform/fs';
+import { listAsync, existsAsync, readAsync } from '../../platform/fs';
 import ga from '../../common/analytics';
 import { getContext, setContext, emitter } from '../../common/context';
 import LevelLifecycleManager from '../../common/levelLifecycleManager';
@@ -226,7 +226,7 @@ export default class Game extends React.Component {
         // Process entities one at a time, in directory order, so registration
         // and logging order match the previous synchronous implementation.
         const legacyEntityConfigs = [];
-        for (const entityKey of list(commonEntitiesDir)) {
+        for (const entityKey of await listAsync(commonEntitiesDir)) {
           const entityDirPath = `${commonEntitiesDir}/${entityKey}`;
           if ((await existsAsync(entityDirPath)) !== 'dir') {
             console.error(
