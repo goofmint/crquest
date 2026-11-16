@@ -15,7 +15,7 @@
 同梱しないもの:
 
 - `public/node_modules`: 7 パッケージすべてが vendored (`public/content`) になっており、実行時の `getBundledExtensionDirectories()` は `node_modules` を引かない。コンテンツが `require` する `lodash.merge` / `lodash.isequal` は新ローダーの許可リストが提供する (`module-loader-usage.md`)。
-- `images/`、`fonts/`、`lib/`、`movies/`、`code_runner/`、`avatars/avatar*.png`、`index.*`: ページが URL で読む。`frontendDist` (`../public`) としてバイナリに埋め込まれる。
+- `images/`、`fonts/`、`lib/`、`movies/`、`code_runner/`、`avatars/`、`index.*`: ページが URL で読む。`frontendDist` (`../tauri-dist`、`public/` から `content/` と `levels/` などを除いたもの) としてバイナリに埋め込まれる。
 - `public/package.json`: アプリのバージョンは `tauri.conf.json` の `version` が参照するため、実行時に読まない (`platform/tauri/paths.js`)。
 
 ## 2. パス解決
@@ -45,5 +45,5 @@ npm run tauri -- build --debug
 
 ## 5. 既知の注意
 
-- `frontendDist` が `public/` 全体を埋め込むため、`content/` と `levels/` (約 46MB) はバイナリ内とリソースの両方に入る。埋め込み対象の絞り込みは配布構成の後続タスクで決める。
-- ディレクトリはそのままコピーされるため、`public/` 配下の `.DS_Store` 等の未追跡ファイルも入りうる。CI など clean な checkout でビルドする。
+- (W12 で解消) `frontendDist` は `tauri-dist/` (`tasks/stage_tauri_frontend.js` が `public/` から `content/`、`levels/`、`node_modules` (`animate.min.css` を除く)、`package*.json`、ドット始まりのファイルを除いて作る) になり、`content/` と `levels/` はリソースにだけ入る。ページはこれらを asset プロトコル (`$RESOURCE/**` の scope) で読む。詳細は `tauri-runtime.md` の W12。
+- `bundle.resources` のディレクトリはそのままコピーされるため、`public/content` / `public/levels` 配下の `.DS_Store` 等の未追跡ファイルは入りうる。CI など clean な checkout でビルドする。

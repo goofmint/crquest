@@ -194,12 +194,120 @@ mod tests {
         assert_eq!(embedded.as_ref(), on_disk.as_slice());
     }
 
-    /// No CSP is configured, so nothing blocks a same-origin worker. When a
-    /// CSP is introduced (W12) it needs `worker-src 'self'` (or `script-src`
-    /// fallback): this fails then, as a reminder.
+    /// `frontendDist` is the staging directory (tasks/stage_tauri_frontend.js):
+    /// `content/` and `levels/` are resources read through the asset protocol,
+    /// `node_modules/` is bundled (one stylesheet is linked by index.html), and
+    /// dotfiles are not served.
     #[test]
-    fn no_csp_is_configured_yet() {
+    fn the_frontend_dist_leaves_out_the_resource_only_directories() {
         let context = context();
-        assert!(context.config().app.security.csp.is_none());
+        let paths: Vec<String> = context
+            .assets()
+            .iter()
+            .map(|(path, _)| path.to_string())
+            .collect();
+        assert!(paths.iter().any(|path| path == "/index.html"));
+        assert!(paths.iter().any(|path| path == "/tauri-game.js"));
+        assert!(paths
+            .iter()
+            .any(|path| path == "/node_modules/animate.css/animate.min.css"));
+        let unexpected: Vec<&String> = paths
+            .iter()
+            .filter(|path| {
+                path.starts_with("/content/")
+                    || path.starts_with("/levels/")
+                    || (path.starts_with("/node_modules/")
+                        && path.as_str() != "/node_modules/animate.css/animate.min.css")
+                    || path.contains("/.")
+                    || path == &"/package.json"
+                    || path == &"/package-lock.json"
+            })
+            .collect();
+        assert!(unexpected.is_empty(), "embedded: {unexpected:?}");
+    }
+
+    fn csp_sources(directive: &str) -> Vec<String> {
+        let csp = context()
+            .config()
+            .app
+            .security
+            .csp
+            .clone()
+            .expect("a CSP is configured");
+        let directives: std::collections::HashMap<
+            String,
+            tauri::utils::config::CspDirectiveSources,
+        > = csp.into();
+        directives
+            .get(directive)
+            .unwrap_or_else(|| panic!("CSP has no {directive}"))
+            .clone()
+            .into()
+    }
+
+    /// The directives that the code needs (docs/migration/tauri-runtime.md,
+    /// W12, lists the evidence of each one). A change here is a decision.
+    #[test]
+    fn the_csp_allows_what_the_app_uses_and_nothing_broader() {
+        assert_eq!(csp_sources("default-src"), ["'self'"]);
+        // new Function (moduleLoader, pug, ejs), no inline script
+        assert_eq!(csp_sources("script-src"), ["'self'", "'unsafe-eval'"]);
+        // code_runner/worker.js and Ace's blob: worker
+        assert_eq!(csp_sources("worker-src"), ["'self'", "blob:"]);
+        // styled-components, Ace and React style attributes
+        assert_eq!(csp_sources("style-src"), ["'self'", "'unsafe-inline'"]);
+        for directive in ["img-src", "media-src"] {
+            let sources = csp_sources(directive);
+            assert!(sources.contains(&"asset:".to_string()));
+            assert!(sources.contains(&"http://asset.localhost".to_string()));
+        }
+        let connect = csp_sources("connect-src");
+        for source in [
+            "ipc:",
+            "http://ipc.localhost",
+            "asset:",
+            "http://asset.localhost",
+        ] {
+            assert!(
+                connect.contains(&source.to_string()),
+                "connect-src lacks {source}"
+            );
+        }
+        // Every network host is an exact https origin: no wildcard, no scheme-only source
+        for directive in ["connect-src", "frame-src"] {
+            for source in csp_sources(directive) {
+                let local = [
+                    "'self'",
+                    "ipc:",
+                    "asset:",
+                    "http://ipc.localhost",
+                    "http://asset.localhost",
+                ];
+                assert!(
+                    local.contains(&source.as_str())
+                        || (source.starts_with("https://") && !source.contains('*')),
+                    "{directive}: {source}"
+                );
+            }
+        }
+    }
+
+    /// Tauri adds nonces and hashes to `style-src` / `script-src` for inline
+    /// `<style>` / `<script>` of the HTML it serves, and a nonce makes the
+    /// browser ignore `'unsafe-inline'`. The page has none (it has only
+    /// `<link>` and `<script src>`), so the policy above stays as written.
+    #[test]
+    fn the_page_has_no_inline_script_or_style() {
+        let context = context();
+        let html = context
+            .assets()
+            .get(&"/index.html".into())
+            .expect("index.html is embedded");
+        let html = String::from_utf8(html.to_vec()).unwrap().to_lowercase();
+        assert!(!html.contains("<style"));
+        for script in html.split("<script").skip(1) {
+            let tag = &script[..script.find('>').unwrap()];
+            assert!(tag.contains(" src="), "inline script: <script{tag}>");
+        }
     }
 }

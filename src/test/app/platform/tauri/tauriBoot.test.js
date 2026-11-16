@@ -12,12 +12,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { build } from 'vite';
 import { repoRoot } from '../../../utils/conversationScenarios';
+import { stageTauriFrontend } from '../../../../../tasks/stage_tauri_frontend';
 
 const bootstrap = path.join(repoRoot, 'src/test/utils/tauriBootBootstrap.mjs');
 
-function runBootstrap(outputDir, scenario = '') {
+function runBootstrap(outputDir, scenario = '', stagedDir = outputDir) {
   return new Promise((resolve, reject) => {
-    const child = fork(bootstrap, [outputDir, scenario], {
+    const child = fork(bootstrap, [outputDir, scenario, stagedDir], {
       execArgv: ['--experimental-vm-modules', '--no-warnings'],
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     });
@@ -37,6 +38,7 @@ function runBootstrap(outputDir, scenario = '') {
 describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   let outputDir;
+  let stagedDir;
 
   beforeAll(async () => {
     outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminalquest-tauri-boot-'));
@@ -46,12 +48,18 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
       logLevel: 'silent',
       build: { outDir: outputDir, emptyOutDir: true },
     });
+    // The Tauri frontendDist (W12): public/ without content/, levels/ and
+    // node_modules (tasks/stage_tauri_frontend.js) plus this build's output
+    stagedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminalquest-tauri-dist-'));
+    stageTauriFrontend(path.join(repoRoot, 'public'), stagedDir);
+    fs.cpSync(outputDir, stagedDir, { recursive: true });
   }, 180000);
 
   afterAll(() => {
     // vite.config.mjs sets NODE_ENV=production while it is loaded
     process.env.NODE_ENV = originalNodeEnv;
     if (outputDir) fs.rmSync(outputDir, { recursive: true, force: true });
+    if (stagedDir) fs.rmSync(stagedDir, { recursive: true, force: true });
   });
 
   it('produces the split modules', () => {
@@ -65,8 +73,46 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     expect(game).toMatch(/exports\.fileLoader = function\s*\(\)\s*\{\s*return fs\.readFileSync\.apply\(fs, arguments\);/);
   });
 
+  it('the staged frontendDist serves every file the page and its styles link', () => {
+    // index.html: link href / script src; each must be a file of the staging
+    // directory (the webview requests them from the embedded frontendDist)
+    const html = fs.readFileSync(path.join(stagedDir, 'index.html'), 'utf8');
+    const urls = [...html.matchAll(/<(?:link|script|img|source)\b[^>]*?\b(?:href|src)="([^"]+)"/g)].map(m => m[1]);
+    expect(urls.length).toBeGreaterThan(8);
+    urls.forEach(url => {
+      expect(url).not.toMatch(/^(?:[a-z]+:|\/)/);
+      expect(fs.existsSync(path.join(stagedDir, url)), url).toBe(true);
+    });
+    // css url(...) of the styles that index.html links (relative to the stylesheet)
+    const styles = urls.filter(url => url.endsWith('.css'));
+    styles.forEach(style => {
+      const css = fs.readFileSync(path.join(stagedDir, style), 'utf8');
+      [...css.matchAll(/url\(\s*['"]?([^'")]+?)['"]?\s*\)/g)]
+        .map(m => m[1].split(/[?#]/)[0])
+        .filter(url => !/^(?:[a-z]+:|\/)/i.test(url))
+        .forEach(url => {
+          expect(fs.existsSync(path.join(stagedDir, path.dirname(style), url)), `${style}: ${url}`).toBe(true);
+        });
+    });
+    // what the Tauri build reads as resources, or bundles, is not embedded
+    ['content', 'levels', 'node_modules/pug', 'package.json', 'package-lock.json'].forEach(name => {
+      expect(fs.existsSync(path.join(stagedDir, name)), name).toBe(false);
+    });
+    // the worker script and the page-shipped avatars are
+    ['code_runner/worker.js', 'avatars/avatar1.png', 'avatars/parts/body.png'].forEach(name => {
+      expect(fs.existsSync(path.join(stagedDir, name)), name).toBe(true);
+    });
+    const hidden = [];
+    const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).forEach(entry => {
+      if (entry.name.startsWith('.')) hidden.push(path.join(dir, entry.name));
+      else if (entry.isDirectory()) walk(path.join(dir, entry.name));
+    });
+    walk(stagedDir);
+    expect(hidden).toEqual([]);
+  });
+
   it('replaces the loading screen with the title screen on a fresh state', async () => {
-    const result = await runBootstrap(outputDir);
+    const result = await runBootstrap(outputDir, '', stagedDir);
     expect(result.fatal).toBeUndefined();
     expect(result.leaked).toEqual([]);
     expect(result.startError, JSON.stringify(result.logs, null, 2)).toBeNull();
@@ -83,7 +129,7 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
   }, 60000);
 
   it('detects a console.error that is followed by more than 40 other logs', async () => {
-    const result = await runBootstrap(outputDir, 'early-error');
+    const result = await runBootstrap(outputDir, 'early-error', stagedDir);
     expect(result.errors).toEqual(['early error']);
     expect(result.logs).toHaveLength(40);
     expect(result.logs.some(([level]) => level === 'error')).toBe(false);

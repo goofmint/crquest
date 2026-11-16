@@ -4,7 +4,7 @@
   "version": "../public/package.json",
   "identifier": "com.terminalquest.desktop",
   "build": {
-    "frontendDist": "../public",
+    "frontendDist": "../tauri-dist",
     "beforeDevCommand": { "script": "npm run build:tauri", "wait": true },
     "beforeBuildCommand": "npm run build:tauri"
   },
@@ -21,7 +21,27 @@
       }
     ],
     "security": {
-      "csp": null,
+      "csp": {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "'unsafe-eval'"],
+        "worker-src": ["'self'", "blob:"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "asset:", "http://asset.localhost", "data:"],
+        "media-src": ["'self'", "asset:", "http://asset.localhost", "data:"],
+        "font-src": ["'self'"],
+        "connect-src": [
+          "'self'",
+          "ipc:",
+          "http://ipc.localhost",
+          "asset:",
+          "http://asset.localhost",
+          "https://firestore.googleapis.com",
+          "https://twilioquest-prod.firebaseapp.com",
+          "https://twilioquest-dev.firebaseapp.com",
+          "https://www.youtube.com"
+        ],
+        "frame-src": ["https://www.youtube.com"]
+      },
       "assetProtocol": {
         "enable": true,
         "scope": [
