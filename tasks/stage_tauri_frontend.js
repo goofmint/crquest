@@ -9,7 +9,9 @@ Left out:
   through the asset protocol (platform/tauri/assets.js), so embedding them as
   well only duplicated them in the binary (docs/migration/tauri-resources.md).
 - node_modules/: the Tauri build bundles every package. Only the files listed in
-  RUNTIME_NODE_MODULES_FILES are copied, because src/index.html links them.
+  RUNTIME_NODE_MODULES_FILES are copied (to the `to` path outside node_modules,
+  because Tauri rejects a frontendDist containing node_modules), because
+  src/index.html links them.
 - package.json and package-lock.json (not read at run time: the version comes
   from tauri.conf.json), and every file or directory whose name starts with a
   dot (.DS_Store and the like).
@@ -24,8 +26,12 @@ const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
 const stagingDir = path.join(rootDir, 'tauri-dist');
 
-// Relative to public/, '/' separated.
-const RUNTIME_NODE_MODULES_FILES = ['node_modules/animate.css/animate.min.css'];
+// Relative to public/ (from) and to the staging directory (to), '/' separated.
+// Tauri refuses a frontendDist that contains a node_modules folder, so the file
+// is staged under lib/ and index.html links that path.
+const RUNTIME_NODE_MODULES_FILES = [
+  { from: 'node_modules/animate.css/animate.min.css', to: 'lib/animate.min.css' },
+];
 const GENERATED_FILES = ['index.html', 'index.js', 'tauri-game.js', 'index.css'];
 const EXCLUDED_TOP_LEVEL_ENTRIES = [
   ...resourceOnlyDirectories,
@@ -50,12 +56,12 @@ function stageTauriFrontend(source = publicDir, target = stagingDir) {
       return relativePath === '' || isStaged(relativePath);
     },
   });
-  RUNTIME_NODE_MODULES_FILES.forEach(relativePath => {
-    const from = path.join(source, ...relativePath.split('/'));
+  RUNTIME_NODE_MODULES_FILES.forEach(file => {
+    const from = path.join(source, ...file.from.split('/'));
     if (!fs.existsSync(from)) {
       throw new Error(`${from} does not exist (index.html links it): run npm install`);
     }
-    const to = path.join(target, ...relativePath.split('/'));
+    const to = path.join(target, ...file.to.split('/'));
     fs.mkdirSync(path.dirname(to), { recursive: true });
     fs.copyFileSync(from, to);
   });

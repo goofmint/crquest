@@ -1,5 +1,7 @@
 # platform 境界チェック ベースライン
 
+> #68 で更新: チェッカーはモジュール読み込み構文 (`import` / `export ... from` / `require()` / 動的 `import()`) だけを違反と判定するようになり、コメントと `'fs': ...` のようなモックのキーによる誤検出 (下記 4 行) は解消した。現在 `npm run check:platform` は終了コード 0。以下は #86 時点の記録である。
+
 Phase 1 task 1-7。`src/js/app/platform/` 以外のレンダラーコードが `electron` / `electron-is-dev` / `fs` / `fs-jetpack` を直接読み込んでいないかを検証した結果の記録。このチケットでは違反を修正していない（アプリケーションの動作は変更なし）。
 
 ## 結果
