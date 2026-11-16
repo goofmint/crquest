@@ -67,6 +67,11 @@ export default defineConfig({
           'node_modules/@testing-library/react/dist/@testing-library/react.esm.js'
         ),
       },
+      // The root node_modules has older pug (2) and cheerio (rc.3) for the build
+      // tasks; the app (Electron's runtime require, and the Tauri bundle) uses
+      // the versions in public/node_modules.
+      { find: /^pug$/, replacement: path.join(publicModules, 'pug') },
+      { find: /^cheerio$/, replacement: path.join(publicModules, 'cheerio') },
       { find: /^react$/, replacement: path.join(publicModules, 'react') },
       { find: /^react\/(.*)$/, replacement: path.join(publicModules, 'react', '$1') },
       { find: /^react-dom$/, replacement: path.join(publicModules, 'react-dom') },

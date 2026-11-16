@@ -170,6 +170,10 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 
 `platform/assets.js` / `platform/tauri/assets.js`: 静的パスと URL の構築 (`getStaticRootPath`、`getStaticFileUrl`、`toAssetUrl`、`toAssetSrc`)。詳細は `tauri-runtime.md` の W5。
 
+### 3.7 conversationTemplate (#139)
+
+`platform/conversationTemplate.js` / `platform/tauri/conversationTemplate.js`: 会話の pug テンプレートの描画 (`renderConversationTemplate(absolutePath, context)`)。詳細は `tauri-runtime.md` の W8。
+
 ## 4. 未解決事項
 
 - 呼び出し元の非同期化 (3.2 章の表)。`initPlatform()` を呼ぶエントリは未作成 (Phase 11)。
