@@ -94,3 +94,12 @@ Issue #28 (5-0: 取り込み方式の確定) と #29 (5a: twilioquest-base の�
 1. `npm install` (`public/node_modules` に `twilioquest-base` が入らなくなる)。
 2. `npm start` で起動し、新規ゲームが `fog_owl` から始まることを確認する。NPC との会話、扉の開閉、チェスト、`challenge-questions` の目標 (`03-debugging-*` の validator) が従来どおり動くこと。
 3. 設定 > 拡張機能の一覧に `twilioquest-base` が従来どおり同梱として表示されること。
+
+## 6. tarball との差分 (#108)
+
+`public/content/twilioquest-base/` は、次のファイルを除き、`twilioquest-base@8.1.0` の tarball と同一である (Worker 化で書き換えた `validator.js` の経緯は `validation-helper-worker.md` を参照)。調査の詳細は `content-twilioquest-base-findings.md`。
+
+| ファイル | 変更 | 理由 |
+| --- | --- | --- |
+| `levels/challenge-questions/objectives/flatten-array/validator.js` | `areEqualStrings` に `!Array.isArray(expected) &&` を追加 | 期待値が配列のとき、結合した文字列 (`.join()`) が合格していた |
+| `levels/challenge-questions/objectives/remove-duplicate-characters/validator.js` | `test("aaaaaaaaaaaaaaabc", "abc");` を追加 | 説明文の例。連続する重複を 1 回しか除去しない解答が合格していた |
