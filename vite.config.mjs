@@ -78,14 +78,15 @@ function unavailableModuleName(source) {
 // `electron` are never provided: the platform layer replaces them.
 const requireFromRoot = createRequire(path.join(rootDir, 'package.json'));
 const tauriBuiltinReplacements = {
-  // Well-known packages (root devDependencies). `path-browserify` is POSIX
-  // only (decision D4 (a)).
-  path: requireFromRoot.resolve('path-browserify'),
+  // Well-known packages (root devDependencies).
   events: requireFromRoot.resolve('events/events.js'),
   util: requireFromRoot.resolve('util/util.js'),
   assert: requireFromRoot.resolve('assert/build/assert.js'),
-  // Small in-repo shims: the npm `url` has no fileURLToPath, and the npm
-  // `process` would report the OS as 'browser'.
+  // Small in-repo shims: the npm `url` has no fileURLToPath, the npm
+  // `process` would report the OS as 'browser', and `path` picks win32 or
+  // posix from the OS that initPlatform() read (path-browserify and
+  // path-browserify-win32 underneath; decision D4 (b), W12).
+  path: path.join(srcDir, 'js', 'tauri_shims', 'path.js'),
   url: path.join(srcDir, 'js', 'tauri_shims', 'url.js'),
   process: path.join(srcDir, 'js', 'tauri_shims', 'process.js'),
 };
