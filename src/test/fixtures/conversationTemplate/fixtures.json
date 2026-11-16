@@ -1,0 +1,128 @@
+{
+ "simple.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"Player\"><statement id=\"hello\">Hello Player, level 10</statement><responses><response id=\"one\">First</response><response id=\"two\">Second</response></responses></conversation>",
+   "filename": "<fixtures>/simple.pug",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"Player\"><statement id=\"hello\">Hello Player, level 10</statement><responses><response id=\"one\">First</response><response id=\"two\">Second</response></responses></conversation>",
+   "filename": "<fixtures>/simple.pug",
+   "setStateCalls": []
+  }
+ },
+ "state.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"N\"><statement id=\"first\">Visit 1</statement></conversation>",
+   "filename": "<fixtures>/state.pug",
+   "setStateCalls": [
+    [
+     "WORLD",
+     {
+      "visits": 1
+     }
+    ]
+   ]
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"N\"><statement id=\"went\">Went</statement></conversation>",
+   "filename": "<fixtures>/state.pug",
+   "setStateCalls": [
+    [
+     "WORLD",
+     {
+      "visits": 8
+     }
+    ]
+   ]
+  }
+ },
+ "outer.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"Outer\"><statement id=\"s\"><p>Inline <b>statement</b></p></statement><responses><response id=\"inner\">Inner 10</response><response id=\"loud\">LOUD</response></responses></conversation>",
+   "filename": "<fixtures>/outer.pug",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"Outer\"><statement id=\"s\"><p>Inline <b>statement</b></p></statement><responses><response id=\"inner\">Inner 10</response><response id=\"loud\">LOUD</response></responses></conversation>",
+   "filename": "<fixtures>/outer.pug",
+   "setStateCalls": []
+  }
+ },
+ "layout.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"Layout\"></conversation>",
+   "filename": "<fixtures>/layout.pug",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"Layout\"></conversation>",
+   "filename": "<fixtures>/layout.pug",
+   "setStateCalls": []
+  }
+ },
+ "extending.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"Layout\"><statement id=\"e\">Extended</statement><responses><response id=\"inner\">Inner 10</response></responses></conversation>",
+   "filename": "<fixtures>/extending.pug",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"Layout\"><statement id=\"e\">Extended</statement><responses><response id=\"inner\">Inner 10</response></responses></conversation>",
+   "filename": "<fixtures>/extending.pug",
+   "setStateCalls": []
+  }
+ },
+ "statements.pug": {
+  "empty": {
+   "html": "<conversation display_name=\"Lookup\"><statement id=\"chosen\"></statement><statements><statement id=\"chosen\"><text>Looked <i>up</i></text></statement></statements></conversation>",
+   "filename": "<fixtures>/statements.pug",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "html": "<conversation display_name=\"Lookup\"><statement id=\"chosen\"></statement><statements><statement id=\"chosen\"><text>Looked <i>up</i></text></statement></statements></conversation>",
+   "filename": "<fixtures>/statements.pug",
+   "setStateCalls": []
+  }
+ },
+ "missing-include.pug": {
+  "empty": {
+   "errorName": "Error",
+   "errorMessage": "ENOENT: no such file or directory, open '<fixtures>/nowhere.pug'\n    at <fixtures>/missing-include.pug line 2",
+   "errorCode": "ENOENT",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "errorName": "Error",
+   "errorMessage": "ENOENT: no such file or directory, open '<fixtures>/nowhere.pug'\n    at <fixtures>/missing-include.pug line 2",
+   "errorCode": "ENOENT",
+   "setStateCalls": []
+  }
+ },
+ "syntax-error.pug": {
+  "empty": {
+   "errorName": "Error",
+   "errorMessage": "<fixtures>/syntax-error.pug:3:9\n    1| conversation\n    2|   statement(\n  > 3|     text\n---------------^\n\nThe end of the string reached with no closing bracket ) found.",
+   "errorCode": "PUG:NO_END_BRACKET",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "errorName": "Error",
+   "errorMessage": "<fixtures>/syntax-error.pug:3:9\n    1| conversation\n    2|   statement(\n  > 3|     text\n---------------^\n\nThe end of the string reached with no closing bracket ) found.",
+   "errorCode": "PUG:NO_END_BRACKET",
+   "setStateCalls": []
+  }
+ },
+ "runtime-error.pug": {
+  "empty": {
+   "errorName": "TypeError",
+   "errorMessage": "Cannot read properties of undefined (reading 'value') on line 3",
+   "setStateCalls": []
+  },
+  "visits 7 / go": {
+   "errorName": "TypeError",
+   "errorMessage": "Cannot read properties of undefined (reading 'value') on line 3",
+   "setStateCalls": []
+  }
+ }
+}

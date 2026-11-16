@@ -8,9 +8,18 @@ import nodeFs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { build } from 'vite';
-import { ANY_STATE, createContext, listPugFiles, repoRoot } from '../../../utils/conversationScenarios';
+import {
+  ANY_STATE,
+  REPO_PLACEHOLDER,
+  createContext,
+  listPugFiles,
+  readRecorded,
+  recordedFileKey,
+  renderKey,
+  repoRoot,
+  toPortableOutcome,
+} from '../../../utils/conversationScenarios';
 import { createFixtureDirectory, removeFixtureDirectory } from '../../../utils/conversationFixtures';
-import { renderConversationTemplate as renderElectron } from '../../../../js/app/platform/conversationTemplate';
 
 describe('conversation bundle (--mode tauri) in a VM without Node globals', () => {
   const originalNodeEnv = process.env.NODE_ENV;
@@ -81,7 +90,7 @@ describe('conversation bundle (--mode tauri) in a VM without Node globals', () =
     expect(code).not.toContain('Buffer.isBuffer(contents)');
   });
 
-  test('cheerio parses in the VM like the Electron one', () => {
+  test('cheerio parses in the VM (the selectors of Conversation.jsx)', () => {
     const html = '<conversation display_name="N"><statement id="a">Hi <b>there</b></statement>' +
       '<responses><response id="x">One</response><response id="y">Two</response></responses></conversation>';
     const $ = conversation.cheerio.load(html);
@@ -92,27 +101,25 @@ describe('conversation bundle (--mode tauri) in a VM without Node globals', () =
     ).toEqual([['x', 'One'], ['y', 'Two']]);
   });
 
-  test('every .pug file renders in the VM to the Electron result (empty and all-set state)', async () => {
+  test('every .pug file renders in the VM to the recorded Electron result (empty and all-set state)', async () => {
+    // Recorded before the Electron implementation was removed (#65)
+    const recordedRepository = readRecorded('repository.json');
     let rendered = 0;
     for (const file of listPugFiles()) {
-      for (const state of [{}, ANY_STATE]) {
-        const electron = createContext(state);
+      for (const [stateName, state] of [['empty', {}], ['all', ANY_STATE]]) {
+        const recorded = recordedRepository[recordedFileKey(file)][renderKey(stateName)];
         const vmSide = createContext(state);
-        let expected;
-        try {
-          expected = { html: await renderElectron(file, electron.context) };
-        } catch (error) {
-          expected = { error: error.message };
-        }
         let actual;
         try {
           actual = { html: await conversation.renderConversationTemplate(file, vmSide.context) };
         } catch (error) {
           actual = { error: error.message };
         }
-        expect(actual, file).toEqual(expected);
+        const expected =
+          recorded.html === undefined ? { error: recorded.errorMessage } : { html: recorded.html };
+        expect(toPortableOutcome(actual, [[repoRoot, REPO_PLACEHOLDER]]), file).toEqual(expected);
         expect(vmSide.context.filename).toBe(file);
-        expect(vmSide.setStateCalls, file).toEqual(electron.setStateCalls);
+        expect(vmSide.setStateCalls, file).toEqual(recorded.setStateCalls);
         if (expected.html !== undefined) rendered++;
       }
     }
