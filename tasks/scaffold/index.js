@@ -1,6 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
-const chalk = require('chalk');
+// chalk is ESM-only: Node's require(esm) gives the module namespace, whose
+// `default` is the chalk instance.
+const chalk = require('chalk').default;
 const { ncp } = require('ncp');
 const { stripIndents } = require('common-tags');
 const commandLineArgs = require('command-line-args');
@@ -30,9 +32,13 @@ async function run() {
 
   if (!options.missionName) {
     console.error(
-      stripIndents(chalk`{red {bold No mission was provided!} This command requires a mission name.}
+      stripIndents(`${chalk.red(
+        `${chalk.bold(
+          'No mission was provided!'
+        )} This command requires a mission name.`
+      )}
     
-    {blue Example:} "npm run scaffold:mission -- javascript"`)
+    ${chalk.blue('Example:')} "npm run scaffold:mission -- javascript"`)
     );
     return;
   }
@@ -42,7 +48,7 @@ async function run() {
 
   if (levelNames.includes(options.missionName)) {
     console.error(
-      stripIndents(chalk`{red {bold This mission already exists!}}
+      stripIndents(`${chalk.red(chalk.bold('This mission already exists!'))}
       
       "${options.missionName}" already exists.`)
     );
@@ -53,7 +59,7 @@ async function run() {
   await copyMissionDirectory(newMissionPath);
 
   console.log(
-    chalk`{green Done creating {bold ${options.missionName}} directory!}`
+    chalk.green(`Done creating ${chalk.bold(options.missionName)} directory!`)
   );
 }
 

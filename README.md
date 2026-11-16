@@ -61,6 +61,20 @@ Things to know:
 
 - The Tauri window has a Content Security Policy (`app.security.csp` in `src-tauri/tauri.conf.json`). Violations only show in the webview console (F12 in a debug build). How to revert it is described in `docs/migration/tauri-runtime.md`.
 
+### Build a release bundle with Tauri
+
+```
+npm run release
+```
+
+`release` is `tauri build` (`npm run tauri -- build` does the same). `beforeBuildCommand` runs `npm run build:tauri` first, so there is no separate build step. It needs the Rust toolchain and the operating system packages listed under Prerequisites, and it builds the bundle formats of the operating system you run it on (`bundle.targets` is `all` in `src-tauri/tauri.conf.json`). The artifacts are written under `src-tauri/target/release/bundle/` (for example `macos/` and `dmg/` on macOS, `nsis/` and `msi/` on Windows, `deb/`, `rpm/` and `appimage/` on Linux), and the executable is `src-tauri/target/release/`. The version comes from `public/package.json`.
+
+Code signing, notarization and publishing are not automated: nothing is uploaded anywhere. The old `release` script (`tasks/create_release.js`) tarred `public/` and published it to Firebase Storage and Firestore for the Electron build; it was removed together with its dependencies (see `docs/migration/tasks-dependencies.md`). `npm run ci` runs `install:app` and `release`.
+
+### Scripts under `tasks/`
+
+The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions` needs the Firebase variables in `.env.template`; `npm run generateVoiceOvers` needs AWS credentials that the default AWS provider chain can find (Amazon Polly, region `us-east-1`).
+
 ### Tests
 
 ```

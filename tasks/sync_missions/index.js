@@ -1,4 +1,6 @@
-const chalk = require('chalk');
+// chalk is ESM-only: Node's require(esm) gives the module namespace, whose
+// `default` is the chalk instance.
+const chalk = require('chalk').default;
 const { db } = require('../shared/firebase');
 const { getBundledExtensionPaths } = require('../utils/bundledExtensions');
 const { readLevels } = require('../utils/readLevels');
@@ -48,9 +50,11 @@ async function run() {
   const extensionPaths = getBundledExtensionPaths();
 
   console.log(
-    chalk`{blue {bold Syncing levels} from repository to firestore from extension directories:}\n${extensionPaths.join(
-      '\n'
-    )}`
+    `${chalk.blue(
+      `${chalk.bold(
+        'Syncing levels'
+      )} from repository to firestore from extension directories:`
+    )}\n${extensionPaths.join('\n')}`
   );
 
   const readLevelPromises = extensionPaths.map(readLevels);
@@ -58,14 +62,16 @@ async function run() {
   const levels = levelsByExtension.flat();
 
   console.log(
-    chalk`{blue {bold Found missions:}} ${levels
+    `${chalk.blue.bold('Found missions:')} ${levels
       .map(level => level.levelName)
       .join(', ')}`
   );
 
   await syncLevels(levels);
 
-  console.log(chalk`{green {bold Done} syncing missions to firestore!}`);
+  console.log(
+    chalk.green(`${chalk.bold('Done')} syncing missions to firestore!`)
+  );
 }
 
 withActionsErrorReporting(run)();

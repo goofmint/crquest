@@ -1,30 +1,33 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
-const firebaseAdmin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 
 // Path to auth credentials for the appropriate Firebase admin credentials
 // should be configured as an environment variable for builds
-const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SA_JSON);
-const databaseURL = process.env.FIREBASE_DATABASE_URL;
-const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+const requiredEnvNames = ['FIREBASE_ADMIN_SA_JSON', 'FIREBASE_DATABASE_URL'];
+const missingEnvNames = requiredEnvNames.filter(name => !process.env[name]);
 
-if (!serviceAccount || !databaseURL || !storageBucket) {
-  throw 'Firebase configuration is required. Check .env.template for more info.';
+if (missingEnvNames.length > 0) {
+  throw new Error(
+    `Firebase configuration is required. Missing environment variables: ${missingEnvNames.join(
+      ', '
+    )}. Check .env.template for more info.`
+  );
 }
 
+const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SA_JSON);
+const databaseURL = process.env.FIREBASE_DATABASE_URL;
+
 // Initialize Firebase admin SDK
-firebaseAdmin.initializeApp({
-  credential: firebaseAdmin.credential.cert(serviceAccount),
+const app = initializeApp({
+  credential: cert(serviceAccount),
   databaseURL,
-  storageBucket,
 });
 
-// Get handles to relevant Firebase services
-const db = firebaseAdmin.firestore();
-const bucket = firebaseAdmin.storage().bucket();
+// Get handle to the relevant Firebase service
+const db = getFirestore(app);
 
 module.exports = {
   db,
-  bucket,
-  firebaseAdmin,
 };

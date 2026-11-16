@@ -1,6 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
-const chalk = require('chalk');
+// chalk is ESM-only: Node's require(esm) gives the module namespace, whose
+// `default` is the chalk instance.
+const chalk = require('chalk').default;
 const { readLevels } = require('./utils/readLevels');
 
 /**
@@ -113,25 +115,25 @@ function printLevelObjectiveTable(level) {
     );
 
     if (objective.isInManifest) {
-      line += chalk`{green ${paddedObjectiveKey}}`;
+      line += chalk.green(paddedObjectiveKey);
     } else {
-      line += chalk`{red ${paddedObjectiveKey}}`;
+      line += chalk.red(paddedObjectiveKey);
     }
 
     line += '\t';
 
     if (objective.isInFolders) {
-      line += chalk`{green ${paddedObjectiveKey}}`;
+      line += chalk.green(paddedObjectiveKey);
     } else {
-      line += chalk`{red ${paddedObjectiveKey}}`;
+      line += chalk.red(paddedObjectiveKey);
     }
 
     line += '\t';
 
     if (objective.isInMaps) {
-      line += chalk`{green ${paddedObjectiveKey}}`;
+      line += chalk.green(paddedObjectiveKey);
     } else {
-      line += chalk`{red ${paddedObjectiveKey}}`;
+      line += chalk.red(paddedObjectiveKey);
     }
 
     lines.push(line);
@@ -146,7 +148,9 @@ function printObjectivesMissingFromManifest(level) {
   let lines = [];
 
   lines.push(
-    chalk`These objectives should probably be {green ADDED} to the manifest:`
+    `These objectives should probably be ${chalk.green(
+      'ADDED'
+    )} to the manifest:`
   );
   objectiveData.forEach(objective => {
     if (
@@ -155,12 +159,14 @@ function printObjectivesMissingFromManifest(level) {
       objective.isInMaps
     ) {
       // These objectives should probably be added to the manifest
-      lines.push(chalk`{green ${objective.key}}`);
+      lines.push(chalk.green(objective.key));
     }
   });
 
   lines.push(
-    chalk`These objectives should probably be {red REMOVED} from the manifest:`
+    `These objectives should probably be ${chalk.red(
+      'REMOVED'
+    )} from the manifest:`
   );
   objectiveData.forEach(objective => {
     if (
@@ -168,7 +174,7 @@ function printObjectivesMissingFromManifest(level) {
       (!objective.isInFolders || !objective.isInMaps)
     ) {
       // These objectives should probably be removed from the manifest
-      lines.push(chalk`{red ${objective.key}}`);
+      lines.push(chalk.red(objective.key));
     }
   });
 
@@ -177,7 +183,7 @@ function printObjectivesMissingFromManifest(level) {
 
 readLevels(process.argv[2]).then(levels => {
   levels.forEach(level => {
-    console.log(chalk`{bold Level:} ${level.title} (${level.levelName})`);
+    console.log(`${chalk.bold('Level:')} ${level.title} (${level.levelName})`);
 
     if (process.argv[3] === '--only-show-changes') {
       printObjectivesMissingFromManifest(level);
