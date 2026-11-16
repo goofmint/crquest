@@ -28,6 +28,14 @@ describe('--mode tauri output', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
+  // The prebuilt browser bundle of jimp (what `import 'jimp'` is in this build,
+  // #154) is a browserify bundle with its own internal `require` of its own
+  // modules (`require("assert")` there is a key of its module table, not a
+  // runtime lookup). It is wrapped by the bundler as `var import_jimp = ...`
+  // up to the closing `})))());`, and is left out of the require scan.
+  const withoutJimpBrowserBundle = code =>
+    code.replace(/^var import_jimp = [^\n]*\n[\s\S]*?^\}\)\)\)\(\)\);$/m, '');
+
   const jsFiles = () => Object.entries(files).filter(([name]) => name.endsWith('.js'));
 
   test('every import/export specifier is a relative file (nothing to resolve at runtime)', () => {
@@ -46,7 +54,7 @@ describe('--mode tauri output', () => {
     const names = [...builtinModules, 'electron', 'react', 'pug', 'lodash.get', 'styled-components'];
     for (const [, code] of jsFiles()) {
       // Comments (JSDoc examples in the sources and packages) mention require()
-      const executable = code
+      const executable = withoutJimpBrowserBundle(code)
         .split('\n')
         .filter(line => !/^\s*(\*|\/\/|\/\*)/.test(line))
         .join('\n');
@@ -82,15 +90,12 @@ describe('--mode tauri output', () => {
     expect(entry.match(/tauri-game\.js/g)).toHaveLength(1);
   });
 
-  test('path, events, util, assert and url are browser implementations (W2)', () => {
+  test('path, util and assert are browser implementations; none of the Node names is a stub (W2)', () => {
     const game = files['tauri-game.js'];
     for (const file of [
       'node_modules/path-browserify/index.js',
-      'node_modules/events/events.js',
       'node_modules/util/util.js',
       'node_modules/assert/build/assert.js',
-      'node_modules/url/url.js',
-      'src/js/tauri_shims/url.js',
     ]) {
       expect(game).toContain(`// ${file}`);
     }
@@ -102,7 +107,9 @@ describe('--mode tauri output', () => {
 
   test('other Node modules fail explicitly instead of being empty objects', () => {
     const game = files['tauri-game.js'];
-    for (const name of ['fs', 'stream']) {
+    // (`stream`, `events` and the `url` shim were only used by jimp's Node entry: the Tauri build
+    // uses its browser bundle, #154)
+    for (const name of ['fs', 'resolve']) {
       expect(game).toContain(`The Node module \\"${name}\\" is not available in the Tauri build`);
     }
     // Nothing in the game requires `electron` any more (W3: the menu moved to
