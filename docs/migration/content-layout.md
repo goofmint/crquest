@@ -103,3 +103,4 @@ Issue #28 (5-0: 取り込み方式の確定) と #29 (5a: twilioquest-base の�
 | --- | --- | --- |
 | `levels/challenge-questions/objectives/flatten-array/validator.js` | `areEqualStrings` に `!Array.isArray(expected) &&` を追加 | 期待値が配列のとき、結合した文字列 (`.join()`) が合格していた |
 | `levels/challenge-questions/objectives/remove-duplicate-characters/validator.js` | `test("aaaaaaaaaaaaaaabc", "abc");` を追加 | 説明文の例。連続する重複を 1 回しか除去しない解答が合格していた |
+| `levels/fog_owl/events/handleTutorial.js` | モジュールスコープの進行中フラグ (`try/finally` で解除、永続化しない) を追加し、完了時に `world.getState(STATE_KEY)` の最新状態へ `hasSeenTutorial` / `showNavMapArrow` を載せて `world.setState` で保存する | #4: `levelDidLoad` と `mapDidLoad` が続けて発行され、チュートリアルが 2 回走っていた。#3: `hasSeenTutorial` が完了直後に保存されず、次の fog_owl イベントまで失われていた。回帰テストは `src/test/app/content/fogOwlTutorial.test.js` |

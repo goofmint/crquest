@@ -8,8 +8,8 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | `flatten-array/validator.js` | 確認済み (比較ロジックは同一) | 学習者: 配列を返さず `.join()` した文字列でも合格する (説明文は「新しい配列を返す」) | `baseValidators.test.js` | 修正済み |
 | 2 | `remove-duplicate-characters/validator.js` | 確認済み (テストケースは同一の 2 件) | 学習者: 連続 3 文字以上を縮約しない解答 (`s.replace(/(.)\1/g, '$1')`) が合格する。説明文に `aaaaaaaaaaaaaaabc` -> `abc` の例がある | 同上 | 修正済み |
-| 3 | `fog_owl/events.js` | 確認済み (ファイルは同一) | 小。保存済みの状態は、チュートリアル終了後の次のイベントまで `hasSeenTutorial` を含まない | 調査用スクリプトで再現 (コミットなし) | 未修正 (選択肢を報告) |
-| 4 | `fog_owl/events/handleTutorial.js` | 確認済み (ファイルは同一) | 中。初回の fog_owl 入場で、チュートリアルが 2 回走る | 同上 | 未修正 (選択肢を報告) |
+| 3 | `fog_owl/events.js` | 確認済み (ファイルは同一) | 小。保存済みの状態は、チュートリアル終了後の次のイベントまで `hasSeenTutorial` を含まない | 調査用スクリプトで再現 (コミットなし) | 修正済み (`content-layout.md` 6) |
+| 4 | `fog_owl/events/handleTutorial.js` | 確認済み (ファイルは同一) | 中。初回の fog_owl 入場で、チュートリアルが 2 回走る | 同上 | 修正済み (`content-layout.md` 6) |
 
 ## 1, 2 (修正済み)
 
