@@ -32,22 +32,33 @@ const CLASSIC_SCRIPTS = [
   'lib/phaser-2.13.2.min.js',
 ];
 
-const [outputDir] = process.argv.slice(2);
+const [outputDir, scenario] = process.argv.slice(2);
 const TIMEOUT_MS = 20000;
 const POLL_MS = 50;
 
 const logs = [];
+// EVERY console.error of the page (logs is only the tail, for diagnosis)
+const errors = [];
 const ipcCalls = [];
 
 const APP_DATA = '/mock/config';
 // The bundle resource directory has the layout of public/ (docs/migration/
 // tauri-resources.md): the real game content is read from there.
-const RESOURCE_DIR = path.join(repoRoot, 'public');
+const HOST_RESOURCE_DIR = path.join(repoRoot, 'public');
+// The bundled app uses path-browserify (POSIX), so every path it sees and every
+// path compared here is in POSIX form, whatever the host OS is. A Windows drive
+// letter becomes a leading-slash path (C:\x -> /C:/x) so that it stays absolute.
+const toPosix = hostPath => {
+  const slashed = hostPath.split(path.sep).join('/');
+  return /^[A-Za-z]:/.test(slashed) ? `/${slashed}` : slashed;
+};
+const RESOURCE_DIR = toPosix(HOST_RESOURCE_DIR);
+const toHostPath = target => path.join(HOST_RESOURCE_DIR, ...target.slice(RESOURCE_DIR.length).split('/'));
 const APP_VERSION = '0.0.0-boot-test';
 // Audio directories list as empty, so the audio loader treats every track as
 // loaded without decoding anything (Web Audio is not part of this test).
 const EMPTY_AUDIO_DIRECTORIES = ['levels/common/music', 'levels/common/sfx'].map(directory =>
-  path.join(RESOURCE_DIR, directory)
+  path.posix.join(RESOURCE_DIR, directory)
 );
 
 const NOT_FOUND = 'No such file or directory (os error 2)';
@@ -60,7 +71,7 @@ const overlayDirectories = new Set();
 const overlayFiles = new Map();
 
 function isUnderResources(target) {
-  return target === RESOURCE_DIR || target.startsWith(RESOURCE_DIR + path.sep);
+  return target === RESOURCE_DIR || target.startsWith(`${RESOURCE_DIR}/`);
 }
 
 function fileInfo(kind) {
@@ -92,7 +103,7 @@ function kindOf(target) {
   if (overlayFiles.has(target)) return 'file';
   if (isUnderResources(target)) {
     try {
-      return fs.statSync(target).isDirectory() ? 'dir' : 'file';
+      return fs.statSync(toHostPath(target)).isDirectory() ? 'dir' : 'file';
     } catch {
       return undefined;
     }
@@ -109,7 +120,7 @@ function requireKind(target) {
 function readBytes(target) {
   if (overlayFiles.has(target)) return [...overlayFiles.get(target)];
   if (!isUnderResources(target) || requireKind(target) !== 'file') throw NOT_FOUND;
-  return [...fs.readFileSync(target)];
+  return [...fs.readFileSync(toHostPath(target))];
 }
 
 function readDirectory(target) {
@@ -117,10 +128,10 @@ function readDirectory(target) {
   if (EMPTY_AUDIO_DIRECTORIES.includes(target)) return [];
   if (!isUnderResources(target)) {
     return [...overlayDirectories, ...overlayFiles.keys()]
-      .filter(entry => path.dirname(entry) === target)
-      .map(entry => ({ name: path.basename(entry), isDirectory: overlayDirectories.has(entry), isFile: overlayFiles.has(entry), isSymlink: false }));
+      .filter(entry => path.posix.dirname(entry) === target)
+      .map(entry => ({ name: path.posix.basename(entry), isDirectory: overlayDirectories.has(entry), isFile: overlayFiles.has(entry), isSymlink: false }));
   }
-  return fs.readdirSync(target, { withFileTypes: true }).map(entry => ({
+  return fs.readdirSync(toHostPath(target), { withFileTypes: true }).map(entry => ({
     name: entry.name,
     isDirectory: entry.isDirectory(),
     isFile: entry.isFile(),
@@ -200,7 +211,11 @@ function createWindow() {
     info: (...a) => logs.push(['info', a.map(String).join(' ')]),
     debug: () => {},
     warn: (...a) => logs.push(['warn', a.map(String).join(' ')]),
-    error: (...a) => logs.push(['error', a.map(x => (x && x.stack) || String(x)).join(' ')]),
+    error: (...a) => {
+      const message = a.map(x => (x && x.stack) || String(x)).join(' ');
+      errors.push(message);
+      logs.push(['error', message]);
+    },
   };
   // Web platform APIs of a webview that jsdom lacks
   window.TextEncoder = TextEncoder;
@@ -221,6 +236,13 @@ const leaked = vm.runInContext(
   context
 );
 if (leaked.length) throw new Error(`the page context has Node globals: ${leaked}`);
+
+// Test scenario of tauriBoot.test.js: an early console.error followed by more
+// than 40 other logs must still be reported in `errors`
+if (scenario === 'early-error') {
+  window.console.error('early error');
+  for (let i = 0; i < 100; i += 1) window.console.log(`noise ${i}`);
+}
 
 const modules = new Map();
 function load(identifier) {
@@ -282,11 +304,12 @@ async function main() {
     startError: startError ? String(startError.stack ?? startError) : null,
     failures,
     logs: logs.slice(-40),
+    errors,
     ipcCalls,
     leaked,
   }, () => process.exit(0));
 }
 
 main().catch(error => {
-  process.send({ fatal: String(error.stack ?? error), logs: logs.slice(-40), ipcCalls }, () => process.exit(1));
+  process.send({ fatal: String(error.stack ?? error), logs: logs.slice(-40), errors, ipcCalls }, () => process.exit(1));
 });

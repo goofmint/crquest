@@ -15,9 +15,9 @@ import { repoRoot } from '../../../utils/conversationScenarios';
 
 const bootstrap = path.join(repoRoot, 'src/test/utils/tauriBootBootstrap.mjs');
 
-function runBootstrap(outputDir) {
+function runBootstrap(outputDir, scenario = '') {
   return new Promise((resolve, reject) => {
-    const child = fork(bootstrap, [outputDir], {
+    const child = fork(bootstrap, [outputDir, scenario], {
       execArgv: ['--experimental-vm-modules', '--no-warnings'],
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     });
@@ -73,7 +73,14 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     expect(result.failures, JSON.stringify(result.logs, null, 2)).toEqual([]);
     expect(result.loading, JSON.stringify(result, null, 2)).toBe(false);
     expect(result.title, JSON.stringify(result, null, 2)).toBe(true);
-    const errors = result.logs.filter(([level]) => level === 'error');
-    expect(errors).toEqual([]);
+    // The complete record of console.error, not the tail kept for diagnosis
+    expect(result.errors).toEqual([]);
+  }, 60000);
+
+  it('detects a console.error that is followed by more than 40 other logs', async () => {
+    const result = await runBootstrap(outputDir, 'early-error');
+    expect(result.errors).toEqual(['early error']);
+    expect(result.logs).toHaveLength(40);
+    expect(result.logs.some(([level]) => level === 'error')).toBe(false);
   }, 60000);
 });
