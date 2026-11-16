@@ -1,7 +1,7 @@
 import React from 'react';
 import pug from 'pug';
 import cheerio from 'cheerio';
-import fileUrl from 'file-url';
+import { toAssetUrl } from '../platform/assets';
 import { keypress } from 'keypress.js';
 import audioManager from '../common/audio/index';
 import sharedListener from '../common/listener';
@@ -268,7 +268,7 @@ class ConversationBuilder {
         ? `images/conversations/${statement.expression}`
         : `images/conversations/${this.npc.name}`
     );
-    const avatarUrl = fileUrl(avatarPath);
+    const avatarUrl = toAssetUrl(avatarPath);
 
     return { displayName, avatarUrl, statement, responses };
   }

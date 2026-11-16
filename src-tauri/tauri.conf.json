@@ -20,7 +20,17 @@
         "backgroundColor": "#232323"
       }
     ],
-    "security": { "csp": null }
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$RESOURCE/**",
+          "$CONFIG/terminalquest/**",
+          "$CONFIG/TerminalQuest/**"
+        ]
+      }
+    }
   },
   "bundle": {
     "active": true,

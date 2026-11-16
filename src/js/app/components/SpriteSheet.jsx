@@ -1,5 +1,10 @@
 import React from 'react';
-import fileUrl from 'file-url';
+import { toAssetUrl } from '../platform/assets';
+
+// `sheet` is either already a URL (file:, asset:, tauri:, ...; at least two
+// characters before the colon so that a Windows drive letter does not count)
+// or an absolute path that has to be converted.
+const URL_SCHEME = /^[a-z][a-z0-9+.-]+:/i;
 
 const SpriteContainer = ({ width, height, children, scale }) => {
   const style = {
@@ -12,8 +17,8 @@ const SpriteContainer = ({ width, height, children, scale }) => {
 
 const Sprite = ({ sheet, row, col, width, height, scale }) => {
   let sheetUrl = sheet;
-  if (sheetUrl && sheetUrl.indexOf('file:') < 0) {
-    sheetUrl = sheet ? fileUrl(sheet) : '';
+  if (sheetUrl && !URL_SCHEME.test(sheetUrl)) {
+    sheetUrl = toAssetUrl(sheet);
   }
   const style = {
     background: `url("${sheetUrl}") -${col * width}px -${row * height}px`,

@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 import TiledService from '../../common/tiled';
+import { toAssetSrc } from '../../platform/assets';
 import IdleAnimations from './entities/IdleAnimations';
 
 function deepClone(object) {
@@ -268,11 +269,11 @@ class EntityConfigurator {
       const imagePath = `${objectDirPath}/${spriteSheet.fileName}`;
 
       if (spriteSheet.type === 'image') {
-        game.load.image(key, imagePath);
+        game.load.image(key, toAssetSrc(imagePath));
       } else {
         game.load.spritesheet(
           key,
-          imagePath,
+          toAssetSrc(imagePath),
           spriteSheet.frameDimensions.width,
           spriteSheet.frameDimensions.height
         );

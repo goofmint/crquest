@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
-import fileUrl from 'file-url';
+import { toAssetUrl } from '../../../platform/assets';
 import { resolveAbsolutePath } from '../../../common/assetLoader';
 
 const AssetLoaderContext = createContext({
@@ -19,7 +19,7 @@ const AssetLoaderProvider = ({ assetPaths = [[]], children }) => {
 
   const addAsset = async path => {
     const assetPath = await resolveAbsolutePath(path);
-    const asset = fileUrl(assetPath);
+    const asset = toAssetUrl(assetPath);
 
     // We use the path as the key for this asset
     setAssets(set(assets, path, asset));
@@ -28,7 +28,7 @@ const AssetLoaderProvider = ({ assetPaths = [[]], children }) => {
   const addAssets = async paths => {
     const assetPromises = paths.map(async path =>  {
       const assetPath = await resolveAbsolutePath(path);
-      return fileUrl(assetPath);
+      return toAssetUrl(assetPath);
     });
     const absolutePaths = await Promise.all(assetPromises);
 
@@ -49,7 +49,7 @@ const AssetLoaderProvider = ({ assetPaths = [[]], children }) => {
 
       const assetResolutionPromises = assetPaths.map(async ([key, path]) => {
         const assetPath = await resolveAbsolutePath(path);
-        const asset = fileUrl(assetPath);
+        const asset = toAssetUrl(assetPath);
 
         initialAssets[key] = asset;
       });

@@ -8,6 +8,7 @@ import { getContext, setContext, emitter } from '../../common/context';
 import LevelLifecycleManager from '../../common/levelLifecycleManager';
 import DynamicLevel from './DynamicLevel';
 import { staticFilePath } from '../../common/fs_utils';
+import { toAssetSrc } from '../../platform/assets';
 import { prettyLog } from '../../common/utils';
 import {
   readDirectory,
@@ -163,8 +164,8 @@ export default class Game extends React.Component {
             spriteSheetFiles.map(async filename => {
               if (filename.indexOf('.png') >= 0) {
                 const baseName = `${filename.replace('.png', '')}`;
-                const fileUrl = await resolveAbsolutePath(
-                  `spritesheets/${filename}`
+                const fileUrl = toAssetSrc(
+                  await resolveAbsolutePath(`spritesheets/${filename}`)
                 );
 
                 return { baseName, fileUrl, height: 32, width: 32 };
@@ -180,8 +181,8 @@ export default class Game extends React.Component {
             tilesetFiles.map(async filename => {
               if (filename.indexOf('.png') >= 0) {
                 const baseName = `${filename.replace('.png', '')}`;
-                const fileUrl = await resolveAbsolutePath(
-                  `tilesets/${filename}`
+                const fileUrl = toAssetSrc(
+                  await resolveAbsolutePath(`tilesets/${filename}`)
                 );
 
                 // Check if there's a JSON config for this tileset
