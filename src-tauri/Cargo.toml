@@ -29,4 +29,5 @@ libc = "0.2"
 
 [dev-dependencies]
 glob = "0.3"
+serde_json = "1"
 tauri = { version = "2", features = ["protocol-asset", "test"] }

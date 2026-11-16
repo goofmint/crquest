@@ -153,23 +153,32 @@ describe('exec (no shell)', () => {
 });
 
 describe('pathExists', () => {
-  const info = kind => ({ isFile: kind === 'file', isDirectory: kind === 'dir', isSymlink: false, size: 1, mtime: null });
-
-  test('true for an existing file or directory, via stat of the path as given', async () => {
-    fsMocks.stat.mockResolvedValueOnce(info('file')).mockResolvedValueOnce(info('dir'));
-    await expect(pathExists('/a b/tool')).resolves.toBe(true);
-    await expect(pathExists('/a b')).resolves.toBe(true);
-    expect(fsMocks.stat).toHaveBeenNthCalledWith(1, '/a b/tool');
+  test('asks the Rust path_exists command with the path as given (no fs access)', async () => {
+    const calls = backend(() => true);
+    await expect(pathExists('/a b/node')).resolves.toBe(true);
+    expect(calls).toEqual([{ cmd: 'path_exists', payload: { path: '/a b/node' } }]);
+    expect(fsMocks.stat).not.toHaveBeenCalled();
   });
 
-  test('false when the path does not exist (ENOENT only)', async () => {
-    fsMocks.stat.mockRejectedValue('No such file or directory (os error 2)');
-    await expect(pathExists('/x')).resolves.toBe(false);
+  test('resolves false when the command says the path does not exist', async () => {
+    backend(() => false);
+    await expect(pathExists('/usr/bin/python3')).resolves.toBe(false);
   });
 
-  test('any other failure (for example a path outside the scope) rejects', async () => {
-    fsMocks.stat.mockRejectedValue('forbidden path: /x, maybe it is not allowed on the scope');
-    await expect(pathExists('/x')).rejects.toThrow(/forbidden path/);
+  test('a path that is not allowed rejects with an Error that has the kind', async () => {
+    backend(() => {
+      throw { kind: 'notAllowed', message: 'program is not allowed: /bin/ls', stdout: '', stderr: '' };
+    });
+    await expect(pathExists('/bin/ls')).rejects.toMatchObject({
+      kind: 'notAllowed',
+      message: 'program is not allowed: /bin/ls',
+    });
+  });
+
+  test('a non-string is a TypeError and nothing is invoked', async () => {
+    const calls = backend(() => true);
+    await expect(pathExists(undefined)).rejects.toBeInstanceOf(TypeError);
+    expect(calls).toEqual([]);
   });
 
   test('has no synchronous variant', async () => {

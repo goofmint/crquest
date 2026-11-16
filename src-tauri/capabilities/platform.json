@@ -322,6 +322,29 @@
         }
       ]
     },
+    {
+      "identifier": "allow-path-exists",
+      "allow": [
+        {
+          "program": "git"
+        },
+        {
+          "program": "node"
+        },
+        {
+          "program": "npm"
+        },
+        {
+          "program": "python"
+        },
+        {
+          "program": "python3"
+        },
+        {
+          "program": "python3.*"
+        }
+      ]
+    },
     "allow-is-dev",
     "allow-open-devtools",
     "allow-toggle-devtools",

@@ -17,15 +17,17 @@
  *   `run_command`; anything else rejects without running. A non-zero exit
  *   rejects like Node's `exec` (`Error: Command failed: ...`, with `code`,
  *   `stdout`, `stderr`).
- * - `pathExists(path)`: resolves `true` / `false` through an asynchronous
- *   `stat` (platform/fs `existsAsync`). Only ENOENT means "does not exist":
- *   any other failure rejects, in particular a path outside the fs read
- *   scope (src-tauri/capabilities/platform.json), which is not silently
- *   reported as missing. The Windows Store (`WindowsApps`) `stat` problem noted
- *   in ../exec.js is not verified on Tauri.
+ * - `pathExists(path)`: resolves `true` / `false` through the Rust command
+ *   `path_exists` (not through fs: a path the user typed for an executable is
+ *   outside the fs scope, and widening the fs read scope was rejected). It has
+ *   the authorization of `run_command`: only an absolute path whose file name
+ *   is an allowed program (git, node, npm, python, python3, python3.*) is
+ *   answered; any other file name rejects (kind `notAllowed`), because it could
+ *   not be run anyway. A path that is not absolute (including a bare name)
+ *   resolves `false`. Directories count as existing, like Electron's
+ *   `fs.existsSync`. Nothing is listed or read.
  */
 import { invoke } from '@tauri-apps/api/core';
-import { existsAsync } from './fs';
 
 const KILL_SIGNAL = 'SIGKILL';
 
@@ -121,4 +123,9 @@ export const exec = async (command, options = {}) => {
   return { stdout, stderr };
 };
 
-export const pathExists = async path => (await existsAsync(path)) !== false;
+export const pathExists = async path => {
+  if (typeof path !== 'string') {
+    throw new TypeError('pathExists requires a path string');
+  }
+  return invokeCommand('path_exists', { path });
+};

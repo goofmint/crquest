@@ -1,4 +1,6 @@
 mod bundled_scope;
+#[cfg(test)]
+mod capability_scope;
 mod close;
 mod exec;
 mod help_menu;
@@ -65,6 +67,16 @@ async fn command_exists(
     .map_err(join_failure)?
 }
 
+/// True if `path` (an absolute path whose file name is an allowed program
+/// name) exists. See `exec::path_exists`.
+#[tauri::command]
+async fn path_exists(scope: CommandScope<ProgramEntry>, path: String) -> Result<bool, RunFailure> {
+    let patterns = scope_patterns(&scope);
+    tauri::async_runtime::spawn_blocking(move || exec::path_exists(&path, &patterns))
+        .await
+        .map_err(join_failure)?
+}
+
 /// True in debug builds (`cargo build` without `--release`), like
 /// `electron-is-dev` for an unpackaged Electron app.
 #[tauri::command]
@@ -103,6 +115,12 @@ fn open_devtools() -> Result<(), String> {
 #[tauri::command]
 fn toggle_devtools() -> Result<(), String> {
     Err("DevTools are not available in release builds".to_string())
+}
+
+/// The generated context (embedded `frontendDist`, config, ACL). One place, so
+/// that the tests can inspect the same context that `run` starts with.
+fn context() -> tauri::Context {
+    tauri::generate_context!()
 }
 
 pub fn run() {
@@ -144,11 +162,44 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             run_command,
             command_exists,
+            path_exists,
             is_dev,
             open_devtools,
             toggle_devtools,
             help_menu::enable_help_menu
         ])
-        .run(tauri::generate_context!())
+        .run(context())
         .expect("error while running TerminalQuest");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// QuestIDE and the validators start `code_runner/worker.js` with
+    /// `new Worker(<page-relative URL>)`; the page is served from the embedded
+    /// `frontendDist`, so the file must be in it, byte for byte.
+    #[test]
+    fn the_worker_script_is_embedded_in_the_frontend_dist() {
+        let context = context();
+        let embedded = context
+            .assets()
+            .get(&"/code_runner/worker.js".into())
+            .expect("code_runner/worker.js is not embedded in frontendDist");
+        let on_disk = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/code_runner/worker.js"
+        ))
+        .unwrap();
+        assert_eq!(embedded.as_ref(), on_disk.as_slice());
+    }
+
+    /// No CSP is configured, so nothing blocks a same-origin worker. When a
+    /// CSP is introduced (W12) it needs `worker-src 'self'` (or `script-src`
+    /// fallback): this fails then, as a reminder.
+    #[test]
+    fn no_csp_is_configured_yet() {
+        let context = context();
+        assert!(context.config().app.security.csp.is_none());
+    }
 }

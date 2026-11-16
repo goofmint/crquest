@@ -530,6 +530,42 @@ pub fn command_exists(
     Ok(find_in_path(name, path_var, path_ext).is_some())
 }
 
+/// Existence of a path that a user typed for an executable (the
+/// executable-path challenge, `ValidationHelper.isExecutableValid`).
+///
+/// Same authorization as `run_command`: the path must be absolute and its file
+/// name (stem) must match the program allowlist, so this only answers for
+/// files that could be run through `run_command` anyway. It reveals one bit
+/// (exists or not) and never lists or reads anything. A path that is not
+/// absolute (including a bare name) is reported as missing: it is not a path to
+/// a file, and the Electron implementation (`fs.existsSync`) resolves it
+/// against the process working directory, which is not meaningful here.
+/// Like `fs.existsSync`, any file system error is "does not exist", and a
+/// directory counts as existing.
+pub fn path_exists(path: &str, patterns: &[String]) -> Result<bool, RunFailure> {
+    if path.trim().is_empty() || path.contains('\0') {
+        return Err(failure(
+            FailureKind::InvalidArgument,
+            "path must be a non-empty string",
+        ));
+    }
+    if !Path::new(path).is_absolute() {
+        return Ok(false);
+    }
+    authorize_program(path, patterns)?;
+    Ok(entry_exists(Path::new(path)))
+}
+
+fn entry_exists(path: &Path) -> bool {
+    if path.exists() {
+        return true;
+    }
+    // Windows Store apps (`WindowsApps`) are reparse points that `metadata`
+    // cannot follow (the case `fs.existsSync` handles on Electron); the link
+    // itself is there. Not verified on Windows by the author.
+    cfg!(windows) && std::fs::symlink_metadata(path).is_ok()
+}
+
 /// Windows executable extensions to try (`PATHEXT`); empty elsewhere.
 pub fn system_path_ext() -> Vec<String> {
     if cfg!(windows) {
@@ -629,6 +665,55 @@ mod tests {
         assert_eq!(kind("python-evil"), FailureKind::NotAllowed);
         assert_eq!(kind(""), FailureKind::InvalidArgument);
         assert_eq!(kind("  "), FailureKind::InvalidArgument);
+    }
+
+    #[test]
+    fn path_exists_answers_only_for_allowed_absolute_paths() {
+        let dir = std::env::temp_dir().join(format!("tq-path-exists-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("git")).unwrap();
+        std::fs::write(dir.join("node"), b"x").unwrap();
+        std::fs::write(dir.join("secret.txt"), b"x").unwrap();
+        let p = |name: &str| dir.join(name).to_string_lossy().into_owned();
+        let kind = |path: &str| path_exists(path, &patterns()).unwrap_err().kind;
+
+        // exists / missing (a directory with an allowed name counts, like existsSync)
+        assert_eq!(path_exists(&p("node"), &patterns()), Ok(true));
+        assert_eq!(path_exists(&p("git"), &patterns()), Ok(true));
+        assert_eq!(path_exists(&p("python3.12"), &patterns()), Ok(false));
+        // an existing file whose name is not allowed is not answered
+        assert_eq!(kind(&p("secret.txt")), FailureKind::NotAllowed);
+        assert_eq!(kind(&p("missing.txt")), FailureKind::NotAllowed);
+        // not absolute: missing, without touching the file system
+        assert_eq!(path_exists("git", &patterns()), Ok(false));
+        assert_eq!(path_exists("./node", &patterns()), Ok(false));
+        assert_eq!(path_exists("bin/node", &patterns()), Ok(false));
+        // malformed
+        assert_eq!(kind(""), FailureKind::InvalidArgument);
+        assert_eq!(kind("  "), FailureKind::InvalidArgument);
+        assert_eq!(kind("/tmp/\0node"), FailureKind::InvalidArgument);
+        // an empty scope denies everything
+        assert_eq!(
+            path_exists(&p("node"), &[]).unwrap_err().kind,
+            FailureKind::NotAllowed
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn path_exists_follows_symlinks_like_exists_sync() {
+        let dir = std::env::temp_dir().join(format!("tq-path-exists-ln-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("real"), b"x").unwrap();
+        std::os::unix::fs::symlink(dir.join("real"), dir.join("python3")).unwrap();
+        std::os::unix::fs::symlink(dir.join("gone"), dir.join("node")).unwrap();
+        let p = |name: &str| dir.join(name).to_string_lossy().into_owned();
+        assert_eq!(path_exists(&p("python3"), &patterns()), Ok(true));
+        // dangling link: existsSync is false
+        assert_eq!(path_exists(&p("node"), &patterns()), Ok(false));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

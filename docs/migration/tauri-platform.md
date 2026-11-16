@@ -65,6 +65,7 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 | --- | --- | --- |
 | `run_command` | `program`, `args`, `cwd?`, `env?`, `timeoutMs?`, `maxBuffer?` | 成功: `{ code, stdout, stderr }`。終了コードが非ゼロでも成功扱い (`platform/exec.js` の `run` と同じ) |
 | `command_exists` | `name` | `true` / `false` |
+| `path_exists` | `path` | `true` / `false` (W11 #142。実行ファイルのパスの存在確認) |
 
 失敗 (invoke の reject 値) は `{ kind, code, message, stdout, stderr, killed }` である。`kind` は次のいずれか。
 
@@ -89,7 +90,7 @@ scope の変数: `READ` = `$RESOURCE`、`$RESOURCE/**`、`$CONFIG/terminalquest(
 
 validator は任意の拡張パッケージから来るため、webview から呼べる command は「何でも実行できる」口にしてはいけない。許可は 2 層ある。
 
-1. 権限: command は `build.rs` の app manifest に登録してあり、`allow-run-command` / `allow-command-exists` を持つ capability のウィンドウ (`main`) だけが呼べる。
+1. 権限: command は `build.rs` の app manifest に登録してあり、`allow-run-command` / `allow-command-exists` / `allow-path-exists` を持つ capability のウィンドウ (`main`) だけが呼べる。
 2. スコープ: 許可するプログラム名のパターンは `src-tauri/capabilities/platform.json` の `{ "program": "..." }` で宣言し、Rust は `CommandScope` から読む (Rust にリストを埋め込んでいない)。スコープが空なら全拒否する。
 
 現在の許可パターン: `git`、`node`、`npm`、`python`、`python3`、`python3.*` (`*` は任意の文字列)。
@@ -101,6 +102,8 @@ validator は任意の拡張パッケージから来るため、webview から�
 - ディレクトリ部の無い名前は OS の PATH 解決に任せる。
 - したがって、学習者が設定で指定する実行ファイルのパス (`TQ_PYTHON_EXE`、`TQ_GIT_EXE`、`isExecutableValid` で検証する node など。いずれも `public/content` の validator が `helper.exec(path, args)` に渡す) は、ファイル名が上のパターンに合えば動く (例: `/opt/homebrew/bin/python3.11`、`C:\Program Files\Git\cmd\git.exe`)。`py.exe`、`python-3.12` や `pypy`、`pwsh` など、別名の実行ファイルは拒否される。拒否されて困る場合はパターンを capability に追加する。
 - `command_exists` は、許可パターンに合う「名前だけ」を受け付ける (パスは `invalidArgument`)。現在の呼び出し元は `commandExists('git')` のみ。Electron は任意の名前を調べられたが、Tauri では許可名に限る (他の名前を調べる道具にしないため)。
+
+- `path_exists` (W11 #142): `isExecutableValid` が学習者の入力したパスの存在を確認するための command。`run_command` と同じ `authorize_program` を通すので、答えるのは「絶対パスで、ファイル名が許可パターンに合うもの」だけである (許可名以外は `notAllowed` で reject する。どのみち起動できないパス)。相対パス (名前だけも含む) は `false` を返す (Electron の `fs.existsSync` は作業ディレクトリ基準で、実質存在しない扱い)。返すのは存在するかどうかの 1 ビットだけで、一覧も読み取りもしない。ディレクトリも「存在する」(`existsSync` と同じ)。fs の read scope を広げる案 (`/usr/**` などは絞れず、任意のユーザーディレクトリが読めてしまう) は採らなかった。scope は `allow-command-exists` と同じ 6 パターンを capability に宣言する (Rust には埋め込まない)。Windows Store (`WindowsApps`) の別名は `metadata` で辿れないので `symlink_metadata` でも確認する (Windows では未検証)。
 
 引数と `cwd` は検査しない。`python -c` や `node -e` は、ゲームがユーザーコードを検証するために引数で任意コードを実行するので、これを塞ぐとゲームが成立しない。この許可リストが防ぐのは「webview から任意の別プログラム (`sh`、`curl`、`rm` など) を起動すること」であり、許可した 5 種のインタプリタ経由の任意コード実行は防がない。残る危険と前提は次のとおり。
 
@@ -116,7 +119,7 @@ validator は任意の拡張パッケージから来るため、webview から�
 
 ### 2.4 テスト
 
-`cd src-tauri && cargo test`: 許可リスト (許可、拒否、相対パス、空スコープ)、`command_exists`、実プロセスでの終了コード、出力、非ゼロ終了、ENOENT / EACCES、`cwd`、`env`、タイムアウト、`maxBuffer`、シグナル、引数がシェルに解釈されないこと (Unix のみ `/bin/sh` と `/bin/echo` を使うテスト)。
+`cd src-tauri && cargo test`: 許可リスト (許可、拒否、相対パス、空スコープ)、`command_exists`、`path_exists` (許可名だけ答える、相対は `false`、シンボリックリンク)、実プロセスでの終了コード、出力、非ゼロ終了、ENOENT / EACCES、`cwd`、`env`、タイムアウト、`maxBuffer`、シグナル、引数がシェルに解釈されないこと (Unix のみ `/bin/sh` と `/bin/echo` を使うテスト)。
 
 ## 3. `platform/*` の Tauri 実装 (#60)
 
@@ -146,7 +149,7 @@ Tauri の plugin はすべて非同期である。Electron 契約で同期のメ
 | `env.isDev` | 同上 (Rust の `is_dev`) | `config.js`、`assetLoader.js`、`firebase.js`、`gameEvents.js`、`itemsHelper.js`、`index.jsx` |
 | `store.getValue` / `setValue` / `hasValue` / `deleteValue` | throw (`ERR_TAURI_SYNC_UNSUPPORTED`)。非同期版 `*Async` を追加 | `ContextProvider.jsx` (getValue)、`common/context/index.js` (setValue)、`common/audio/index.js` (getValue / setValue)、`ClearDataButton.jsx` (hasValue / deleteValue) |
 | `fs.exists` / `list` / `read` / `remove` / `readFileSync`、`exec.pathExistsSync` | 契約から削除した (W6 #137)。Electron と Tauri の両方に存在しない。非同期の `existsAsync` / `listAsync` / `readAsync` / `removeAsync` / `readFile` を使う | なし |
-| `exec.pathExists(path)` (非同期、追加) | Electron: `fs.existsSync` の結果 (Windows Store の `fs.stat` 問題を避ける)。Tauri: `existsAsync` (stat)。ENOENT 以外の失敗 (scope 外のパスなど) は reject する | `ValidationHelper.isExecutableValid`。ユーザー指定の実行ファイルのパスは fs の read scope の外なので Tauri では reject になる (W11)。Windows Store アプリの `stat` は未検証 |
+| `exec.pathExists(path)` (非同期、追加) | Electron: `fs.existsSync` の結果 (Windows Store の `fs.stat` 問題を避ける)。Tauri: Rust の `path_exists` command (W11 #142。2.2 章)。絶対パスでファイル名が許可パターンに合うものだけ答え、許可名以外は `notAllowed` で reject、相対パスは `false` | `ValidationHelper.isExecutableValid`。Windows Store アプリは未検証 |
 | `devtools.openDevTools` / `toggleDevTools` | `Promise<void>` を返す (#64、`tauri-shell.md`)。Rust コマンドを呼び、失敗 (release ビルド) は reject する。await しない呼び出し元は未処理の Promise 拒否になる。「フォーカス中のウィンドウが無い」例外は出せない | `index.jsx`、`App.jsx` |
 
 `exec.exec` (シェル文字列) の扱いは 2.3 章のとおり。
