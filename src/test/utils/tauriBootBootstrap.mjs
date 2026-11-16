@@ -225,7 +225,7 @@ if (leaked.length) throw new Error(`the page context has Node globals: ${leaked}
 const modules = new Map();
 function load(identifier) {
   if (modules.has(identifier)) return modules.get(identifier);
-  const source = fs.readFileSync(fileURLToPath(identifier), 'utf8');
+  const source = fs.readFileSync(toPath(identifier), 'utf8');
   const module = new vm.SourceTextModule(source, {
     context,
     identifier,
@@ -238,13 +238,9 @@ function load(identifier) {
   return module;
 }
 
-function fileURLToPath(url) {
-  return new URL(url).pathname;
-}
-
 function resolve(specifier, referencing) {
   if (!specifier.startsWith('.')) throw new Error(`boot test: unexpected non-relative import ${specifier} in ${referencing}`);
-  return pathToFileURL(path.resolve(path.dirname(fileURLToPath(referencing)), specifier)).href;
+  return pathToFileURL(path.resolve(path.dirname(toPath(referencing)), specifier)).href;
 }
 
 async function importModule(specifier, referencing) {
