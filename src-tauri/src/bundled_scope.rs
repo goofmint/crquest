@@ -104,4 +104,129 @@ mod tests {
         assert!(bundled.matches_with("/home/u/ext/.bundled/objects/x/y.png", options));
         assert!(!bundled.matches_with("/home/u/ext/.other/a.png", options));
     }
+
+    // The real scope objects of a (mock) app with the plugins registered in the
+    // order of lib.rs. A directory is added through the same call the dialog
+    // makes (`allow_directory`, recursive) and the persisted-scope restore
+    // replays; the real `is_allowed` decides. Gap: persisted-scope itself is not
+    // registered here (it writes into the real app data directory); its restore
+    // is the same `allow_directory` call on these scopes (see its source).
+    mod real_scope {
+        use super::*;
+        use std::fs::create_dir_all;
+        use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+
+        struct Fixture {
+            root: PathBuf,
+            app: tauri::App<MockRuntime>,
+        }
+
+        fn fixture(name: &str) -> Fixture {
+            let root = std::env::temp_dir()
+                .join(format!("tq-bundled-scope-{name}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&root);
+            for dir in [
+                ".bundled/tilesets",
+                ".bundled/objects/a",
+                ".other",
+                ".git",
+                "ext1",
+            ] {
+                create_dir_all(root.join(dir)).unwrap();
+            }
+            for file in [
+                ".bundled/tilesets/t.png",
+                ".bundled/objects/a/o.png",
+                ".other/x.txt",
+                ".git/config",
+                "ext1/e.txt",
+            ] {
+                std::fs::write(root.join(file), b"x").unwrap();
+            }
+            let app = mock_builder()
+                .plugin(tauri_plugin_fs::init())
+                .plugin(init())
+                .build(mock_context(noop_assets()))
+                .unwrap();
+            Fixture {
+                root: root.canonicalize().unwrap(),
+                app,
+            }
+        }
+
+        fn check(scope: &Scope, root: &Path) {
+            for allowed in [
+                "",
+                "ext1",
+                "ext1/e.txt",
+                ".bundled",
+                ".bundled/tilesets",
+                ".bundled/tilesets/t.png",
+                ".bundled/objects/a",
+                ".bundled/objects/a/o.png",
+            ] {
+                assert!(
+                    scope.is_allowed(root.join(allowed)),
+                    "{allowed} must be allowed"
+                );
+            }
+            for hidden in [".other", ".other/x.txt", ".git", ".git/config"] {
+                assert!(
+                    !scope.is_allowed(root.join(hidden)),
+                    "{hidden} must not be allowed"
+                );
+            }
+        }
+
+        #[test]
+        fn selection_allows_bundled_only_in_fs_and_asset_scopes() {
+            let f = fixture("select");
+            f.app.fs_scope().allow_directory(&f.root, true).unwrap();
+            f.app
+                .asset_protocol_scope()
+                .allow_directory(&f.root, true)
+                .unwrap();
+            check(&f.app.fs_scope(), &f.root);
+            check(&f.app.asset_protocol_scope(), &f.root);
+            let _ = std::fs::remove_dir_all(&f.root);
+        }
+
+        #[test]
+        fn restore_replays_allow_directory_and_gets_the_same_result() {
+            let f = fixture("restore");
+            // persisted-scope restores `<dir>` and `<dir>/**` entries, then
+            // (for saved `.bundled` entries) `<dir>/.bundled` again
+            f.app.fs_scope().allow_directory(&f.root, true).unwrap();
+            f.app
+                .fs_scope()
+                .allow_directory(f.root.join(".bundled"), true)
+                .unwrap();
+            f.app
+                .asset_protocol_scope()
+                .allow_directory(&f.root, true)
+                .unwrap();
+            f.app
+                .asset_protocol_scope()
+                .allow_directory(f.root.join(".bundled"), true)
+                .unwrap();
+            check(&f.app.fs_scope(), &f.root);
+            check(&f.app.asset_protocol_scope(), &f.root);
+            let _ = std::fs::remove_dir_all(&f.root);
+        }
+
+        #[test]
+        fn without_the_plugin_the_hidden_directory_is_denied() {
+            let f = fixture("baseline");
+            let app = mock_builder()
+                .plugin(tauri_plugin_fs::init())
+                .build(mock_context(noop_assets()))
+                .unwrap();
+            app.fs_scope().allow_directory(&f.root, true).unwrap();
+            assert!(app.fs_scope().is_allowed(f.root.join("ext1/e.txt")));
+            assert!(!app
+                .fs_scope()
+                .is_allowed(f.root.join(".bundled/tilesets/t.png")));
+            let _ = std::fs::remove_dir_all(&f.root);
+        }
+    }
 }
