@@ -298,6 +298,12 @@ const SIMPLE_VALIDATORS = [
         'const removeDuplicateCharacters = s => [...new Set(s)].join("");',
         'Expected "aba" from input "aba", but received "ab".',
       ],
+      // #108: three or more repeated characters must collapse to one as well
+      [
+        'removes a repeated pair only once',
+        "const removeDuplicateCharacters = s => s.replace(/(.)\\1/g, '$1');",
+        'Expected "abc" from input "aaaaaaaaaaaaaaabc", but received "aaaaaaaabc".',
+      ],
       [
         'returns the input',
         'const removeDuplicateCharacters = s => s;',
@@ -378,10 +384,11 @@ describe('flatten-array', () => {
       'const flattenArray = a => (a.length ? a.flat(Infinity).map(String) : "Pure Ducktypium!");',
       NOT_EQUAL,
     ],
+    // #108: a string is no longer accepted where an array is expected
     [
-      'returns a joined string (equal as a string)',
+      'returns a joined string (not an array)',
       'const flattenArray = a => (a.length ? a.flat(Infinity).join() : "Pure Ducktypium!");',
-      true,
+      'Expected [1,two,3,four] from input [1,two,3,four], but received "1,two,3,four".',
     ],
     [
       'does not answer the empty array with a string',

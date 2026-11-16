@@ -33,6 +33,7 @@ module.exports = async function (helper) {
 
         test("aabbcc", "abc");
         test("aba", "aba");
+        test("aaaaaaaaaaaaaaabc", "abc");
 
         return { outcome: "ok" };
       },

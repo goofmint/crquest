@@ -49,10 +49,13 @@ module.exports = async function (helper) {
           const testResult = testFunction(input);
 
           // Checks for 'value' equality. This should only be true if both are 'Pure Ducktypium!'
-          const areEqualStrings = Object.is(
-            String(testResult).toLowerCase(),
-            String(expected).toLowerCase()
-          );
+          // (#108: not when an array is expected, e.g. a joined string)
+          const areEqualStrings =
+            !Array.isArray(expected) &&
+            Object.is(
+              String(testResult).toLowerCase(),
+              String(expected).toLowerCase()
+            );
 
           // Checks for equal types, lengths, and element values
           const areEqualArrays =
