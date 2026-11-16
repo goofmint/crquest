@@ -549,6 +549,15 @@ pub fn path_exists(path: &str, patterns: &[String]) -> Result<bool, RunFailure> 
             "path must be a non-empty string",
         ));
     }
+    if Path::new(path)
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(failure(
+            FailureKind::InvalidArgument,
+            "path must not contain '..'",
+        ));
+    }
     if !Path::new(path).is_absolute() {
         return Ok(false);
     }
@@ -698,6 +707,21 @@ mod tests {
             FailureKind::NotAllowed
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn path_exists_rejects_parent_directory_components() {
+        let kind = |path: &str| path_exists(path, &patterns()).unwrap_err().kind;
+        assert_eq!(
+            kind("/nope/../usr/bin/python3"),
+            FailureKind::InvalidArgument
+        );
+        assert_eq!(kind("/usr/bin/../bin/node"), FailureKind::InvalidArgument);
+        assert_eq!(kind("../git"), FailureKind::InvalidArgument);
+        assert_eq!(kind("/a/.."), FailureKind::InvalidArgument);
+        // not a parent component: ordinary names that contain dots
+        assert_eq!(path_exists("/a/..git/node", &patterns()), Ok(false));
+        assert_eq!(path_exists("/a/b../node", &patterns()), Ok(false));
     }
 
     #[cfg(unix)]
