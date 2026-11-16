@@ -50,7 +50,15 @@ This runs `npm run build:tauri` first (`beforeDevCommand` in `src-tauri/tauri.co
 Things to know:
 
 - `build:tauri` and `build:all` both write `public/index.js` (and `public/index.html`, `public/index.css`), so the output is shared. After running Tauri, run `npm run build:all` before going back to Electron (`npm start` does this itself).
-- Save data is not shared. Electron keeps it in `userData/config.json`; Tauri keeps it in a separate `config.json` under the app data directory (`$APPDATA/com.terminalquest.desktop`). Progress is not migrated between the two.
+- Save data is not shared, and progress is not migrated between the two. Both shells use a file named `config.json`; the default locations are:
+
+  | Shell                                                               | macOS                                                                 | Windows                                           | Linux                                                                                                             |
+  | :------------------------------------------------------------------ | :-------------------------------------------------------------------- | :------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------- |
+  | Electron (`userData`, app name `terminalquest` from `package.json`) | `~/Library/Application Support/terminalquest/config.json`             | `%APPDATA%\terminalquest\config.json`             | `$XDG_CONFIG_HOME/terminalquest/config.json`, or `~/.config/terminalquest/config.json`                            |
+  | Tauri (`app_data_dir`, identifier `com.terminalquest.desktop`)      | `~/Library/Application Support/com.terminalquest.desktop/config.json` | `%APPDATA%\com.terminalquest.desktop\config.json` | `$XDG_DATA_HOME/com.terminalquest.desktop/config.json`, or `~/.local/share/com.terminalquest.desktop/config.json` |
+
+  The directories come from the official [Electron](https://www.electronjs.org/docs/latest/api/app#appgetpathname) and [Tauri](https://docs.rs/tauri/2/tauri/path/struct.PathResolver.html) documentation. The Windows `%APPDATA%` path is the Roaming AppData folder. The `config.json` file name is taken from the code (`src/js/app/config/config.js`, `src/js/app/platform/tauri/store.js`); the paths have not been checked on a running build.
+
 - The Tauri window has a Content Security Policy (`app.security.csp` in `src-tauri/tauri.conf.json`). Violations only show in the webview console (F12 in a debug build). How to revert it is described in `docs/migration/tauri-runtime.md`.
 
 ### Tests
