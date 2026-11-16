@@ -187,7 +187,6 @@ mod tests {
                 );
             }
         }
-        }
 
         #[test]
         fn selection_allows_bundled_only_in_fs_and_asset_scopes() {
