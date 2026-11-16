@@ -5,6 +5,7 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "run_command",
             "command_exists",
+            "path_exists",
             "is_dev",
             "open_devtools",
             "toggle_devtools",
