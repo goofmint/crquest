@@ -68,7 +68,11 @@ export function relative(from, to) {
 }
 
 export function toNamespacedPath(path) {
-  return current().toNamespacedPath(path);
+  const implementation = current();
+  // POSIX returns the path unchanged (path-browserify has no such function)
+  return typeof implementation.toNamespacedPath === 'function'
+    ? implementation.toNamespacedPath(path)
+    : path;
 }
 
 export function dirname(path) {

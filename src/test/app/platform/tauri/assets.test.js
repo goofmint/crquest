@@ -94,6 +94,12 @@ describe('platform assets (Tauri)', () => {
     );
   });
 
+  test('resource-only directory names are case-sensitive on POSIX', () => {
+    expect(toAssetUrl(`${RESOURCE}/LEVELS/a.mp3`)).toBe(
+      new URL('LEVELS/a.mp3', document.baseURI).href
+    );
+  });
+
   test('a path that only shares the resource directory prefix is not a resource', () => {
     expect(toAssetUrl(`${RESOURCE}-other/avatars/a.png`)).toContain('asset://localhost/');
   });
@@ -192,6 +198,26 @@ describe('platform assets (Tauri, Windows paths)', () => {
     // A path on another drive is not a resource
     expect(toAssetUrl('D:\\Program Files\\TerminalQuest\\avatars\\a.png')).toContain(
       'http://asset.localhost/'
+    );
+  });
+
+  test('UNC and authority-like paths are rejected, not turned into another host', () => {
+    ['\\\\example.com\\a.png', '//example.com/a.png', '\\/example.com/a.png'].forEach(value =>
+      expect(() => getStaticFileUrl(value)).toThrow(/relative path/)
+    );
+    ['\\\\server\\share\\a.png', '//server/share/a.png'].forEach(value =>
+      expect(() => toAssetUrl(value)).toThrow(/absolute path/)
+    );
+  });
+
+  test('resource-only directories are matched case-insensitively on Windows only', () => {
+    setPlatformState({ resourceDirPath: 'C:\\Res', platform: 'win32' });
+    expect(toAssetUrl('C:\\Res\\LEVELS\\a.mp3')).toBe(
+      `http://asset.localhost/${encodeURIComponent('C:\\Res\\LEVELS\\a.mp3')}`
+    );
+    expect(toAssetUrl('c:\\res\\Content\\a.png')).toContain('http://asset.localhost/');
+    expect(toAssetUrl('C:\\Res\\Avatars\\a.png')).toBe(
+      new URL('Avatars/a.png', document.baseURI).href
     );
   });
 

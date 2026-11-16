@@ -6,7 +6,7 @@
 // a forked child process (src/test/utils/tauriBootBootstrap.mjs) and reports
 // the page state back over IPC. See docs/migration/tauri-runtime.md (#154) for
 // what is stubbed and what this does not cover.
-import { fork } from 'node:child_process';
+import { execFileSync, fork } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -53,6 +53,13 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     stagedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'terminalquest-tauri-dist-'));
     stageTauriFrontend(path.join(repoRoot, 'public'), stagedDir);
     fs.cpSync(outputDir, stagedDir, { recursive: true });
+    // index.css is the output of `npm run build:css` (git-ignored, not made by
+    // `npm test`): compile it here, with the same sass call, into the staged copy
+    execFileSync(
+      path.join(repoRoot, 'node_modules', '.bin', 'sass'),
+      [path.join(repoRoot, 'src/scss/main.scss'), path.join(stagedDir, 'index.css'), '--no-source-map'],
+      { cwd: repoRoot }
+    );
   }, 180000);
 
   afterAll(() => {

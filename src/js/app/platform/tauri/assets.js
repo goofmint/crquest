@@ -27,8 +27,15 @@ import resourceOnlyDirectories from '../../config/tauriResourceOnlyDirectories.j
 // A separator of either platform: a Windows relative path may use both.
 const SEPARATORS = /[\\/]/;
 
+// UNC (two backslashes, then host) and authority-like (`//host`) paths are not supported
+const AUTHORITY_LIKE = /^[\\/]{2}/;
+
 function assertAbsolute(absolutePath) {
-  if (typeof absolutePath !== 'string' || !path.isAbsolute(absolutePath)) {
+  if (
+    typeof absolutePath !== 'string' ||
+    AUTHORITY_LIKE.test(absolutePath) ||
+    !path.isAbsolute(absolutePath)
+  ) {
     throw new Error(`assets: an absolute path is required, got ${absolutePath}`);
   }
 }
@@ -43,17 +50,21 @@ export function getStaticRootPath() {
 }
 
 export function getStaticFileUrl(relativePath) {
+  // Separators first: every check below, and the URL, see the same string
+  const normalized =
+    typeof relativePath === 'string' ? relativePath.split(SEPARATORS).join('/') : relativePath;
   if (
-    typeof relativePath !== 'string' ||
-    relativePath === '' ||
-    path.isAbsolute(relativePath) ||
-    relativePath.split(SEPARATORS).includes('..')
+    typeof normalized !== 'string' ||
+    normalized === '' ||
+    normalized.startsWith('/') ||
+    path.isAbsolute(normalized) ||
+    normalized.split('/').includes('..')
   ) {
     throw new Error(
       `assets: a relative path inside the static root is required, got ${relativePath}`
     );
   }
-  return pageRelativeUrl(relativePath.split(SEPARATORS).join('/'));
+  return pageRelativeUrl(normalized);
 }
 
 /**
@@ -73,7 +84,10 @@ export function toAssetUrl(absolutePath) {
   // resource directory, and the normalized path is what gets converted.
   const normalized = path.normalize(absolutePath);
   const segments = resourceSegments(normalized);
-  if (segments && !resourceOnlyDirectories.includes(segments[0])) {
+  // On Windows `path.relative` keeps the input's casing, and the file system ignores it
+  const caseInsensitive = path.sep === '\\';
+  const first = caseInsensitive ? segments?.[0].toLowerCase() : segments?.[0];
+  if (segments && !resourceOnlyDirectories.includes(first)) {
     return getStaticFileUrl(segments.join('/'));
   }
   return convertFileSrc(normalized);

@@ -60,6 +60,16 @@ describe('path shim (Tauri)', () => {
     expect(pathShim.resolve('C:/a', 'D:\\b')).toBe('D:\\b');
   });
 
+  test('toNamespacedPath: unchanged on POSIX, delegated on win32', () => {
+    ['linux', 'darwin'].forEach(platform => {
+      use(platform);
+      expect(pathShim.toNamespacedPath('/a/b')).toBe('/a/b');
+      expect(pathShim.toNamespacedPath('C:\\a')).toBe('C:\\a');
+    });
+    use('win32');
+    expect(pathShim.toNamespacedPath('C:\\a\\b')).toBe(nodePath.win32.toNamespacedPath('C:\\a\\b'));
+  });
+
   test('the OS is read at every call, not once', () => {
     use('linux');
     expect(pathShim.join('a', 'b')).toBe('a/b');
