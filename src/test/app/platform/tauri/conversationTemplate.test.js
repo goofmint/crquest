@@ -3,6 +3,7 @@
 // calls for every .pug file of the repository and for the fixtures, and the
 // same errors, with the files read through the (mocked) Tauri fs plugin.
 import nodeFs from 'node:fs';
+import nodePath from 'node:path';
 
 const plugin = vi.hoisted(() => ({ readTextFile: vi.fn() }));
 vi.mock('@tauri-apps/plugin-fs', () => plugin);
@@ -106,7 +107,7 @@ describe('Tauri conversation templates equal the Electron ones', () => {
     test('there are templates, and only scientist1.pug uses include (covered by the fixtures too)', () => {
       expect(files.length).toBeGreaterThanOrEqual(100);
       const withInclude = files.filter(f => /^\s*include\s/m.test(nodeFs.readFileSync(f, 'utf8')));
-      expect(withInclude.map(f => f.split('/').pop())).toEqual(['scientist1.pug']);
+      expect(withInclude.map(f => nodePath.basename(f))).toEqual(['scientist1.pug']);
     });
 
     test('same result for an empty state, an all-set state and every lastResponse', async () => {
