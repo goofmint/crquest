@@ -24,6 +24,9 @@ beforeEach(() => {
   });
 });
 
+// Pug-resolved paths use the native separator (backslashes on Windows)
+const slashes = text => text.replace(/\\/g, '/');
+
 // The response ids of a rendered conversation: the lastResponse values to try
 function responseIds(html) {
   return [...html.matchAll(/<response id="([^"]+)"/g)].map(m => m[1]);
@@ -60,11 +63,11 @@ describe('Tauri conversation templates equal the Electron ones', () => {
 
     test('every file is read once, the root first, through the plugin', async () => {
       await renderTauri(`${dir}/extending.pug`, createContext().context);
-      expect(plugin.readTextFile.mock.calls.map(call => call[0])).toEqual([
-        `${dir}/extending.pug`,
-        `${dir}/layout.pug`,
-        `${dir}/parts/deeper.pug`,
-        `${dir}/parts/inner.pug`,
+      expect(plugin.readTextFile.mock.calls.map(call => slashes(call[0]))).toEqual([
+        `${slashes(dir)}/extending.pug`,
+        `${slashes(dir)}/layout.pug`,
+        `${slashes(dir)}/parts/deeper.pug`,
+        `${slashes(dir)}/parts/inner.pug`,
       ]);
     });
 
@@ -84,11 +87,11 @@ describe('Tauri conversation templates equal the Electron ones', () => {
 
     test('a missing include has the code and the "at <file> line <n>" suffix of Electron', async () => {
       const { electron, tauri } = await both(`${dir}/missing-include.pug`, {});
-      const suffix = `\n    at ${dir}/missing-include.pug line 2`;
+      const suffix = `\n    at ${slashes(dir)}/missing-include.pug line 2`;
       expect(electron.errorCode).toBe('ENOENT');
       expect(tauri.errorCode).toBe('ENOENT');
-      expect(electron.errorMessage.endsWith(suffix)).toBe(true);
-      expect(tauri.errorMessage.endsWith(suffix)).toBe(true);
+      expect(slashes(electron.errorMessage).endsWith(suffix)).toBe(true);
+      expect(slashes(tauri.errorMessage).endsWith(suffix)).toBe(true);
     });
 
     test('a failed read is not retried forever', async () => {

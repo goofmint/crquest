@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { builtinModules, createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // The bundle must reference react/jsx-runtime, which exists in every React 19
@@ -95,7 +95,10 @@ const tauriBuiltinReplacements = {
 // only calls it when a template uses a filter. Its load-time access of `fs`
 // would throw, so it gets the same failing stub as a Node builtin; a template
 // with a filter then fails with an explicit error where it uses it.
-const runFilterFile = path.join(publicDir, 'node_modules', 'pug-filters', 'lib', 'run-filter.js');
+// (Vite passes module ids with forward slashes, also on Windows, hence normalizePath.)
+const runFilterFile = normalizePath(
+  path.join(publicDir, 'node_modules', 'pug-filters', 'lib', 'run-filter.js')
+);
 
 function tauriUnavailableModules() {
   return {
@@ -103,7 +106,7 @@ function tauriUnavailableModules() {
     enforce: 'pre',
     resolveId(source, importer) {
       if (platformTarget !== 'tauri') return null;
-      if (source === 'resolve' && importer === runFilterFile) {
+      if (source === 'resolve' && importer && normalizePath(importer) === runFilterFile) {
         return UNAVAILABLE_PREFIX + source;
       }
       const name = unavailableModuleName(source);
@@ -174,12 +177,12 @@ function resolvePackagesFromPublic() {
 //   `require('fs')` is replaced by an empty object.
 const tauriPackagePatches = [
   {
-    file: path.join(publicDir, 'node_modules', 'pug', 'lib', 'index.js'),
+    file: normalizePath(path.join(publicDir, 'node_modules', 'pug', 'lib', 'index.js')),
     from: "Buffer.isBuffer(contents)\n        ? contents.toString('utf8')\n        : contents",
     to: "typeof contents === 'string'\n        ? contents\n        : contents.toString('utf8')",
   },
   {
-    file: path.join(publicDir, 'node_modules', 'jstransformer', 'index.js'),
+    file: normalizePath(path.join(publicDir, 'node_modules', 'jstransformer', 'index.js')),
     from: "var fs = require('fs');",
     to: 'var fs = {};',
   },
@@ -191,7 +194,7 @@ function patchTauriPackages() {
     enforce: 'pre',
     transform(code, id) {
       if (platformTarget !== 'tauri') return null;
-      const patch = tauriPackagePatches.find(candidate => candidate.file === id);
+      const patch = tauriPackagePatches.find(candidate => candidate.file === normalizePath(id));
       if (!patch) return null;
       if (!code.includes(patch.from)) {
         throw new Error(`${id} no longer contains the text that the Tauri build patches: ${patch.from}`);
