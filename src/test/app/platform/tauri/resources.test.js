@@ -79,3 +79,47 @@ describe('tauri.conf.json bundle.resources', () => {
     });
   });
 });
+
+// W12: frontendDist is the staging directory, which leaves out what is shipped
+// as resources (tasks/stage_tauri_frontend.js, tauriResourceOnlyDirectories.json)
+describe('tauri.conf.json frontendDist (staging directory)', () => {
+  const resourceOnly = require('../../../../js/app/config/tauriResourceOnlyDirectories.json');
+  const { stagingDir, RUNTIME_NODE_MODULES_FILES } = require('../../../../../tasks/stage_tauri_frontend');
+  const html = fs.readFileSync(path.join(ROOT, 'src/index.html'), 'utf8');
+
+  test('is the directory that tasks/stage_tauri_frontend.js writes', () => {
+    expect(path.resolve(TAURI_DIR, conf.build.frontendDist)).toBe(stagingDir);
+  });
+
+  test('the Tauri build commands stage it after building', () => {
+    const scripts = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).scripts;
+    expect(scripts['build:tauri']).toMatch(/--serial stage:tauri$/);
+    expect(scripts['stage:tauri']).toBe('node tasks/stage_tauri_frontend.js');
+    expect(conf.build.beforeBuildCommand).toBe('npm run build:tauri');
+    expect(conf.build.beforeDevCommand.script).toBe('npm run build:tauri');
+  });
+
+  test('every directory left out of it is a resource (the asset protocol serves it)', () => {
+    resourceOnly.forEach((name) => {
+      expect(entries.some(([, destination]) => destination === `${name}/`)).toBe(true);
+    });
+  });
+
+  test('the staging directory is git-ignored', () => {
+    const { spawnSync } = require('node:child_process');
+    const result = spawnSync('git', ['check-ignore', '-q', 'tauri-dist/probe.js'], { cwd: ROOT });
+    expect(result.status).toBe(0);
+  });
+
+  test('the node_modules files it keeps are exactly those that index.html links', () => {
+    const linked = [...html.matchAll(/(?:href|src)="(node_modules\/[^"]+)"/g)].map((m) => m[1]);
+    expect(linked).toEqual(RUNTIME_NODE_MODULES_FILES);
+  });
+
+  test('index.html has no inline script or style (Tauri would add a nonce, which disables unsafe-inline)', () => {
+    expect(html.toLowerCase()).not.toContain('<style');
+    html.toLowerCase().split('<script').slice(1).forEach((script) => {
+      expect(script.slice(0, script.indexOf('>'))).toContain(' src=');
+    });
+  });
+});

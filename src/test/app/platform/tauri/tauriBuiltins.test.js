@@ -13,6 +13,7 @@ const root = path.resolve(__dirname, '../../../../..');
 describe('Node builtin replacements in the Tauri build', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   let api;
+  let platformState;
 
   beforeAll(async () => {
     // The build removes unused exports of an entry, so the entry stores the
@@ -20,9 +21,12 @@ describe('Node builtin replacements in the Tauri build', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-builtins-'));
     const entry = path.join(dir, 'entry.js');
     const allowlist = path.join(root, 'src/js/app/common/moduleAllowlist.js');
+    const state = path.join(root, 'src/js/app/platform/tauri/state.js');
     fs.writeFileSync(
       entry,
-      `import * as allowlist from ${JSON.stringify(allowlist)};\nglobalThis.api = allowlist;\n`
+      `import * as allowlist from ${JSON.stringify(allowlist)};\n` +
+        `import * as state from ${JSON.stringify(state)};\n` +
+        'globalThis.api = allowlist;\nglobalThis.platformState = state;\n'
     );
     let outputs;
     try {
@@ -42,7 +46,12 @@ describe('Node builtin replacements in the Tauri build', () => {
     const context = vm.createContext({ URL, URLSearchParams, queueMicrotask, console });
     vm.runInContext(chunks[0].code, context);
     api = context.api;
+    platformState = context.platformState;
   }, 120000);
+
+  afterEach(() => {
+    platformState.resetPlatformState();
+  });
 
   afterAll(() => {
     process.env.NODE_ENV = originalNodeEnv;
@@ -56,6 +65,7 @@ describe('Node builtin replacements in the Tauri build', () => {
   });
 
   test('the extension allowlist loads and exposes path, assert and util', () => {
+    platformState.setPlatformState({ platform: 'darwin' });
     expect(api.isAllowedBuiltIn('path')).toBe(true);
     expect(api.isAllowedBuiltIn('fs')).toBe(false);
     const { path: posix, assert, util } = api.BUILT_IN_MODULES;
@@ -71,8 +81,31 @@ describe('Node builtin replacements in the Tauri build', () => {
     expect(util.inspect({ a: 1 })).toBe('{ a: 1 }');
   });
 
-  test('path.resolve has no process.cwd() to fall back to: relative-only input throws', () => {
-    // The path-browserify implementation needs a cwd for a relative result
-    expect(() => api.BUILT_IN_MODULES.path.resolve('a', 'b')).toThrow();
+  test('path.resolve has no working directory to fall back to: relative-only input throws', () => {
+    ['darwin', 'win32'].forEach(platform => {
+      platformState.setPlatformState({ platform });
+      expect(() => api.BUILT_IN_MODULES.path.resolve('a', 'b')).toThrow(/absolute path/);
+    });
+  });
+
+  test('path follows the OS read by initPlatform (what an extension require("path") gets)', () => {
+    const { path: extensionPath } = api.BUILT_IN_MODULES;
+    // Before initPlatform() there is no OS: no default
+    expect(() => extensionPath.join('a', 'b')).toThrow(/initPlatform/);
+    expect(() => extensionPath.sep).toThrow(/initPlatform/);
+
+    platformState.setPlatformState({ platform: 'win32' });
+    expect(extensionPath.sep).toBe('\\');
+    expect(extensionPath.join('C:\\Users', 'me', '..', 'you', 'a.txt')).toBe('C:\\Users\\you\\a.txt');
+    expect(extensionPath.isAbsolute('C:/Users')).toBe(true);
+    expect(extensionPath.resolve('C:\\a', '..', 'b')).toBe('C:\\b');
+    expect(extensionPath.basename('C:\\a\\b.txt')).toBe('b.txt');
+
+    platformState.setPlatformState({ platform: 'linux' });
+    expect(extensionPath.sep).toBe('/');
+    expect(extensionPath.join('/a', 'b', '..', 'c')).toBe('/a/c');
+    expect(extensionPath.isAbsolute('C:/Users')).toBe(false);
+    expect(extensionPath.win32.sep).toBe('\\');
+    expect(extensionPath.posix.sep).toBe('/');
   });
 });

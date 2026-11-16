@@ -17,7 +17,7 @@
 - `version` は `../public/package.json` を参照 (ゲームのバージョンの正本、現在 3.12.1)。`cargo check` で解決できることを確認済み。`Cargo.toml` の version は 3.12.1 を手書きしており、`tauri.conf.json` 側が優先される。
 - `identifier` は `com.terminalquest.desktop` (新規に決めた値。`.app` 終わりは macOS の拡張子と衝突するため避けた)。
 - `csp` は `null` (`tauri init` の既定)。Electron は `nodeIntegration` 前提のため、現行フロントはそのままでは Tauri で動かない。これは #60 以降の範囲。
-- 本番ビルドは `frontendDist` 全体 (`public/node_modules` を含む) を埋め込む。配布構成 (埋め込み対象の絞り込み) は後続タスク。
+- (W12 で変更) `frontendDist` は `../tauri-dist` (`tasks/stage_tauri_frontend.js` が `public/` から作る。`content/`、`levels/`、`node_modules` を除く)。`tauri-runtime.md` の W12 を参照。
 - アイコン: `public/images/app/logo.png` (2560x1440) を透明で正方形にパディングし、`npm run tauri -- icon <png> -o src-tauri/icons` で生成した暫定版。Android/iOS 用は削除済み。製品アイコンへの差し替えは別途。
 - `@tauri-apps/api` はフロントがまだ使わないため未使用。
 

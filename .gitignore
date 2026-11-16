@@ -33,3 +33,5 @@ public/test/
 # Tauri (see docs/migration/tauri-scaffold.md)
 src-tauri/target/
 src-tauri/gen/
+# Tauri frontendDist (tasks/stage_tauri_frontend.js)
+tauri-dist/

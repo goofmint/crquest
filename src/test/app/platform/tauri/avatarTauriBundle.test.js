@@ -153,6 +153,7 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
       resourceDirPath: RESOURCE,
       appVersion: '1.0.0',
       isDev: false,
+      platform: 'linux',
     });
     const uri = await new Promise((resolve, reject) => {
       window.avatarEntry.generateDataURI(options, resolve);

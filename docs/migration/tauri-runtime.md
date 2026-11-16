@@ -145,7 +145,7 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 | D1 | store の同期 API。(A) `initPlatform()` が store 全体を先読みしてメモリに持ち、同期 `getValue` はそこから返し、`setValue` は書き込みを非同期に流す。(B) 呼び出し元 (`ContextProvider`、`audio`、`context/index.js`、`ClearDataButton`) を非同期化し、Electron の store に `*Async` を足す | (B)。(A) は `setValue` の失敗を呼び出し元に返せず、フォールバック禁止のルールに反する (握りつぶすか、別経路で通知することになる)。(B) は呼び出し元 4 ファイルの変更が Electron にも及ぶので、W4 で挙動を固定するテストを先に足す |
 | D2 | メニュー項目 (B5)。(a) Rust または JS の menu API で Help メニューを組み立てる、(b) 項目を落とす (明示的に記録する)。"Open Save File" は Tauri の store ファイルと意味がずれる | 最初の起動マイルストーンまでは何も追加しない (ただしコード上は no-op を明示する)。後続 W10 で (a) を実装し、"Open Save File" は Tauri の store の場所を指すよう直す |
 | D3 | 右クリックメニュー (B9) | 後続。既定のままにして記録する |
-| D4 | `path` の実装。(a) `path-browserify` (POSIX のみ)、(b) 区切りを正規化する自前の薄いラッパー (`modulePath.js` に近い) | 起動マイルストーンは (a) で macOS のみ。Windows 対応は W13 で (b) を検討 |
+| D4 | `path` の実装。(a) `path-browserify` (POSIX のみ)、(b) 区切りを正規化する自前の薄いラッパー (`modulePath.js` に近い) | 起動マイルストーンは (a) で macOS のみ。W12 で OS に応じて win32 / posix を選ぶシム (`path-browserify-win32` の win32 を使用) にした |
 | D5 | URL 化の方針 (B3)。ディスク上の絶対パスを (1) すべて asset プロトコルにする、(2) `public/` 配下 (= `$RESOURCE/content` など、埋め込み済み) は相対 URL、それ以外 (ユーザー拡張) は asset プロトコル | (2)。asset プロトコルの有効化 (Cargo feature `protocol-asset`、`assetProtocol` scope、capability) は範囲を最小にする |
 
 ## 4. 作業項目 (PR 単位)
@@ -188,7 +188,7 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 
 | 組み込み | Tauri での実装 | 理由 |
 | --- | --- | --- |
-| `path` | `path-browserify` (POSIX のみ。D4 の (a)) | 定番の小さなパッケージ。Windows のパス意味論は W12 |
+| `path` | 当初は `path-browserify` (POSIX のみ。D4 の (a))。W12 で `src/js/tauri_shims/path.js` に変更 (OS に応じて win32 / posix を選ぶ。D4 の (b)) | W12 を参照 |
 | `events` | `events` 3.x | 同上 (ルートの lock に 1.1.1 が `aws-sdk` の依存として入っていたため、直接依存として 3.3 を追加し、`aws-sdk` 側は入れ子になった) |
 | `util` / `assert` | `util` 0.12 / `assert` 2.x | `moduleAllowlist.js` が拡張コンテンツに渡すのと同じ API |
 | `url` | 自前 `src/js/tauri_shims/url.js` | 旧 API (`parse`/`format`/`resolve`) は npm `url` 0.11、`URL` / `URLSearchParams` は webview のもの、`fileURLToPath` は Node の POSIX 版と同じ挙動 (非 `file:` と host つきは Node と同じく例外)。npm `url` には `fileURLToPath` が無い |
@@ -263,7 +263,7 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - Electron 実装は従来の文字列をそのまま返す。`getStaticRootPath` は `fileURLToPath(new URL('.', document.baseURI))` (`fs_utils.js` から移しただけ)、`toAssetUrl` は `file-url`、`toAssetSrc` は入力のパス (生パスのまま Howler・Phaser・`<img>` に渡す現状を保つ。`undefined` は `undefined`)、`getStaticFileUrl` は `fileUrl(path.resolve(root, 相対パス))`。
 - Tauri 実装 (種類ごと):
   - `staticFilePath` の基準: `getResourceDirPath()` (`path.resolve(resourceDir, 相対パス)`。基準が絶対パスなので path-browserify の `process.cwd()` 呼び出しは起きない。`config.js` の 2 か所の `resolve` も絶対パス引数で問題ない。テストで固定)。
-  - `$RESOURCE` 配下のファイル (`levels/common/music`・`sfx`、`content/`、`avatars/parts`): `frontendDist` に同じ相対パスで埋め込まれているため、ページ相対 URL にする (D5 (2))。asset プロトコルに依存しないので、起動に必須の音声はこの経路で通る。
+  - `$RESOURCE` 配下のファイル (`levels/common/music`・`sfx`、`content/`、`avatars/parts`): `frontendDist` に同じ相対パスで埋め込まれているため、ページ相対 URL にする (D5 (2))。asset プロトコルに依存しないので、起動に必須の音声はこの経路で通る。(W12 で変更: `content/` と `levels/` は `frontendDist` から除いたので asset プロトコルの URL になる。`avatars/` はページ相対のまま)
   - それ以外の絶対パス (ユーザーデータ、ユーザー拡張): `convertFileSrc` (asset プロトコル)。
   - `avatars/avatarN.png`、`code_runner/worker.js` (`getStaticFileUrl`): ページ相対 URL。絶対パスと `..` は throw する。
 - asset プロトコル: `tauri.conf.json` の `app.security.assetProtocol` を有効にし、scope は `$RESOURCE/**`、`$CONFIG/terminalquest/**`、`$CONFIG/TerminalQuest/**` だけ (fs の capability と同じ範囲)。`Cargo.toml` の `tauri` に `protocol-asset` feature を追加した。capability の追加は不要 (asset プロトコルは scope だけで制御される)。
@@ -378,7 +378,7 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 実機 (WebView) を使わずに確認できる範囲を確認し、直したのは (4) だけである。共通の JS (Electron と共有するコード) は変更していない。
 
 1. QuestIDE の保存先 (`$CONFIG/TerminalQuest/QuestIDE/<level>/<objective>/user_code.js`)。使う操作は、保存 = `mkdir` (親、recursive) + `write_text_file`、読み込み = `stat` + `read_text_file`、validator = `read_text_file`、Clear Data = `lstat` + `remove`。実際の capability (`platform.json`) の各 fs permission の scope を、Tauri の本物の scope 判定 (`tauri::fs::Scope`。tauri-plugin-fs の `resolve_path` と同じ作り方) で評価する Rust テスト (`src-tauri/src/capability_scope.rs`) を足した。結果: 全操作が許可される。ギャップは無く、scope は変更していない (最も狭いまま)。`$CONFIG` 外、`TerminalQuestX` のような接頭辞だけ同じ兄弟、ホームの下、`/tmp` には書けず、`$RESOURCE` は読み取りのみ。残り: プラグインが scope の前後で行うシンボリックリンクの解決と ACL そのものは WebView が要るので未確認。
-2. Worker の起動。URL は `getStaticFileUrl('code_runner/worker.js')` (W5) で、ページ相対の同一オリジン URL (`tauri://localhost/...`、Windows は `http://tauri.localhost/...`。Vitest `workerUrl.test.js` で固定)。`public/code_runner/worker.js` は `frontendDist` (`../public`) に入り、バイナリに埋め込まれたものがディスクのファイルとバイト一致することを Rust テスト (`lib.rs` の `tests`。`generate_context!` を `context()` に切り出して共有) で確認した。worker.js は import / export / `importScripts` の無い classic script (Vitest で固定) で、`new Worker(url)` に渡す形は変えていない。CSP は `csp: null` (未設定) なので `worker-src` に制限は無い (Rust テストで固定。CSP を足すときはこのテストが落ちるので、`worker-src 'self'` を足すこと。W12)。残り: WKWebView / WebView2 / WebKitGTK で `new Worker('tauri://localhost/...')` が実際に動くか (調べた範囲では、`tauri://` で問題が報告されているのは service worker で、dedicated worker の報告は見つからなかった。未確認)。
+2. Worker の起動。URL は `getStaticFileUrl('code_runner/worker.js')` (W5) で、ページ相対の同一オリジン URL (`tauri://localhost/...`、Windows は `http://tauri.localhost/...`。Vitest `workerUrl.test.js` で固定)。`public/code_runner/worker.js` は `frontendDist` (`../public`) に入り、バイナリに埋め込まれたものがディスクのファイルとバイト一致することを Rust テスト (`lib.rs` の `tests`。`generate_context!` を `context()` に切り出して共有) で確認した。worker.js は import / export / `importScripts` の無い classic script (Vitest で固定) で、`new Worker(url)` に渡す形は変えていない。CSP は W12 で設定した (`worker-src 'self' blob:`。Rust テストで固定。W12 を参照)。残り: WKWebView / WebView2 / WebKitGTK で `new Worker('tauri://localhost/...')` が実際に動くか (調べた範囲では、`tauri://` で問題が報告されているのは service worker で、dedicated worker の報告は見つからなかった。未確認)。
 3. `helper.exec` の許可リスト。`ValidationHelper` の `exec` / `commandExists` / `isExecutableValid` が Rust に送る引数を、Tauri の `exec` 実装に `mockIPC` をつないだ Vitest (`validatorExec.test.js`) で固定した (`run_command` の引数、シェルを介さない、許可外は `notAllowed`、`isExecutableValid` の文字列は厳密解析されて `run_command` に届く、非ゼロ終了のメッセージ)。`public/content` の validator が名指しするプログラムを走査するテストも足した: リテラルで指定しているのは `git` と `powershell.exe` で、`powershell.exe` 以外は許可される。残りの呼び出し (`TQ_GIT_EXE`、`TQ_NODE_EXE`、`TQ_PYTHON_EXE`、`isExecutableValid` に渡す入力) は学習者が入力するパスで、ファイル名が `git`、`node`、`npm`、`python`、`python3`、`python3.*` (`.exe` は除く) に合えば動く。ギャップ: (a) `fs-08-hidden` の win32 の分岐は `powershell.exe` を呼ぶので Tauri では `notAllowed` になる。PowerShell は `-Command` で何でも実行できる (シェルと同じ) ので許可リストには足していない。選択肢は、validator を PowerShell なしにする (Windows の隠し属性を見る手段が fs plugin に無いため、専用の Rust command が要る)、または `powershell` を許可する (許可リストの意味が変わる)。Windows のみで、W12 (Windows) と合わせて決める。(b) `py.exe`、`python-3.12`、`pypy` などファイル名が別名の実行ファイルは拒否される (許可パターンを足せば通る。2.2 章のとおり)。
 4. 実行ファイルのパスの存在確認。`pathExists` は、ユーザー指定のパスが fs の read scope の外なので reject していた (W6)。fs の scope を広げる (任意の場所の `stat` を許す) 代わりに、既存の Rust のセキュリティモデルを使う専用の command `path_exists` を足した。`run_command` と同じ `authorize_program` を通し、絶対パスでファイル名が許可パターンに合うものだけ答える (許可名以外は `notAllowed` で reject、相対パスは `false`)。`..` を含むパスは `invalidArgument` で reject する。返すのは存在の 1 ビットで、一覧も読み取りもしない。許可パターンは capability の `allow-path-exists` に `allow-command-exists` と同じ 6 件を宣言した (権限の追加は `build.rs` の manifest と `permissions/autogenerated/path_exists.toml`)。トレードオフ: webview から「`<任意のディレクトリ>/git` などが存在するか」を調べられる (許可名のファイルの有無だけ。内容も一覧も出ない)。`run_command` はもともとこの名前のファイルを実行できるので、新しい能力は存在確認だけである。Electron の `existsSync` との差: 許可名以外のパスは、Electron では存在すれば成功するが、Tauri では `notAllowed` で reject する (どのみち `run_command` で起動できないパスなので、起動できないものを「存在する」と返さない)。このとき `isExecutableValid` は例外を投げ、validator の `catch` が「予期しないエラー」を表示する (メッセージに `program is not allowed` が付く validator もある)。
 - Electron の出力: 共有の `src/js` は `platform/tauri/exec.js` (Tauri 専用) 以外変更していない。`public/index.js` の SHA-256 は変更前と同一 (下記の検証)。
@@ -391,12 +391,69 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
   4. 実行ファイルのパスの課題: 正しいパスで成功し、存在しないパス (例: `/nope/python3`) では "The path you provided does not exist!" が出る。`/bin/ls` のようなファイル名が許可外のパスではエラーが出る (上記のトレードオフ。Electron とは異なる)。名前だけ (`git`) は "does not exist" になる。
   5. 起動時のコンソールに `forbidden path` や `Permission ... not found` が出ない。
 
-### W12. 配布ビルド (後続、#63 の周辺)
+### W12. 配布ビルド (#143)
 
-- 内容: `frontendDist` から `content/`、`levels/` の重複を除く (`tauri-resources.md` 5 章)、`public/node_modules` の埋め込みを絞る、CSP (`csp: null` の見直し)、Windows のパス意味論 (D4 の (b))、`tauri build` の確認、Electron からの保存データ移行の要否。
-- 規模: 約 6〜10 ファイル。
+- 内容: (A) `frontendDist` から `content/`、`levels/`、`node_modules` の重複・不要分を除く、(B) CSP (`csp: null` の見直し)、(C) Windows のパス意味論 (D4 の (b))、(D) 決定事項の記録 (Electron 保存データの移行、`fs-08-hidden` の PowerShell)。`tauri build` はエージェントが実行していない (手動確認)。
+- 規模: 約 25 ファイル (テストと文書を含む)。
 - 依存: W1〜W11。
-- Electron リスク: なし。
+- Electron リスク: なし。`public/` と `npm run build:all` の出力 (`index.js`、`index.html`、`index.css`) は変えていない (ベースラインとの SHA-256 一致を確認した)。
+
+#### A. frontendDist の絞り込み
+
+- `tasks/stage_tauri_frontend.js` が、Tauri ビルド後の `public/` から `tauri-dist/` (git 管理外) を作る。`tauri.conf.json` の `build.frontendDist` は `../tauri-dist`。`npm run build:tauri` の最後 (`--serial stage:tauri`) で実行されるので、`beforeBuildCommand` / `beforeDevCommand` (どちらも `npm run build:tauri`) にそのまま入る。
+- 除くもの: `content/`、`levels/` (`src/js/app/config/tauriResourceOnlyDirectories.json`。`bundle.resources` で `$RESOURCE` に入り、ページは asset プロトコルで読む)、`node_modules/` (Tauri ビルドは全パッケージをバンドルする。`index.html` が読む `node_modules/animate.css/animate.min.css` だけを許可リストで残す)、`package.json` / `package-lock.json` (実行時に読まない。バージョンは `tauri.conf.json` が `../public/package.json` から取る)、名前が `.` で始まるファイル (`.DS_Store` など)。`avatars/` は `avatars/parts/` も含めて残す (Jimp が `toAssetSrc` で URL として読むため。108KB)。
+- サイズ (今回の環境): 変更前の埋め込み対象 `public/` は 210MB・14,537 ファイル (`node_modules` 111MB、`levels` 28MB、`content` 19MB を含む)。変更後の `tauri-dist/` は 57MB・628 ファイル。残りは `images` 24MB、`lib` 19MB、`tauri-game.js` 6.5MB など。`lib/` のうち使っていないファイル (例: `phaser-2.11.0.min.js`) の削減は今回の範囲外。
+- `platform/tauri/assets.js`: `$RESOURCE` 配下でも `content/` と `levels/` の URL は `convertFileSrc` (asset プロトコル。既存の `$RESOURCE/**` の scope) になった。それ以外の `$RESOURCE` 配下 (`avatars/` など) は従来どおりページ相対 URL。Electron の `assets.js` は変えていない。
+- テスト: Vitest (`assets.test.js`、`resources.test.js`、起動テスト `tauriBoot.test.js`: 起動テストは、ステージングした `frontendDist` に `index.html` と CSS が参照するすべてのファイルがあること、`content` / `levels` / `node_modules/pug` / `.DS_Store` が無いことを確認し、ページの古典スクリプトもステージング側から読む)、Rust (`lib.rs`: 埋め込みに `content/` と `levels/` が無く `index.html` と `animate.min.css` はあること。Worker のバイト一致は維持)。
+- 注意: `generate_context!` は `frontendDist` の存在を必要とする。clean な checkout で `cargo check` / `cargo test` を実行する前に `npm run build:tauri` が必要 (従来も `public/index.html` が生成物だったので同じ前提)。
+
+#### B. CSP (`app.security.csp`)
+
+起動して確認できないため、各 directive はコードと同梱ライブラリの読みを根拠にしている。広い許可 (`*`、`https:`、`unsafe-inline` の script) は入れていない。
+
+| directive | 値 | 根拠 |
+| --- | --- | --- |
+| `default-src` | `'self'` | 以降の directive で足りない種類を全部閉じる (`object-src` など) |
+| `script-src` | `'self' 'unsafe-eval'` | `new Function` を使う: `moduleLoader.js` (拡張の CommonJS を評価、`evaluateScript`)、pug 3 (`Function("pug", template + ...)`)、ejs、lodash の `Function("return this")`、Phaser と firestore の `Function(`。`public/tauri-game.js` で確認。インラインスクリプトは無い (`index.html` は `<script src>` のみ。Rust テストで固定) |
+| `worker-src` | `'self' blob:` | `new Worker(url)` で `code_runner/worker.js` を同一オリジンから起動 (`codeRunnerWorker.js`、W5)。Ace の JavaScript モードは `loadWorkerFromBlob: true` (`lib/ace/ace.js` の既定) で `new Worker(blobURL)` を作る (`QuestIDE.jsx` の `setMode('ace/mode/javascript')`) |
+| `style-src` | `'self' 'unsafe-inline'` | styled-components、React の `style=`、Ace が `<style>` を作る (`ace.js` の `createElement("style")`) |
+| `img-src` | `'self' asset: http://asset.localhost data:` | `levels/` / `content/` の画像は asset URL (macOS / Linux は `asset://localhost`、Windows は `http://asset.localhost`)。`data:` は Jimp の `getBase64Async` (アバター生成。`avatarRenderer.js`)、Ace、tachyons.css、Phaser の既定画像 |
+| `media-src` | `'self' asset: http://asset.localhost data:` | 音声 (Howler、`levels/common/music`・`sfx` の asset URL)。`movies/opening_cinematic.mp4` (`TitleScreen.jsx`) は同一オリジン。Howler は `data:audio/wav` の無音ファイルでアンロックする (`tauri-game.js`) |
+| `font-src` | `'self'` | `fonts/`、`lib/fontawesome/webfonts` (どちらも `frontendDist`)。`data:` のフォントは無い |
+| `connect-src` | `'self' ipc: http://ipc.localhost asset: http://asset.localhost` と下の外部ホスト | IPC は macOS / Linux が `ipc:`、Windows が `http://ipc.localhost` (Tauri の規定)。`asset:` は Howler (WebAudio) と Phaser の音声読み込みの XHR。外部: `https://firestore.googleapis.com` (firebase-firestore 6.2.3、`firebase.js`)、`https://twilioquest-prod.firebaseapp.com` と `https://twilioquest-dev.firebaseapp.com` (`config.js` の `apiBaseUrl`: `teams.js`、`operations.js`、`sync.js`、`gameEvents.js` の `fetch`)、`https://www.youtube.com` (`IFrameOverlay.jsx` の `fetch(url)`) |
+| `frame-src` | `https://www.youtube.com` | `IFrameOverlay` が開く URL。リポジトリ内の使用は `twilioquest-dev-fundamentals/levels/tower_of_knowledge/events.js` の YouTube 埋め込みのみ |
+
+- `dangerousDisableAssetCspModification` は使わない。Tauri は、配信する HTML の inline `<style>` / `<script>` に nonce / ハッシュを付け、その directive に追加する (nonce があると `'unsafe-inline'` は無視される)。`index.html` には inline の style / script が無いので追加は起きず、`style-src` の `'unsafe-inline'` は有効のまま (Rust テストと Vitest で固定。inline を足すとテストが落ちる)。
+- 許可していないもの (実機で違反が出たら製品判断): (1) 学習者のコードやコンテンツが任意の外部ホストに送る通信 (ページ上のコードの `fetch` など。Worker は別: 下の「Worker の通信」)。(2) `index.jsx` の Spector.js (`https://spectorcdn.babylonjs.com`、デバッグ用の取得)。(3) `IFrameOverlay` の `fetch(url)` は外部サイトの CORS により、CSP とは別に失敗しうる (Electron でも同じコード)。(4) ほかの iframe のホスト。
+- Worker の通信 (記録するリスクと判断): `code_runner/worker.js` と validator の Worker は `new Worker(<URL>)` で読み込む。URL から読み込んだ Worker の CSP は、親ページではなく Worker スクリプト自身の応答ヘッダーで決まる。Tauri 2.12.5 の CSP は HTML に `<meta>` として注入するだけで (`app.rs` の asset の `csp_header` は `None`)、`worker.js` の応答に `Content-Security-Policy` ヘッダーは付かない。したがって Worker 内の `fetch` / `XMLHttpRequest` は、ページの `connect-src` でも `script-src 'unsafe-eval'` でも制限されない (`worker-src` は Worker を作ることだけを制限する)。アプリに `blob:` の Worker は無い (Ace の blob Worker は構文チェックだけで、学習者のコードは実行しない)。意味: 学習者のコード (QuestIDE の Run) は、任意のホストへ通信できる。Electron は CSP が無く、同じコードで同じ挙動なので、挙動の回帰ではない。これは学習者が自分で書いたコードを実行する機能の性質でもあるが、CSP では守れていない。後続の判断項目として記録する (実装しない): Worker のスクリプトを返す応答に CSP ヘッダーを付ける (カスタムプロトコルが要る) か、Worker 内で `fetch` を無効化する (`code_runner` の挙動変更になる)。実機確認: QuestIDE で `fetch('https://example.com')` を書いて Run し、通信できることを確認する (できなければ上の記述を見直す)。
+- 戻し方: `tauri.conf.json` の `app.security.csp` を `null` にする (Rust テスト `the_csp_allows_what_the_app_uses_and_nothing_broader` は CSP があることを前提にするので、そのテストも直す)。
+- 起動テスト・Vitest では CSP を検証できない (jsdom は CSP を適用しない)。実際の違反は WebView のコンソールにだけ出る。
+
+#### C. Windows のパス意味論
+
+- `src/js/tauri_shims/path.js` (`vite.config.mjs` の Tauri 専用プラグインが `path` / `node:path` をここに向ける。Electron の設定は変更なし)。呼び出しごとに `getPlatform()` (`initPlatform()` が読んだ OS) で win32 (`path-browserify-win32@2.0.0` の `win32`) か posix (従来の `path-browserify`) を選ぶ。`sep` と `delimiter` はデフォルトエクスポートのゲッター (ES module は変化する名前付きエクスポートを持てない。リポジトリは `path.sep` をデフォルトエクスポート経由でのみ使う)。`path.win32` / `path.posix` は OS に依らず使える。
+- `path-browserify-win32` は `posix` を default export し、`.win32` と `.posix` を持つ (インストール後に確認。Node の `path` と同じ形)。その win32 の `resolve` は作業ディレクトリが無いと `\` を根にして黙って解決してしまうため、シムの `resolve()` は両 OS で「絶対パスが 1 つも無ければ例外」にした (従来の `path-browserify` と同じ契約)。
+- 初期化前 (`initPlatform()` が完了する前) の呼び出しは例外 (フォールバックなし)。起動時の `tauriIndex.jsx` → `initPlatform()` → ゲームの動的 import の順は #154 で保証済みで、`path` を使うモジュールはゲーム側にしかない。pug などバンドルされたパッケージの `require('path')` も同じシムになる。拡張の `require('path')` は `moduleAllowlist.js` がこのシムを返す (`tauriBuiltins.test.js` で win32 / linux の意味論を確認)。
+- `platform/tauri/assets.js`: 絶対パスの判定を `path.isAbsolute()` にして `C:\...` と `C:/...` を受け入れ、`..` の判定は `/` と `\` の両方を区切りとして扱い、リソースディレクトリ内かの判定は `path.relative()` (win32 では大文字小文字を区別しない)。
+- 対象外 (実機確認項目): UNC パス (`\\server\share`)、`$CONFIG` scope の大文字小文字、`url.js` の `fileURLToPath` (POSIX 実装のまま)、`\foo` のようなドライブ無しの根付きパス。
+
+#### D. 決定事項 (今回は実装しない。記録のみ)
+
+1. Electron の保存データの移行: 行わない。Tauri の store と Electron の `userData/config.json` は別ファイルで、既存の進捗は引き継がれない (`tauri-platform.md` 1.4 章)。製品判断が必要で、決定済みの方針は無い。影響: Electron 版からの利用者は Tauri 版で新規状態から始まる。前提: 自動移行は Electron の `userData` を読むための fs scope の拡大、アカウント/GUID と競合の扱い、失敗時の復旧の方針が要る。同意付きのインポート UI は別の選択肢。#63 / #65 の前に決めること。
+2. `fs-08-hidden` の PowerShell: 許可しない。`powershell.exe` は `-Command` で任意のコマンドを実行できる (許可リストの意味が変わる)。Windows の隠し属性を確認する専用の Rust command を、後続の作業項目として足す (fs plugin には隠し属性を見る手段が無い)。それまで Windows の `fs-08-hidden` は Tauri で `notAllowed` になる (W11 のギャップ (a))。
+
+#### 検証 (自動)
+
+- `npm ci` (クリーン)、`npm run build:all`、`npm run build:tauri` の後に `npm run build:all`、`npm test`、`cargo fmt --check` / `clippy --all-targets -D warnings` / `test`。`tauri.conf.json` は `cargo check` の `generate_context!` が読む。`tauri build` / `tauri dev` は実行していない。
+- Electron: `npm run build:all` の `public/index.js`、`public/index.html`、`public/index.css` の SHA-256 が、W12 の前のコミットでビルドしたものと一致。
+
+#### ユーザーの手動確認 (W12)
+
+1. 配布ビルド: `npm run tauri -- build --debug`。`tauri-resources.md` 4 章どおり `Resources/` に `content/`、`levels/`、`avatars/parts/` があること。実行ファイルのサイズが W12 前より小さい (埋め込みの 210MB → 57MB)。
+2. `npm run tauri -- dev` で起動し、DevTools (F12) のコンソールに CSP 違反 (`Refused to ... because it violates the following Content Security Policy directive`) が出ない。出た場合は directive 名と URL を記録する。確認する操作: タイトル画面と動画、新規開始、アバター作成 (`data:` 画像)、レベルの画像・タイル・NPC・アイテムが表示される (asset プロトコル)、音楽と効果音が鳴る、QuestIDE (Ace のエディタ表示、構文チェック、Run、Worker)、拡張機能が読み込める (`new Function`)、設定の同期 (firestore) 、会話。
+3. 違反が解消できない場合は `app.security.csp` を `null` に戻して原因を切り分ける (「戻し方」)。
+4. Network タブ: `levels/` と `content/` の画像・音声が `asset://localhost/...` (Windows は `http://asset.localhost/...`) で 200 になる。`tauri://localhost/levels/...` は無い。
+5. Windows: 起動してタイトル画面まで進む。拡張機能ディレクトリの選択と読み込み。`C:\...` の画像 (拡張のアセット) が表示される。UNC パスと `$CONFIG` の大文字小文字は未確認の項目。
 
 ### 起動時の失敗の修正と起動テスト (#154)
 
@@ -524,5 +581,5 @@ npm run tauri -- build --debug
 - R3: WKWebView の自動再生制限により、タイトル画面の音楽が鳴らない可能性 (起動の可否とは別問題として扱う)。
 - R4: `jimp` のブラウザ動作 (W9): jsdom (Node のグローバル無し) での合成は Electron と全画素一致を確認済み (#140)。実際の webview での確認は未実施。`cheerio` / `pug` は W8 で解消 (#139)。bundle には通っても実行時に失敗する場合の代替 (Canvas、`DOMParser`) は挙動変更を伴うため、事前に相談が必要。
 - R5: W3、W4、W5 は Electron と共有するコードを触る。`index.jsx`、`audio/index.js`、`ContextProvider.jsx`、`fs_utils.js` は動作確認済みなので、挙動を固定するテストを先に足してから変更する。
-- R6: Windows のパス意味論 (`path.sep`、ドライブレター、`$CONFIG` scope の大文字小文字) は W12 まで未検証。
-- R7: Tauri の store と Electron の `userData/config.json` は別ファイルで、既存のセーブデータは引き継がれない (`tauri-platform.md` 1.4 章)。#63 / #65 の前に移行の要否を決める。
+- R6: Windows のパス意味論は W12 でシムと単体テストを入れた (`path.sep`、ドライブレター)。実機 (Windows) での確認と `$CONFIG` scope の大文字小文字、UNC は未検証。
+- R7: Tauri の store と Electron の `userData/config.json` は別ファイルで、既存のセーブデータは引き継がれない (`tauri-platform.md` 1.4 章)。#63 / #65 の前に移行の要否を決める (W12 で「移行しない」を暫定の決定として記録した。W12 の D を参照)。

@@ -32,7 +32,7 @@ const CLASSIC_SCRIPTS = [
   'lib/phaser-2.13.2.min.js',
 ];
 
-const [outputDir, scenario] = process.argv.slice(2);
+const [outputDir, scenario, stagedDir] = process.argv.slice(2);
 const TIMEOUT_MS = 20000;
 const POLL_MS = 50;
 
@@ -227,7 +227,7 @@ function createWindow() {
   window.TextDecoder = TextDecoder;
   // The classic scripts of index.html that run before index.js (real ones)
   CLASSIC_SCRIPTS.forEach(script => {
-    window.eval(fs.readFileSync(path.join(repoRoot, 'public', script), 'utf8'));
+    window.eval(fs.readFileSync(path.join(stagedDir, script), 'utf8'));
   });
   return { dom, window };
 }
