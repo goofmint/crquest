@@ -50,7 +50,9 @@ const HOST_RESOURCE_DIR = path.join(repoRoot, 'public');
 // letter becomes a leading-slash path (C:\x -> /C:/x) so that it stays absolute.
 const toPosix = hostPath => {
   const slashed = hostPath.split(path.sep).join('/');
-  return /^[A-Za-z]:/.test(slashed) ? `/${slashed}` : slashed;
+  // posix.normalize also collapses a UNC prefix (//server/share) the same way
+  // the app's POSIX path functions do, so comparisons stay consistent.
+  return path.posix.normalize(/^[A-Za-z]:/.test(slashed) ? `/${slashed}` : slashed);
 };
 const RESOURCE_DIR = toPosix(HOST_RESOURCE_DIR);
 const toHostPath = target => path.join(HOST_RESOURCE_DIR, ...target.slice(RESOURCE_DIR.length).split('/'));
