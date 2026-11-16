@@ -76,6 +76,23 @@ describe('platform assets (Tauri)', () => {
     expect(toAssetUrl(`${RESOURCE}-other/a.png`)).toContain('asset://localhost/');
   });
 
+  test('.. that resolves inside the resource directory is a resource', () => {
+    const url = toAssetUrl(`${RESOURCE}/levels/common/../common/sfx/a.mp3`);
+    expect(new URL(url).pathname).toBe('/levels/common/sfx/a.mp3');
+    expect(toAssetSrc(`${RESOURCE}/levels/../avatars/parts/body.png`)).toBe(
+      new URL('avatars/parts/body.png', document.baseURI).href
+    );
+  });
+
+  test('.. that escapes the resource directory goes to the asset protocol, normalized', () => {
+    expect(toAssetUrl(`${RESOURCE}/../other/a.png`)).toBe(
+      'asset://localhost/%2Fopt%2Fother%2Fa.png'
+    );
+    expect(toAssetSrc(`${RESOURCE}/levels/../../etc/a.png`)).toBe(
+      'asset://localhost/%2Fopt%2Fetc%2Fa.png'
+    );
+  });
+
   test('toAssetSrc passes undefined through; toAssetUrl rejects it', () => {
     expect(toAssetSrc(undefined)).toBeUndefined();
     expect(() => toAssetUrl(undefined)).toThrow(/absolute path/);

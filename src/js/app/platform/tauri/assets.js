@@ -15,6 +15,7 @@
  *   tauri.conf.json allows for the resource and user data directories only.
  *   Paths are POSIX (decision D4); Windows is W12.
  */
+import path from 'path';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { getResourceDirPath } from './paths';
 
@@ -49,11 +50,14 @@ export function getStaticFileUrl(relativePath) {
 
 export function toAssetUrl(absolutePath) {
   assertAbsolute(absolutePath);
-  const root = `${getResourceDirPath().replace(/\/+$/, '')}/`;
-  if (absolutePath.startsWith(root)) {
-    return getStaticFileUrl(absolutePath.slice(root.length));
+  // Normalize first: `..` segments decide whether the file is inside the
+  // resource directory, and the normalized path is what gets converted.
+  const normalized = path.normalize(absolutePath);
+  const root = `${path.normalize(getResourceDirPath()).replace(/\/+$/, '')}/`;
+  if (normalized.startsWith(root)) {
+    return getStaticFileUrl(normalized.slice(root.length));
   }
-  return convertFileSrc(absolutePath);
+  return convertFileSrc(normalized);
 }
 
 export function toAssetSrc(absolutePath) {
