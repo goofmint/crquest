@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@actions/core": "^3.0.1",
+    "@babel/parser": "^7.29.14",
     "@oxc-project/runtime": "^0.158.0",
     "@tauri-apps/cli": "^2.12.4",
     "@testing-library/dom": "^10.4.2",

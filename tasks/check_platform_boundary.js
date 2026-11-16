@@ -4,8 +4,9 @@
 // electron, electron-is-dev, fs-jetpack or fs (including node:fs and subpaths
 // such as fs/promises) as a module. git grep finds candidate lines that
 // contain such a quoted specifier; every file with a candidate is then read
-// whole and tokenized (findViolationLines), so multi-line imports/requires and
-// multi-line comments are judged by their syntax, not line by line.
+// whole and parsed with @babel/parser (findViolationLines), so multi-line forms, comments, strings,
+// regexes and template interpolation are judged by the AST, not line by line.
+// A file that cannot be parsed is an error (exit non-zero), never skipped.
 // Only module-loading syntax counts: static `import ... from 'x'`,
 // `import 'x'`, `export ... from 'x'` (also the `from 'x'` line of a
 // multi-line import/export), `require('x')` and dynamic `import('x')`.
@@ -24,6 +25,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const parser = require('@babel/parser');
 
 const repoRoot = path.resolve(__dirname, '..');
 const SPECIFIER =
@@ -42,165 +44,87 @@ const args = [
 
 const FORBIDDEN_SPECIFIER = /^(electron|electron-is-dev|fs-jetpack|(node:)?fs)(\/.*)?$/;
 
-const IDENT_START = /[A-Za-z_$]/;
-const IDENT_PART = /[A-Za-z0-9_$]/;
-
-// After these tokens a `/` starts a regex literal instead of a division.
-const REGEX_PRECEDING_WORDS = new Set([
-  'return',
-  'typeof',
-  'instanceof',
-  'in',
-  'of',
-  'new',
-  'delete',
-  'void',
-  'throw',
-  'case',
-  'do',
-  'else',
-  'yield',
-  'await',
-]);
-
-// Lexical tokenizer, just enough for module-loading detection. Comments
-// (including multi-line ones), regex literals and string/template contents
-// never yield identifier tokens. Tokens: { type: 'ident' | 'string' | 'punct',
-// value, line }. A string that is not closed before the end of its line ends
-// there, so an apostrophe in JSX text cannot swallow the rest of the file.
-function tokenize(source) {
-  const tokens = [];
-  let i = 0;
-  let line = 1;
-  const last = () => tokens[tokens.length - 1];
-  const regexAllowed = () => {
-    const prev = last();
-    if (!prev) return true;
-    if (prev.type === 'string') return false;
-    if (prev.type === 'ident') return REGEX_PRECEDING_WORDS.has(prev.value);
-    return !/^[)\]}]$/.test(prev.value);
-  };
-  // Skips a template literal starting after its opening backtick. Returns its
-  // text without substitutions, or null when it has a `${}` substitution.
-  const readTemplate = () => {
-    let text = '';
-    let hasSubstitution = false;
-    while (i < source.length && source[i] !== '`') {
-      if (source[i] === '\\') {
-        text += source[i + 1] === undefined ? '' : source[i + 1];
-        if (source[i + 1] === '\n') line += 1;
-        i += 2;
-      } else if (source[i] === '$' && source[i + 1] === '{') {
-        hasSubstitution = true;
-        i += 2;
-        let depth = 1;
-        while (i < source.length && depth > 0) {
-          if (source[i] === '{') depth += 1;
-          else if (source[i] === '}') depth -= 1;
-          else if (source[i] === '\n') line += 1;
-          i += 1;
-        }
-      } else {
-        if (source[i] === '\n') line += 1;
-        text += source[i];
-        i += 1;
-      }
-    }
-    i += 1;
-    return hasSubstitution ? null : text;
-  };
-  while (i < source.length) {
-    const ch = source[i];
-    const next = source[i + 1];
-    if (ch === '\n') {
-      line += 1;
-      i += 1;
-    } else if (/\s/.test(ch)) {
-      i += 1;
-    } else if (ch === '/' && next === '/') {
-      while (i < source.length && source[i] !== '\n') i += 1;
-    } else if (ch === '/' && next === '*') {
-      const end = source.indexOf('*/', i + 2);
-      const stop = end === -1 ? source.length : end + 2;
-      for (let k = i; k < stop; k += 1) if (source[k] === '\n') line += 1;
-      i = stop;
-    } else if (ch === "'" || ch === '"') {
-      const startLine = line;
-      let value = '';
-      i += 1;
-      while (i < source.length && source[i] !== ch && source[i] !== '\n') {
-        if (source[i] === '\\') {
-          value += source[i + 1] === undefined ? '' : source[i + 1];
-          if (source[i + 1] === '\n') line += 1;
-          i += 2;
-        } else {
-          value += source[i];
-          i += 1;
-        }
-      }
-      if (source[i] === ch) i += 1;
-      tokens.push({ type: 'string', value, line: startLine });
-    } else if (ch === '`') {
-      const startLine = line;
-      i += 1;
-      const value = readTemplate();
-      tokens.push(
-        value === null
-          ? { type: 'punct', value: '`', line: startLine }
-          : { type: 'string', value, line: startLine }
-      );
-    } else if (ch === '/' && regexAllowed()) {
-      let inClass = false;
-      i += 1;
-      while (i < source.length && source[i] !== '\n') {
-        if (source[i] === '\\') i += 1;
-        else if (source[i] === '[') inClass = true;
-        else if (source[i] === ']') inClass = false;
-        else if (source[i] === '/' && !inClass) break;
-        i += 1;
-      }
-      i += 1;
-      while (i < source.length && IDENT_PART.test(source[i])) i += 1;
-      tokens.push({ type: 'punct', value: '/regex/', line });
-    } else if (IDENT_START.test(ch)) {
-      let value = '';
-      while (i < source.length && IDENT_PART.test(source[i])) {
-        value += source[i];
-        i += 1;
-      }
-      tokens.push({ type: 'ident', value, line });
-    } else {
-      tokens.push({ type: 'punct', value: ch, line });
-      i += 1;
-    }
+// Specifier text of a string literal, or of a template literal without
+// substitutions; null for anything else (a computed specifier cannot be judged).
+function specifierOf(node) {
+  if (!node) return null;
+  if (node.type === 'StringLiteral') return node.value;
+  if (
+    node.type === 'TemplateLiteral' &&
+    node.expressions.length === 0 &&
+    node.quasis.length === 1
+  ) {
+    return node.quasis[0].value.cooked;
   }
-  return tokens;
+  return null;
 }
 
-// Returns the line numbers (1-based) of forbidden module specifiers that a
-// whole source file loads: `import ... from 'x'` / `export ... from 'x'`
-// (the `from 'x'` may be on a later line than `import`), `import 'x'`,
-// `require('x')` and `import('x')`, each also with the specifier on a
-// separate line.
-function findViolationLines(source) {
-  const tokens = tokenize(source);
-  const lines = [];
-  tokens.forEach((token, index) => {
-    const prev = tokens[index - 1];
-    if (token.type !== 'ident' || (prev && prev.value === '.')) return;
-    const next = tokens[index + 1];
-    let specifier = null;
-    if (token.value === 'from' || token.value === 'import') {
-      if (next && next.type === 'string') specifier = next;
-    }
-    if (token.value === 'require' || token.value === 'import') {
-      const arg = tokens[index + 2];
-      if (next && next.value === '(' && arg && arg.type === 'string') {
-        specifier = arg;
+// The specifier node a module-loading construct loads, or null when `node`
+// is not one: static import, export ... from, require('x') and dynamic
+// import('x') (a CallExpression on `Import`, or an ImportExpression).
+function loadedSpecifierNode(node) {
+  switch (node.type) {
+    case 'ImportDeclaration':
+    case 'ExportNamedDeclaration':
+    case 'ExportAllDeclaration':
+      return node.source;
+    case 'ImportExpression':
+      return node.source;
+    case 'CallExpression':
+      if (
+        (node.callee.type === 'Identifier' && node.callee.name === 'require') ||
+        node.callee.type === 'Import'
+      ) {
+        return node.arguments[0] || null;
       }
+      return null;
+    default:
+      return null;
+  }
+}
+
+function visit(node, onNode) {
+  if (Array.isArray(node)) {
+    node.forEach(child => visit(child, onNode));
+    return;
+  }
+  if (!node || typeof node.type !== 'string') return;
+  onNode(node);
+  Object.keys(node).forEach(key => {
+    if (
+      key === 'loc' ||
+      key === 'leadingComments' ||
+      key === 'trailingComments'
+    ) {
+      return;
     }
-    if (specifier && FORBIDDEN_SPECIFIER.test(specifier.value)) {
-      lines.push(specifier.line);
+    const child = node[key];
+    if (child && typeof child === 'object') visit(child, onNode);
+  });
+}
+
+// Parses a whole source file (JSX allowed) and returns the line numbers
+// (1-based) of the specifiers of forbidden module loads. Comments, strings,
+// regexes, division, JSX and multi-line forms are the parser's business.
+// Template interpolation is executed code, so `${require('fs')}` counts. A file
+// that does not parse throws an error naming it.
+function findViolationLines(source, filename = '<source>') {
+  let ast;
+  try {
+    ast = parser.parse(source, {
+      sourceType: 'module',
+      allowReturnOutsideFunction: true,
+      plugins: ['jsx'],
+    });
+  } catch (error) {
+    throw new Error(`Cannot parse ${filename}: ${error.message}`);
+  }
+  const lines = [];
+  visit(ast.program, node => {
+    const specifierNode = loadedSpecifierNode(node);
+    const specifier = specifierOf(specifierNode);
+    if (specifier !== null && FORBIDDEN_SPECIFIER.test(specifier)) {
+      lines.push(specifierNode.loc.start.line);
     }
   });
   return lines;
@@ -236,7 +160,7 @@ function main() {
       const sourceLines = fs
         .readFileSync(path.join(repoRoot, file), 'utf8')
         .split('\n');
-      findViolationLines(sourceLines.join('\n')).forEach(lineNumber => {
+      findViolationLines(sourceLines.join('\n'), file).forEach(lineNumber => {
         violations.push(`${file}:${lineNumber}:${sourceLines[lineNumber - 1]}`);
       });
     });

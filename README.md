@@ -77,7 +77,7 @@ runs the unit tests with [Vitest](https://vitest.dev) (jsdom environment, [Testi
 
 The Rust side has its own checks, run from `src-tauri/` (`cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`).
 
-`npm run check:platform` (`tasks/check_platform_boundary.js`) fails when code under `src/js` (outside `src/js/app/platform`) loads `electron`, `electron-is-dev`, `fs-jetpack` or `fs` through module-loading syntax (`import`, `export ... from`, `require()`, dynamic `import()`). Comments and plain strings such as a mock key `'fs': ...` are not violations. It exits 0 when there are none. See `docs/migration/final-verification.md` for the full verification record.
+`npm run check:platform` (`tasks/check_platform_boundary.js`) fails when code under `src/js` (outside `src/js/app/platform`) loads `electron`, `electron-is-dev`, `fs-jetpack` or `fs` through module-loading syntax (`import`, `export ... from`, `require()`, dynamic `import()`); candidate files are found with `git grep` and then parsed with `@babel/parser`, so a file that cannot be parsed is an error. Comments and plain strings such as a mock key `'fs': ...` are not violations. It exits 0 when there are none. See `docs/migration/final-verification.md` for the full verification record.
 
 ### Verifying the Tauri build by hand
 

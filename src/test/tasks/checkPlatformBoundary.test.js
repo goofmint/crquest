@@ -12,7 +12,7 @@ describe('check_platform_boundary judging', () => {
     "import { ipcRenderer } from 'electron';",
     "import isDev from 'electron-is-dev';",
     "import 'fs';",
-    "} from 'fs';",
+    "import {\n} from 'fs';",
     "export { readFile } from 'node:fs';",
     "export * from 'fs-jetpack';",
     "const fs = require('fs');",
@@ -26,8 +26,8 @@ describe('check_platform_boundary judging', () => {
   });
 
   it.each([
-    "      'fs': mockFs,",
-    '      "fs": { readFile() {} },',
+    "const m = {\n  'fs': mockFs,\n};",
+    'const m = {\n  "fs": { readFile() {} },\n};',
     "const mocks = { fs: 1, 'fs-jetpack': 2 };",
     "// import fs from 'fs';",
     "  // const fs = require('fs');",
@@ -81,6 +81,30 @@ describe('check_platform_boundary judging', () => {
     expect(
       isModuleLoadViolation("const a = <p>don't</p>;\nconst b = require('fs');")
     ).toBe(true);
+  });
+
+  it('flags a require after a division', () => {
+    expect(
+      findViolationLines("const n = 4 / 2; const fs = require('fs');")
+    ).toEqual([1]);
+  });
+
+  it('flags a require inside a template interpolation', () => {
+    expect(findViolationLines("const s = `${require('fs')}`;")).toEqual([1]);
+  });
+
+  it('reports the right line in JSX after closing tags', () => {
+    expect(
+      findViolationLines(
+        "const a = <p>Hello</p>;\nconst b = <div>x</div>;\nconst fs = require('fs');"
+      )
+    ).toEqual([3]);
+  });
+
+  it('fails explicitly on a file that does not parse', () => {
+    expect(() => findViolationLines('const = ;', 'src/js/broken.js')).toThrow(
+      /Cannot parse src\/js\/broken.js/
+    );
   });
 
   it('reports the line of the specifier', () => {
