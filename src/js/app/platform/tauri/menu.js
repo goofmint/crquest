@@ -31,7 +31,7 @@ import { appDataDir, join } from '@tauri-apps/api/path';
 import { showAlert } from './dialog';
 import { toggleDevTools } from './devtools';
 import { openPath } from './shell';
-import { rejectAsError } from './errors';
+import { rejectAsError, toError } from './errors';
 import { STORE_FILE } from './storeFile';
 
 const HELP_MENU_EVENT = 'help-menu-click';
@@ -60,7 +60,9 @@ function createActions(items) {
   };
 }
 
-async function reportFailure(title, error) {
+async function reportFailure(title, reason) {
+  // A rejection can be null, undefined, a string or any object
+  const error = toError(reason);
   console.error(`${title} failed:`, error);
   await showAlert(`${title} failed: ${error.message}`);
 }

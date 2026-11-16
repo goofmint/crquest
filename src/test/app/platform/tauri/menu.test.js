@@ -149,6 +149,19 @@ describe('Tauri Help menu (#141)', () => {
     expect(mocks.showAlert).toHaveBeenCalledWith('Sync Bundled Assets failed: sync broke');
   });
 
+  test.each([
+    ['null', null, 'Unexpected rejection value: null'],
+    ['undefined', undefined, 'Unexpected rejection value: undefined'],
+    ['a string', 'plain reason', 'plain reason'],
+    ['an Error', new Error('boom'), 'boom'],
+    ['a plain object', { code: 1 }, 'Unexpected rejection value: {"code":1}'],
+  ])('a callback rejecting with %s still shows the dialog', async (_name, reason, message) => {
+    syncClick.mockImplementation(() => Promise.reject(reason));
+    await installHelpMenu(items);
+    await click('help-sync-assets');
+    expect(mocks.showAlert).toHaveBeenCalledWith(`Sync Bundled Assets failed: ${message}`);
+  });
+
   test('an unknown id is reported and nothing runs', async () => {
     await installHelpMenu(items);
     await click('help-other');
