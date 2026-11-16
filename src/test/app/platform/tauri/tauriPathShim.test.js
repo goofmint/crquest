@@ -92,6 +92,20 @@ describe('path shim (Tauri)', () => {
     expect(() => pathShim.resolve()).toThrow(/absolute path/);
   });
 
+  test('win32: drive-relative segments are rejected by resolve(), absolute ones still work', () => {
+    use('win32');
+    ['C:foo', 'D:', 'c:foo\\bar'].forEach(segment => {
+      expect(() => pathShim.resolve(segment)).toThrow(/drive-relative/);
+      expect(() => pathShim.resolve('C:\\a', segment)).toThrow(/drive-relative/);
+      expect(() => pathShim.resolve(segment, 'C:\\a')).toThrow(/drive-relative/);
+    });
+    expect(pathShim.resolve('C:\\a', 'b')).toBe('C:\\a\\b');
+    expect(pathShim.resolve('C:/a', 'C:\\b')).toBe('C:\\b');
+    // On POSIX `C:foo` is an ordinary relative name: the usual absolute-path guard
+    use('linux');
+    expect(pathShim.resolve('/a', 'C:foo')).toBe('/a/C:foo');
+  });
+
   test('exposes the public API of Node path (apart from matchesGlob)', () => {
     use('linux');
     const expected = Object.keys(nodePath).filter(name => name !== 'matchesGlob' && name !== '_makeLong');

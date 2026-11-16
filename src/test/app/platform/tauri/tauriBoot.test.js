@@ -55,9 +55,10 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     fs.cpSync(outputDir, stagedDir, { recursive: true });
     // index.css is the output of `npm run build:css` (git-ignored, not made by
     // `npm test`): compile it here, with the same sass call, into the staged copy
+    // (the package's bin entry through node: the .bin shim cannot be executed on Windows)
     execFileSync(
-      path.join(repoRoot, 'node_modules', '.bin', 'sass'),
-      [path.join(repoRoot, 'src/scss/main.scss'), path.join(stagedDir, 'index.css'), '--no-source-map'],
+      process.execPath,
+      [path.join(repoRoot, 'node_modules', 'sass', 'sass.js'), path.join(repoRoot, 'src/scss/main.scss'), path.join(stagedDir, 'index.css'), '--no-source-map'],
       { cwd: repoRoot }
     );
   }, 180000);

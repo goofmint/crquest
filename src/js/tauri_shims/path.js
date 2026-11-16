@@ -43,6 +43,20 @@ function current() {
 
 export function resolve(...segments) {
   const implementation = current();
+  // win32 only: `C:foo` is relative to the current directory of drive C, which a
+  // webview does not have (the implementation would resolve it against `C:\`)
+  const driveRelative = segments.find(
+    segment =>
+      implementation === win32 &&
+      typeof segment === 'string' &&
+      /^[a-zA-Z]:(?![\\/])/.test(segment) &&
+      !win32.isAbsolute(segment)
+  );
+  if (driveRelative !== undefined) {
+    throw new Error(
+      `path.resolve() does not support the drive-relative path ${JSON.stringify(driveRelative)}: there is no working directory in the Tauri build`
+    );
+  }
   if (!segments.some(segment => typeof segment === 'string' && implementation.isAbsolute(segment))) {
     throw new Error(
       'path.resolve() needs an absolute path: there is no working directory in the Tauri build'
