@@ -1,6 +1,6 @@
 const {
   isModuleLoadViolation,
-  isViolationGrepLine,
+  findViolationLines,
 } = require('../../../tasks/check_platform_boundary');
 
 describe('check_platform_boundary judging', () => {
@@ -31,7 +31,6 @@ describe('check_platform_boundary judging', () => {
     "const mocks = { fs: 1, 'fs-jetpack': 2 };",
     "// import fs from 'fs';",
     "  // const fs = require('fs');",
-    " * require('fs') is not allowed here",
     "/* import 'electron' */",
     "const x = 1; // require('fs')",
     "const url = 'electron';",
@@ -39,12 +38,52 @@ describe('check_platform_boundary judging', () => {
     expect(isModuleLoadViolation(line)).toBe(false);
   });
 
-  it('judges git grep output lines by their source text', () => {
-    expect(isViolationGrepLine("src/js/a.js:3:import fs from 'fs';")).toBe(true);
-    expect(isViolationGrepLine("src/js/a.js:3:  'fs': mock,")).toBe(false);
+  it('flags a require whose specifier is on the next line', () => {
+    expect(findViolationLines("const fs = require(\n  'fs'\n);")).toEqual([2]);
   });
 
-  it('throws on a malformed git grep line', () => {
-    expect(() => isViolationGrepLine('garbage')).toThrow();
+  it('flags a multi-line dynamic import', () => {
+    expect(
+      findViolationLines("const m = await import(\n  'node:fs'\n);")
+    ).toEqual([2]);
+  });
+
+  it('flags a multi-line import whose from clause is on a later line', () => {
+    expect(
+      findViolationLines("import {\n  readFile,\n  writeFile,\n} from\n  'fs';")
+    ).toEqual([5]);
+  });
+
+  it('ignores a require inside a multi-line block comment', () => {
+    expect(
+      isModuleLoadViolation("/*\n * note:\n require('fs');\n */\nconst a = 1;")
+    ).toBe(false);
+  });
+
+  it('ignores module-loading text inside strings and templates', () => {
+    expect(isModuleLoadViolation('const example = "require(\'fs\')";')).toBe(
+      false
+    );
+    expect(
+      isModuleLoadViolation("const example = `import fs from 'fs'`;")
+    ).toBe(false);
+    expect(
+      isModuleLoadViolation("const example = 'import fs from \\'fs\\'';")
+    ).toBe(false);
+  });
+
+  it('is not confused by regex literals, member calls and JSX apostrophes', () => {
+    expect(
+      isModuleLoadViolation("const r = /'/; const s = require('fs');")
+    ).toBe(true);
+    expect(isModuleLoadViolation("const r = /require\\('fs'\\)/;")).toBe(false);
+    expect(isModuleLoadViolation("loader.require('fs');")).toBe(false);
+    expect(
+      isModuleLoadViolation("const a = <p>don't</p>;\nconst b = require('fs');")
+    ).toBe(true);
+  });
+
+  it('reports the line of the specifier', () => {
+    expect(findViolationLines("\n\nimport x from 'fs';\n")).toEqual([3]);
   });
 });
