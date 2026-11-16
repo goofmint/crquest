@@ -1,4 +1,5 @@
 const path = require('path');
+const { PollyClient } = require('@aws-sdk/client-polly');
 const parseOptions = require('./parse_options');
 const writeSpeechFilesForConversation = require('./write_files');
 const buildFileList = require('./build_file_list');
@@ -17,12 +18,23 @@ console.log(
 );
 console.log(conversationFilePaths);
 
-conversationFilePaths.forEach(filePath => {
-  const statements = getStatementsFromConversationFile(filePath);
+// Create single AWS Polly client (credentials come from the default AWS
+// credential provider chain)
+const polly = new PollyClient({ region: 'us-east-1' });
 
-  writeSpeechFilesForConversation(
-    statements,
-    path.dirname(filePath),
-    path.basename(filePath)
-  );
+(async () => {
+  for (const filePath of conversationFilePaths) {
+    const statements = getStatementsFromConversationFile(filePath);
+
+    await writeSpeechFilesForConversation(
+      polly,
+      statements,
+      path.dirname(filePath),
+      path.basename(filePath)
+    );
+  }
+})().catch(err => {
+  console.error('Failed to generate voice overs.');
+  console.error(err);
+  process.exitCode = 1;
 });

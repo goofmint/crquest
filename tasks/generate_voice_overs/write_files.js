@@ -1,14 +1,11 @@
-const aws = require('aws-sdk');
+const { SynthesizeSpeechCommand } = require('@aws-sdk/client-polly');
 const jetpack = require('fs-jetpack');
 const { getBaseName } = require('./helpers');
 
-// Create single AWS Polly instance
-const polly = new aws.Polly({
-  signatureVersion: 'v4',
-  region: 'us-east-1',
-});
-
-function writeSpeechFilesForConversation(
+// `polly` is a PollyClient (or anything with a compatible `send`), created by
+// the caller so that the credentials and region are configured in one place.
+async function writeSpeechFilesForConversation(
+  polly,
   statements,
   conversationDirPath,
   conversationFileName
@@ -19,28 +16,32 @@ function writeSpeechFilesForConversation(
 
   const baseName = getBaseName(conversationFileName);
 
-  statements.forEach(({ id, text, speech }) => {
-    const pollyParams = {
-      OutputFormat: 'mp3',
-      VoiceId: 'Brian',
-      LanguageCode: 'en-GB',
-      Text: speech ? `<speak>${speech}</speak>` : text,
-      TextType: speech ? 'ssml' : 'text',
-    };
+  await Promise.all(
+    statements.map(async ({ id, text, speech }) => {
+      const pollyParams = {
+        OutputFormat: 'mp3',
+        VoiceId: 'Brian',
+        LanguageCode: 'en-GB',
+        Text: speech ? `<speak>${speech}</speak>` : text,
+        TextType: speech ? 'ssml' : 'text',
+      };
 
-    polly.synthesizeSpeech(pollyParams, (err, data) => {
-      if (err) {
-        console.log(err.code);
-      } else if (data) {
-        if (data.AudioStream instanceof Buffer) {
-          jetpack.write(
-            `${voiceOverDirPath}/${baseName}_${id}.mp3`,
-            data.AudioStream
-          );
-        }
+      const data = await polly.send(new SynthesizeSpeechCommand(pollyParams));
+
+      if (!data.AudioStream) {
+        throw new Error(
+          `Polly returned no AudioStream for statement "${id}" in ${conversationFileName}`
+        );
       }
-    });
-  });
+
+      const audio = await data.AudioStream.transformToByteArray();
+
+      jetpack.write(
+        `${voiceOverDirPath}/${baseName}_${id}.mp3`,
+        Buffer.from(audio)
+      );
+    })
+  );
 }
 
 module.exports = writeSpeechFilesForConversation;

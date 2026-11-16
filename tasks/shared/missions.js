@@ -1,5 +1,7 @@
 const klaw = require('klaw');
-const through2 = require('through2');
+// through2 is ESM-only: require(esm) gives the module namespace, whose
+// `default` is the through2 function (with `.obj`).
+const through2 = require('through2').default;
 const path = require('path');
 const fs = require('fs').promises;
 
