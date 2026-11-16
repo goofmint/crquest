@@ -41,11 +41,11 @@ npm run check:platform        # node tasks/check_platform_boundary.js
 内部では次の `git grep -E` を `child_process.spawnSync` で実行する（Bash / zsh にそのまま貼れるよう、シェル側は `$'...'` で引用符を書いている。スクリプト内の正規表現そのものは同じ）。
 
 ```
-git grep -n -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'"`]*)?[\'"`]' -- src/js ':(exclude)src/js/app/platform'
+git grep -l -z -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'"`]*)?[\'"`]' -- src/js ':(exclude)src/js/app/platform'
 ```
 
 - import 文ではなく引用符付きのモジュール指定子を検索するため、複数行 import、`require(...)`、リテラルの動的 `import(...)`、`node:fs`、`fs/promises` などのサブパスも検出する。`electron-store` には一致しない。
-- git grep は候補ファイルの選択にだけ使う。候補があったファイルは全文を `@babel/parser` (JSX 対応) で構文解析し、AST の `import` / `export ... from` / `require()` / 動的 `import()` のうち禁止指定子を読むものだけを違反として `パス:行:内容` で出力し exit 1 にする。コメント・文字列・正規表現・複数行の書き方・テンプレートの `${}` 内は構文解析が扱う (`${require('fs')}` は違反)。解析できないファイルは明示的なエラーで exit 1 になり、スキップしない。git grep の終了コード 1 (候補なし) は exit 0、2 以上と spawn エラーは例外で失敗する。許可リストやスキップはない。
+- git grep は候補ファイルの選択にだけ使う (`-l -z`: ファイル名だけを NUL 区切りで受け取るので、日本語や `:` を含む名前もそのまま読める)。候補があったファイルは全文を `@babel/parser` (JSX 対応) で構文解析し、AST の `import` / `export ... from` / `require()` / 動的 `import()` のうち禁止指定子を読むものだけを違反として `パス:行:内容` で出力し exit 1 にする。コメント・文字列・正規表現・複数行の書き方・テンプレートの `${}` 内は構文解析が扱う (`${require('fs')}` は違反)。解析できないファイルは明示的なエラーで exit 1 になり、スキップしない。git grep の終了コード 1 (候補なし) は exit 0、2 以上と spawn エラーは例外で失敗する。許可リストやスキップはない。
 - `git grep` は追跡済みファイルのみを検索する。未追跡の新規ファイルは `git add` するまで検出されない。
 - `check:platform` は `test` / `ci` / `start` には組み込んでいない（現状では失敗するため）。
 
