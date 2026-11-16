@@ -90,6 +90,8 @@ describe('build-time selection (vite.config.mjs)', () => {
     const code = await bundle('production');
     expect(code).not.toContain('platform/tauri/');
     expect(code).toContain('require("electron-store")');
+    // jimp stays a runtime require of public/node_modules (its Node entry)
+    expect(code).toContain('require("jimp")');
   }, 60000);
 
   test('--mode tauri bundles platform/tauri/* and the Tauri JS APIs', async () => {
