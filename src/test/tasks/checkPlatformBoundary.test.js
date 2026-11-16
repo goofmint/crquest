@@ -1,5 +1,6 @@
 const {
   isModuleLoadViolation,
+  collectViolations,
   findViolationLines,
 } = require('../../../tasks/check_platform_boundary');
 
@@ -109,5 +110,54 @@ describe('check_platform_boundary judging', () => {
 
   it('reports the line of the specifier', () => {
     expect(findViolationLines("\n\nimport x from 'fs';\n")).toEqual([3]);
+  });
+
+  describe('collectViolations with unusual tracked file names', () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const { spawnSync } = require('child_process');
+    const MOCK = "const mocks = { 'fs': 1 };\n";
+    const REAL = "const fs = require('fs');\n";
+    let root;
+
+    function makeRepo(files) {
+      root = fs.mkdtempSync(path.join(os.tmpdir(), 'boundary-'));
+      fs.mkdirSync(path.join(root, 'src', 'js'), { recursive: true });
+      Object.keys(files).forEach(name => {
+        fs.writeFileSync(path.join(root, 'src', 'js', name), files[name]);
+      });
+      const git = args => {
+        const r = spawnSync('git', args, { cwd: root });
+        expect(r.status).toBe(0);
+      };
+      git(['init', '-q']);
+      git(['add', '.']);
+      return root;
+    }
+
+    afterEach(() => {
+      fs.rmSync(root, { recursive: true, force: true });
+    });
+
+    it.each(['\u65e5\u672c\u8a9e.js', 'a:b.js'])(
+      'passes for a mock key only in %s',
+      name => {
+        expect(collectViolations(makeRepo({ [name]: MOCK }))).toEqual([]);
+      }
+    );
+
+    it('reports a real violation in a non-ASCII file name', () => {
+      const name = '\u65e5\u672c\u8a9e.js';
+      expect(collectViolations(makeRepo({ [name]: REAL }))).toEqual([
+        `src/js/${name}:1:${REAL.trim()}`,
+      ]);
+    });
+
+    it('reports a real violation in a file name with a colon', () => {
+      expect(collectViolations(makeRepo({ 'a:b.js': REAL }))).toEqual([
+        `src/js/a:b.js:1:${REAL.trim()}`,
+      ]);
+    });
   });
 });

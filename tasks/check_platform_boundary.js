@@ -33,7 +33,8 @@ const SPECIFIER =
 const pattern = SPECIFIER;
 const args = [
   'grep',
-  '-n',
+  '-l',
+  '-z',
   '-E',
   '-e',
   pattern,
@@ -134,54 +135,53 @@ function isModuleLoadViolation(source) {
   return findViolationLines(source).length > 0;
 }
 
-function main() {
-  const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+// Runs the check in the git repository `root` and returns the violation
+// lines (`file:line:text`). git grep -l -z gives the candidate file names
+// verbatim (NUL separated, never quoted or escaped), so non-ASCII names and
+// names containing `:` are read as they are. Throws on any git failure.
+function collectViolations(root = repoRoot) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
   if (result.error) {
     throw result.error;
   }
-  if (result.status === 0) {
-    const files = [
-      ...new Set(
-        result.stdout
-          .split('\n')
-          .filter(line => line !== '')
-          .map(line => {
-            const match = /^([^:]*):\d+:/.exec(line);
-            if (!match) {
-              throw new Error(`Unexpected git grep output line: ${line}`);
-            }
-            return match[1];
-          })
-      ),
-    ];
-    const violations = [];
-    files.forEach(file => {
-      const sourceLines = fs
-        .readFileSync(path.join(repoRoot, file), 'utf8')
-        .split('\n');
-      findViolationLines(sourceLines.join('\n'), file).forEach(lineNumber => {
-        violations.push(`${file}:${lineNumber}:${sourceLines[lineNumber - 1]}`);
-      });
-    });
-    if (violations.length > 0) {
-      process.stdout.write(`${violations.join('\n')}\n`);
-      console.error('Platform boundary violations found.');
-      process.exit(1);
-    }
-    console.log('Platform boundary check: no violations');
-    process.exit(0);
-  }
   if (result.status === 1) {
-    console.log('Platform boundary check: no violations');
-    process.exit(0);
+    return [];
   }
-  throw new Error(
-    `git grep failed with status ${result.status}: ${result.stderr}`
-  );
+  if (result.status !== 0) {
+    throw new Error(
+      `git grep failed with status ${result.status}: ${result.stderr}`
+    );
+  }
+  const files = result.stdout.split('\0').filter(file => file !== '');
+  const violations = [];
+  files.forEach(file => {
+    const sourceLines = fs
+      .readFileSync(path.join(root, file), 'utf8')
+      .split('\n');
+    findViolationLines(sourceLines.join('\n'), file).forEach(lineNumber => {
+      violations.push(`${file}:${lineNumber}:${sourceLines[lineNumber - 1]}`);
+    });
+  });
+  return violations;
 }
 
-module.exports = { findViolationLines, isModuleLoadViolation };
+function main() {
+  const violations = collectViolations();
+  if (violations.length > 0) {
+    process.stdout.write(`${violations.join('\n')}\n`);
+    console.error('Platform boundary violations found.');
+    process.exit(1);
+  }
+  console.log('Platform boundary check: no violations');
+  process.exit(0);
+}
+
+module.exports = {
+  collectViolations,
+  findViolationLines,
+  isModuleLoadViolation,
+};
 
 if (require.main === module) {
   main();
