@@ -10,6 +10,11 @@
  * @typedef {Object} PlatformEnv
  * @property {() => boolean} isDev
  *   True when running in development (not packaged). Fixed at module load.
+ * @property {() => 'darwin' | 'win32' | 'linux'} getPlatform
+ *   The operating system, in the vocabulary of Node's `process.platform`.
+ *   Electron: `process.platform`, read on every call (exactly the value the
+ *   callers used to read directly). The Tauri implementation maps the OS
+ *   plugin's names onto the same words.
  */
 import electronIsDev from 'electron-is-dev';
 
@@ -17,4 +22,8 @@ const dev = electronIsDev;
 
 export function isDev() {
   return dev;
+}
+
+export function getPlatform() {
+  return process.platform;
 }

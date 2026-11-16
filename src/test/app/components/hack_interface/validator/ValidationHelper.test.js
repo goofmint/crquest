@@ -16,6 +16,9 @@ vi.mock('../../../../../js/app/platform/exec', () => ({
   commandExists: vi.fn(),
   pathExistsSync: vi.fn(),
 }));
+vi.mock('../../../../../js/app/platform/env', () => ({
+  getPlatform: vi.fn(() => process.platform),
+}));
 vi.mock('../../../../../js/app/platform/paths', () => ({
   getAppDataPath: vi.fn(),
 }));
@@ -50,6 +53,7 @@ import ValidationHelper from '../../../../../js/app/components/hack_interface/va
 import * as platformFs from '../../../../../js/app/platform/fs';
 import * as platformExec from '../../../../../js/app/platform/exec';
 import * as platformPaths from '../../../../../js/app/platform/paths';
+import { getPlatform } from '../../../../../js/app/platform/env';
 import { staticFileUrl } from '../../../../../js/app/common/fs_utils';
 import {
   evaluateInWorker,
@@ -120,6 +124,11 @@ describe('helper.fs', () => {
 describe('helper.platform', () => {
   test('is process.platform', () => {
     expect(makeHelper().platform).toBe(process.platform);
+  });
+
+  test.each(['darwin', 'win32', 'linux'])('is whatever platform/env reports (%s)', value => {
+    getPlatform.mockReturnValueOnce(value);
+    expect(makeHelper().platform).toBe(value);
   });
 });
 

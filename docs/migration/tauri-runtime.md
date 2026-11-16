@@ -192,10 +192,10 @@ Tauri 側の現状: DevTools は Rust コマンドとキーボードショート
 | `events` | `events` 3.x | 同上 (ルートの lock に 1.1.1 が `aws-sdk` の依存として入っていたため、直接依存として 3.3 を追加し、`aws-sdk` 側は入れ子になった) |
 | `util` / `assert` | `util` 0.12 / `assert` 2.x | `moduleAllowlist.js` が拡張コンテンツに渡すのと同じ API |
 | `url` | 自前 `src/js/tauri_shims/url.js` | 旧 API (`parse`/`format`/`resolve`) は npm `url` 0.11、`URL` / `URLSearchParams` は webview のもの、`fileURLToPath` は Node の POSIX 版と同じ挙動 (非 `file:` と host つきは Node と同じく例外)。npm `url` には `fileURLToPath` が無い |
-| `process` | 自前 `src/js/tauri_shims/process.js` | `env`、`nextTick` (microtask)、`browser`、`versions` など読み込み時に読まれるものだけ。npm `process` は OS 名を `'browser'` と偽るため使わない。`platform` は `undefined` (W7 が `platform/env` 経由に置き換える) |
+| `process` | 自前 `src/js/tauri_shims/process.js` | `env`、`nextTick` (microtask)、`browser`、`versions` など読み込み時に読まれるものだけ。npm `process` は OS 名を `'browser'` と偽るため使わない。`platform` は `undefined` (W7 で `platform/env` 経由に置き換え済みで、参照するコードは無い) |
 
 - 追加した依存は `path-browserify`、`events`、`util`、`assert`、`url` (ルートの devDependencies。ビルド時にバンドルされるのみ)。`public/package-lock.json` は変更していない。`system.js` の未使用の `import { platform } from 'process'` は、Electron の出力を 1 バイトも変えないため触っていない (Tauri では未使用として除かれ、シムの `platform` は参照されない)。
-- 差し替えないもの: `fs`、`child_process`、`electron` は W1 のとおり、プロパティにアクセスすると `The Node module "x" is not available in the Tauri build` を投げる (これらは `platform/*` が受け持つ)。`stream`、`buffer`、`zlib`、`http(s)`、`querystring` (jimp、pngjs、phin が使う。W9) も同様である。グローバルの `process` は定義しない: `system.js:57` と `ValidationHelper.js:59` の `process.platform` は webview で `ReferenceError` になる (W7)。`path.resolve` に絶対パスが無いと、path-browserify が `process.cwd()` を呼んで失敗する (W5。`resolve` の呼び出しは約 3 か所)。`fs_utils.js` の `fileURLToPath(new URL('.', document.baseURI))` は、Tauri の `tauri://` では `The URL must be of scheme file` で失敗する (W5)。
+- 差し替えないもの: `fs`、`child_process`、`electron` は W1 のとおり、プロパティにアクセスすると `The Node module "x" is not available in the Tauri build` を投げる (これらは `platform/*` が受け持つ)。`stream`、`buffer`、`zlib`、`http(s)`、`querystring` (jimp、pngjs、phin が使う。W9) も同様である。グローバルの `process` は定義しない: `system.js:57` と `ValidationHelper.js:59` の `process.platform` は W7 で `platform/env` に置き換えた。`path.resolve` に絶対パスが無いと、path-browserify が `process.cwd()` を呼んで失敗する (W5。`resolve` の呼び出しは約 3 か所)。`fs_utils.js` の `fileURLToPath(new URL('.', document.baseURI))` は、Tauri の `tauri://` では `The URL must be of scheme file` で失敗する (W5)。
 - 確認: 出力に 5 つの実装 (`node_modules/path-browserify`、`events`、`util`、`assert`、`url` と `tauri_shims/url.js`) が入り、5 つとも「利用不可」のスタブには置き換わっていないこと (`tauriBundle.test.js`)。`moduleAllowlist.js` を Tauri モードでビルドして、`require`・`process`・`Buffer` が無い `vm` コンテキストで実行し、`path` / `assert` / `util` が動くこと (`tauriBuiltins.test.js`)。シムの単体テスト (`src/test/js/tauriShims.test.js`: `fileURLToPath` は Node と同じ結果)。
 - マイルストーン 0 の確認コマンド (`require("` の検査) は、ES モジュール出力になったので `grep -n '^import\|require("' public/index.js public/tauri-game.js | head` に読み替える (入口の `import` は `./index.js` への相対 import のみ)。
 
@@ -270,6 +270,15 @@ Electron の追加確認 (手動): 設定や進捗を変更した直後にアプ
 - 規模: 約 7 ファイル。
 - 依存: W2 (`process` の代替が無くてもよい状態にするため、W7 の後に W2 の `process` 代替を外せる)。
 - Electron リスク: なし (同じ値を返す)。
+
+#### W7 の実施結果 (#138)
+
+- 監査: `src/js` と `public/content` の `process.platform` / `process.env` / `process.*` を洗い出した。アプリのコードで読んでいたのは `system.js:57` (`systemInfo.os`) と `ValidationHelper.js:59` (`helper.platform`) の 2 か所、未使用の `import { platform } from 'process'` (`system.js:2`)、`platform/exec.js:102` (`commandExists`。Electron 実装なので Tauri のビルドには入らない。触っていない) である。ほかの `process.env` はコメントと、ワーカーに渡す `env` オプションの説明だけで、`process` を読むコードではない。`public/content` に `process.*` を読むものは無く、検証コードは `helper.platform` だけを使う (`fs-08-hidden/validator.js`)。`public/content` は変更していない。
+- 設計: `platform/env.js` に `getPlatform()` を追加した。Electron は呼び出しのたびに `process.platform` を返す (従来の読み取りと同じ値・同じ時点)。Tauri (`platform/tauri/env.js`) は `initPlatform()` が `@tauri-apps/plugin-os` の `platform()` を読んで保持した値を同期で返し、初期化前に呼ぶと `getPlatformState` が明示的なエラーを投げる。変換は `macos` -> `darwin`、`windows` -> `win32`、`linux` -> `linux` の 3 つだけで、それ以外 (`ios`、`android`、`freebsd` など) は `Unsupported operating system ...` で `initPlatform()` を reject する (既定値なし)。`platform()` は同期だが、例外を `rejectAsError` に通すために `Promise.resolve().then` で包んでいる。
+- 置き換え: `system.js` は `getPlatform()`、`ValidationHelper.js` は `this.platform = getPlatform()` (コンストラクタで呼ぶ。Tauri では初期化後に作られる)。`system.js` の未使用 `import { platform } from 'process'` は削除した。`os:allow-platform` は付与済みで、Rust 側 (`tauri_plugin_os::init()`) も登録済みなので、capability と Rust は変更していない。
+- テスト: `platform/env.test.js` (Electron は `process.platform` を呼び出しごとに返す)、`platform/tauri/platformEnv.test.js` (初期化前の例外、3 つの変換、未対応値と値なしで reject して未初期化のまま)、`context_provider/system.test.js`、`ValidationHelper.test.js` (`helper.platform` が `getPlatform()` の値)、`platform/noDirectProcessPlatform.test.js` (`platform/` の外に `process.platform` と `from 'process'` が無い)。`initPathsEnv.test.js` は OS プラグインの値を用意するよう更新した。API の一致は既存の `selection.test.js` の一致検査 (`env`) が見る。
+- 残り: `tauri_shims/process.js` の `platform` は `undefined` のまま (参照するコードが無くなったので、W2 のシムから `process` を外せるかは別途判断)。Windows と Pi (`isPi`) の判定は範囲外。
+- 手動確認 (ユーザーが実施): Electron (`npm start`): 新規セーブでも従来どおり起動し、`fs-08-hidden` のレベルで macOS/Linux は `.sneaky.txt`、Windows は `sneaky.txt` を期待する (値が従来と同じ)。Tauri (`npm run tauri -- dev`): 起動時に `Unsupported operating system` や `used before initPlatform()` のエラーが出ないこと。DevTools で新規セーブの `systemInfo.os` が macOS なら `darwin`、Windows なら `win32` であること。
 
 ### W8. 会話 (pug / cheerio) の Tauri 対応 (B7)
 
