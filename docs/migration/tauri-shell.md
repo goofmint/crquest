@@ -1,5 +1,7 @@
 # Tauri のシェル動作: DevTools、終了確認、外部リンク (#64)
 
+> この文書は #64 時点のスナップショットである。現行の開発手順は `README.md` を参照すること。
+
 Electron は変更していない。`npm run build:all` の `public/index.js` / `index.html` / `index.css` は変更前と SHA-256 が一致する (確認済み)。
 
 ## 実装
