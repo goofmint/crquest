@@ -17,12 +17,31 @@ module.exports = async helper => {
       return;
     }
 
-    const gitDirPath = path.join(TQ_JAVASCRIPT_WORKSPACE_PATH, '.git');
-    const gitRepoExists = await helper.fs.existsAsync(gitDirPath);
+    // `git rev-parse` instead of an fs check of "<workspace>/.git": the fs scope
+    // granted for a chosen folder does not match a leading-dot name.
+    let gitDir;
+    let gitDetail = '';
+    try {
+      const revParse = await helper.exec('git', ['rev-parse', '--git-dir'], {
+        cwd: TQ_JAVASCRIPT_WORKSPACE_PATH,
+      });
+      if (revParse.code === 0) {
+        gitDir = revParse.stdout.trim();
+      } else if (!/not a git repository/i.test(revParse.stderr)) {
+        // "not a git repository" is the ordinary "not initialized yet" case;
+        // anything else (for example "dubious ownership") explains itself.
+        gitDetail = revParse.stderr.trim();
+      }
+    } catch (err) {
+      gitDetail = String(err);
+    }
 
-    if (gitRepoExists !== 'dir') {
+    if (gitDir !== '.git') {
       helper.fail(
-        `We didn't find a .git directory in your JavaScript workspace directory! -> ${gitDirPath}`
+        `We didn't find a .git directory in your JavaScript workspace directory! -> ${path.join(
+          TQ_JAVASCRIPT_WORKSPACE_PATH,
+          '.git'
+        )}${gitDetail ? `\n\n${gitDetail}` : ''}`
       );
       return;
     }

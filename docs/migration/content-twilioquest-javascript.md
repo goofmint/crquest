@@ -92,6 +92,11 @@ Issue #32。`twilioquest-javascript@1.1.7` (`public/package-lock.json` が解決
 - メッセージ、判定、報酬、ミッションの流れは同じ。学習者が見る違いは、`js_node_env_setup` で起動に失敗した場合のメッセージ (従来は応答なし) だけ。
 - 本パッケージの課題は、学習者が自分のエディタでワークスペースにファイルを作り、自分の Node.js で動かす形式で、QuestIDE (`show_ide`) には依存しない。`objective.json` の `show_ide` は `false` の目標があり、QuestIDE で動かす課題は見つからなかった。したがって `code-runner-behavior.md` の Worker 版で提供できない API を要求する、QuestIDE 上の課題は無い。
 - **前提**: validator はユーザーのマシンの Node.js (`TQ_NODE_EXE`、`git`) を `helper.exec` で起動し、学習者のワークスペースのファイルを `helper.fs` で読む。Tauri 版でもこの 2 つの API (子プロセス起動とユーザー指定パスの読み取り) が使えることが前提になる。
+- **学習者が指定するパスの読み取り権限 (#173)**: Tauri の fs scope は同梱リソースとアプリ設定だけを許可していて、ホームディレクトリは許可しない (scope を広げない)。そのため、`js_node_workspace` で貼り付けたパス (`~/Downloads/test` など) の `stat` は `forbidden path` で拒否された。対応は次のとおり。
+  - `objective.json` の入力欄の型を `text` から `directory` に変えた (新しい型)。編集できるテキスト欄と **Choose Folder** ボタンを表示し、ボタンは Extensions と同じ `showDirectoryDialog` を使う。選択したフォルダ (再帰) だけが fs / asset scope に追加され、`persisted-scope` で再起動後も復元される。値は従来どおり文字列で、`JAVASCRIPT_WORKSPACE_PATH` の形も変わらない。キャンセルしたときは入力値を変えない。
+  - fs の scope 拒否 (`forbidden path` / `not allowed on the scope` / OS の権限エラー) には `code = 'EACCES'` を付ける (`tauri/errors.js`)。`ENOENT` の判定と「存在しない」の扱いは変えない。`js_node_workspace` は `EACCES` / `EPERM` のとき、「フォルダはあるかもしれないが、ゲームからは見えない。Choose Folder で選び直してほしい」と案内する。
+  - `create_repo` は、`<workspace>/.git` の fs 確認を `git rev-parse --git-dir` に置き換えた (`cwd` はワークスペース)。Unix の scope は先頭が `.` の名前に一致しない (`requireLiteralLeadingDot`) ため、選択したフォルダを許可しても `.git` は fs では見えない。出力が `.git` のときだけ (ワークスペース直下のリポジトリ) 成功扱いにし、`../.git` (別のリポジトリの内側) と失敗は「`.git` が無い」の失敗にする。`exec` の `cwd` は fs scope の検査対象外。
+  - **既知のトレードオフ**: 動的に追加する scope には書き込み系の権限も含まれる (Extensions のディレクトリと同じ)。ユーザーが自分で選んだフォルダだけで、静的 scope は広げていない。貼り付けただけのパスは、選び直しが必要 (保存済みのパスがあっても、同意の証拠としては扱わない)。
 - `vm` で評価する学習者のコード (3.1 節の 15 件) には実行時間の制限が無い (従来と同じ。無限ループを書くと UI が固まる)。Worker ベースの runner (#26 / #39) で解決する。
 - `pullVarsFromUserCodeLocalScope` は内部で `vm` を使う。Web Worker 化 (#26) の際に `pullVarsFromQuestIdeUserCodeLocalScope` と同時に置き換える。
 - 取り込んだ `README.md`、`package.json` の `dependencies` (`command-exists`、`esprima`、`fs-jetpack`) は原文のまま (出所の記録)。実行時にはもう使わない。
@@ -108,9 +113,9 @@ Issue #32。`twilioquest-javascript@1.1.7` (`public/package-lock.json` が解決
 2. 新規ゲームから JavaScript Test Lab (`javascript` レベル) が従来どおり読み込めること。
 3. 目標を順に進める (Node.js のパス、ワークスペース、各課題)。
    - `js_node_env_setup`: 実在する Node.js のパスで成功しバージョンが表示される、存在しないパスで失敗する。
-   - `js_node_workspace`: 存在するディレクトリで成功する。
+   - `js_node_workspace`: **Choose Folder** で選んだ存在するディレクトリ (`~/Downloads/` 配下など、同梱・設定の外) で成功する。**Choose Folder でまだ許可していない別のフォルダ**のパスを貼り付けただけだと、権限の案内メッセージが出る (拒否の確認はこの形で行う)。一方、すでに Choose Folder で許可したフォルダのパスを貼り付けた場合は成功する。キャンセルしたとき入力値が残る。成功ケースとして別に、再起動後、選び直さずに後続の目標 (`js_declare_variable` など) がワークスペースのファイルを読める (`.persisted-scope` が更新される)。macOS (Downloads などのユーザーフォルダ) と Windows (ドライブのパス)。
    - 課題のファイル (`laserConfiguration.js` など) を作って HACK し、正解で成功、誤りで従来のヒント文が出ること。Node で実行する課題 (`sayPlease.js`、`divideByTwo.js`、`northBridgeControl.js`、`enhancedLifeDetector.js`、`treeLifeDetector.js`、`shouldWater.js`、`sortOrder.js`、`fizzBuzz.js`) は引数が正しく渡ること。
    - `arrays2` (`addFirstToLast.js`)、`arrayFunctions` (`getFirstAmountSorted.js`) で、誤った関数のときにアサーションのメッセージが表示される。
-   - `create_repo`: git のリポジトリを作成してコミットし、成功すること。コミット前は「initial commit がない」のメッセージ。
+   - `create_repo`: `git init` の前後と初回コミットの前後で確認する。git のリポジトリを作成してコミットし、成功すること。コミット前は「initial commit がない」のメッセージ。
 4. Windows でも `fizzBuzz` などが成功すること (検証コードを `node -e` の引数で渡すため、長さの上限は約 32,000 文字。本パッケージの検証コードは数 KB)。
 5. `appData` に `TwilioQuest/javascript_validator` ディレクトリが作られなくなったこと。

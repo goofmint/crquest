@@ -574,6 +574,40 @@ describe('js_node_workspace', () => {
     expect(empty.callback.mock.calls[0][0].message).toMatch(/provide a path/);
     console.log.mockRestore();
   });
+
+  test('explains a scope denial and asks to choose the folder again (#173)', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { helper, callback } = makeHelper({
+      validationFields: { workspacePath: '/Users/jane/Downloads/test' },
+    });
+    helper.fs = {
+      ...helper.fs,
+      existsAsync: vi.fn().mockRejectedValue(
+        Object.assign(new Error('forbidden path: /Users/jane/Downloads/test'), {
+          code: 'EACCES',
+        })
+      ),
+    };
+    await requireValidator('js_node_workspace')(helper);
+    const message = callback.mock.calls[0][0].message;
+    expect(message).toMatch(/not allowed to look at it/);
+    expect(message).toMatch(/Choose Folder/);
+    console.log.mockRestore();
+  });
+
+  test('keeps the generic message for other unexpected errors', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { helper, callback } = makeHelper({
+      validationFields: { workspacePath: workspace },
+    });
+    helper.fs = {
+      ...helper.fs,
+      existsAsync: vi.fn().mockRejectedValue(new Error('boom')),
+    };
+    await requireValidator('js_node_workspace')(helper);
+    expect(callback.mock.calls[0][0].message).toMatch(/couldn't successfully find/);
+    console.log.mockRestore();
+  });
 });
 
 describe('create_repo', () => {
@@ -592,9 +626,69 @@ describe('create_repo', () => {
     expect(callback.mock.calls[0][0].message).toContain('not found: git');
   });
 
-  test('fails when there is no .git directory', async () => {
+  // git answers `rev-parse --git-dir` with ".git" only for the repository root.
+  const gitExec = ({ revParse, status }) =>
+    vi.fn(async (program, args) => {
+      if (args[0] === 'rev-parse') return revParse;
+      return status;
+    });
+  const ok = stdout => ({ code: 0, stdout, stderr: '' });
+
+  test('fails when the workspace is not a git repository', async () => {
     const { helper, callback } = makeRepoHelper({
       commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({
+        revParse: { code: 128, stdout: '', stderr: 'fatal: not a git repository' },
+      }),
+    });
+    await requireValidator('create_repo')(helper);
+    expect(callback.mock.calls[0][0].message).toContain(
+      "We didn't find a .git directory"
+    );
+    expect(helper.exec).toHaveBeenCalledWith('git', ['rev-parse', '--git-dir'], {
+      cwd: workspace,
+    });
+  });
+
+  test('shows git\'s reason when rev-parse fails for another cause', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({
+        revParse: { code: 128, stdout: '', stderr: 'fatal: detected dubious ownership in repository' },
+      }),
+    });
+    await requireValidator('create_repo')(helper);
+    const message = callback.mock.calls[0][0].message;
+    expect(message).toContain("We didn't find a .git directory");
+    expect(message).toContain('dubious ownership');
+  });
+
+  test('does not add git\'s reason for the ordinary not-a-repository case', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({
+        revParse: { code: 128, stdout: '', stderr: 'fatal: not a git repository (or any of the parent directories): .git' },
+      }),
+    });
+    await requireValidator('create_repo')(helper);
+    expect(callback.mock.calls[0][0].message).not.toContain('fatal:');
+  });
+
+  test('fails when the workspace is only inside another repository', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({ revParse: ok('../.git\n') }),
+    });
+    await requireValidator('create_repo')(helper);
+    expect(callback.mock.calls[0][0].message).toContain(
+      "We didn't find a .git directory"
+    );
+  });
+
+  test('treats a failing rev-parse as not initialized', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: vi.fn().mockRejectedValue(new Error('spawn failed')),
     });
     await requireValidator('create_repo')(helper);
     expect(callback.mock.calls[0][0].message).toContain(
@@ -603,10 +697,9 @@ describe('create_repo', () => {
   });
 
   test('fails when there is no commit yet, succeeds after one', async () => {
-    fs.mkdirSync(path.join(workspace, '.git'));
     const noCommits = makeRepoHelper({
       commandExists: vi.fn().mockResolvedValue(true),
-      exec: vi.fn().mockResolvedValue({ code: 0, stdout: 'No commits yet', stderr: '' }),
+      exec: gitExec({ revParse: ok('.git\n'), status: ok('No commits yet') }),
     });
     await requireValidator('create_repo')(noCommits.helper);
     expect(noCommits.callback.mock.calls[0][0].message).toMatch(/initial commit/);
@@ -616,17 +709,19 @@ describe('create_repo', () => {
 
     const committed = makeRepoHelper({
       commandExists: vi.fn().mockResolvedValue(true),
-      exec: vi.fn().mockResolvedValue({ code: 0, stdout: 'clean', stderr: '' }),
+      exec: gitExec({ revParse: ok('.git\n'), status: ok('clean') }),
     });
     await requireValidator('create_repo')(committed.helper);
     expect(committed.callback.mock.calls[0][0]).toBeNull();
   });
 
   test('reports a failing git status', async () => {
-    fs.mkdirSync(path.join(workspace, '.git'));
     const { helper, callback } = makeRepoHelper({
       commandExists: vi.fn().mockResolvedValue(true),
-      exec: vi.fn().mockResolvedValue({ code: 128, stdout: '', stderr: 'fatal: bad' }),
+      exec: gitExec({
+        revParse: ok('.git\n'),
+        status: { code: 128, stdout: '', stderr: 'fatal: bad' },
+      }),
     });
     await requireValidator('create_repo')(helper);
     expect(callback.mock.calls[0][0].message).toContain('Command failed: git status');

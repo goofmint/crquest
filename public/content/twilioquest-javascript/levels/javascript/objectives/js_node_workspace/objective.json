@@ -4,9 +4,9 @@
   "validation_fields": [
     {
       "name": "workspacePath",
-      "type": "text",
+      "type": "directory",
       "placeholder": "C:\\Users\\jane\\twilioquest\\js",
-      "label": "Paste in the full path to a folder on your computer where you will keep all your TwilioQuest JavaScript code."
+      "label": "Choose the folder on your computer where you will keep all your TwilioQuest JavaScript code."
     }
   ],
   "rewards": {

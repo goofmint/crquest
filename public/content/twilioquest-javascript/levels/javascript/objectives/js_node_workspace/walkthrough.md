@@ -2,7 +2,7 @@
 
 To complete this challenge, create a folder on your computer to keep all your JavaScript code files for TwilioQuest. You can create the folder using your OS' graphical tools (Finder on Mac or Windows Explorer), or using a command prompt.
 
-Once you have created a folder, paste the full path to this folder in the text field on the right. Let's say you created a new folder called `quest` to keep your JavaScript code. On Mac, a folder path might look like this:
+Once you have created a folder, click **Choose Folder** on the right and select it. The full path to the folder appears in the text field. (The game can only read folders you picked this way, so pasting a path alone may be refused with a permission message. Just choose the folder again with the button.) Let's say you created a new folder called `quest` to keep your JavaScript code. On Mac, a folder path might look like this:
 
 `/Users/jane/quest`
 
