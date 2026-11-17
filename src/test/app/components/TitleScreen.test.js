@@ -93,13 +93,24 @@ describe('TitleScreen audio gate (#168)', () => {
     expect(mocks.play).toHaveBeenCalledTimes(1);
   });
 
-  test('a first key that keypress.js stops from bubbling still begins (Escape)', () => {
+  test('a first key that keypress.js stops from bubbling still begins', () => {
     // keypress.js calls stopPropagation() for the combos it handles
     const stop = e => e.stopPropagation();
     document.body.addEventListener('keydown', stop);
     const { container } = mount();
-    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    fireEvent.keyDown(document.body, { key: 'Enter', code: 'Enter' });
     document.body.removeEventListener('keydown', stop);
+    expect(mocks.play).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain(START);
+  });
+
+  test('Escape does not begin (it is not a user activation); a later key does', () => {
+    const { container } = mount();
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    expect(mocks.play).not.toHaveBeenCalled();
+    expect(container.textContent).toContain(GATE);
+
+    fireEvent.keyDown(document, { key: 'a', code: 'KeyA' });
     expect(mocks.play).toHaveBeenCalledTimes(1);
     expect(container.textContent).toContain(START);
   });

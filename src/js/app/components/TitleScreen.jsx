@@ -30,13 +30,15 @@ export default class TitleScreen extends React.Component {
   componentDidMount() {
     // Space goes through the spacebar combo below (which also calls begin());
     // handling it here too would let one keystroke both begin and start.
+    // Escape never counts as a user activation (HTML spec), so it cannot
+    // unlock the audio and must not use up the single begin() attempt.
     this.anyKeyListener = event => {
-      if (event.code !== 'Space') {
+      if (event.code !== 'Space' && event.code !== 'Escape') {
         this.begin();
       }
     };
-    // Capture phase: keypress.js stops propagation for the combos it handles
-    // (e.g. Escape), which would otherwise hide the first key from this listener.
+    // Capture phase: keypress.js stops propagation for the combos it handles,
+    // which would otherwise hide the first key from this listener.
     document.addEventListener('keydown', this.anyKeyListener, true);
     this.spaceListener = sharedListener.simple_combo(
       'space',
