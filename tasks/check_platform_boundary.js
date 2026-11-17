@@ -2,9 +2,8 @@
 //
 // Fails when code under src/js, other than src/js/app/platform, loads
 // electron, electron-is-dev, fs-jetpack or fs (including node:fs and subpaths
-// such as fs/promises) as a module. git grep finds candidate lines that
-// contain such a quoted specifier; every file with a candidate is then read
-// whole and parsed with @babel/parser (findViolationLines), so multi-line forms, comments, strings,
+// such as fs/promises) as a module. every tracked JS/JSX file under src/js (git ls-files -z)
+// is read whole and parsed with @babel/parser (findViolationLines), so multi-line forms, comments, strings,
 // regexes and template interpolation are judged by the AST, not line by line.
 // A file that cannot be parsed is an error (exit non-zero), never skipped.
 // Only module-loading syntax counts: static `import ... from 'x'`,
@@ -20,7 +19,7 @@
 // - public/levels/: dynamically loaded extension content (validators), not renderer source.
 //
 // Exit codes: 0 no violations, 1 violations found (all matches printed),
-// any other failure (git grep status >= 2, spawn error) throws.
+// any other failure (git ls-files failure, parse error, spawn error) throws.
 
 const { spawnSync } = require('child_process');
 const fs = require('fs');
@@ -28,16 +27,13 @@ const path = require('path');
 const parser = require('@babel/parser');
 
 const repoRoot = path.resolve(__dirname, '..');
-const SPECIFIER =
-  '[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'"`]*)?[\'"`]';
-const pattern = SPECIFIER;
+// Every tracked JavaScript / JSX source file under src/js (outside the
+// platform module) is parsed. There is deliberately no text pre-filter: a
+// regex narrower than the AST judge would skip e.g. require('\x66s').
+const SOURCE_EXTENSIONS = ['.js', '.jsx', '.mjs', '.cjs'];
 const args = [
-  'grep',
-  '-l',
+  'ls-files',
   '-z',
-  '-E',
-  '-e',
-  pattern,
   '--',
   'src/js',
   ':(exclude)src/js/app/platform',
@@ -72,6 +68,7 @@ function loadedSpecifierNode(node) {
     case 'ImportExpression':
       return node.source;
     case 'CallExpression':
+    case 'OptionalCallExpression':
       if (
         (node.callee.type === 'Identifier' && node.callee.name === 'require') ||
         node.callee.type === 'Import'
@@ -136,7 +133,7 @@ function isModuleLoadViolation(source) {
 }
 
 // Runs the check in the git repository `root` and returns the violation
-// lines (`file:line:text`). git grep -l -z gives the candidate file names
+// lines (`file:line:text`). git ls-files -z gives the file names
 // verbatim (NUL separated, never quoted or escaped), so non-ASCII names and
 // names containing `:` are read as they are. Throws on any git failure.
 function collectViolations(root = repoRoot) {
@@ -145,15 +142,14 @@ function collectViolations(root = repoRoot) {
   if (result.error) {
     throw result.error;
   }
-  if (result.status === 1) {
-    return [];
-  }
   if (result.status !== 0) {
     throw new Error(
-      `git grep failed with status ${result.status}: ${result.stderr}`
+      `git ls-files failed with status ${result.status}: ${result.stderr}`
     );
   }
-  const files = result.stdout.split('\0').filter(file => file !== '');
+  const files = result.stdout
+    .split('\0')
+    .filter(file => SOURCE_EXTENSIONS.includes(path.extname(file)));
   const violations = [];
   files.forEach(file => {
     const sourceLines = fs

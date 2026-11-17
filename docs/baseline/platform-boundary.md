@@ -38,15 +38,15 @@ src/js/index.js:8:const { remote } = require('electron');
 npm run check:platform        # node tasks/check_platform_boundary.js
 ```
 
-内部では次の `git grep -E` を `child_process.spawnSync` で実行する（Bash / zsh にそのまま貼れるよう、シェル側は `$'...'` で引用符を書いている。スクリプト内の正規表現そのものは同じ）。
+内部では次の `git ls-files` を `child_process.spawnSync` で実行し、追跡済みの `.js` / `.jsx` / `.mjs` / `.cjs` をすべて構文解析する (テキストの事前絞り込みはしない。`require('\x66s')` のようなエスケープ表記も AST で判定するため)。
 
 ```
-git grep -l -z -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[^\'"`]*)?[\'"`]' -- src/js ':(exclude)src/js/app/platform'
+git ls-files -z -- src/js ':(exclude)src/js/app/platform'
 ```
 
 - import 文ではなく引用符付きのモジュール指定子を検索するため、複数行 import、`require(...)`、リテラルの動的 `import(...)`、`node:fs`、`fs/promises` などのサブパスも検出する。`electron-store` には一致しない。
-- git grep は候補ファイルの選択にだけ使う (`-l -z`: ファイル名だけを NUL 区切りで受け取るので、日本語や `:` を含む名前もそのまま読める)。候補があったファイルは全文を `@babel/parser` (JSX 対応) で構文解析し、AST の `import` / `export ... from` / `require()` / 動的 `import()` のうち禁止指定子を読むものだけを違反として `パス:行:内容` で出力し exit 1 にする。コメント・文字列・正規表現・複数行の書き方・テンプレートの `${}` 内は構文解析が扱う (`${require('fs')}` は違反)。解析できないファイルは明示的なエラーで exit 1 になり、スキップしない。git grep の終了コード 1 (候補なし) は exit 0、2 以上と spawn エラーは例外で失敗する。許可リストやスキップはない。
-- `git grep` は追跡済みファイルのみを検索する。未追跡の新規ファイルは `git add` するまで検出されない。
+- `git ls-files -z` はファイル名だけを NUL 区切りで返すので、日本語や `:` を含む名前もそのまま読める。対象ファイルは全文を `@babel/parser` (JSX 対応) で構文解析し、AST の `import` / `export ... from` / `require()` (`require?.()` を含む) / 動的 `import()` のうち禁止指定子を読むものだけを違反として `パス:行:内容` で出力し exit 1 にする。コメント・文字列・正規表現・複数行の書き方・テンプレートの `${}` 内は構文解析が扱う (`${require('fs')}` は違反)。解析できないファイルは明示的なエラーで exit 1 になり、スキップしない。違反なしは exit 0、git の失敗と spawn エラーは例外で失敗する。許可リストやスキップはない。
+- `git ls-files` は追跡済みファイルのみを返す。未追跡の新規ファイルは `git add` するまで検出されない。
 - `check:platform` は `test` / `ci` / `start` には組み込んでいない（現状では失敗するため）。
 
 ## 検証範囲と除外
@@ -110,7 +110,7 @@ git grep -l -z -E -e $'[\'"`](electron|electron-is-dev|fs-jetpack|(node:)?fs)(/[
 - 計算された `require`: `src/js/app/common/assetLoader.js:239` の `require(absoluteModulePath)`（`requireFromExtension`、221-240 行）。指定子が実行時に決まるため grep では検出できない。拡張モジュールを読み込む意図的な動的ロードで、プラン記載の 222-240 行は関数本体（宣言は 221 行目）。
 - `window.require` のエイリアス: `src/js/app/components/hack_interface/validator/Validator.jsx:37` の `const _require = window.require;`（コメントは 35-36 行目）。文字列指定子を伴わないため検出できない。
 - ユーザーコードの実行: プレイヤーが書いたコードや拡張の validator が `require('fs')` 等を実行しても、ソースに現れないため検出できない。
-- 指定子を変数や連結で組み立てるコード、`git grep` が見ない未追跡ファイルも検出対象外。
+- 指定子を変数や連結で組み立てるコード、`git ls-files` が見ない未追跡ファイルも検出対象外。
 
 ## フォローアップ（このチケットでは未実施）
 

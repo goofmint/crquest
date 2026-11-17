@@ -108,6 +108,13 @@ describe('check_platform_boundary judging', () => {
     );
   });
 
+  it('flags optional and parenthesized require calls', () => {
+    expect(findViolationLines("require?.('fs');")).toEqual([1]);
+    expect(findViolationLines("(require)('fs');")).toEqual([1]);
+    expect(findViolationLines("require?.('fs').readFile;")).toEqual([1]);
+    expect(findViolationLines("a?.require?.('fs');")).toEqual([]);
+  });
+
   it('reports the line of the specifier', () => {
     expect(findViolationLines("\n\nimport x from 'fs';\n")).toEqual([3]);
   });
@@ -154,9 +161,26 @@ describe('check_platform_boundary judging', () => {
       ]);
     });
 
-    it('reports a real violation in a file name with a colon', () => {
+    // A tracked file name with a colon cannot be created on Windows
+    const itColon = process.platform === 'win32' ? it.skip : it;
+    itColon('reports a real violation in a file name with a colon', () => {
       expect(collectViolations(makeRepo({ 'a:b.js': REAL }))).toEqual([
         `src/js/a:b.js:1:${REAL.trim()}`,
+      ]);
+    });
+
+    it('judges every source file, including an escaped specifier', () => {
+      expect(
+        collectViolations(
+          makeRepo({
+            'a.js': "const f = require('\\x66s');\n",
+            'b.js': REAL,
+            'c.txt': REAL,
+          })
+        )
+      ).toEqual([
+        "src/js/a.js:1:const f = require('\\x66s');",
+        `src/js/b.js:1:${REAL.trim()}`,
       ]);
     });
   });
