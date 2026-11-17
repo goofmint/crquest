@@ -650,6 +650,30 @@ describe('create_repo', () => {
     });
   });
 
+  test('shows git\'s reason when rev-parse fails for another cause', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({
+        revParse: { code: 128, stdout: '', stderr: 'fatal: detected dubious ownership in repository' },
+      }),
+    });
+    await requireValidator('create_repo')(helper);
+    const message = callback.mock.calls[0][0].message;
+    expect(message).toContain("We didn't find a .git directory");
+    expect(message).toContain('dubious ownership');
+  });
+
+  test('does not add git\'s reason for the ordinary not-a-repository case', async () => {
+    const { helper, callback } = makeRepoHelper({
+      commandExists: vi.fn().mockResolvedValue(true),
+      exec: gitExec({
+        revParse: { code: 128, stdout: '', stderr: 'fatal: not a git repository (or any of the parent directories): .git' },
+      }),
+    });
+    await requireValidator('create_repo')(helper);
+    expect(callback.mock.calls[0][0].message).not.toContain('fatal:');
+  });
+
   test('fails when the workspace is only inside another repository', async () => {
     const { helper, callback } = makeRepoHelper({
       commandExists: vi.fn().mockResolvedValue(true),

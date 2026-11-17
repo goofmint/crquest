@@ -13,9 +13,11 @@ const NOT_FOUND_PATTERN =
   /os error (2|3)\b|No such file or directory|cannot find the (file|path) specified/i;
 
 // A path outside the capability scope (`forbidden path: ... not allowed on the
-// scope for `allow-stat` permission ...`) or an OS permission error.
+// scope for `allow-stat` permission ...`) or an OS permission error. Matched by
+// text, not by number: `os error 5` is "Access is denied" on Windows but an I/O
+// error on macOS / Linux.
 const FORBIDDEN_PATTERN =
-  /forbidden path|not allowed on the scope|os error 13\b|Permission denied|Access is denied/i;
+  /forbidden path|not allowed on the scope|os error 13\b|Permission denied|Operation not permitted|Access is denied/i;
 
 const NOT_DIRECTORY_PATTERN = /os error (20|267)\b|Not a directory|directory name is invalid/i;
 

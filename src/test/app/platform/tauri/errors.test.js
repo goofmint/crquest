@@ -29,6 +29,9 @@ describe('toError', () => {
     expect(forbidden.message).toContain('forbidden path: /Users/jane/Downloads/test');
     expect(toError('Permission denied (os error 13)').code).toBe('EACCES');
     expect(toError('Access is denied. (os error 5)').code).toBe('EACCES');
+    expect(toError('Operation not permitted (os error 1)').code).toBe('EACCES');
+    // `os error 5` alone is an I/O error on macOS / Linux, not a permission denial.
+    expect(toError('Input/output error (os error 5)').code).toBeUndefined();
   });
 
   test('does not invent a code for other failures', () => {

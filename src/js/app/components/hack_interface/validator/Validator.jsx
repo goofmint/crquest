@@ -17,7 +17,7 @@ import levelLoader from '../../../common/levelLoader';
 import { requireFromExtension } from '../../../common/assetLoader';
 import World from '../../../common/world';
 import CopyDebugInfoButton from './CobyDebugInfoButton';
-import { showDirectoryDialog } from '../../../platform/dialog';
+import { showAlert, showDirectoryDialog } from '../../../platform/dialog';
 
 const MD = new Converter({
   openLinksInNewWindow: true,
@@ -382,10 +382,18 @@ export default class Validator extends React.Component {
   // which a path typed or pasted into the field is not. Cancelling keeps the
   // current value.
   async chooseDirectory(field, currentValue) {
-    const directoryPath = await showDirectoryDialog({
-      title: field.label ? field.label.replace(/<[^>]*>/g, '') : 'Choose a folder',
-      defaultPath: currentValue || undefined,
-    });
+    let directoryPath;
+    try {
+      directoryPath = await showDirectoryDialog({
+        title: field.label ? field.label.replace(/<[^>]*>/g, '') : 'Choose a folder',
+        defaultPath: currentValue || undefined,
+      });
+    } catch (error) {
+      await showAlert(
+        `The folder dialog could not be opened. Please try again.\n\n${error.message}`
+      );
+      return;
+    }
     if (!directoryPath) {
       return;
     }

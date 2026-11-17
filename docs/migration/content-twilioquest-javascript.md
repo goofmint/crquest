@@ -113,7 +113,7 @@ Issue #32。`twilioquest-javascript@1.1.7` (`public/package-lock.json` が解決
 2. 新規ゲームから JavaScript Test Lab (`javascript` レベル) が従来どおり読み込めること。
 3. 目標を順に進める (Node.js のパス、ワークスペース、各課題)。
    - `js_node_env_setup`: 実在する Node.js のパスで成功しバージョンが表示される、存在しないパスで失敗する。
-   - `js_node_workspace`: **Choose Folder** で選んだ存在するディレクトリ (`~/Downloads/` 配下など、同梱・設定の外) で成功する。同じパスを貼り付けただけだと、権限の案内メッセージが出る。キャンセルしたとき入力値が残る。再起動後、選び直さずに後続の目標 (`js_declare_variable` など) がワークスペースのファイルを読める (`.persisted-scope` が更新される)。macOS (Downloads などのユーザーフォルダ) と Windows (ドライブのパス)。
+   - `js_node_workspace`: **Choose Folder** で選んだ存在するディレクトリ (`~/Downloads/` 配下など、同梱・設定の外) で成功する。**Choose Folder でまだ許可していない別のフォルダ**のパスを貼り付けただけだと、権限の案内メッセージが出る (拒否の確認はこの形で行う)。一方、すでに Choose Folder で許可したフォルダのパスを貼り付けた場合は成功する。キャンセルしたとき入力値が残る。成功ケースとして別に、再起動後、選び直さずに後続の目標 (`js_declare_variable` など) がワークスペースのファイルを読める (`.persisted-scope` が更新される)。macOS (Downloads などのユーザーフォルダ) と Windows (ドライブのパス)。
    - 課題のファイル (`laserConfiguration.js` など) を作って HACK し、正解で成功、誤りで従来のヒント文が出ること。Node で実行する課題 (`sayPlease.js`、`divideByTwo.js`、`northBridgeControl.js`、`enhancedLifeDetector.js`、`treeLifeDetector.js`、`shouldWater.js`、`sortOrder.js`、`fizzBuzz.js`) は引数が正しく渡ること。
    - `arrays2` (`addFirstToLast.js`)、`arrayFunctions` (`getFirstAmountSorted.js`) で、誤った関数のときにアサーションのメッセージが表示される。
    - `create_repo`: `git init` の前後と初回コミットの前後で確認する。git のリポジトリを作成してコミットし、成功すること。コミット前は「initial commit がない」のメッセージ。

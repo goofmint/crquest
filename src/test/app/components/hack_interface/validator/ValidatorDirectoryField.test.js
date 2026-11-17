@@ -30,7 +30,7 @@ vi.mock('../../../../../js/app/common/context', () => ({
   emitter: { on: vi.fn(), off: vi.fn() },
 }));
 
-import { showDirectoryDialog } from '../../../../../js/app/platform/dialog';
+import { showAlert, showDirectoryDialog } from '../../../../../js/app/platform/dialog';
 import Validator from '../../../../../js/app/components/hack_interface/validator/Validator';
 
 // #173: a folder chosen with the dialog is granted to the fs scope; a typed or
@@ -86,6 +86,18 @@ describe('Validator directory field', () => {
     fireEvent.click(screen.getByText('Choose Folder'));
     await waitFor(() => expect(showDirectoryDialog).toHaveBeenCalled());
     expect(showDirectoryDialog.mock.calls[0][0].defaultPath).toBe('/typed/path');
+    expect(pathInput(container).value).toBe('/typed/path');
+  });
+
+  test('shows an alert and keeps the value when the dialog fails', async () => {
+    showDirectoryDialog.mockRejectedValue(new Error('dialog unavailable'));
+    showAlert.mockResolvedValue(undefined);
+    const { container } = renderValidator();
+    fireEvent.change(pathInput(container), { target: { value: '/typed/path' } });
+    fireEvent.click(screen.getByText('Choose Folder'));
+    await waitFor(() => expect(showAlert).toHaveBeenCalled());
+    expect(showAlert.mock.calls[0][0]).toContain('dialog unavailable');
+    expect(showAlert.mock.calls[0][0]).toContain('try again');
     expect(pathInput(container).value).toBe('/typed/path');
   });
 
