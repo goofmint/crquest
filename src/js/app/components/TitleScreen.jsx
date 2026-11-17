@@ -35,7 +35,9 @@ export default class TitleScreen extends React.Component {
         this.begin();
       }
     };
-    document.addEventListener('keydown', this.anyKeyListener);
+    // Capture phase: keypress.js stops propagation for the combos it handles
+    // (e.g. Escape), which would otherwise hide the first key from this listener.
+    document.addEventListener('keydown', this.anyKeyListener, true);
     this.spaceListener = sharedListener.simple_combo(
       'space',
       this.onPlayerPressedStart.bind(this)
@@ -60,7 +62,7 @@ export default class TitleScreen extends React.Component {
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.anyKeyListener);
+    document.removeEventListener('keydown', this.anyKeyListener, true);
     sharedListener.unregister_combo(this.spaceListener);
     sharedListener.unregister_combo(this.escapeListener);
   }
@@ -70,12 +72,19 @@ export default class TitleScreen extends React.Component {
       return;
     }
     this.hasBegun = true;
-    document.removeEventListener('keydown', this.anyKeyListener);
+    document.removeEventListener('keydown', this.anyKeyListener, true);
     this.setState({ hasBegun: true });
     audioManager.music.play('overture_b');
   }
 
-  onPlayerPressedStart() {
+  // Called by the spacebar combo as (event, count, isAutorepeat), and without
+  // arguments by the click handlers.
+  onPlayerPressedStart(event, count, isAutorepeat) {
+    if (isAutorepeat) {
+      // Holding Space must not count as the second press.
+      return;
+    }
+
     if (!this.hasBegun) {
       // The first gesture only starts the audio; it does not start the game.
       this.begin();
