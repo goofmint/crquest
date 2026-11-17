@@ -111,9 +111,13 @@ describe('tauri.conf.json frontendDist (staging directory)', () => {
     expect(result.status).toBe(0);
   });
 
-  test('the node_modules files it keeps are exactly those that index.html links', () => {
-    const linked = [...html.matchAll(/(?:href|src)="(node_modules\/[^"]+)"/g)].map((m) => m[1]);
-    expect(linked).toEqual(RUNTIME_NODE_MODULES_FILES);
+  test('the node_modules files it keeps are exactly those that index.html links, outside node_modules', () => {
+    const linked = RUNTIME_NODE_MODULES_FILES.map((file) => file.to);
+    linked.forEach((to) => {
+      expect(to.split('/')).not.toContain('node_modules');
+      expect(html).toContain(`href="${to}"`);
+    });
+    expect(html).not.toMatch(/(?:href|src)="node_modules\//);
   });
 
   test('index.html has no inline script or style (Tauri would add a nonce, which disables unsafe-inline)', () => {

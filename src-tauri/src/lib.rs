@@ -208,16 +208,13 @@ mod tests {
             .collect();
         assert!(paths.iter().any(|path| path == "/index.html"));
         assert!(paths.iter().any(|path| path == "/tauri-game.js"));
-        assert!(paths
-            .iter()
-            .any(|path| path == "/node_modules/animate.css/animate.min.css"));
+        assert!(paths.iter().any(|path| path == "/lib/animate.min.css"));
         let unexpected: Vec<&String> = paths
             .iter()
             .filter(|path| {
                 path.starts_with("/content/")
                     || path.starts_with("/levels/")
-                    || (path.starts_with("/node_modules/")
-                        && path.as_str() != "/node_modules/animate.css/animate.min.css")
+                    || path.starts_with("/node_modules/")
                     || path.contains("/.")
                     || path == &"/package.json"
                     || path == &"/package-lock.json"

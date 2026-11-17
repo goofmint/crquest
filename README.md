@@ -73,9 +73,11 @@ The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions`
 npm test
 ```
 
-runs the unit tests with [Vitest](https://vitest.dev) (jsdom environment, [Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for the React components). They run in plain Node.js and do not start Tauri. The configuration is in `vitest.config.mjs`; see `docs/migration/vitest.md`. The platform modules that read files and run commands (`platform/fs`, `exec`, `env`, `assets`, `paths`, `conversationTemplate`) are replaced there by the Node-backed ones in `src/test/nodePlatform/`, because the Tauri implementation needs a webview; `platform/tauri/*` has its own tests. There is no `lint` script.
+runs the unit tests with [Vitest](https://vitest.dev) (jsdom environment, [Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for the React components). They run in plain Node.js and do not start Tauri. The configuration is in `vitest.config.mjs`; see `docs/migration/vitest.md`. The platform modules that read files and run commands (`platform/fs`, `exec`, `env`, `assets`, `paths`, `conversationTemplate`) are replaced there by the Node-backed ones in `src/test/nodePlatform/`, because the Tauri implementation needs a webview; `platform/tauri/*` has its own tests. There is no `lint` script: the static checks are `npm run check:platform` (below) and, on the Rust side, `cargo fmt --check` and `cargo clippy`.
 
-The Rust side has its own checks, run from `src-tauri/` (`cargo fmt --check`, `cargo clippy`, `cargo test`).
+The Rust side has its own checks, run from `src-tauri/` (`cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`).
+
+`npm run check:platform` (`tasks/check_platform_boundary.js`) fails when code under `src/js` (outside `src/js/app/platform`) loads `electron`, `electron-is-dev`, `fs-jetpack` or `fs` through module-loading syntax (`import`, `export ... from`, `require()`, dynamic `import()`); every tracked `.js` / `.jsx` / `.mjs` / `.cjs` file there (listed with `git ls-files`) is parsed with `@babel/parser`, so a file that cannot be parsed is an error. Comments and plain strings such as a mock key `'fs': ...` are not violations. It exits 0 when there are none. See `docs/migration/final-verification.md` for the full verification record.
 
 ### Verifying the Tauri build by hand
 
