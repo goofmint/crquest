@@ -59,6 +59,11 @@ export default class DynamicLevel extends EventEmitter {
   }
 
   preload() {
+    // Images come from the Tauri asset protocol, a different origin from the
+    // page. Without an explicit CORS mode the browser taints them and WebGL's
+    // texImage2D throws a SecurityError (issue #166).
+    this.game.load.crossOrigin = 'anonymous';
+
     this.loadEntityConfigs();
 
     // Load common 32x32 spritesheets
