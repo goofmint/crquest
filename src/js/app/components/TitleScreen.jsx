@@ -15,7 +15,11 @@ export default class TitleScreen extends React.Component {
 
   constructor(props) {
     super(props);
+    // WKWebView / WebView2 keep WebAudio suspended until the first user
+    // gesture (#168), so the title music is started by that gesture.
+    this.hasBegun = false;
     this.state = {
+      hasBegun: false,
       isInitialGameLaunch: false,
       cinematicShowing: false,
       shouldStartGameAfterFinishingCinematic: false,
@@ -24,6 +28,14 @@ export default class TitleScreen extends React.Component {
   }
 
   componentDidMount() {
+    // Space goes through the spacebar combo below (which also calls begin());
+    // handling it here too would let one keystroke both begin and start.
+    this.anyKeyListener = event => {
+      if (event.code !== 'Space') {
+        this.begin();
+      }
+    };
+    document.addEventListener('keydown', this.anyKeyListener);
     this.spaceListener = sharedListener.simple_combo(
       'space',
       this.onPlayerPressedStart.bind(this)
@@ -45,16 +57,31 @@ export default class TitleScreen extends React.Component {
       // their initial launch.
       isInitialGameLaunch: !getContext('hasSeenCinematic'),
     });
-
-    audioManager.music.play('overture_b');
   }
 
   componentWillUnmount() {
+    document.removeEventListener('keydown', this.anyKeyListener);
     sharedListener.unregister_combo(this.spaceListener);
     sharedListener.unregister_combo(this.escapeListener);
   }
 
+  begin() {
+    if (this.hasBegun) {
+      return;
+    }
+    this.hasBegun = true;
+    document.removeEventListener('keydown', this.anyKeyListener);
+    this.setState({ hasBegun: true });
+    audioManager.music.play('overture_b');
+  }
+
   onPlayerPressedStart() {
+    if (!this.hasBegun) {
+      // The first gesture only starts the audio; it does not start the game.
+      this.begin();
+      return;
+    }
+
     if (!getContext('hasSeenCinematic')) {
       this.showCinematic(true);
     } else {
@@ -117,6 +144,19 @@ export default class TitleScreen extends React.Component {
   }
 
   render() {
+    const gateScreen = (
+      <div className="inner">
+        <div className="logo" style={{ fontSize: '3em', textAlign: 'center' }}>
+          <img src="images/app/logo.png" />
+        </div>
+        <div className="controls">
+          <span className="gate" onClick={() => this.begin()}>
+            click or press any key
+          </span>
+        </div>
+      </div>
+    );
+
     const startScreen = (
       <div className="inner">
         <div className="logo" style={{ 
@@ -193,7 +233,11 @@ export default class TitleScreen extends React.Component {
     return (
       <div className="TitleScreen">
         <div className="stars" />
-        {this.state.cinematicShowing ? cinematic : startScreen}
+        {!this.state.hasBegun
+          ? gateScreen
+          : this.state.cinematicShowing
+          ? cinematic
+          : startScreen}
       </div>
     );
   }
