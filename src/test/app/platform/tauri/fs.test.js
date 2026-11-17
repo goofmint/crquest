@@ -83,11 +83,18 @@ describe('Node fs.promises family', () => {
     await expect(fs.readFile('/missing', 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
-  test('a forbidden path rejects without an ENOENT code', async () => {
-    mocks.readTextFile.mockRejectedValue('forbidden path: /etc/passwd, maybe it is not allowed');
+  test('a forbidden path rejects as EACCES, never as missing (#173)', async () => {
+    mocks.readTextFile.mockRejectedValue('forbidden path: /etc/passwd, maybe it is not allowed on the scope');
     const error = await fs.readFile('/etc/passwd', 'utf8').catch(e => e);
     expect(error).toBeInstanceOf(Error);
-    expect(error.code).toBeUndefined();
+    expect(error.code).toBe('EACCES');
+  });
+
+  test('existsAsync propagates a scope denial but still answers false for ENOENT (#173)', async () => {
+    mocks.stat.mockRejectedValueOnce('forbidden path: /Users/jane/test, maybe it is not allowed on the scope for `allow-stat` permission');
+    await expect(fs.existsAsync('/Users/jane/test')).rejects.toMatchObject({ code: 'EACCES' });
+    mocks.stat.mockRejectedValueOnce('No such file or directory (os error 2)');
+    await expect(fs.existsAsync('/missing')).resolves.toBe(false);
   });
 
   test('readdir resolves names; rejects ENOENT', async () => {

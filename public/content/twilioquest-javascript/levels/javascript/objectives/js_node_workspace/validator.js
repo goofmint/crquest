@@ -35,6 +35,12 @@ module.exports = async (helper) => {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
+    } else if (e.code === "EACCES" || e.code === "EPERM") {
+      helper.fail(`
+        The folder may exist, but the game is not allowed to look at it.
+        Click "Choose Folder" and select the folder again with the button
+        (a path that is only pasted in is not enough), then click HACK.
+      `);
     } else {
       helper.fail(`
         Sorry! We couldn't successfully find your Node.js workspace path.

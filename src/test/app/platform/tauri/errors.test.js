@@ -21,9 +21,19 @@ describe('toError', () => {
     expect(toError('Not a directory (os error 20)').code).toBe('ENOTDIR');
   });
 
+  test('detects a path outside the capability scope as EACCES (#173)', () => {
+    const forbidden = toError(
+      'forbidden path: /Users/jane/Downloads/test, maybe it is not allowed on the scope for `allow-stat` permission in your capability file'
+    );
+    expect(forbidden.code).toBe('EACCES');
+    expect(forbidden.message).toContain('forbidden path: /Users/jane/Downloads/test');
+    expect(toError('Permission denied (os error 13)').code).toBe('EACCES');
+    expect(toError('Access is denied. (os error 5)').code).toBe('EACCES');
+  });
+
   test('does not invent a code for other failures', () => {
-    const error = toError('forbidden path: /etc/passwd');
-    expect(error.message).toBe('forbidden path: /etc/passwd');
+    const error = toError('disk exploded');
+    expect(error.message).toBe('disk exploded');
     expect(error.code).toBeUndefined();
   });
 

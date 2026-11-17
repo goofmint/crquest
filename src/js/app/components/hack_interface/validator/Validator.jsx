@@ -17,6 +17,7 @@ import levelLoader from '../../../common/levelLoader';
 import { requireFromExtension } from '../../../common/assetLoader';
 import World from '../../../common/world';
 import CopyDebugInfoButton from './CobyDebugInfoButton';
+import { showDirectoryDialog } from '../../../platform/dialog';
 
 const MD = new Converter({
   openLinksInNewWindow: true,
@@ -377,6 +378,20 @@ export default class Validator extends React.Component {
     });
   }
 
+  // A folder chosen in the dialog is granted to the fs scope (and persisted),
+  // which a path typed or pasted into the field is not. Cancelling keeps the
+  // current value.
+  async chooseDirectory(field, currentValue) {
+    const directoryPath = await showDirectoryDialog({
+      title: field.label ? field.label.replace(/<[^>]*>/g, '') : 'Choose a folder',
+      defaultPath: currentValue || undefined,
+    });
+    if (!directoryPath) {
+      return;
+    }
+    this.updateFieldValues(directoryPath, field.name);
+  }
+
   doReset() {
     this.setState({
       feedback: '',
@@ -547,6 +562,33 @@ export default class Validator extends React.Component {
                 >
                   False
                 </label>
+              </div>
+            );
+          }
+
+          if (field.type === 'directory') {
+            const currentValue = this.state.validationFields[field.name] || '';
+            return (
+              <div className="validation-field" key={field.name}>
+                <label dangerouslySetInnerHTML={{ __html: labelHtml }} />
+                <input
+                  className="validation-input-text"
+                  type="text"
+                  placeholder={field.placeholder}
+                  value={currentValue}
+                  onChange={e =>
+                    this.updateFieldValues(e.target.value, field.name)
+                  }
+                  onFocus={() => this.validationFieldFocus()}
+                  onBlur={() => this.validationFieldBlur()}
+                />
+                <Button
+                  label="Choose Folder"
+                  onClick={e => {
+                    e.preventDefault();
+                    this.chooseDirectory(field, currentValue);
+                  }}
+                />
               </div>
             );
           }

@@ -12,6 +12,11 @@
 const NOT_FOUND_PATTERN =
   /os error (2|3)\b|No such file or directory|cannot find the (file|path) specified/i;
 
+// A path outside the capability scope (`forbidden path: ... not allowed on the
+// scope for `allow-stat` permission ...`) or an OS permission error.
+const FORBIDDEN_PATTERN =
+  /forbidden path|not allowed on the scope|os error 13\b|Permission denied|Access is denied/i;
+
 const NOT_DIRECTORY_PATTERN = /os error (20|267)\b|Not a directory|directory name is invalid/i;
 
 export function toError(reason) {
@@ -24,6 +29,8 @@ export function toError(reason) {
       error.code = 'ENOENT';
     } else if (NOT_DIRECTORY_PATTERN.test(reason)) {
       error.code = 'ENOTDIR';
+    } else if (FORBIDDEN_PATTERN.test(reason)) {
+      error.code = 'EACCES';
     }
     return error;
   }
