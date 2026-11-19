@@ -1,0 +1,27 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="司書")
+  case lastResponse
+    when "what_learn"
+      statement#watch_video
+      responses
+
+    default
+      statement#default
+      responses
+        response#what_learn.
+          ここでは何を学べるんですか？
+
+  statements
+    statement#default
+      text.
+        図書館の 1 階へようこそ。ここは<span class="highlight">ファイルシステムの基礎</span>のフロアです！
+
+    statement#watch_video
+      text.
+        「ファイルシステムって何？ なぜ知っておく必要があるの？」と思ったことがあるなら、この階が役立ちます。
+        <br/><br/>
+        まずはテレビにセットしてあるビデオカセットを見てみましょう！
+
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

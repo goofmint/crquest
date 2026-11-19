@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import useSpriteSheet from '../hooks/useSpriteSheet';
 import NavMapButton from './NavMapButton';
 
@@ -11,6 +12,7 @@ const LevelSelect = ({
   selectPrev,
   selectPlanet,
 }) => {
+  const { t } = useTranslation();
   const CONTROL_BOX_SCALE = 3;
   const CONTROL_RADIO_SCALE = 2;
   const CONTROL_ARROW_SCALE = 2;
@@ -43,6 +45,7 @@ const LevelSelect = ({
           >
             <NavMapButton
               onClick={selectPrev}
+              label={t('ui.map.previous')}
               config={{
                 sheet: assets.controlBoxArrows,
                 tileWidth: 30,
@@ -74,6 +77,7 @@ const LevelSelect = ({
             </div>
             <NavMapButton
               onClick={selectNext}
+              label={t('ui.map.next')}
               config={{
                 sheet: assets.controlBoxArrows,
                 tileWidth: 30,

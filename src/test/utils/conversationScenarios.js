@@ -12,7 +12,7 @@ export const repoRoot = path.resolve(__dirname, '../../..');
 export function listPugFiles() {
   return execFileSync('git', ['ls-files', '*.pug'], { cwd: repoRoot, encoding: 'utf8' })
     .split('\n')
-    .filter(Boolean)
+    .filter(file => file && !/\.[a-z]{2,3}(?:-[\w]+)*\.pug$/i.test(file))
     .sort()
     .map(file => path.join(repoRoot, file));
 }

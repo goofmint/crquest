@@ -29,6 +29,7 @@ const makeWorld = ({ onWait } = {}) => {
     return args;
   };
   const world = {
+    t: (_, fallback) => fallback,
     getState: key => state[key],
     setState: (key, value) => {
       state[key] = value;

@@ -4,6 +4,8 @@ import { setContext, getContext, emitter } from './context';
 import { staticFilePath } from './fs_utils';
 import TiledService from './tiled';
 import analytics from './analytics';
+import { contentMessage, readContentMessages } from './assetLoader';
+import { getLanguage as getActiveLanguage } from '../i18n';
 
 function resolveFilterFn(keyOrFilter) {
   if (typeof keyOrFilter === 'string') {
@@ -22,12 +24,27 @@ function getCameraPosition(camera) {
 }
 
 class World {
+  messages = {};
+
   constructor(level) {
     this.level = level;
   }
 
+  async loadMessages() {
+    this.messages = await readContentMessages(
+      levelLoader.getLevelConfigPath(this.level.levelName)
+    );
+  }
+
+  getLanguage = getActiveLanguage;
+
+  t = (key, fallbackEnglish, vars) =>
+    contentMessage(this.messages, key, fallbackEnglish, vars);
+
   generateAPI(shouldIncludeBundledAPI = false) {
     const worldAPI = {
+      getLanguage: this.getLanguage,
+      t: this.t,
       getState: this.getState,
       setState: this.setState,
       startConversation: this.startConversation,

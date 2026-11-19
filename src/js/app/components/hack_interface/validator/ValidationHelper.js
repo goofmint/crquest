@@ -8,6 +8,8 @@ import * as platformExec from '../../../platform/exec';
 import * as platformPaths from '../../../platform/paths';
 import { getPlatform } from '../../../platform/env';
 import { staticFileUrl } from '../../../common/fs_utils';
+import { contentMessage } from '../../../common/assetLoader';
+import { getLanguage, t } from '../../../i18n';
 import {
   evaluateInWorker,
   pullVarsInWorker,
@@ -46,12 +48,14 @@ const validatorFs = Object.freeze({
 });
 
 export default class ValidationHelper {
-  constructor(validationContext, callback, level) {
+  constructor(validationContext, callback, level, messages = {}) {
     // Instance variables
     this.validationCallback = callback;
     this.validationFields = {};
     this.context = validationContext.context;
     this.env = validationContext.env;
+    this.language = getLanguage();
+    this.messages = messages;
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
     this.fs = validatorFs;
@@ -64,6 +68,10 @@ export default class ValidationHelper {
       const val = validationContext.validationFields[key].trim();
       this.validationFields[key] = val;
     });
+  }
+
+  t(key, fallbackEnglish, vars) {
+    return contentMessage(this.messages, key, fallbackEnglish, vars);
   }
 
   getNormalizedInput(key, { lowerCase = true, trim = true } = {}) {
@@ -156,7 +164,7 @@ export default class ValidationHelper {
    */
   async isExecutableValid(path, args) {
     if (path === undefined || path.trim() === '') {
-      return [false, `You didn't enter a file path.`];
+      return [false, t('ui.executable.pathRequired', { lng: this.language })];
     }
 
     /**
@@ -172,13 +180,7 @@ export default class ValidationHelper {
      * This is true as of: 8/26/2020.
      */
     if (!(await platformExec.pathExists(path))) {
-      return [
-        false,
-        `The path you provided does not exist!
-      
-        "${path}"
-        `,
-      ];
+      return [false, t('ui.executable.pathMissing', { lng: this.language, path })];
     }
 
     try {
@@ -192,25 +194,16 @@ export default class ValidationHelper {
         (err.message.toLowerCase().includes('access') &&
           err.message.toLowerCase().includes('denied'))
       ) {
-        return [
-          false,
-          `The path you provided isn't executable!
-
-        Please ensure this is a path to an executable and that TwilioQuest has
-        the appropriate permissions to execute the file.
-        
-        "${path}"
-        `,
-        ];
+        return [false, t('ui.executable.notExecutable', { lng: this.language, path })];
       }
 
       return [
         false,
-        `An error occured when we tried to validate we could run your executable!
-
-      Path: ${path}
-      Error: ${err}
-      `,
+        t('ui.executable.validationFailed', {
+          lng: this.language,
+          path,
+          error: String(err),
+        }),
       ];
     }
 

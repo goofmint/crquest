@@ -132,7 +132,9 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     // The Help menu is enabled only after its listener is installed (#141)
     const listen = result.ipcCalls.indexOf('plugin:event|listen');
     const enable = result.ipcCalls.indexOf('enable_help_menu');
-    expect(listen).toBeGreaterThanOrEqual(0);
+    const labels = result.ipcCalls.indexOf('set_shell_texts');
+    expect(labels).toBeGreaterThanOrEqual(0);
+    expect(listen).toBeGreaterThan(labels);
     expect(enable).toBeGreaterThan(listen);
   }, 60000);
 
@@ -141,5 +143,16 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     expect(result.errors).toEqual(['early error']);
     expect(result.logs).toHaveLength(40);
     expect(result.logs.some(([level]) => level === 'error')).toBe(false);
+  }, 60000);
+
+  it('uses the saved Japanese preference for the document, title and native dialog', async () => {
+    const result = await runBootstrap(outputDir, 'saved-japanese', stagedDir);
+    expect(result.fatal).toBeUndefined();
+    expect(result.startError).toBeNull();
+    expect(result.failures).toEqual([]);
+    expect(result.errors).toEqual([]);
+    expect(result.lang).toBe('ja');
+    expect(result.titleControls).toContain('スペースキーでスタート');
+    expect(result.shellLabels.closeDialog.cancel).toBe('キャンセル');
   }, 60000);
 });

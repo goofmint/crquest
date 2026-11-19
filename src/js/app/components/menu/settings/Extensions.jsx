@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   getBundledExtensionDirectories,
   getExternalExtensionDirectories,
@@ -11,6 +12,7 @@ import InputTextField from './InputTextField';
 import { showDirectoryDialog } from '../../../platform/dialog';
 
 function ExtensionsList({ extensions }) {
+  const { t } = useTranslation();
   return extensions.length > 0 ? (
     <ul>
       {extensions.map(({ name, absolutePath, isValid }) => (
@@ -21,17 +23,18 @@ function ExtensionsList({ extensions }) {
               color: isValid ? '#00ff00' : '#ff0000',
             }}
           >
-            {isValid ? 'loaded' : 'failed'}
+            {isValid ? t('ui.extensions.loaded') : t('ui.extensions.failed')}
           </span>
         </li>
       ))}
     </ul>
   ) : (
-    <span>None</span>
+    <span>{t('ui.extensions.none')}</span>
   );
 }
 
 function AllExtensionsList() {
+  const { t } = useTranslation();
   const [bundledExtensions, setBundledExtensions] = useState([]);
   const [externalExtensions, setExternalExtensions] = useState([]);
 
@@ -53,13 +56,13 @@ function AllExtensionsList() {
 
   return (
     <>
-      <h4>External Extensions</h4>
-      <p>These extensions are being loaded from the directory above.</p>
+      <h4>{t('ui.extensions.external')}</h4>
+      <p>{t('ui.extensions.externalInfo')}</p>
       <ExtensionsList extensions={externalExtensions} />
       <br />
-      <h4>Bundled Extensions</h4>
+      <h4>{t('ui.extensions.bundled')}</h4>
       <p>
-        These extensions come bundled by default when you download TerminalQuest.
+        {t('ui.extensions.bundledInfo')}
       </p>
       <ExtensionsList extensions={bundledExtensions} />
     </>
@@ -67,15 +70,13 @@ function AllExtensionsList() {
 }
 
 function EnabledExtensions({ onFocus, onBlur, save }) {
+  const { t } = useTranslation();
   const directory = getExtensionDirectory();
 
   return (
     <>
       <p>
-        TerminalQuest will attempt to load extensions from the folder below. Note
-        that some extensions may{' '}
-        <span className="highlight">require you to restart the game</span>{' '}
-        before they are available (e.g. new missions in the mission computer).
+        <Trans i18nKey="ui.extensions.loadingNotice" components={{ emphasis: <span className="highlight" /> }} />
       </p>
       <br />
       <br />
@@ -90,23 +91,24 @@ function EnabledExtensions({ onFocus, onBlur, save }) {
           )
         }
       >
-        Disable Extensions
+        {t('ui.extensions.disable')}
       </Button>
       <br />
       <br />
-      <h4>Extension Directory</h4>
+      <h4>{t('ui.extensions.directory')}</h4>
       <div>
         <InputTextField
-          value={directory || 'No directory chosen'}
+          aria-label={t('ui.extensions.directory')}
+          value={directory || t('ui.extensions.noDirectory')}
           disabled
         ></InputTextField>
         <InlineButton
-          label="Choose Directory"
+          label={t('ui.extensions.chooseDirectory')}
           onClick={async () => {
             const directoryPath = await showDirectoryDialog({
               defaultPath: directory,
-              buttonLabel: 'Choose',
-              title: 'Choose a directory to load your extensions from',
+              buttonLabel: t('ui.extensions.choose'),
+              title: t('ui.extensions.directoryTitle'),
             });
 
             if (!directoryPath) {
@@ -124,7 +126,7 @@ function EnabledExtensions({ onFocus, onBlur, save }) {
         />
       </div>
       <br />
-      <h3>Loaded Extensions</h3>
+      <h3>{t('ui.extensions.all')}</h3>
       <AllExtensionsList />
       <br />
     </>
@@ -132,18 +134,14 @@ function EnabledExtensions({ onFocus, onBlur, save }) {
 }
 
 function DisabledExtensions({ save }) {
+  const { t } = useTranslation();
   return (
     <>
       <p>
-        Click the button below to enable extensions. Extensions can contain new
-        levels, items, or features for TerminalQuest.
+        {t('ui.extensions.enableInfo')}
       </p>
       <p>
-        <span className="highlight">Be careful</span>! If you install extensions
-        in TerminalQuest, those extensions will be able to execute code on your
-        computer. Ensure that you trust the extension author before using this
-        feature. Broken extensions can also cause the TerminalQuest game to become
-        unstable, possibly even requiring you to reinstall the game.
+        <Trans i18nKey="ui.extensions.warning" components={{ emphasis: <span className="highlight" /> }} />
       </p>
       <Button
         onClick={() =>
@@ -156,18 +154,19 @@ function DisabledExtensions({ save }) {
           )
         }
       >
-        Enable Extensions
+        {t('ui.extensions.enable')}
       </Button>
     </>
   );
 }
 
 export default function Extensions({ onFocus, onBlur, save }) {
+  const { t } = useTranslation();
   const enabled = areExtensionsEnabled();
 
   return (
     <>
-      <h3>Extensions</h3>
+      <h3>{t('ui.extensions.title')}</h3>
       {enabled ? (
         <EnabledExtensions onFocus={onFocus} onBlur={onBlur} save={save} />
       ) : (

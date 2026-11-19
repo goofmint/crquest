@@ -26,7 +26,10 @@ module.exports = async function (helper) {
   try {
     if (!directoryOrFileName) {
       helper.fail(
-        "You need to provide the name of a directory or file in the Hack Interface!"
+        helper.t(
+          "missingInput",
+          "You need to provide the name of a directory or file in the Hack Interface!"
+        )
       );
       return;
     }
@@ -38,18 +41,33 @@ module.exports = async function (helper) {
 
     if (!(await exists(helper, absolutePathToDirOrFile))) {
       helper.fail(
-        `TwilioQuest cannot locate the directory or file you entered, "${directoryOrFileName}", in your earlier entered present working directory "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_PWD}".`
+        helper.t(
+          "missingEntry",
+          'TwilioQuest cannot locate the directory or file you entered, "{{entryName}}", in your earlier entered present working directory "{{workingDirectory}}".',
+          {
+            entryName: directoryOrFileName,
+            workingDirectory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_PWD,
+          }
+        )
       );
       return;
     }
   } catch (err) {
-    helper.fail(`An error occurred while TwilioQuest was trying to validate your present working directory.
-    
-    ${err}`);
+    helper.fail(
+      helper.t(
+        "validationError",
+        "An error occurred while TwilioQuest was trying to validate your present working directory.\n    \n    {{error}}",
+        { error: err }
+      )
+    );
     return;
   }
 
   helper.success(
-    `TwiloQuest was able to find your file or directory at the path "${absolutePathToDirOrFile}". Well done!`
+    helper.t(
+      "success",
+      'TwiloQuest was able to find your file or directory at the path "{{entryPath}}". Well done!',
+      { entryPath: absolutePathToDirOrFile }
+    )
   );
 };

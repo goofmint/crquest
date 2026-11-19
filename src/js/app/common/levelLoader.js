@@ -9,6 +9,7 @@ import {
   readFile,
   readDirectory,
   resolveAbsolutePath,
+  readLocalizedJson,
   doesPathExist,
   isPathFromBundledExtension,
 } from './assetLoader';
@@ -20,6 +21,19 @@ const LEVEL_FILE_NAME = 'level.json';
 const OBJECTIVE_FILE_NAME = 'objective.json';
 const EVENTS_FILE_NAME = 'events.js';
 const MAPS_DIR_NAME = 'maps';
+const LEVEL_TRANSLATION_FIELDS = {
+  title: true,
+  description: true,
+  questTitle: true,
+  questDescription: true,
+  defaultGoal: true,
+  flavorTextOverrides: { '*': true },
+};
+const OBJECTIVE_TRANSLATION_FIELDS = {
+  title: true,
+  description: true,
+  validation_fields: { label: true, placeholder: true },
+};
 
 /**
  * Because this file is a singleton, we need to ensure that our yup
@@ -169,6 +183,19 @@ class LevelLoader {
 
   getObjectivesDirPath(levelName) {
     return path.join(LEVEL_DIR_NAME, levelName, 'objectives');
+  }
+
+  getLevelConfigPath(levelName) {
+    return path.join(LEVEL_DIR_NAME, levelName, LEVEL_FILE_NAME);
+  }
+
+  readLevelConfig(levelName, language) {
+    return readLocalizedJson(this.getLevelConfigPath(levelName),
+      LEVEL_TRANSLATION_FIELDS, { language });
+  }
+
+  readObjectiveConfig(objectivePath) {
+    return readLocalizedJson(objectivePath, OBJECTIVE_TRANSLATION_FIELDS);
   }
 
   getEventsModulePath(levelName) {
@@ -539,16 +566,14 @@ class LevelLoader {
   }
 
   async readLevelInfo(levelDirName) {
-    const levelPath = path.join(LEVEL_DIR_NAME, levelDirName, LEVEL_FILE_NAME);
-    const fileContents = await readFile(levelPath);
+    let levelInfo = await this.readLevelConfig(levelDirName);
 
-    if (!fileContents) {
+    if (!levelInfo) {
       throw new Error(
-        `The level "${levelDirName}" does not have an config file.`
+        `The level "${levelDirName}" does not have a config file.`
       );
     }
 
-    let levelInfo = JSON.parse(fileContents);
     levelInfo.levelName = levelDirName;
 
     const missionInfo = await this.getMissionInfo(levelInfo);
@@ -573,14 +598,13 @@ class LevelLoader {
       OBJECTIVE_FILE_NAME
     );
 
-    const fileContents = await readFile(objectivePath);
-    if (!fileContents) {
+    const objectiveInfo = await this.readObjectiveConfig(objectivePath);
+    if (!objectiveInfo) {
       throw new Error(
         `The objective "${objectiveName}" does not have an ${OBJECTIVE_FILE_NAME} file.`
       );
     }
 
-    const objectiveInfo = JSON.parse(fileContents);
     objectiveInfo.objectiveName = objectiveName;
 
     return objectiveInfo;

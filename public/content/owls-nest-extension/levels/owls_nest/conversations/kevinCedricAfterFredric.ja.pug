@@ -1,0 +1,34 @@
+- const STATE_KEY = 'com.twilioquest.owls_nest';
+- const worldState = getState(STATE_KEY);
+
+conversation(display_name="Kevin")
+  case lastResponse
+    when "how_shut_it_down"
+      statement#how_shut_it_down
+      responses
+        response#on_it.
+          任せてください。ライアンを見つけて解除コードを受け取ります。
+
+    when "on_it"
+      statement#not_much_time
+      responses
+
+    default
+      statement#oh_no
+      responses
+        response#how_shut_it_down.
+          どうにか止める方法はないんですか？
+
+  statements
+    statement#not_much_time
+      text.
+        封鎖が始まったとき、ライアンは機関室で駆動コイルの作業をしていたはずだ。しかも<span class="highlight">燃料漏れで火災が起き、閉じ込められた</span>らしい。<br/><br/>なんとかライアンを見つけて、<span class="highlight">解除コードをフォグ・オウルのそばの端末に持ってきてくれ</span>。自爆はできる限り遅らせるが、急いでくれ。
+    statement#how_shut_it_down
+      text.
+        セドリックなら進行を遅らせられる。でも止めるには管理者用の解除コードが必要だ。フォグ・オウルの主任設計者、<span class="highlight">ライアン</span>がそのコードの入ったトークンを持っているはずだ。
+    statement#oh_no
+      text.
+        フレドリック……道を踏み外していたのは分かっていたけど、レガシーシステムと手を組むとは。どうやったかは分からないが、警備プロトコルを無効にしてフォグ・オウルの自爆シーケンスを起動したようだ。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

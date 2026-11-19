@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import ga from '../common/analytics';
 import sharedListener from '../common/listener';
@@ -8,7 +9,7 @@ import { getContext, setContext } from '../common/context';
 const CINEMATIC_PAGE = './cinematic';
 const CINEMATIC_PAGE_TITLE = 'Mission Cinematic Cinematic';
 
-export default class TitleScreen extends React.Component {
+class TitleScreen extends React.Component {
   static propTypes = {
     close: PropTypes.func,
   };
@@ -117,17 +118,18 @@ export default class TitleScreen extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const startScreen = (
       <div className="inner">
         <div className="logo" style={{ 
           fontSize: '3em',
           textAlign: 'center' 
         }}>
-          <img src="images/app/logo.png"/>
+          <img src="images/app/logo.png" alt="TerminalQuest" />
         </div>
         <div className="controls">
           <span onClick={() => this.onPlayerPressedStart()}>
-            press spacebar to start
+            {t('ui.title.pressStart')}
           </span>
           {!getContext('hasSeenCinematic') ? (
             ''
@@ -141,7 +143,7 @@ export default class TitleScreen extends React.Component {
               }}
             >
               <i className="fas fa-play" />
-              &nbsp;mission briefing
+              &nbsp;{t('ui.title.briefing')}
             </span>
           )}
         </div>
@@ -152,10 +154,10 @@ export default class TitleScreen extends React.Component {
       <div className="cinematic">
         <div className="metaControls">
           <span onClick={() => this.hideCinematic()}>
-            Back to Title (ESC Key)
+            {t('ui.title.back')}
           </span>
           <span onClick={() => this.toggleMute()}>
-            {this.state.muteCinematic ? 'UNMUTE' : 'MUTE'} AUDIO
+            {this.state.muteCinematic ? t('ui.title.unmute') : t('ui.title.mute')}
           </span>
           <span
             onClick={() => {
@@ -177,7 +179,7 @@ export default class TitleScreen extends React.Component {
               this.onPlayerPressedStart();
             }}
           >
-            Start Game (SPACEBAR)
+            {t('ui.title.start')}
           </span>
         </div>
         <video
@@ -198,3 +200,5 @@ export default class TitleScreen extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(TitleScreen);

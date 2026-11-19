@@ -13,6 +13,7 @@
 //   app makes at startup, backed by an empty store, an empty save, and an audio
 //   directory that lists as empty (so the audio gate passes without decoding);
 // - IndexedDB: fake-indexeddb (jsdom has none, a webview does);
+// - fetch: only the startup user-sync POST is answered, with no network I/O;
 // - canvas (`getContext` returns null) and jsdom's layout-less rendering.
 // The classic scripts of index.html (firebase, ace, Phaser) are the real files.
 // Everything else (all app code, React, styled-components, ejs, pug, ...) is the
@@ -40,6 +41,7 @@ const logs = [];
 // EVERY console.error of the page (logs is only the tail, for diagnosis)
 const errors = [];
 const ipcCalls = [];
+let shellLabels;
 
 const APP_DATA = '/mock/config';
 // The bundle resource directory has the layout of public/ (docs/migration/
@@ -154,7 +156,11 @@ const ipcHandlers = {
   'plugin:app|version': () => APP_VERSION,
   'plugin:app|name': () => 'terminalquest',
   is_dev: () => false,
-  // The Help menu (platform/tauri/menu.js): listen first, then enable
+  // The native labels and Help menu (platform/tauri/menu.js)
+  set_shell_texts: payload => {
+    shellLabels = payload;
+    return null;
+  },
   'plugin:event|listen': () => 1,
   enable_help_menu: () => null,
   'plugin:store|load': () => 1,
@@ -162,7 +168,12 @@ const ipcHandlers = {
   'plugin:store|reload': () => {
     throw NOT_FOUND;
   },
-  'plugin:store|get': () => [null, false],
+  'plugin:store|get': ({ key }) => {
+    if (scenario === 'saved-japanese' && key === 'settings') {
+      return [{ avatar: 1, name: 'Player', language: 'ja' }, true];
+    }
+    return [null, false];
+  },
   'plugin:store|set': () => null,
   'plugin:store|save': () => null,
   'plugin:store|has': () => false,
@@ -225,6 +236,13 @@ function createWindow() {
   // Web platform APIs of a webview that jsdom lacks
   window.TextEncoder = TextEncoder;
   window.TextDecoder = TextDecoder;
+  window.fetch = async (url, options) => {
+    if (url !== 'https://twilioquest-prod.firebaseapp.com/quest/api/v1/user-sync' ||
+        options?.method !== 'POST') {
+      throw new Error(`boot test: unexpected fetch ${options?.method ?? 'GET'} ${url}`);
+    }
+    return new Response(null, { status: 204 });
+  };
   // The classic scripts of index.html that run before index.js (real ones)
   CLASSIC_SCRIPTS.forEach(script => {
     window.eval(fs.readFileSync(path.join(stagedDir, script), 'utf8'));
@@ -282,6 +300,8 @@ function snapshot() {
   return {
     loading: Boolean(window.document.querySelector('#app .__loading')),
     title: Boolean(window.document.querySelector('.TitleScreen')),
+    titleControls: window.document.querySelector('.TitleScreen .controls')?.textContent.trim(),
+    lang: window.document.documentElement.lang,
     appHtml: app ? app.innerHTML.slice(0, 300) : null,
   };
 }
@@ -311,6 +331,7 @@ async function main() {
     logs: logs.slice(-40),
     errors,
     ipcCalls,
+    shellLabels,
     leaked,
   }, () => process.exit(0));
 }

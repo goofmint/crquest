@@ -3,6 +3,8 @@ import useSpriteSheet from '../hooks/useSpriteSheet';
 
 const NavMapButton = ({
   onClick,
+  label,
+  visibleLabel,
   config: { sheet, tileWidth, tileHeight, scale, raisedFrame, pressedFrame },
 }) => {
   const [pressed, setPressed] = useState(false);
@@ -24,6 +26,7 @@ const NavMapButton = ({
   return (
     <button
       className="nav-map__button"
+      aria-label={label}
       onClick={onClick}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
@@ -33,6 +36,11 @@ const NavMapButton = ({
         row: pressed ? pressedFrame.row : raisedFrame.row,
         col: pressed ? pressedFrame.col : raisedFrame.col,
       })}
+      {visibleLabel && (
+        <span aria-hidden="true" className="nav-map__button-label">
+          {visibleLabel}
+        </span>
+      )}
     </button>
   );
 };

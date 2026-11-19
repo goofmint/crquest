@@ -1,0 +1,13 @@
+{
+  "text": {
+    "bookshelf": "面白そうな本がたくさん並んでいる。",
+    "drawerBookshelf": "あの引き出しには何が入っているんだろう……",
+    "blueCrystalFormation": "純粋な<span style=\"color: blue\">ブルーアニウム</span>のかけらだ！",
+    "redCrystalFormation": "固体の<span style=\"color: red\">レッドアイト</span>のかけらだ！",
+    "pinkCrystalFormation": "純度 100% の<span style=\"color: pink\">ピンクジェン</span>のかけらだ！",
+    "greenCrystalFormation": "<span style=\"color: green\">グリーンドレート</span>のかけらだ！",
+    "tombstoneRIP": "名前はよく読み取れない……",
+    "vaseRed": "きれいな花瓶だ！",
+    "crate": "雑多な物が入った箱だ。"
+  }
+}

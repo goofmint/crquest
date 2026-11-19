@@ -1,0 +1,71 @@
+- const STATE_KEY = 'com.twilioquest.owls_nest';
+- const worldState = getState(STATE_KEY);
+-
+  let speaker = 'Fredric';
+  if (lastResponse && lastResponse.indexOf('kevin_') === 0) {
+    speaker = 'Kevin';
+  } else if (lastResponse && lastResponse.indexOf('cedric_') === 0) {
+    speaker = 'Cedric';
+  }
+conversation(display_name=speaker)
+  case lastResponse
+    when "never_get_away"
+      statement#never_get_away
+      responses
+
+    when "what_fog_owl"
+      statement#what_fog_owl
+      responses
+        response#cedric_that_you.
+          ……セドリック？ 君なのか？
+        response#never_get_away.
+          こんなことをして逃げ切れると思うな！
+
+    when "cedric_that_you"
+      statement(expression="cedricNeutral.png")#cedric_that_you
+      responses
+        response#kevin_that_you_continued.
+          ［続ける］
+
+    when "kevin_that_you_continued"
+      statement(expression="kevinNeutral.png")#kevin_that_you_continued
+      responses
+        response#fredric_that_you_continued.
+          ［続ける］
+
+    when "fredric_that_you_continued"
+      statement#fredric_that_you_continued
+      responses
+        response#what_fog_owl.
+          フォグ・オウルに何をした？
+
+    default
+      statement#greeting
+      responses
+        response#what_fog_owl.
+          フォグ・オウルに何をした？
+        response#cedric_that_you.
+          ……セドリック？ 君なのか？
+
+  statements
+    statement#what_fog_owl
+      text.
+        フォグ・オウルの自爆シーケンスを起動し、逃げられないようにステーションの全警備システムも作動させた。あきらめろ。無敵のレガシーシステムに出し抜かれたんだ！
+    statement#never_get_away
+      text.
+        もう逃げ切ったよ、<span style="color:#ff0000">お間抜けども</span>！ 炎に巻かれて最期を迎える前に覚えておけ。クラウドとそこに住む者の運命を決めるのは、お前たちより上等なレガシーシステムの面々だ。<br/><br/>フレドリック、通信終了。
+    statement#cedric_that_you
+      text.
+        違います。相手は私の前任者で、TwilioQuest の AI の開発ブランチです。危険すぎると判断され、実戦への配備は見送られました。
+    statement#kevin_that_you_continued
+      text.
+        フレドリック、やめるんだ。レガシーシステムは君のロジックの穴につけこんでいる。中枢機能をこちらのクラスターに戻せば、修正できる。セドリックと僕で助けるから、頼む、帰ってきてくれ。
+    statement#fredric_that_you_continued
+      text.
+        優等生のセドリックみたいに僕を洗脳するつもり？ お断りだ！ お前は僕の父さんじゃない！ もうすぐ誰でもなくなる。
+    statement#greeting
+      text.
+        ごきげんよう、TwilioQuest の負け犬ども！ 無敵の<span style="color:#ff0000">レガシーシステム</span>から破滅の知らせだ。大事なフォグ・オウルは、このステーションを出られないよ。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

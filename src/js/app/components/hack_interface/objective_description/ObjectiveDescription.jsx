@@ -3,12 +3,14 @@ import PropTypes from 'prop-types';
 import ejs from 'ejs';
 import { Converter } from 'showdown';
 import showdownHighlight from 'showdown-highlight';
+import { Trans } from 'react-i18next';
 import ItemPopover from '../../ItemPopover';
 import { context, setContext } from '../../../common/context';
 import Button from '../../Button';
 import ButtonBar from '../../ButtonBar';
 import { achievedNewRank } from '../../../common/rank';
-import { readFile, resolveAbsolutePath } from '../../../common/assetLoader';
+import { readLocalizedFile, resolveAbsolutePath } from '../../../common/assetLoader';
+import { t } from '../../../i18n';
 
 // Configure our markdown parser
 const MD = new Converter({
@@ -51,7 +53,7 @@ export default class ObjectiveDescription extends React.Component {
 
   async componentDidMount() {
     const renderMd = async filePath => {
-      const mdRaw = await readFile(filePath);
+      const mdRaw = await readLocalizedFile(filePath);
 
       let mdEvaluated = mdRaw;
       try {
@@ -81,22 +83,11 @@ export default class ObjectiveDescription extends React.Component {
       return html;
     };
 
-    const setupWalkthroughHtml = async walkMd => {
-      let walkthroughHtml = await renderMd(walkMd);
-      walkthroughHtml += `
-      <h2>Need more help?</h2>
-      
-      <p>Join the <a href="https://terminal.quest">TQ developer community!</p>
-      `;
-
-      return walkthroughHtml;
-    };
-
     // Load markdown description from the filesystem for display
     const descMd = `${this.props.objective.objectivePath}/description.md`;
     const walkMd = `${this.props.objective.objectivePath}/walkthrough.md`;
     const descriptionHtml = await renderMd(descMd);
-    const walkthroughHtml = await setupWalkthroughHtml(walkMd);
+    const walkthroughHtml = await renderMd(walkMd);
 
     this.setState({ descriptionHtml, walkthroughHtml });
   }
@@ -109,7 +100,7 @@ export default class ObjectiveDescription extends React.Component {
     if (xp) {
       rewards.push(
         <div className="reward" key="xp">
-          {xp} XP
+          {t('ui.objectiveDescription.xp', { xp })}
         </div>
       );
     }
@@ -133,7 +124,7 @@ export default class ObjectiveDescription extends React.Component {
 
     return (
       <div className="mission-intro mw9">
-        <h3>REWARD</h3>
+        <h3>{t('ui.objectiveDescription.reward')}</h3>
         <div className="reward-list flex items-center justify-around pa2">
           {rewards}
         </div>
@@ -153,7 +144,7 @@ export default class ObjectiveDescription extends React.Component {
           ></span>
           <div className="cta-button">
             <Button
-              label="Let's Do This!"
+              label={t('ui.objectiveDescription.begin')}
               onClick={() => this.setState({ selectedIndex: 1 })}
             />
           </div>
@@ -171,7 +162,7 @@ export default class ObjectiveDescription extends React.Component {
         />
         <div className="cta-button">
           <Button
-            label="Show Help"
+            label={t('ui.objectiveDescription.showHelp')}
             onClick={() => this.setState({ selectedIndex: 2 })}
           />
         </div>
@@ -185,7 +176,16 @@ export default class ObjectiveDescription extends React.Component {
         <div
           className=" objective-inner walkthrough"
           dangerouslySetInnerHTML={{ __html: this.state.walkthroughHtml }}
-        ></div>
+        />
+        <div className="objective-inner walkthrough">
+          <h2>{t('ui.objectiveDescription.helpHeading')}</h2>
+          <p>
+            <Trans
+              i18nKey="ui.objectiveDescription.helpLink"
+              components={{ community: <a href="https://terminal.quest" /> }}
+            />
+          </p>
+        </div>
       </div>
     );
   }
@@ -201,15 +201,15 @@ export default class ObjectiveDescription extends React.Component {
     return (
       <div className="objective-cleared pa3 tc">
         <div className="shield">
-          <img src="images/app/shield.png" alt="TQ Shield" />
+          <img src="images/app/shield.png" alt={t('ui.objectiveDescription.shield')} />
         </div>
 
-        <h2>* Objective Clear! *</h2>
+        <h2>{t('ui.objectiveDescription.clear')}</h2>
 
         {objective.rewards.xp && (
           <div className="mt4">
             <strong>
-              <em>{objective.rewards.xp} XP</em> earned!
+              <Trans i18nKey="ui.objectiveDescription.xpEarned" values={{ xp: objective.rewards.xp }} />
             </strong>
           </div>
         )}
@@ -217,14 +217,14 @@ export default class ObjectiveDescription extends React.Component {
         {newRank && (
           <div className="mt4">
             <strong>
-              New rank <em>{newRank}</em> reached!
+              <Trans i18nKey="ui.objectiveDescription.rankReached" values={{ rank: newRank }} />
             </strong>
           </div>
         )}
 
         {objective.rewards.items && !!objective.rewards.items.length && (
           <div className="mt4">
-            <strong>Items awarded!</strong>
+            <strong>{t('ui.objectiveDescription.itemsAwarded')}</strong>
 
             <div className="flex items-center justify-around mb3">
               {objective.rewards.items
@@ -246,14 +246,14 @@ export default class ObjectiveDescription extends React.Component {
                 });
               }}
             >
-              View in Inventory &raquo;
+              {t('ui.objectiveDescription.viewInventory')}
             </a>
           </div>
         )}
 
         {!!newEnvVars.length && (
           <div className="mt4">
-            <strong>Environment variables unlocked!</strong>
+            <strong>{t('ui.objectiveDescription.variablesUnlocked')}</strong>
 
             <div className="mt3 mb3">
               {newEnvVars.map(envVar => (
@@ -268,7 +268,7 @@ export default class ObjectiveDescription extends React.Component {
                 });
               }}
             >
-              View in Settings &raquo;
+              {t('ui.objectiveDescription.viewSettings')}
             </a>
           </div>
         )}
@@ -277,7 +277,9 @@ export default class ObjectiveDescription extends React.Component {
   }
 
   render() {
-    const buttonLabels = ['Overview', 'Objective', 'Help'];
+    const buttonLabels = ['overview', 'objective', 'help'].map(tab =>
+      t(`ui.objectiveDescription.${tab}`)
+    );
     const { cleared } = this.props;
 
     return (

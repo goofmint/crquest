@@ -5,7 +5,12 @@ module.exports = async function (helper) {
     });
 
     if (!filePath) {
-      helper.fail("You need to provide a file path in the Hack Interface!");
+      helper.fail(
+        helper.t(
+          "missingInput",
+          "You need to provide a file path in the Hack Interface!"
+        )
+      );
       return;
     }
 
@@ -14,9 +19,14 @@ module.exports = async function (helper) {
 
     if (!helper.areArrayContentsEqual(pathParts, expectedPathParts)) {
       helper.fail(
-        `Your entered file path "${filePath}" did not match the expected path to Cedric's YouTube video file "${helper.formatPathPartsForOs(
-          ...expectedPathParts
-        )}".`
+        helper.t(
+          "incorrectPath",
+          'Your entered file path "{{filePath}}" did not match the expected path to Cedric\'s YouTube video file "{{expectedPath}}".',
+          {
+            filePath,
+            expectedPath: helper.formatPathPartsForOs(...expectedPathParts),
+          }
+        )
       );
       return;
     }
@@ -25,7 +35,10 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success(`
-  You found Cedric's YouTube video! He'll be delighted to hear about this!
-`);
+  helper.success(
+    helper.t(
+      "success",
+      "\n  You found Cedric's YouTube video! He'll be delighted to hear about this!\n"
+    )
+  );
 };

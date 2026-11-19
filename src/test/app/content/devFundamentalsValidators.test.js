@@ -40,6 +40,7 @@ const makeHelper = ({
   env = {},
   platform = 'linux',
   exec,
+  messages = {},
 } = {}) => {
   const result = {};
   const helper = {
@@ -51,6 +52,10 @@ const makeHelper = ({
       lstat: fs.promises.lstat,
     },
     exec: exec || vi.fn(),
+    t: (key, fallback, vars = {}) =>
+      (messages[key] ?? fallback).replace(/\{\{(\w+)\}\}/g, (match, name) =>
+        Object.hasOwn(vars, name) ? String(vars[name]) : match
+      ),
     getNormalizedInput: key => fields[key] || '',
     getFilePathPartsArray: filePath => filePath.split(path.sep),
     formatPathPartsForOs: (...parts) => parts.join(path.sep),
@@ -72,6 +77,27 @@ beforeEach(() => {
 });
 afterEach(() => {
   jetpack.remove(dir);
+});
+
+describe('fs-01-path in Japanese', () => {
+  const validate = validatorOf('fs-01-path');
+  const messages = JSON.parse(
+    fs.readFileSync(path.join(OBJECTIVES, 'fs-01-path', 'messages.ja.json'), 'utf8')
+  );
+
+  test('keeps the original answer and interpolates paths in translated feedback', async () => {
+    const correctPath = ['cedric', 'robot_thoughts', 'youtube_video.mp4'].join(path.sep);
+    const valid = makeHelper({ fields: { filePath: correctPath }, messages });
+    await validate(valid.helper);
+    expect(valid.result.success.message).toContain('YouTube 動画が見つかりました');
+
+    const incorrectPath = ['cedric', 'youtube_video.mp4'].join(path.sep);
+    const invalid = makeHelper({ fields: { filePath: incorrectPath }, messages });
+    await validate(invalid.helper);
+    expect(invalid.result.fail).toBe(
+      `入力されたパス「${incorrectPath}」は、セドリックの YouTube 動画へのパス「${correctPath}」と一致しません。`
+    );
+  });
 });
 
 describe('fs-02-pwd', () => {

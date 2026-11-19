@@ -26,7 +26,7 @@ function missingTemplateError(path) {
   return error;
 }
 
-export async function renderConversationTemplate(absolutePath, context) {
+export async function compileConversationTemplate(absolutePath, context) {
   // path -> { source } | { failure }
   const files = new Map();
 
@@ -60,10 +60,16 @@ export async function renderConversationTemplate(absolutePath, context) {
   const options = { ...context, plugins: [plugin] };
   for (;;) {
     try {
-      return pug.compile(root.source, options)(options);
+      const render = pug.compile(root.source, options);
+      return () => render(options);
     } catch (error) {
       if (!error.missingTemplate) throw error;
       await load(error.missingTemplate);
     }
   }
+}
+
+export async function renderConversationTemplate(absolutePath, context) {
+  const render = await compileConversationTemplate(absolutePath, context);
+  return render();
 }

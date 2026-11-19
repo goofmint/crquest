@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-shell-texts"
+description = "Enables the set_shell_texts command without any pre-configured scope."
+commands.allow = ["set_shell_texts"]
+
+[[permission]]
+identifier = "deny-set-shell-texts"
+description = "Denies the set_shell_texts command without any pre-configured scope."
+commands.deny = ["set_shell_texts"]

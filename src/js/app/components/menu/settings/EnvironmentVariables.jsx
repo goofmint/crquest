@@ -1,8 +1,9 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import ConcealedInputField from './ConcealedInputField';
 
-export default class EnvironmentVariables extends React.Component {
+class EnvironmentVariables extends React.Component {
   static propTypes = {
     env: PropTypes.object,
     onFocus: PropTypes.func,
@@ -19,36 +20,37 @@ export default class EnvironmentVariables extends React.Component {
   }
 
   renderLockControl() {
+    const { t } = this.props;
     return (
       <span key="envToggle"
         className="underline pointer"
         onClick={this.toggleEnvVarLock.bind(this)}
       >
-        {this.state.envVarsLocked ? 'Unlock' : 'Lock'}
+        {this.state.envVarsLocked ? t('ui.variables.unlock') : t('ui.variables.lock')}
       </span>
     );
   }
 
   renderEmptyState() {
+    const { t } = this.props;
     return (
       <h5>
-        Variables will appear here when unlocked in missions.
+        {t('ui.variables.empty')}
       </h5>
     );
   }
 
   render() {
+    const { t } = this.props;
     const envKeys = Object.keys(this.props.env);
 
     return (
       <div>
         <h3 className="mb2" key="title">
-          Environment Variables
+          {t('ui.variables.title')}
         </h3>
         <p>
-          Missions in TerminalQuest will save important data as "environment
-          variables" to use them across different missions. If you need to change
-          any of them, click "Unlock" and edit them using the fields below.
+          {t('ui.variables.description')}
         </p>
         {!!envKeys.length ? this.renderLockControl() : this.renderEmptyState()}
         {envKeys
@@ -60,6 +62,7 @@ export default class EnvironmentVariables extends React.Component {
                 <div key={key}>
                   <p className="mb2">{key}</p>
                   <ConcealedInputField
+                    aria-label={key}
                     className="pa2 w-100 mw7"
                     onChange={value => this.props.onChange(key, value, 'env')}
                     type="text"
@@ -75,6 +78,7 @@ export default class EnvironmentVariables extends React.Component {
                 <div key={key}>
                   <p className="mb2">{key}</p>
                   <input
+                    aria-label={key}
                     className="pa2 w-100 mw7"
                     onChange={evt =>
                       this.props.onChange(key, evt.target.value, 'env')
@@ -93,3 +97,5 @@ export default class EnvironmentVariables extends React.Component {
     );
   }
 }
+
+export default withTranslation()(EnvironmentVariables);

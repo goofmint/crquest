@@ -348,6 +348,7 @@
     "allow-is-dev",
     "allow-open-devtools",
     "allow-toggle-devtools",
-    "allow-enable-help-menu"
+    "allow-enable-help-menu",
+    "allow-set-shell-texts"
   ]
 }

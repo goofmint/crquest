@@ -9,8 +9,8 @@
  * calls `enable_help_menu`, so no click can arrive without a listener.
  * HELP_MENU_EVENT and the ids mirror help_menu.rs; keep both in sync.
  *
- * `addHelpMenuItems(items)` takes the same `{ label, click }` list as the
- * Electron module and returns undefined (not awaited by the caller). Setup is
+ * `addHelpMenuItems(items)` takes an `{ id, label, click }` list and returns
+ * undefined (not awaited by the caller). Setup is
  * asynchronous, so a failure is reported (console and dialog), never dropped.
  * - "Sync Bundled Assets": the shared `click` of `items`. The setup fails when
  *   it is missing.
@@ -28,6 +28,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { appDataDir, join } from '@tauri-apps/api/path';
+import { t } from '../../i18n';
 import { showAlert } from './dialog';
 import { toggleDevTools } from './devtools';
 import { openPath } from './shell';
@@ -36,7 +37,36 @@ import { STORE_FILE } from './storeFile';
 
 const HELP_MENU_EVENT = 'help-menu-click';
 const ENABLE_COMMAND = 'enable_help_menu';
-const SYNC_LABEL = 'Sync Bundled Assets';
+const SYNC_ID = 'help-sync-assets';
+const MENU_LABELS = {
+  help: 'shell.menu.help',
+  'help-toggle-devtools': 'shell.menu.toggleDevtools',
+  [SYNC_ID]: 'shell.menu.syncAssets',
+  'help-open-user-data': 'shell.menu.openUserData',
+  'help-open-save-file': 'shell.menu.openSaveFile',
+  'quit-with-confirmation': 'shell.menu.quit',
+};
+
+export function getHelpMenuLabel(id) {
+  return t(MENU_LABELS[id]);
+}
+
+export async function updateShellTexts() {
+  const menuLabels = Object.fromEntries(
+    Object.keys(MENU_LABELS).map(id => [id, getHelpMenuLabel(id)])
+  );
+  const closeDialog = {
+    title: t('shell.dialog.quitTitle'),
+    message: t('shell.dialog.quitMessage'),
+    ok: t('shell.dialog.ok'),
+    cancel: t('shell.dialog.cancel'),
+  };
+  try {
+    await rejectAsError(invoke('set_shell_texts', { menuLabels, closeDialog }));
+  } catch (error) {
+    console.error(failureText(t('shell.errors.updateTexts'), error.message), error);
+  }
+}
 
 async function openAppDataDirectory() {
   await openPath(await rejectAsError(appDataDir()));
@@ -48,23 +78,28 @@ async function openStoreFile() {
 }
 
 function createActions(items) {
-  const sync = items.find(item => item.label === SYNC_LABEL);
+  const sync = items.find(item => item.id === SYNC_ID);
   if (!sync) {
-    throw new Error(`The menu item "${SYNC_LABEL}" was not provided`);
+    throw new Error(t('shell.errors.missingMenuItem', { item: getHelpMenuLabel(SYNC_ID) }));
   }
   return {
-    'help-toggle-devtools': { title: 'Toggling the developer tools', run: toggleDevTools },
-    'help-sync-assets': { title: SYNC_LABEL, run: sync.click },
-    'help-open-user-data': { title: 'Opening the user data directory', run: openAppDataDirectory },
-    'help-open-save-file': { title: 'Opening the save file', run: openStoreFile },
+    'help-toggle-devtools': { title: 'shell.errors.toggleHelpDevtools', run: toggleDevTools },
+    [SYNC_ID]: { title: 'shell.errors.syncAssets', run: sync.click },
+    'help-open-user-data': { title: 'shell.errors.openUserData', run: openAppDataDirectory },
+    'help-open-save-file': { title: 'shell.errors.openSaveFile', run: openStoreFile },
   };
 }
 
-async function reportFailure(title, reason) {
+function failureText(action, message) {
+  return t('shell.errors.failed', { action, message });
+}
+
+async function reportFailure(titleKey, reason) {
   // A rejection can be null, undefined, a string or any object
   const error = toError(reason);
-  console.error(`${title} failed:`, error);
-  await showAlert(`${title} failed: ${error.message}`);
+  const text = failureText(t(titleKey), error.message);
+  console.error(text, error);
+  await showAlert(text);
 }
 
 /** Resolves once the listener is installed and the items are enabled. */
@@ -72,11 +107,11 @@ async function installHelpMenu(items) {
   const actions = createActions(items);
   await rejectAsError(
     listen(HELP_MENU_EVENT, event => {
-      const action = actions[event.payload];
+      const action = Object.hasOwn(actions, event.payload) && actions[event.payload];
       if (!action) {
         reportFailure(
-          'Help menu',
-          new Error(`Unknown menu item id: ${JSON.stringify(event.payload)}`)
+          'shell.errors.helpMenu',
+          new Error(t('shell.errors.unknownMenuId', { id: JSON.stringify(event.payload) }))
         ).catch(console.error);
         return;
       }
@@ -91,6 +126,6 @@ async function installHelpMenu(items) {
 
 export function addHelpMenuItems(items) {
   installHelpMenu(items).catch(error =>
-    reportFailure('Setting up the Help menu', error).catch(console.error)
+    reportFailure('shell.errors.setupHelp', error).catch(console.error)
   );
 }

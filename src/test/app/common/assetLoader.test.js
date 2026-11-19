@@ -5,6 +5,10 @@ import {
   readDirectory,
   doesPathExist,
   resolveAbsolutePath,
+  readLocalizedAsset,
+  readLocalizedJson,
+  readContentMessages,
+  contentMessage,
   requireFromExtension,
   syncBundledAssets,
   isPathFromBundledExtension,
@@ -60,6 +64,128 @@ beforeEach(() => {
 afterEach(() => {
   // restore mocked console.error
   console.error = consoleErrorFunction;
+});
+
+describe('localized assets', () => {
+  const assetPath = (file, language) =>
+    readLocalizedAsset(file, absolutePath => absolutePath, { language });
+
+  beforeEach(() => {
+    mockConfig();
+    mockExtensionsContext();
+  });
+
+  test('uses the translation in the extension that owns the original', async () => {
+    expect(await assetPath('bundled-extension-file.md', 'ja'))
+      .toBe(path.join(PUBLIC_PATH, 'content/twilioquest-base/bundled-extension-file.ja.md'));
+  });
+
+  test('uses the overriding extension’s English original when it has no translation', async () => {
+    const asset = 'overridden-bundled-extension-file.md';
+    const resolved = await assetPath(asset, 'ja');
+    expect(resolved).toBe(await resolveAbsolutePath(asset));
+    expect(resolved).toContain('bbb-minimal-config-extension');
+  });
+
+  test.each(['en', 'ja'])('falls back to the original when needed (%s)', async language => {
+    const asset = 'bundled-file.txt';
+    expect(await assetPath(asset, language))
+      .toBe(await resolveAbsolutePath(asset));
+  });
+
+  test('uses the original when a localized file cannot be loaded', async () => {
+    const asset = 'bundled-extension-file.md';
+    const read = vi.fn().mockRejectedValueOnce(new Error('Invalid translation'))
+      .mockResolvedValueOnce('English source');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await expect(readLocalizedAsset(asset, read, { language: 'ja' }))
+        .resolves.toBe('English source');
+      expect(read).toHaveBeenNthCalledWith(1, await assetPath(asset, 'ja'));
+      expect(read).toHaveBeenNthCalledWith(2, await assetPath(asset, 'en'));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('ignores directories with translation file names', async () => {
+    const dir = jetpack.dir(path.join(FIXTURES_PATH, 'public/localization-directory'));
+    try {
+      dir.write('description.md', 'English');
+      dir.dir('description.ja.md');
+      const read = vi.fn().mockResolvedValue('English');
+      const options = { language: 'ja', extensions: [{ absolutePath: dir.cwd() }] };
+      await expect(readLocalizedAsset('description.md', read, options)).resolves.toBe('English');
+      expect(read).toHaveBeenCalledExactlyOnceWith(dir.path('description.md'));
+    } finally {
+      dir.remove('.');
+    }
+  });
+
+  test('overlays only allowed strings and matches named entries in the original order', async () => {
+    const dir = jetpack.dir(path.join(FIXTURES_PATH, 'public/localization-fixture'));
+    try {
+      dir.write('objective.json', {
+        title: 'Objective',
+        validation_fields: [
+          { name: 'answer', label: 'Answer', type: 'text' },
+          { name: 'command', label: 'Command', type: 'text' },
+        ],
+      });
+      dir.write('objective.ja.json', {
+        title: '目標',
+        validation_fields: [
+          { name: 'command', label: 'コマンド' },
+          { name: 'answer', label: '答え', type: 'tampered' },
+          { name: 'new', label: '追加' },
+        ],
+      });
+      const fields = { title: true, validation_fields: { label: true } };
+      const options = { language: 'ja', extensions: [{ absolutePath: dir.cwd() }] };
+      expect(await readLocalizedJson('objective.json', fields, options)).toEqual({
+        title: '目標',
+        validation_fields: [
+          { name: 'answer', label: '答え', type: 'text' },
+          { name: 'command', label: 'コマンド', type: 'text' },
+        ],
+      });
+    } finally {
+      dir.remove('.');
+    }
+  });
+
+  test('reads messages next to the original and interpolates values as text', async () => {
+    const dir = jetpack.dir(path.join(FIXTURES_PATH, 'public/messages-fixture'));
+    try {
+      dir.write('validator.js', '');
+      dir.write('messages.ja.json', { ready: '準備完了 {{name}}' });
+      const options = { language: 'ja', extensions: [{ absolutePath: dir.cwd() }] };
+      const messages = await readContentMessages('validator.js', options);
+      expect(contentMessage(messages, 'ready', 'Ready', { name: '<player>' }))
+        .toBe('準備完了 <player>');
+      expect(contentMessage(messages, 'missing', 'Hello {{name}}', { name: 'Player' }))
+        .toBe('Hello Player');
+    } finally {
+      dir.remove('.');
+    }
+  });
+
+  test('falls back when optional JSON is malformed', async () => {
+    const dir = jetpack.dir(path.join(FIXTURES_PATH, 'public/invalid-localization-fixture'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      dir.write('level.json', { title: 'English' });
+      dir.write('level.ja.json', '{oops');
+      dir.write('messages.ja.json', ['not a message table']);
+      const options = { language: 'ja', extensions: [{ absolutePath: dir.cwd() }] };
+      await expect(readLocalizedJson('level.json', { title: true }, options))
+        .resolves.toEqual({ title: 'English' });
+      await expect(readContentMessages('level.json', options)).resolves.toEqual({});
+    } finally {
+      warn.mockRestore();
+      dir.remove('.');
+    }
+  });
 });
 
 describe('readFile', () => {

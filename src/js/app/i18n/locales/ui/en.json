@@ -1,0 +1,267 @@
+{
+  "ui": {
+    "menu": {
+      "inventory": "Inventory",
+      "journal": "Journal",
+      "settings": "Settings",
+      "help": "Help",
+      "close": "Close Menu"
+    },
+    "journal": {
+      "empty": "No Quests Found.",
+      "title": "Quest Journal",
+      "active": "Active Quests",
+      "completed": "Completed Quests"
+    },
+    "hud": {
+      "returnConfirm": "Return to the Fog Owl?",
+      "xp": "XP:",
+      "rank": "Rank:",
+      "defaultObjective": "Explore The Cloud and build your programming skills!",
+      "return": "Return to Fog Owl",
+      "inventoryShortcut": "Inventory (1)",
+      "journalShortcut": "Journal (2)",
+      "settingsShortcut": "Settings (3)",
+      "helpShortcut": "Help (4)",
+      "returnShortcut": "Return to Fog Owl (5)",
+      "noRank": "None"
+    },
+    "title": {
+      "pressStart": "press spacebar to start",
+      "briefing": "mission briefing",
+      "back": "Back to Title (ESC Key)",
+      "unmute": "UNMUTE AUDIO",
+      "mute": "MUTE AUDIO",
+      "start": "Start Game (SPACEBAR)"
+    },
+    "onboarding": {
+      "name": "Enter your name",
+      "avatar": "Select your avatar",
+      "login": "Operator Login",
+      "welcome": "Welcome, {{name}}.",
+      "connected": "You are connected to {{event}}.",
+      "start": "Press <keyCap>[ENTER]</keyCap> to start",
+      "continue": "Press <keyCap>[ENTER]</keyCap> to continue",
+      "back": " or <keyCap>[ESC]</keyCap> to go back",
+      "joinQuestion": "Do you have an adventure team join code?",
+      "no": "NO",
+      "yes": "YES",
+      "joinEnter": "Enter your team join code:",
+      "characterAvatar": "Your character avatar"
+    },
+    "conversation": {
+      "end": "<end conversation>"
+    },
+    "objectiveDescription": {
+      "xp": "{{xp}} XP",
+      "reward": "REWARD",
+      "begin": "Let's Do This!",
+      "showHelp": "Show Help",
+      "helpHeading": "Need more help?",
+      "helpLink": "Join the <community>TQ developer community</community>!",
+      "shield": "TQ Shield",
+      "clear": "* Objective Clear! *",
+      "xpEarned": "<em>{{xp}} XP</em> earned!",
+      "rankReached": "New rank <em>{{rank}}</em> reached!",
+      "itemsAwarded": "Items awarded!",
+      "viewInventory": "View in Inventory »",
+      "variablesUnlocked": "Environment variables unlocked!",
+      "viewSettings": "View in Settings »",
+      "overview": "Overview",
+      "objective": "Objective",
+      "help": "Help"
+    },
+    "mission": {
+      "warpHere": "Warp Here >",
+      "locked": "Locked",
+      "warpPoints": "Warp Points",
+      "progress": "{{percent}}% Complete",
+      "selectTraining": "Select Training Mission",
+      "operator": "Hold up, Operator!",
+      "prerequisites": "Before you can take on this mission, you must complete these mission objectives:",
+      "launch": "LAUNCH MISSION",
+      "warpPointsLink": "Warp Points >",
+      "back": "< BACK",
+      "select": "< SELECT A MISSION"
+    },
+    "map": {
+      "empty": "No Destinations...",
+      "loading": "Navigation Loading...",
+      "noReport": "No intelligence report to assign...",
+      "loadingReport": "Loading intelligence report...",
+      "select": "SELECT A DESTINATION",
+      "exit": "Exit navigation map",
+      "go": "Travel to destination",
+      "previous": "Previous destination",
+      "next": "Next destination",
+      "exitButton": "Exit",
+      "goButton": "Go!"
+    },
+    "clearData": {
+      "first": "All user data and progress will be deleted. Continue?",
+      "second": "Seriously, we are about to delete all your items and re-set all your progress in the game. Are you very sure you want to do this?",
+      "error": "Could not clear the saved game data",
+      "erase": "Erase Game Data"
+    },
+    "ide": {
+      "initializing": "Initializing JavaScript development environment...",
+      "ready": "QuestIDE 1.0.0 ready. Welcome, Operator.",
+      "executing": "Executing your program...",
+      "confirmReset": "Discard your changes and reset to the sample code?",
+      "run": "Run Code in Editor",
+      "reset": "Reset to Initial Example Code",
+      "hide": "Hide Code Editor"
+    },
+    "validator": {
+      "directoryTitle": "Choose a folder",
+      "directoryError": "The folder dialog could not be opened. Please try again.\n\n{{error}}",
+      "back": "< Back to tutorial",
+      "tutorial": "Show Tutorial",
+      "editor": "Show Code Editor",
+      "true": "True",
+      "false": "False",
+      "chooseFolder": "Choose Folder",
+      "copied": "Copied info to clipboard!",
+      "copy": "Copy debug info",
+      "done": "DONE",
+      "hack": "HACK",
+      "analyzing": "** ANALYZING **",
+      "locked": "** LOCKED **",
+      "hacking": "** HACKING **",
+      "clear": "** CLEAR **",
+      "success": "** SUCCESS **",
+      "failed": "** FAILED **"
+    },
+    "asyncInput": {
+      "success": "Success!",
+      "error": "Error!",
+      "submit": "Submit",
+      "submitting": "Submitting..."
+    },
+    "extensions": {
+      "loaded": "loaded",
+      "failed": "failed",
+      "none": "None",
+      "noDirectory": "No directory chosen",
+      "chooseDirectory": "Choose Directory",
+      "choose": "Choose",
+      "directoryTitle": "Choose a directory to load your extensions from",
+      "external": "External Extensions",
+      "externalInfo": "These extensions are being loaded from the directory above.",
+      "bundled": "Bundled Extensions",
+      "bundledInfo": "These extensions come bundled by default when you download TerminalQuest.",
+      "disable": "Disable Extensions",
+      "directory": "Extension Directory",
+      "all": "Loaded Extensions",
+      "enableInfo": "Click the button below to enable extensions. Extensions can contain new levels, items, or features for TerminalQuest.",
+      "enable": "Enable Extensions",
+      "title": "Extensions",
+      "loadingNotice": "TerminalQuest will attempt to load extensions from the folder below. Note that some extensions may <emphasis>require you to restart the game</emphasis> before they are available (e.g. new missions in the mission computer).",
+      "warning": "<emphasis>Be careful</emphasis>! If you install extensions in TerminalQuest, those extensions will be able to execute code on your computer. Ensure that you trust the extension author before using this feature. Broken extensions can also cause the TerminalQuest game to become unstable, possibly even requiring you to reinstall the game."
+    },
+    "executable": {
+      "pathRequired": "You didn't enter a file path.",
+      "pathMissing": "The path you provided does not exist!\n\n\"{{path}}\"",
+      "notExecutable": "The path you provided isn't executable!\n\nPlease ensure this is a path to an executable and that TwilioQuest has the appropriate permissions to execute the file.\n\n\"{{path}}\"",
+      "validationFailed": "An error occured when we tried to validate we could run your executable!\n\nPath: {{path}}\nError: {{error}}"
+    },
+    "help": {
+      "movement": "Movement",
+      "assistance": "Technical Assistance",
+      "move": "Move your player with the <strong>arrow keys</strong> or the <strong>[W], [A], [S], and [D]</strong> keys.",
+      "interact": "Interact with people or objects using the <strong>spacebar</strong>.",
+      "discord": "Need help on a particular code challenge, or other technical assistance? Chat with your fellow Operators in our <discord>Discord server</discord>."
+    },
+    "audio": {
+      "title": "Audio/Music Settings",
+      "speakerMuted": "Speaker Muted",
+      "speakerOn": "Speaker On",
+      "unmute": "Unmute",
+      "mute": "Mute",
+      "master": "Master Volume",
+      "music": "Music Volume",
+      "voice": "Voice Over Volume",
+      "sfx": "SFX Volume"
+    },
+    "variables": {
+      "unlock": "Unlock",
+      "lock": "Lock",
+      "empty": "Variables will appear here when unlocked in missions.",
+      "title": "Environment Variables",
+      "description": "Missions in TerminalQuest will save important data as \"environment variables\" to use them across different missions. If you need to change any of them, click \"Unlock\" and edit them using the fields below."
+    },
+    "unlocks": {
+      "alreadyUsed": "Code already redeemed!",
+      "invalid": "Invalid Code!",
+      "redeemed": "Redeemed: \"{{item}}\"!",
+      "title": "Unlock Special Items",
+      "description": "Did you receive an unlock code for a special item in TerminalQuest? Enter the code below to add the item to your inventory!",
+      "code": "Unlock Code",
+      "redeem": "Redeem",
+      "redeeming": "Redeeming..."
+    },
+    "membership": {
+      "code": "Join code",
+      "join": "Join",
+      "joining": "Joining...",
+      "requestError": "Something went wrong!",
+      "codeRequired": "You need to enter a code!",
+      "joined": "Joined: \"{{name}}\"!"
+    },
+    "teams": {
+      "current": "Current Team(s)",
+      "leave": "Leave Team",
+      "empty": "You're not on a team right now.",
+      "missing": "This team does not exist!",
+      "already": "You're already on this team!"
+    },
+    "operations": {
+      "current": "Current Operation(s)",
+      "leave": "Leave Operation",
+      "empty": "You're not in any operations right now.",
+      "missing": "This operation does not exist!",
+      "already": "You're already in this operation!"
+    },
+    "credits": {
+      "team": "Team TerminalQuest",
+      "artwork": "Artwork",
+      "soundtrack": "Soundtrack",
+      "emeritus": "Team TerminalQuest Emeritus",
+      "contributors": "Code and Tutorial Contributors",
+      "thanks": "With Special Thanks To"
+    },
+    "inventory": {
+      "equip": "<strong>Drag/drop</strong> or <strong>double click</strong> to equip items.",
+      "all": "all",
+      "hand": "hand",
+      "head": "head",
+      "body": "body",
+      "legs": "legs",
+      "feet": "feet",
+      "accessory": "accessory",
+      "accessorySlot": "Acce"
+    },
+    "avatar": {
+      "customize": "Customize:",
+      "previous": "Previous {{feature}}",
+      "next": "Next {{feature}}",
+      "skin": "Skin",
+      "eyes": "Eyes",
+      "hairColor": "Hair Color",
+      "hairStyle": "Hair Style",
+      "custom": "Custom"
+    },
+    "elevator": {
+      "floorStatus": "Floor status",
+      "selectFloor": "Go to {{floor}}",
+      "directory": "Floor Directory"
+    },
+    "overlay": {
+      "close": "Close",
+      "loading": "Loading... URL: {{url}}",
+      "error": "Error loading URL: \"{{url}}\"",
+      "loaded": "Loaded!",
+      "frameTitle": "External content"
+    }
+  }
+}

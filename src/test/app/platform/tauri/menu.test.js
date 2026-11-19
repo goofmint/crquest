@@ -21,7 +21,8 @@ vi.mock('../../../../js/app/platform/tauri/dialog', () => ({ showAlert: mocks.sh
 vi.mock('../../../../js/app/platform/tauri/devtools', () => ({ toggleDevTools: mocks.toggleDevTools }));
 vi.mock('../../../../js/app/platform/tauri/shell', () => ({ openPath: mocks.openPath }));
 
-import { addHelpMenuItems } from '../../../../js/app/platform/tauri/menu';
+import { addHelpMenuItems, updateShellTexts } from '../../../../js/app/platform/tauri/menu';
+import { initializeI18n } from '../../../../js/app/i18n';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
@@ -54,11 +55,12 @@ describe('Tauri Help menu (#141)', () => {
     mocks.toggleDevTools.mockResolvedValue(undefined);
     syncClick = vi.fn();
     items = [
-      { label: 'Toggle Developer Tools', click: vi.fn() },
-      { label: 'Sync Bundled Assets', click: syncClick },
-      { label: 'Open User Data', click: vi.fn() },
-      { label: 'Open Save File', click: vi.fn() },
-      { label: 'Show Spector.js UI', click: vi.fn() },
+      { id: 'help-toggle-devtools', label: 'Toggle Developer Tools', click: vi.fn() },
+      { id: 'help-sync-assets', label: '同梱アセットを同期する', click: syncClick },
+      { id: 'help-open-user-data', label: 'Open User Data', click: vi.fn() },
+      { id: 'help-open-save-file', label: 'Open Save File', click: vi.fn() },
+      // A matching English label cannot take the place of the stable ID.
+      { id: 'help-show-spector', label: 'Sync Bundled Assets', click: vi.fn() },
     ];
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -96,7 +98,7 @@ describe('Tauri Help menu (#141)', () => {
   });
 
   test('fails when the Sync item is not provided', async () => {
-    await installHelpMenu(items.filter(i => i.label !== 'Sync Bundled Assets'));
+    await installHelpMenu(items.filter(i => i.id !== 'help-sync-assets'));
     expect(mocks.listen).not.toHaveBeenCalled();
     expect(mocks.invoke).not.toHaveBeenCalled();
     expect(mocks.showAlert).toHaveBeenCalledTimes(1);
@@ -140,6 +142,48 @@ describe('Tauri Help menu (#141)', () => {
     expect(mocks.showAlert).toHaveBeenCalledWith(
       'Opening the save file failed: No such file or directory (os error 2)'
     );
+  });
+
+  test('sends the native menu and confirmation texts to Rust', async () => {
+    await updateShellTexts();
+    expect(mocks.invoke).toHaveBeenCalledWith('set_shell_texts', {
+      menuLabels: {
+        help: 'Help',
+        'help-toggle-devtools': 'Toggle Developer Tools',
+        'help-sync-assets': 'Sync Bundled Assets',
+        'help-open-user-data': 'Open User Data',
+        'help-open-save-file': 'Open Save File',
+        'quit-with-confirmation': 'Quit TerminalQuest',
+      },
+      closeDialog: {
+        title: 'TerminalQuest',
+        message: 'Are you sure you want to quit TerminalQuest?',
+        ok: 'OK',
+        cancel: 'Cancel',
+      },
+    });
+  });
+
+  test('sends the selected Japanese labels and confirmation texts', async () => {
+    await initializeI18n('ja');
+    try {
+      await updateShellTexts();
+      expect(mocks.invoke).toHaveBeenCalledWith('set_shell_texts', {
+        menuLabels: expect.objectContaining({
+          help: 'ヘルプ',
+          'help-sync-assets': '同梱アセットを同期する',
+          'quit-with-confirmation': 'TerminalQuest を終了',
+        }),
+        closeDialog: {
+          title: 'TerminalQuest',
+          message: 'TerminalQuest を終了しますか？',
+          ok: 'OK',
+          cancel: 'キャンセル',
+        },
+      });
+    } finally {
+      await initializeI18n('en');
+    }
   });
 
   test('a failing shared callback is reported', async () => {

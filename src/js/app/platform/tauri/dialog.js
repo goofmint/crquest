@@ -10,17 +10,22 @@
  * (docs/migration/tauri-platform.md).
  */
 import { confirm, message, open } from '@tauri-apps/plugin-dialog';
+import { t } from '../../i18n';
 import { rejectAsError } from './errors';
 
 export async function showConfirm(text) {
   const accepted = await rejectAsError(
-    confirm(text, { kind: 'info', okLabel: 'OK', cancelLabel: 'Cancel' })
+    confirm(text, {
+      kind: 'info',
+      okLabel: t('shell.dialog.ok'),
+      cancelLabel: t('shell.dialog.cancel'),
+    })
   );
   return accepted === true;
 }
 
 export async function showAlert(text) {
-  await rejectAsError(message(text, { kind: 'warning', okLabel: 'OK' }));
+  await rejectAsError(message(text, { kind: 'warning', okLabel: t('shell.dialog.ok') }));
 }
 
 export async function showDirectoryDialog({ title, defaultPath }) {
@@ -38,7 +43,7 @@ export async function showDirectoryDialog({ title, defaultPath }) {
     return undefined;
   }
   if (typeof result !== 'string') {
-    throw new Error('Tauri open dialog returned neither a path nor null');
+    throw new Error(t('shell.errors.invalidDirectory'));
   }
   return result;
 }

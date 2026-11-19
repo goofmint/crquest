@@ -10,12 +10,14 @@ import AvatarSelector from '../../AvatarSelector';
 import EnvironmentVariables from './EnvironmentVariables';
 import { JoinTeam, CurrentTeam } from './AdventureTeams';
 import { JoinOperation, CurrentOperation } from './Operations';
-import { setContext, getContext } from '../../../common/context';
+import { setContext, getContext, flushPendingSaves, saveLanguagePreference } from '../../../common/context';
 import AudioTab from './AudioTab';
 import UnlocksTab from './UnlocksTab';
 import Credits from './Credits';
 import Extensions from './Extensions';
 import { getGamePackageVersion } from '../../../platform/paths';
+import { showConfirm } from '../../../platform/dialog';
+import { getLanguage, isSupportedLanguage, LANGUAGES, t } from '../../../i18n';
 
 const SUBNAV_SECTIONS = [
   'Audio',
@@ -42,6 +44,8 @@ export default class Settings extends React.Component {
 
   state = {
     saved: false,
+    changingLanguage: false,
+    languageError: false,
     inputFocused: false,
     showGuid: false,
     gameVersion: undefined,
@@ -68,6 +72,8 @@ export default class Settings extends React.Component {
 
   componentWillUnmount() {
     this.isComponentMounted = false;
+    window.clearTimeout(this.timeoutID);
+    if (this.state.inputFocused) sharedListener.listen();
   }
 
   componentDidUpdate(prevProps) {
@@ -78,6 +84,7 @@ export default class Settings extends React.Component {
   }
 
   save(key, value, type = 'setting') {
+    if (this.languageChangePending) return;
     if (type === 'setting') {
       setContext({ settings: { ...getContext('settings'), [key]: value } });
     } else if (type === 'env') {
@@ -97,6 +104,28 @@ export default class Settings extends React.Component {
     this.timeoutID = window.setTimeout(() => {
       this.setState({ saved: true });
     }, 500);
+  }
+
+  async changeLanguage(language) {
+    if (this.languageChangePending || !isSupportedLanguage(language) || language === getLanguage()) {
+      return;
+    }
+
+    this.languageChangePending = true;
+    this.setState({ changingLanguage: true, languageError: false });
+    try {
+      if (!(await showConfirm(t('settings.confirmLanguageChange')))) return;
+      if (!this.isComponentMounted) return;
+      await saveLanguagePreference(language);
+      await flushPendingSaves();
+      window.location.reload();
+    } catch (error) {
+      console.error('Could not change language:', error);
+      if (this.isComponentMounted) this.setState({ languageError: true });
+    } finally {
+      this.languageChangePending = false;
+      if (this.isComponentMounted) this.setState({ changingLanguage: false });
+    }
   }
 
   onFocus() {
@@ -119,12 +148,12 @@ export default class Settings extends React.Component {
     return (
       <div className="settings-menu pv3 overflow-y-scroll h-100">
         <ClearDataButton />
-        <h2 className="mb1">Settings</h2>
+        <h2 className="mb1">{t('settings.title')}</h2>
         <p className="game-version gray">
           TerminalQuest
           {this.state.gameVersion !== undefined && ` v${this.state.gameVersion}`}
           {this.state.gameVersionError !== undefined &&
-            ` (failed to load version: ${this.state.gameVersionError})`}
+            ` (${t('settings.versionError', { error: this.state.gameVersionError })})`}
           {' '}|&nbsp;
           {
             (this.state.showGuid) ? 
@@ -134,7 +163,7 @@ export default class Settings extends React.Component {
                   textDecoration: 'underline',
                   cursor: 'pointer'
                 }} onClick={() => this.onToggleGuid()}>
-                  Hide
+                  {t('settings.hideGuid')}
                 </span>
               </span>
               
@@ -143,7 +172,7 @@ export default class Settings extends React.Component {
                 textDecoration: 'underline',
                 cursor: 'pointer'
               }} onClick={() => this.onToggleGuid()}>
-                Show Player GUID
+                {t('settings.showGuid')}
               </span>
           }
         </p>
@@ -162,16 +191,34 @@ export default class Settings extends React.Component {
                   });
                 }}
               >
-                {section}
+                {t(`settings.tabs.${section}`)}
               </h5>
             ))}
           </div>
 
           <div className="w-75">
             {this.props.subnav === 'User' && (
-              <div>
-                <h3>User Settings</h3>
-                <h4 className="mv2">Name</h4>
+              <fieldset className="bn pa0 ma0" disabled={this.state.changingLanguage}>
+                <h3>{t('settings.user')}</h3>
+                <label htmlFor="settings-language" className="db mv2 b">
+                  {t('settings.language')}
+                </label>
+                <select
+                  id="settings-language"
+                  className="pa2"
+                  value={getLanguage()}
+                  onFocus={this.onFocus.bind(this)}
+                  onBlur={this.onBlur.bind(this)}
+                  onChange={event => this.changeLanguage(event.target.value)}
+                >
+                  {Object.entries(LANGUAGES).map(([code, label]) => (
+                    <option key={code} value={code} lang={code}>{label}</option>
+                  ))}
+                </select>
+                {this.state.languageError && (
+                  <p role="alert">{t('settings.languageError')}</p>
+                )}
+                <h4 className="mv2">{t('settings.name')}</h4>
                 <input
                   autoFocus
                   className="pa2 w-100 mw7"
@@ -182,13 +229,13 @@ export default class Settings extends React.Component {
                   value={this.props.name}
                 />
 
-                <h4 className="mb2 mt4">Avatar</h4>
+                <h4 className="mb2 mt4">{t('settings.avatar')}</h4>
                 <AvatarSelector
                   avatar={this.props.avatar}
-                  hotkeysEnabled={!this.state.inputFocused}
+                  hotkeysEnabled={!this.state.inputFocused && !this.state.changingLanguage}
                   selectAvatar={this.save.bind(this, 'avatar')}
                 />
-              </div>
+              </fieldset>
             )}
 
             {this.props.subnav === 'Variables' && (
@@ -214,12 +261,11 @@ export default class Settings extends React.Component {
 
             {this.props.subnav === 'Teams' && (
               <div className="LiveEvents">
-                <h3>Adventure Teams</h3>
+                <h3>{t('settings.teams')}</h3>
                 <p>
-                  If you were given an adventure team join code, type it in to
-                  send your achievements and XP to the leaderboard.
+                  {t('settings.teamsDescription')}
                 </p>
-                <h4 className="mv2">Join Code</h4>
+                <h4 className="mv2">{t('settings.joinCode')}</h4>
                 <JoinTeam
                   onFocus={this.onFocus.bind(this)}
                   onBlur={this.onBlur.bind(this)}
@@ -230,12 +276,11 @@ export default class Settings extends React.Component {
 
             {this.props.subnav === 'Operations' && (
               <div className="LiveEvents">
-                <h3>Operations</h3>
+                <h3>{t('settings.tabs.Operations')}</h3>
                 <p>
-                  If you were given an operation join code, type it in to
-                  send your achievements and XP to the leaderboard.
+                  {t('settings.operationsDescription')}
                 </p>
-                <h4 className="mv2">Join Code</h4>
+                <h4 className="mv2">{t('settings.joinCode')}</h4>
                 <JoinOperation
                   onFocus={this.onFocus.bind(this)}
                   onBlur={this.onBlur.bind(this)}
@@ -258,7 +303,7 @@ export default class Settings extends React.Component {
             className="tc gray absolute bottom-0 left-0 w-100 pt1 pb1"
             style={{ backgroundColor: '#1f243c' }}
           >
-            All changes saved.
+            {t('settings.saved')}
           </div>
         )}
       </div>

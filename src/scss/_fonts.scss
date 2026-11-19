@@ -8,6 +8,13 @@
   src: url('fonts/RobotoMono-Regular.ttf') format('truetype');
 }
 
-$base-font-stack: 'Roboto Mono', Consolas, monospace;
-$game-font-stack: 'Press Start 2P', monospace;
-$reading-font-stack: "Helvetica Neue", Helvetica, sans-serif;
+@font-face {
+  font-family: 'DotGothic16';
+  src: url('fonts/DotGothic16-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+$japanese-font-stack: 'DotGothic16', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', Meiryo;
+$base-font-stack: 'Roboto Mono', Consolas, $japanese-font-stack, monospace;
+$game-font-stack: 'Press Start 2P', $japanese-font-stack, monospace;
+$reading-font-stack: 'Helvetica Neue', Helvetica, $japanese-font-stack, sans-serif;

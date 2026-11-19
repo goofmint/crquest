@@ -1,0 +1,40 @@
+{
+  "loading": {
+    "title": "読み込み中",
+    "interact": "スペースキーで操作します。",
+    "move": "矢印キーまたは WASD で移動します。"
+  },
+  "errors": {
+    "loadSave": "セーブデータを読み込めませんでした",
+    "saveField": "「{{key}}」を保存できませんでした",
+    "loadAudio": "保存された音声設定を読み込めませんでした",
+    "saveAudio": "音声設定を保存できませんでした"
+  },
+  "settings": {
+    "title": "設定",
+    "versionError": "バージョンを読み込めませんでした（{{error}}）",
+    "hideGuid": "非表示",
+    "showGuid": "プレイヤー GUID を表示",
+    "user": "ユーザー設定",
+    "language": "言語",
+    "confirmLanguageChange": "言語を変更するためにゲームを再読み込みします。続行しますか？",
+    "languageError": "言語設定を保存できませんでした。もう一度お試しください。",
+    "name": "名前",
+    "avatar": "アバター",
+    "teams": "アドベンチャーチーム",
+    "teamsDescription": "チームの参加コードを受け取ったら、ここに入力して実績と XP をランキングに送信できます。",
+    "operationsDescription": "作戦の参加コードを受け取ったら、ここに入力して実績と XP をランキングに送信できます。",
+    "joinCode": "参加コード",
+    "saved": "すべての変更を保存しました。",
+    "tabs": {
+      "Audio": "音声",
+      "User": "ユーザー",
+      "Variables": "変数",
+      "Extensions": "拡張機能",
+      "Teams": "チーム",
+      "Operations": "作戦",
+      "Unlocks": "アンロック",
+      "Credits": "クレジット"
+    }
+  }
+}

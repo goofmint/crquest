@@ -12,6 +12,7 @@ import {
 } from './extensions';
 import { staticFilePath } from './fs_utils';
 import { loadModule, invalidateModule } from './moduleLoader';
+import { getLanguage, isSupportedLanguage } from '../i18n';
 
 /**
  * Read a file based on a path relative to extensions' root directory.
@@ -163,6 +164,146 @@ async function resolveAbsolutePath(relativePath, extensions) {
   }
 
   return undefined;
+}
+
+function localizedSibling(absolutePath, language) {
+  const { dir, name, ext } = path.parse(absolutePath);
+  return path.join(dir, `${name}.${language}${ext}`);
+}
+
+function isTranslationLanguage(language) {
+  return language !== 'en' && isSupportedLanguage(language);
+}
+
+async function resolveLocalizedPaths(
+  relativePath,
+  { language = getLanguage(), extensions } = {}
+) {
+  const original = await resolveAbsolutePath(relativePath, extensions);
+  if (!original || !isTranslationLanguage(language)) {
+    return { original };
+  }
+
+  // The original already identifies the winning extension. Looking for the
+  // sibling by its absolute path keeps that owner even when names overlap.
+  const localized = localizedSibling(original, language);
+  try {
+    if ((await fs.stat(localized)).isFile()) {
+      return { original, localized };
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.warn(`Could not access translation: ${localized}`, error);
+    }
+  }
+  return { original };
+}
+
+export async function readLocalizedAsset(relativePath, read, options) {
+  const { original, localized } = await resolveLocalizedPaths(relativePath, options);
+  if (localized) {
+    try {
+      return await read(localized);
+    } catch (error) {
+      console.warn(`Could not load translation: ${localized}`, error);
+    }
+  }
+  if (original) return read(original);
+}
+
+export async function readLocalizedFile(relativePath) {
+  try {
+    return await readLocalizedAsset(relativePath, file => fs.readFile(file, 'utf8'));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function mergeTranslation(original, overlay, fields) {
+  if (fields === true) {
+    return typeof original === 'string' && typeof overlay === 'string'
+      ? overlay
+      : original;
+  }
+  if (Array.isArray(original) && Array.isArray(overlay)) {
+    const isAnonymous = entry => entry && typeof entry === 'object' &&
+      !Array.isArray(entry) && !Object.hasOwn(entry, 'name');
+    const anonymousTranslations = overlay.filter(isAnonymous);
+    // Some objectives have a single prompt with no input name.
+    const anonymousTranslation = original.filter(isAnonymous).length === 1 &&
+      anonymousTranslations.length === 1 ? anonymousTranslations[0] : undefined;
+    return original.map(entry => {
+      const translated = typeof entry?.name === 'string'
+        ? overlay.find(item => item?.name === entry.name)
+        : isAnonymous(entry) ? anonymousTranslation : undefined;
+      return mergeTranslation(entry, translated, fields);
+    });
+  }
+  if (!original || !overlay || typeof original !== 'object' ||
+      typeof overlay !== 'object' || Array.isArray(original) ||
+      Array.isArray(overlay)) {
+    return original;
+  }
+  return Object.fromEntries(Object.entries(original).map(([key, value]) => {
+    const rule = Object.hasOwn(fields, key) ? fields[key] : fields['*'];
+    return [key, rule && Object.hasOwn(overlay, key)
+      ? mergeTranslation(value, overlay[key], rule)
+      : value];
+  }));
+}
+
+async function readOptionalJson(absolutePath) {
+  try {
+    return await fs.readAsync(absolutePath, 'json');
+  } catch (error) {
+    console.warn(`Could not read translation: ${absolutePath}`, error);
+  }
+}
+
+export async function overlayLocalizedJson(
+  absolutePath,
+  original,
+  fields,
+  language = getLanguage()
+) {
+  if (!isTranslationLanguage(language)) return original;
+  const overlay = await readOptionalJson(localizedSibling(absolutePath, language));
+  return mergeTranslation(original, overlay, fields);
+}
+
+export async function readLocalizedJson(
+  relativePath,
+  fields,
+  { language = getLanguage(), extensions } = {}
+) {
+  const original = await resolveAbsolutePath(relativePath, extensions);
+  if (original) {
+    const data = JSON.parse(await fs.readFile(original, 'utf8'));
+    return overlayLocalizedJson(original, data, fields, language);
+  }
+}
+
+export async function readContentMessages(
+  relativePath,
+  { language = getLanguage(), extensions } = {}
+) {
+  if (!isTranslationLanguage(language)) return {};
+  const original = await resolveAbsolutePath(relativePath, extensions);
+  if (!original) return {};
+  const messages = await readOptionalJson(path.join(
+    path.dirname(original), `messages.${language}.json`
+  ));
+  return messages && typeof messages === 'object' && !Array.isArray(messages)
+    ? messages
+    : {};
+}
+
+export function contentMessage(messages, key, fallbackEnglish, vars = {}) {
+  const value = Object.hasOwn(messages, key) ? messages[key] : undefined;
+  const template = typeof value === 'string' ? value : fallbackEnglish;
+  return template.replace(/\{\{\s*([\w.\-]+)\s*\}\}/g, (match, name) =>
+    Object.hasOwn(vars, name) ? String(vars[name]) : match
+  );
 }
 
 async function copyDirectory(source, destination, extensions) {

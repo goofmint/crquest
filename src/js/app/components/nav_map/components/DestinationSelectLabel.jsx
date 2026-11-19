@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import useSpriteSheet from '../hooks/useSpriteSheet';
 
 const DestinationSelectLabel = ({ assets }) => {
+  const { t } = useTranslation();
   const createDestSelectBox = useSpriteSheet({
     sheet: assets.destSelectBox,
     tileWidth: 32,
@@ -21,7 +23,7 @@ const DestinationSelectLabel = ({ assets }) => {
         marginTop: '-4rem',
       }}
     >
-      <p style={{ paddingTop: '6px' }}>SELECT A DESTINATION</p>
+      <p style={{ paddingTop: '6px' }}>{t('ui.map.select')}</p>
       <div className="levelSelect__background">
         {createDestSelectBox({ row: 0, col: 0 })}
         {createDestSelectBox({ row: 0, col: 1 })}

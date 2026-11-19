@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation, withTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import { colors } from '../../common/styles';
 import ga from '../../common/analytics';
@@ -39,6 +40,7 @@ const Quest = styled.div`
 `;
 
 function QuestList({ quests }) {
+  const { t } = useTranslation();
   const questList = [];
 
   quests.forEach(quest => {
@@ -54,13 +56,13 @@ function QuestList({ quests }) {
     <_QuestList>
       { questList.length > 0 ? 
         questList : 
-        <small>No Quests Found.</small> 
+        <small>{t('ui.journal.empty')}</small>
       }
     </_QuestList>
   );
 }
 
-export default class Journal extends React.Component {
+class Journal extends React.Component {
   state = {
     activeQuests: [],
     completedQuests: []
@@ -102,14 +104,15 @@ export default class Journal extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div className="Journal">
         <section className="journal-inner">
-          <h1>Quest Journal</h1>
-          <h2>Active Quests</h2>
+          <h1>{t('ui.journal.title')}</h1>
+          <h2>{t('ui.journal.active')}</h2>
           <QuestList quests={this.state.activeQuests}/>
           <h2 style={{ color: colors.lightBlue, marginTop: '50px' }}>
-            Completed Quests
+            {t('ui.journal.completed')}
           </h2>
           <QuestList quests={this.state.completedQuests}/>
         </section>
@@ -117,3 +120,5 @@ export default class Journal extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(Journal);

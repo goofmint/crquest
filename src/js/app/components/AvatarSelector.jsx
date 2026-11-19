@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { keypress } from 'keypress.js';
 import cx from 'classnames';
@@ -6,7 +7,7 @@ import CustomAvatarCreator from './CustomAvatarCreator';
 import { staticFileUrl } from '../common/fs_utils';
 import { NUM_AVATARS } from '../common/context/schema';
 
-export default class AvatarSelector extends React.Component {
+class AvatarSelector extends React.Component {
   static propTypes = {
     avatar: PropTypes.number.isRequired,
     hotkeysEnabled: PropTypes.bool,
@@ -46,6 +47,7 @@ export default class AvatarSelector extends React.Component {
   }
 
   renderAvatar(number) {
+    const { t } = this.props;
     const classes = cx('w4 h4 tc character-avatar', {
       'b--green ba bw2': number === this.props.avatar,
       'pointer pa1': number !== this.props.avatar,
@@ -56,7 +58,7 @@ export default class AvatarSelector extends React.Component {
     if (number) {
       contents = (
         <img className="character-avatar-img"
-          alt="Your character avatar"
+          alt={t('ui.onboarding.characterAvatar')}
           src={staticFileUrl(`avatars/avatar${number}.png`)}
           draggable="false"
         />
@@ -65,7 +67,7 @@ export default class AvatarSelector extends React.Component {
       contents = (
         <div className="pt3">
           <h1>?</h1>
-          Custom
+          {t('ui.avatar.custom')}
         </div>
       );
     }
@@ -99,3 +101,5 @@ export default class AvatarSelector extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(AvatarSelector);

@@ -1,8 +1,9 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
 
-export default class ItemTabs extends React.Component {
+class ItemTabs extends React.Component {
   static propTypes = {
     tabs: PropTypes.array.isRequired,
     selectedTab: PropTypes.string.isRequired,
@@ -11,6 +12,7 @@ export default class ItemTabs extends React.Component {
   static defaultProps = {};
 
   render() {
+    const { t } = this.props;
     const allTabClass = cx('bw1 pa2 bl bt br', {
       'bb pointer': this.props.selectedTab !== 'all',
     });
@@ -27,7 +29,7 @@ export default class ItemTabs extends React.Component {
           className={allTabClass}
           onClick={this.props.onClick.bind(null, 'all')}
         >
-          all
+          {t('ui.inventory.all')}
         </div>
 
         {this.props.tabs.map(tab => {
@@ -37,7 +39,7 @@ export default class ItemTabs extends React.Component {
               onClick={this.props.onClick.bind(null, tab.name)}
               key={tab.name}
             >
-              {tab.name}
+              {t(`ui.inventory.${tab.name}`, { defaultValue: tab.name })}
             </div>
           );
         })}
@@ -47,3 +49,5 @@ export default class ItemTabs extends React.Component {
     );
   }
 }
+
+export default withTranslation()(ItemTabs);

@@ -1,5 +1,6 @@
 import path from 'path';
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import SplitterLayout from 'react-splitter-layout';
 import codeRunner from '../common/code_runner';
 import { getContext } from '../common/context';
@@ -12,7 +13,7 @@ import { readFile } from '../common/assetLoader';
 // Ace editor is present in the window scope
 const ace = window.ace;
 
-export default class QuestIDE extends React.Component {
+class QuestIDE extends React.Component {
   constructor(props) {
     super(props);
     // Will be reference to CodeMirror editor
@@ -41,8 +42,8 @@ export default class QuestIDE extends React.Component {
 
     // Show initialization logging and resize Ace editor to available space
     setTimeout(() => {
-      this.printLn('Initializing JavaScript development environment...');
-      this.printLn('QuestIDE 1.0.0 ready. Welcome, Operator.');
+      this.printLn(this.props.t('ui.ide.initializing'));
+      this.printLn(this.props.t('ui.ide.ready'));
       this.editor.resize();
     }, 50);
   }
@@ -154,7 +155,7 @@ export default class QuestIDE extends React.Component {
 
   // Execute code currently in the editor
   async runCode() {
-    this.printLn('Executing your program...');
+    this.printLn(this.props.t('ui.ide.executing'));
     await this.saveCode();
     try {
       codeRunner.runCode(
@@ -183,7 +184,7 @@ export default class QuestIDE extends React.Component {
     this.confirmingReset = true;
     let confirmed;
     try {
-      confirmed = await showConfirm('Discard your changes and reset to the sample code?');
+      confirmed = await showConfirm(this.props.t('ui.ide.confirmReset'));
     } finally {
       this.confirmingReset = false;
     }
@@ -198,6 +199,7 @@ export default class QuestIDE extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     // Want to manage visibility rather than not render at all
     const styles = {
       display: this.props.visible ? 'block' : 'none',
@@ -242,21 +244,21 @@ export default class QuestIDE extends React.Component {
               <Button
                 style={buttonStyles}
                 onClick={() => this.runCode()}
-                title="Run Code in Editor"
+                title={t('ui.ide.run')}
               >
                 <i className="fas fa-play" />
               </Button>
               <Button
                 style={buttonStyles}
                 onClick={() => this.resetCode()}
-                title="Reset to Initial Example Code"
+                title={t('ui.ide.reset')}
               >
                 <i className="fas fa-trash-alt" />
               </Button>
               <Button
                 style={buttonStyles}
                 onClick={() => this.onClose()}
-                title="Hide Code Editor"
+                title={t('ui.ide.hide')}
               >
                 <i className="fas fa-sign-out-alt" />
               </Button>
@@ -267,3 +269,5 @@ export default class QuestIDE extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(QuestIDE);

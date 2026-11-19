@@ -1,0 +1,10 @@
+{
+  "title": "隠しファイルを作る",
+  "description": "作成したディレクトリに隠しファイルを作りましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "隠しファイルを作ったら HACK を押してください。"
+    }
+  ]
+}

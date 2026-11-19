@@ -48,12 +48,16 @@ class TrackPlayer {
     // Override TrackPlayer.onload for custom on load behavior
   }
 
+  hasTrack(trackName) {
+    return Object.hasOwn(this.tracks, trackName);
+  }
+
   isTrackNameValid(trackName) {
     if (!trackName) {
       return false;
     }
 
-    if (!this.tracks[trackName]) {
+    if (!this.hasTrack(trackName)) {
       console.warn(`Cannot play track: ${trackName}. Track not loaded.`);
       return false;
     }

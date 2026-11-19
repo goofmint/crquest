@@ -1,13 +1,14 @@
 import React from 'react';
 import cheerio from 'cheerio';
 import { toAssetUrl } from '../platform/assets';
-import { renderConversationTemplate } from '../platform/conversationTemplate';
+import { compileConversationTemplate } from '../platform/conversationTemplate';
 import { keypress } from 'keypress.js';
 import audioManager from '../common/audio/index';
 import sharedListener from '../common/listener';
 import { getContext, setContext, emitter } from '../common/context';
 import levelLoader from '../common/levelLoader';
-import { resolveAbsolutePath } from '../common/assetLoader';
+import { resolveAbsolutePath, readLocalizedAsset } from '../common/assetLoader';
+import { getLanguage, t } from '../i18n';
 
 // Initial state, to be used to reset when menu has been exited
 const INITIAL_STATE = {
@@ -143,8 +144,14 @@ export default class Conversation extends React.Component {
   }
 
   playVoiceOver(key) {
+    const language = getLanguage();
+    const track = language === 'en' ? key : `${key}.${language}`;
+    if (!audioManager.vo.hasTrack(track)) {
+      this.stopVoiceOvers();
+      return;
+    }
     audioManager.music.setMaxVolumeAll(0.02, false);
-    audioManager.vo.play(key);
+    audioManager.vo.play(track);
   }
 
   stopVoiceOvers() {
@@ -169,7 +176,7 @@ export default class Conversation extends React.Component {
       <ConversationChoice
         index={responses.length}
         key={responses.length}
-        text={'<end conversation>'}
+        text={t('ui.conversation.end')}
         onClick={() => this.endConversation()}
       />,
     ];
@@ -211,20 +218,20 @@ class ConversationBuilder {
       this.npc.level.levelName
     );
     const relativeConversationPath = `${conversationsDir}/${this.npc.conversation}.pug`;
-    const absoluteConversationPath = await resolveAbsolutePath(
-      relativeConversationPath
+    const render = await readLocalizedAsset(
+      relativeConversationPath,
+      file => compileConversationTemplate(file, this.context)
     );
 
-    if (!absoluteConversationPath) {
+    if (!render) {
       throw new Error(
         `Could not find the the conversation file for the conversation "${relativeConversationPath}"`
       );
     }
 
-    return await renderConversationTemplate(
-      absoluteConversationPath,
-      this.context
-    );
+    // Fall back only while compiling and resolving includes. Once rendering
+    // starts, the template may have already updated game state.
+    return render();
   }
 
   async parse(conversationHtml) {

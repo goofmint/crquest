@@ -1,0 +1,5 @@
+{
+  "fileStillExists": "「{{directory}}」に「{{fileName}}」がまだあります。rm でファイルを削除してください。",
+  "validationError": "「{{directory}}」から「{{fileName}}」が削除されたか確認している間にエラーが発生しました。\n\n{{error}}",
+  "success": "ファイルが削除されたことを確認できました。お見事です！"
+}

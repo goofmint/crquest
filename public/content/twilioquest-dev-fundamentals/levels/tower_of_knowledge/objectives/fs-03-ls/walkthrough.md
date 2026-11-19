@@ -14,4 +14,6 @@ It's not immediately obvious which of the items listed by `ls` are files, and wh
 
 `ls` can display a lot more information about files and directories than just the names. We can check properties, such as the size, our ability to read or write to a file, and when it was last edited. To show this information, you have to pass a "flag" to the `ls` command. A flag is an option that's preceeded by `-`. For example, if we want a clearer indicator of which items are files and which are directories, we can use `ls -F`. `-F` is the flag for "classify", which will make `ls` classify each of the names in its output to classify the items by whether they are a directory, or a different type of file.
 
+When entering a name, use the actual file or directory name and omit any classification suffix shown by this command, such as * after an executable file.
+
 <% } %>

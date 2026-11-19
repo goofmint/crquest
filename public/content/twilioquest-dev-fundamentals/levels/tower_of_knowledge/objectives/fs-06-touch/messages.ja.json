@@ -1,0 +1,7 @@
+{
+  "missingInput": "新しく作ったファイルの名前を入力してください。",
+  "missingFile": "「{{directory}}」に「{{newFileName}}」が見つかりませんでした。正しいディレクトリにファイルを作ったか確認してください。",
+  "incorrectEntryType": "「{{directory}}」に「{{newFileName}}」は見つかりましたが、ファイルではありません。作成に使ったコマンドを確認してください。",
+  "validationError": "新しく作ったファイルの確認中にエラーが発生しました。\n\n{{error}}",
+  "success": "新しいファイルが見つかりました。お見事です！"
+}

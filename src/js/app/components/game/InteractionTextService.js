@@ -2,6 +2,9 @@ import { readAsync } from '../../platform/fs';
 import { staticFilePath } from '../../common/fs_utils';
 import TiledService from '../../common/tiled';
 import levelLoader from '../../common/levelLoader';
+import { overlayLocalizedJson } from '../../common/assetLoader';
+
+const FLAVOR_TRANSLATION_FIELDS = { text: { '*': true } };
 
 class InteractionTextService {
   defaultTextList = [];
@@ -20,7 +23,10 @@ class InteractionTextService {
       throw new Error(`Flavor text file not found: ${flavorTextFilePath}`);
     }
 
-    this.defaultTextList = flavorTextFile.text;
+    const localized = await overlayLocalizedJson(
+      staticPath, flavorTextFile, FLAVOR_TRANSLATION_FIELDS
+    );
+    this.defaultTextList = localized.text;
     this.tiledIdMaps = flavorTextFile.tiledIdMaps;
   }
 

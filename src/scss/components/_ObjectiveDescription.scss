@@ -107,6 +107,11 @@
   margin: 0;
 }
 
+.ObjectiveDescription:lang(ja) .mission-intro h3 {
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+}
+
 .ObjectiveDescription .mission-intro .avatar {
   float: left;
   margin: 0 20px 20px 0;
@@ -142,6 +147,10 @@
     font-size: 16px;
     font-style: normal;
     font-family: $base-font-stack;
+
+    &:lang(ja) {
+      white-space: normal;
+    }
   }
 
   ul, ol {

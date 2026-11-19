@@ -1,0 +1,45 @@
+- const STATE_KEY = 'com.twilioquest.owls_nest';
+- const worldState = getState(STATE_KEY);
+
+conversation(display_name="Kevin")
+  case lastResponse
+    when "how_help"
+      statement#how_help
+      responses
+        response#like_fredric.
+          セドリックも、いずれお兄さんのようになる可能性はあるんですか？
+        response#will_do.
+          セドリックはきっと乗組員の力になりますよ。
+
+    when "like_fredric"
+      statement#like_fredric
+      responses
+        response#will_do.
+          責めたりはしません。セドリックのことも見守ります。
+
+    when "will_do"
+      statement#will_do
+      responses
+
+    default
+      statement#default
+      responses
+        response#how_help.
+          今日はすでに大変でしたが、できることなら手伝いますよ。
+
+  statements
+    statement#like_fredric
+      text.
+        そうは思わない。彼は一貫してフレドリックより人間を好意的に見てきた。それに、できればフレドリックを責めないでほしい。責めるべきは僕だ。<br/><br/>フレドリックを開発していたとき、何ができるかばかり考えていて、技術が誤った使われ方をしたら何が起こるか考えていなかった。開発者として、どうか同じ過ちを繰り返さないでくれ。
+    statement#how_help
+      text.
+        セドリックは今フォグ・オウルに乗っていて、君の任務に同行したがっている。外の世界に出る準備はできていると思うし、きっと力になってくれる。彼のことを見守ってくれないか？
+    statement#will_do
+      text.
+        君なら大丈夫だ。幸運を、オペレーター。クラウドでまた会おう！
+    statement#default
+      text.
+        何と言えばいいか……君はフォグ・オウルも、このステーションのみんなも救ってくれた。どれだけ感謝しても足りない。<br/><br/>こんなときに悪いんだけど、もう一つだけ頼みがあるんだ。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,10 +1,14 @@
 import { readAsync } from '../../../../js/app/platform/fs';
+import { overlayLocalizedJson } from '../../../../js/app/common/assetLoader';
 import levelLoader from '../../../../js/app/common/levelLoader';
 import TiledService from '../../../../js/app/common/tiled';
 import InteractionTextService from '../../../../js/app/components/game/InteractionTextService';
 
 vi.mock('../../../../js/app/platform/fs', () => ({
   readAsync: vi.fn(),
+}));
+vi.mock('../../../../js/app/common/assetLoader', () => ({
+  overlayLocalizedJson: vi.fn(async (_, data) => data),
 }));
 vi.mock('../../../../js/app/common/fs_utils', () => ({
   staticFilePath: vi.fn(relativePath => `/static/${relativePath}`),
@@ -57,6 +61,21 @@ describe('InteractionTextService.load', () => {
     expect(InteractionTextService.getText({ key: 'door' })).toBe(
       'default door'
     );
+  });
+
+  it('loads translated text while preserving level overrides', async () => {
+    readAsync.mockResolvedValueOnce(FLAVOR_TEXT);
+    overlayLocalizedJson.mockResolvedValueOnce({
+      ...FLAVOR_TEXT,
+      text: { sign: '表示', door: '扉' },
+    });
+    await InteractionTextService.load('levels/common');
+    levelLoader.getLevel.mockReturnValueOnce({
+      flavorTextOverrides: { sign: 'レベルの表示' },
+    });
+    InteractionTextService.loadLevelOverrides('level1');
+    expect(InteractionTextService.getText({ key: 'sign' })).toBe('レベルの表示');
+    expect(InteractionTextService.getText({ key: 'door' })).toBe('扉');
   });
 
   it('propagates read errors', async () => {

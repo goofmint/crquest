@@ -1,0 +1,95 @@
+conversation(display_name="クラウド探検家")
+  case lastResponse
+    default
+      statement#default
+      responses
+        response#here_to_learn.
+          そうです！ この塔のこと、何かご存じですか？
+
+        response#what_tower.
+          ここに塔があるなんて知りませんでした！
+
+
+    when "what_tower"
+      statement#see_tower_from_space
+      responses
+        response#i_guess.
+          そういえば、ナビマップに何か映っていたような……。
+
+        response#anyway.
+          それで、秘密って何ですか？
+
+    when "anyway"
+    when "i_guess"
+    when "here_to_learn"
+      statement#secrets
+      responses
+        response#is_lucky.
+          それは運がよかったですね！ 中に入って手伝うにはどうすればいいですか？
+
+        response#hmmm.
+          うーん……。本当に助けるために来たんですか？
+
+    when "hmmm"
+      statement#of_course
+      responses
+        response#get_inside.
+          そういうことなら……。どうやって中に入るんですか？
+
+    when "get_inside"
+    when "is_lucky"
+      statement#we_cant_get_in
+      responses
+        response#what_is_collector.
+          新人開発者お困りごと収集機？ 長い名前ですね。それ、何ですか？
+
+    when "what_is_collector"
+      statement#collector_is
+      responses
+        response#what_can_i_do.
+          直すために、私に何ができますか？
+
+
+    when "what_can_i_do"
+      statement#find_toolboxes
+      responses
+        response#ill_find_toolboxes.
+            じゃあ、工具箱を探しに行きます！
+
+
+    when "ill_find_toolboxes"
+      statement#thats_the_spirit
+      responses
+
+  statements
+    statement#default
+      text.
+        やあ！ 君もこの塔の秘密を知りに来たのかい？
+
+    statement#see_tower_from_space
+      text.
+        えっ、どうして気づかなかったんだい？ 宇宙からでも見えるのに！
+
+    statement#secrets
+      text.
+        近くの宙域に向けて弱い救難信号が出ていてね。ちょうど宝さが……<em>いや</em>、助けを求めている人を探していたから受信できたんだ！
+
+    statement#of_course
+      text.
+        もちろんさ！ クラウドの秘密を自分のために知りたいなんて、これっぽっちも思ってないよ。困っている人を助けに来たんだ！
+
+    statement#we_cant_get_in
+      text.
+        それが、ちょっと困ったことに……。この<span class="highlight">新人開発者お困りごと収集機</span>を直すまでは、どうも入れそうにないんだ！
+
+    statement#find_toolboxes
+      text.
+        着陸のときに工具箱をいくつも落としちゃってね。<span class="highlight">3 個</span>見つけてくれれば、<span class="highlight">新人開発者お困りごと収集機</span>を直せるよ。
+
+    statement#collector_is
+      text.
+        きっと気に入るよ！ いろんな質問の答えを集められる便利な装置さ。理屈の上では、だけどね……。まずは動くようにしなくちゃ！
+
+    statement#thats_the_spirit
+      text.
+        その意気だ！ 僕はここで……ええっと、監督しているよ！

@@ -7,6 +7,7 @@
 import { showAlert } from './app/platform/dialog';
 import { openExternal } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
+import { t } from './app/i18n';
 
 // Same selector as the link handler in index.jsx (Electron), also matched
 // from child elements. Opening is
@@ -25,8 +26,9 @@ function normalizeExternalUrl(href) {
 }
 
 async function reportFailure(action, error) {
-  console.error(`${action} failed:`, error);
-  await showAlert(`${action} failed: ${error.message}`);
+  const text = t('shell.errors.failed', { action, message: error.message });
+  console.error(text, error);
+  await showAlert(text);
 }
 
 /**
@@ -46,7 +48,7 @@ export function installExternalLinkHandler(doc) {
       event.preventDefault();
       const url = normalizeExternalUrl(link.href);
       openExternal(url).catch(error =>
-        reportFailure(`Opening ${url}`, error)
+        reportFailure(t('shell.errors.openLink', { url }), error)
       );
     },
     false
@@ -77,7 +79,7 @@ export function installDevToolsShortcut(doc) {
     }
     event.preventDefault();
     toggleDevTools().catch(error =>
-      reportFailure('Toggling Developer Tools', error)
+      reportFailure(t('shell.errors.toggleDevtools'), error)
     );
   });
 }

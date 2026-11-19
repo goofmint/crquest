@@ -1,0 +1,7 @@
+{
+  "missingFirstPath": "ハック画面に <em>1 つ目</em>の作業ディレクトリのパスを入力してください。",
+  "missingSecondPath": "ハック画面に <em>2 つ目</em>の作業ディレクトリのパスを入力してください。",
+  "incorrectFirstPath": "入力されたパス「{{pwd1}}」が、robot_thoughts に移動したあとのパスと一致しません。",
+  "incorrectSecondPath": "入力されたパス「{{pwd2}}」が、fog_owl_computations.csv に移動しようとしたあとのパスと一致しません。",
+  "success": "やりました！ 移動後の作業ディレクトリを正しく求められました。"
+}

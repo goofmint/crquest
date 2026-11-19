@@ -21,21 +21,32 @@ module.exports = async function (helper) {
   try {
     if (!newDirPath) {
       helper.fail(
-        "You need to provide the path to your new directory in the Hack Interface!"
+        helper.t(
+          "missingInput",
+          "You need to provide the path to your new directory in the Hack Interface!"
+        )
       );
       return;
     }
 
     if (!(await exists(helper, newDirPath))) {
       helper.fail(
-        `TwilioQuest cannot locate a directory at the path you entered, "${newDirPath}".`
+        helper.t(
+          "missingDirectory",
+          'TwilioQuest cannot locate a directory at the path you entered, "{{newDirPath}}".',
+          { newDirPath }
+        )
       );
       return;
     }
 
     if (!isPathParent(TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_PWD, newDirPath)) {
       helper.fail(
-        `TwilioQuest found your new directory "${newDirPath}", but it should be created within the present working directory you made previously "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_PWD}".`
+        helper.t(
+          "outsideWorkingDirectory",
+          'TwilioQuest found your new directory "{{newDirPath}}", but it should be created within the present working directory you made previously "{{workingDirectory}}".',
+          { newDirPath, workingDirectory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_PWD }
+        )
       );
       return;
     }
@@ -44,21 +55,35 @@ module.exports = async function (helper) {
 
     if (!entryStats.isDirectory()) {
       helper.fail(
-        `TwilioQuest found "${newDirPath}", but it's not a directory! Double check that you're using the correct command when making your directory!`
+        helper.t(
+          "incorrectEntryType",
+          "TwilioQuest found \"{{newDirPath}}\", but it's not a directory! Double check that you're using the correct command when making your directory!",
+          { newDirPath }
+        )
       );
       return;
     }
   } catch (err) {
-    helper.fail(`An error occurred while TwilioQuest was trying to validate your present working directory.
-    
-    ${err}`);
+    helper.fail(
+      helper.t(
+        "validationError",
+        "An error occurred while TwilioQuest was trying to validate your present working directory.\n    \n    {{error}}",
+        { error: err }
+      )
+    );
     return;
   }
 
-  helper.success("TwiloQuest was able to find your new directory! Good job!", [
-    {
-      name: "DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR",
-      value: newDirPath,
-    },
-  ]);
+  helper.success(
+    helper.t(
+      "success",
+      "TwiloQuest was able to find your new directory! Good job!"
+    ),
+    [
+      {
+        name: "DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR",
+        value: newDirPath,
+      },
+    ]
+  );
 };

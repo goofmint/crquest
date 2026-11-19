@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import ItemPopover from '../../ItemPopover';
 import CharacterAvatar from '../../CharacterAvatar';
@@ -6,7 +7,7 @@ import cx from 'classnames';
 import { context, setContext } from '../../../common/context';
 import { equipItem, getItemFromKey } from '../../context_provider/itemsHelper';
 
-export default class CharacterDiagram extends React.Component {
+class CharacterDiagram extends React.Component {
   static contextType = context;
 
   onDragOver(slotName, evt) {
@@ -54,6 +55,8 @@ export default class CharacterDiagram extends React.Component {
   }
 
   renderSlot(slotName, className) {
+    const { t } = this.props;
+    const slotType = slotName.replace(/\d+$/, '');
     const equippedItemKey = this.context.loadout[slotName];
     const equippedItem = getItemFromKey(equippedItemKey);
 
@@ -79,7 +82,7 @@ export default class CharacterDiagram extends React.Component {
               <img
                 style={{ width: '100%', imageRendering: 'pixelated' }}
                 src={equippedItem.iconPath}
-                alt={equippedItem.name}
+                alt={equippedItem.displayName}
                 draggable="true"
                 onDragStart={this.onDragStart.bind(
                   this,
@@ -91,7 +94,7 @@ export default class CharacterDiagram extends React.Component {
             </ItemPopover>
           )}
         </div>
-        {slotName.slice(0, 4)}
+        {t(slotType === 'accessory' ? 'ui.inventory.accessorySlot' : `ui.inventory.${slotType}`)}
       </div>
     );
   }
@@ -122,3 +125,5 @@ export default class CharacterDiagram extends React.Component {
     );
   }
 }
+
+export default withTranslation()(CharacterDiagram);

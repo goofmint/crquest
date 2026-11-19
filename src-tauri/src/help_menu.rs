@@ -11,13 +11,14 @@
 //! which listens first and only then calls `enable_help_menu`, so that no click
 //! can arrive before there is a listener.
 //!
-//! The ids, labels and the event name are mirrored in menu.js; keep both in
-//! sync (the labels are the ones of src/js/index.jsx).
+//! The ids and event name are mirrored in menu.js. The initial labels are in
+//! English; the frontend supplies the selected language after startup.
 
+use std::collections::HashMap;
 use tauri::menu::{Menu, MenuItem, Submenu, HELP_SUBMENU_ID};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
-use crate::close::MAIN_WINDOW_LABEL;
+use crate::close::{CloseConfirmation, CloseDialogText, MAIN_WINDOW_LABEL};
 
 pub const HELP_MENU_EVENT: &str = "help-menu-click";
 
@@ -82,54 +83,99 @@ pub fn on_menu_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
 fn append_items<R: Runtime>(
     app: &AppHandle<R>,
     help: &Submenu<R>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    for item in current_items() {
-        help.append(&MenuItem::with_id(
-            app,
-            item.id,
-            item.label,
-            false,
-            None::<&str>,
-        )?)?;
+) -> Result<Vec<MenuItem<R>>, tauri::Error> {
+    current_items()
+        .map(|item| {
+            let menu_item = MenuItem::with_id(app, item.id, item.label, false, None::<&str>)?;
+            help.append(&menu_item)?;
+            Ok(menu_item)
+        })
+        .collect()
+}
+
+pub struct ShellMenu<R: Runtime> {
+    help: Submenu<R>,
+    help_items: Vec<MenuItem<R>>,
+    #[cfg(target_os = "macos")]
+    quit: MenuItem<R>,
+}
+
+fn apply_label<E>(
+    menu_labels: &HashMap<String, String>,
+    id: &str,
+    set_text: impl FnOnce(&str) -> Result<(), E>,
+) -> Result<(), E> {
+    if let Some(label) = menu_labels.get(id) {
+        set_text(label)?;
     }
     Ok(())
+}
+
+impl<R: Runtime> ShellMenu<R> {
+    fn set_labels(&self, labels: &HashMap<String, String>) -> tauri::Result<()> {
+        apply_label(labels, "help", |text| self.help.set_text(text))?;
+        for item in &self.help_items {
+            apply_label(labels, item.id().as_ref(), |text| item.set_text(text))?;
+        }
+        #[cfg(target_os = "macos")]
+        apply_label(labels, crate::close::QUIT_MENU_ID, |text| {
+            self.quit.set_text(text)
+        })?;
+        Ok(())
+    }
 }
 
 /// Adds the disabled Help items. macOS: to the Help submenu of the menu that
 /// `close::install_quit_menu` set (call it first); the menu is not replaced.
 /// Windows and Linux: the app has no menu, so a menu with only Help is set.
-pub fn install<R: Runtime>(app: &tauri::App<R>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn install<R: Runtime>(
+    app: &tauri::App<R>,
+    #[cfg(target_os = "macos")] quit: MenuItem<R>,
+) -> Result<ShellMenu<R>, Box<dyn std::error::Error>> {
     let handle = app.handle();
-    if let Some(menu) = app.menu() {
-        let help = menu
-            .get(HELP_SUBMENU_ID)
+    let existing_menu = app.menu();
+    let help = if let Some(menu) = &existing_menu {
+        menu.get(HELP_SUBMENU_ID)
             .and_then(|kind| kind.as_submenu().cloned())
-            .ok_or("the Help menu is missing")?;
-        return append_items(handle, &help);
+            .ok_or("the Help menu is missing")?
+    } else {
+        Submenu::with_id(handle, HELP_SUBMENU_ID, "Help", true)?
+    };
+    let help_items = append_items(handle, &help)?;
+    if existing_menu.is_none() {
+        app.set_menu(Menu::with_items(handle, &[&help])?)?;
     }
-    let help = Submenu::with_id(handle, HELP_SUBMENU_ID, "Help", true)?;
-    append_items(handle, &help)?;
-    app.set_menu(Menu::with_items(handle, &[&help])?)?;
-    Ok(())
+    Ok(ShellMenu {
+        help,
+        help_items,
+        #[cfg(target_os = "macos")]
+        quit,
+    })
 }
 
 /// Enables the Help items. Called by the frontend after it started listening
 /// for `HELP_MENU_EVENT`.
 #[tauri::command]
 pub fn enable_help_menu<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    let menu = app.menu().ok_or("the application menu is missing")?;
-    let help = menu
-        .get(HELP_SUBMENU_ID)
-        .and_then(|kind| kind.as_submenu().cloned())
-        .ok_or("the Help menu is missing")?;
-    for item in current_items() {
-        help.get(item.id)
-            .and_then(|kind| kind.as_menuitem().cloned())
-            .ok_or_else(|| format!("the Help item {} is missing", item.id))?
-            .set_enabled(true)
-            .map_err(|error| error.to_string())?;
+    let menu = app.state::<ShellMenu<R>>();
+    for item in &menu.help_items {
+        item.set_enabled(true).map_err(|error| error.to_string())?;
     }
     Ok(())
+}
+
+/// Refreshes the labels of existing menu items and the close confirmation.
+#[tauri::command]
+pub fn set_shell_texts<R: Runtime>(
+    app: AppHandle<R>,
+    confirmation: State<'_, CloseConfirmation>,
+    menu_labels: HashMap<String, String>,
+    close_dialog: CloseDialogText,
+) -> Result<(), String> {
+    confirmation.set_text(close_dialog)?;
+    app.state::<ShellMenu<R>>()
+        .set_labels(&menu_labels)
+        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
@@ -178,5 +224,28 @@ mod tests {
         assert!(is_help_item("help-open-save-file"));
         assert!(!is_help_item("help-unknown"));
         assert!(!is_help_item(""));
+    }
+
+    #[test]
+    fn applies_only_the_label_for_the_menu_item() {
+        let labels = HashMap::from([
+            (
+                "help-open-save-file".to_string(),
+                "セーブファイルを開く".to_string(),
+            ),
+            ("unknown".to_string(), "無視する".to_string()),
+        ]);
+        let mut updates = Vec::new();
+        for item in available_items(true) {
+            apply_label(&labels, item.id, |text| {
+                updates.push((item.id, text.to_string()));
+                Ok::<_, ()>(())
+            })
+            .unwrap();
+        }
+        assert_eq!(
+            updates,
+            [("help-open-save-file", "セーブファイルを開く".to_string())]
+        );
     }
 }

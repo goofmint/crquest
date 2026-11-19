@@ -50,6 +50,7 @@ export default class LevelLifecycleManager {
     this.level = level;
     this.world = new World(level);
     try {
+      await this.world.loadMessages();
       // Get extension relative events path
       const eventModulePath = levelLoader.getEventsModulePath(level.levelName);
       // Set the new event handler - can be null, which is fine.

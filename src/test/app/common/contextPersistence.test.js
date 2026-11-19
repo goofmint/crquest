@@ -5,6 +5,7 @@ import {
   suppressPersistence,
   resumePersistence,
   flushPendingSaves,
+  saveLanguagePreference,
 } from '../../../js/app/common/context/index';
 import { setValueAsync } from '../../../js/app/platform/store';
 import { showAlert } from '../../../js/app/platform/dialog';
@@ -18,7 +19,11 @@ vi.mock('../../../js/app/common/context/schema', () => ({
   ),
   reduceEntries: entries => Object.fromEntries(entries),
   describeSchema: () => ({
-    fields: { saved: { meta: { saveToDisk: true } }, other: {} },
+    fields: {
+      saved: { meta: { saveToDisk: true } },
+      settings: { meta: { saveToDisk: true } },
+      other: {},
+    },
   }),
 }));
 
@@ -125,4 +130,24 @@ describe('persistence suppression', () => {
     expect(setValueAsync).toHaveBeenCalledWith('saved', 2);
     console.warn.mockRestore();
   });
+});
+
+test('persists a language change after queued saves without changing the active settings', async () => {
+  const settings = { avatar: 3, name: 'Player', language: 'en' };
+  const ref = { current: { state: { settings }, setState: vi.fn((update, callback) => callback()) } };
+  setContextRef(ref);
+
+  setContext({ saved: 1 });
+  const saved = saveLanguagePreference('ja');
+  setContext({ settings: { ...settings, name: 'New name' } });
+  await saved;
+  await flushPendingSaves();
+
+  expect(setValueAsync.mock.calls).toEqual([
+    ['saved', 1],
+    ['settings', { ...settings, language: 'ja' }],
+    ['settings', { ...settings, language: 'ja', name: 'New name' }],
+  ]);
+  expect(ref.current.state.settings.language).toBe('en');
+  expect(ref.current.setState).toHaveBeenCalledTimes(2);
 });

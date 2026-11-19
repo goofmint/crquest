@@ -1,9 +1,10 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { context, setContext } from '../../common/context';
 import AvatarSelector from '../AvatarSelector';
 
-export default class AvatarStep extends React.Component {
+class AvatarStep extends React.Component {
   static propTypes = {
     isActive: PropTypes.bool.isRequired,
     onClick: PropTypes.func.isRequired,
@@ -27,12 +28,13 @@ export default class AvatarStep extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div
         className={this.props.isActive ? '' : 'o-50'}
         onClick={this.props.onClick}
       >
-        <h3>Select your avatar</h3>
+        <h3>{t('ui.onboarding.avatar')}</h3>
         <AvatarSelector
           avatar={this.context.settings.avatar}
           hotkeysEnabled={this.props.isActive}
@@ -42,3 +44,5 @@ export default class AvatarStep extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(AvatarStep);

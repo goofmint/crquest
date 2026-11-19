@@ -1,17 +1,20 @@
 import React, { Fragment } from 'react';
+import { withTranslation } from 'react-i18next';
 import AsyncInputBox from './AsyncInputBox';
 import { joinOperation, getJoinedOperations, disconnectOperation } from '../../../common/operations';
 
-export class JoinOperation extends React.Component {
+class JoinOperationView extends React.Component {
   render() {
+    const { t } = this.props;
     const { enableSubmitHotkey, onSuccess = () => {} } = this.props;
 
     return (
       <AsyncInputBox
+        inputLabel={t('ui.membership.code')}
         onFocus={this.props.onFocus}
         onBlur={this.props.onBlur}
-        defaultButtonLabel="Join"
-        resolvingButtonLabel="Joining..."
+        defaultButtonLabel={t('ui.membership.join')}
+        resolvingButtonLabel={t('ui.membership.joining')}
         onSubmit={joinOperation}
         onSuccess={onSuccess}
         enableSubmitHotkey={enableSubmitHotkey}
@@ -20,13 +23,14 @@ export class JoinOperation extends React.Component {
   }
 }
 
-export class CurrentOperation extends React.Component {
+class CurrentOperationView extends React.Component {
   render() {
+    const { t } = this.props;
     const operations = getJoinedOperations();
     
     return (
       <>
-        <h4 className="mt4">Current Operation(s)</h4>
+        <h4 className="mt4">{t('ui.operations.current')}</h4>
         {operations ? 
           operations.map(
             operation => (
@@ -35,15 +39,19 @@ export class CurrentOperation extends React.Component {
               <div className={`mb3 red`}>
                 <span className={`pb1 bb b--red pointer`} 
                   onClick={() => disconnectOperation(operation)}>
-                    Leave Operation
+                    {t('ui.operations.leave')}
                 </span>
               </div>
             </Fragment>
           )
           ) : (
-          <p>You're not in any operations right now.</p>
+          <p>{t('ui.operations.empty')}</p>
         )}
       </>
     );
   }
 }
+
+export const JoinOperation = withTranslation()(JoinOperationView);
+
+export const CurrentOperation = withTranslation()(CurrentOperationView);

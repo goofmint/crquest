@@ -10,6 +10,7 @@ export default class InputTextField extends React.Component {
       invalid,
       autoFocus = true,
       disabled,
+      'aria-label': label,
     } = this.props;
 
     return (
@@ -22,6 +23,7 @@ export default class InputTextField extends React.Component {
         autoFocus={autoFocus}
         className="pa2 w-100 mw7"
         onChange={onChange}
+        aria-label={label}
         type="text"
         onFocus={onFocus}
         onBlur={onBlur}

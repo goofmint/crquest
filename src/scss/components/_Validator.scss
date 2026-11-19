@@ -175,7 +175,7 @@
 
 .Validator p button.get-objective-debug-info {
   &.objective-debug-info-copied::after {
-    content: 'Copied info to clipboard!';
+    content: attr(data-copied-message);
 
     display: inline-block;
     position: absolute;

@@ -41,7 +41,7 @@ import { showAlert } from '../../../../js/app/platform/dialog';
 import { getSavedFields, setContext } from '../../../../js/app/common/context';
 import loadItemsFromDisk from '../../../../js/app/components/context_provider/loadItemsFromDisk';
 
-const DEFAULT_SETTINGS = { avatar: 1, name: '' };
+const DEFAULT_SETTINGS = { avatar: 1, name: '', language: 'en' };
 
 function mountProvider() {
   const ref = React.createRef();
@@ -66,12 +66,12 @@ describe('ContextProvider saved field loading', () => {
     expect(ref.current.state.settings).toEqual(DEFAULT_SETTINGS);
     await vi.waitFor(() => expect(setContext).toHaveBeenCalled());
     const initialState = setContext.mock.calls[0][0];
-    expect(initialState.settings).toEqual({ avatar: 3, name: 'x' });
+    expect(initialState.settings).toEqual({ avatar: 3, name: 'x', language: 'en' });
     // falsy saved values (0, undefined) are not applied: the default stays
     expect(initialState.xp).toBe(0);
     expect(initialState.inventory).toEqual([]);
     expect(initialState.items).toEqual({ sword: {} });
-    expect(ref.current.state.settings).toEqual({ avatar: 3, name: 'x' });
+    expect(ref.current.state.settings).toEqual({ avatar: 3, name: 'x', language: 'en' });
   });
 
   it('reads saved fields one by one in schema order', async () => {

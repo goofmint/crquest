@@ -59,8 +59,8 @@ export default class ItemPopover extends React.Component {
         content={
           <div>
             <div className="fl w3 h3 ma1 relative avatar">
-              <img className="absolute" src="avatars/parts/body.png" />
-              <img className="absolute" src={item.layerPath} />
+              <img className="absolute" src="avatars/parts/body.png" alt="" />
+              <img className="absolute" src={item.layerPath} alt="" />
             </div>
             <h4 className="ma0">{item.displayName}</h4>
             <p className="mb0 item-description"

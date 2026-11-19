@@ -1,0 +1,41 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="司書")
+  case lastResponse
+    when "how_learn"
+      statement#select_floor
+      responses
+
+    when "what_is_place"
+      statement#this_place
+      responses
+        response#how_learn.
+          大きな目標ですね！ 私もここで勉強できますか？
+
+    default
+      statement#default
+      responses
+        response#what_is_place.
+          ありがとうございます！ ここはどんな場所ですか？
+
+  statements
+    statement#default
+      text.
+        こんにちは、開発者さん！ <span class="highlight">無限知識の塔</span>へようこそ！
+
+    statement#this_place
+      text.
+        <span class="highlight">無限知識の塔</span>は、どこまでも広がり続ける図書館です。
+        <br/><br/>
+        司書として、開発者になるために必要なあらゆる知識を、ここに集めようとしています。
+
+    statement#select_floor
+      text.
+        ええ。大きな目標ですが、目指す価値はあります。
+        <br/><br/>
+        知識を集めるのは、誰かと分かち合うためです。それがなければ、いくら集めても意味がありません。
+        <br/><br/>
+        図書館を見て回るなら、私の先にある<span class="highlight">青いエレベーターの操作盤</span>を調べてみてください。あちこちに塔の歴史を記した書見台もあります。実は私、歴史を記録するのも好きなんです……。
+
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

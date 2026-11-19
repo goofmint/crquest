@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { context } from '../common/context';
 import { getItemFromKey } from './context_provider/itemsHelper';
@@ -14,7 +15,7 @@ const RENDER_ORDER = [
   'accessory2',
 ];
 
-export default class CharacterAvatar extends React.Component {
+class CharacterAvatar extends React.Component {
   static propTypes = {
     className: PropTypes.string,
   };
@@ -44,12 +45,13 @@ export default class CharacterAvatar extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div className={this.props.className}>
         <div className="relative character-avatar">
           <img
             className="character-avatar-img"
-            alt="Your character avatar"
+            alt={t('ui.onboarding.characterAvatar')}
             src={
               this.context.settings.avatar === 0
                 ? this.context.customAvatar.uri
@@ -63,3 +65,5 @@ export default class CharacterAvatar extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(CharacterAvatar);

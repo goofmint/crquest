@@ -1,8 +1,9 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { context, setContext } from '../../common/context';
 
-export default class NameStep extends React.Component {
+class NameStep extends React.Component {
   static propTypes = {
     isActive: PropTypes.bool.isRequired,
     onClick: PropTypes.func.isRequired,
@@ -24,14 +25,16 @@ export default class NameStep extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div
         className={this.props.isActive ? '' : 'o-50'}
         onClick={this.props.onClick}
       >
-        <h3>Enter your name</h3>
+        <h3>{t('ui.onboarding.name')}</h3>
         <span className="caret">&gt;&nbsp;</span>
         <input
+          aria-label={t('ui.onboarding.name')}
           autoFocus
           className="white bw0 outline-0"
           disabled={!this.props.isActive}
@@ -46,3 +49,5 @@ export default class NameStep extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(NameStep);
