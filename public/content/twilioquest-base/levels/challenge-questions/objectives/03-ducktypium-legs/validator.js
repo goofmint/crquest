@@ -3,20 +3,24 @@ module.exports = async function (helper) {
     const color = helper.getNormalizedInput("color");
 
     if (!color) {
-      helper.fail("Be sure to enter a color of jar!");
+      helper.fail(helper.t("missingColor", "Be sure to enter a color of jar!"));
       return;
     }
 
     const validColors = ["gray", "white and green", "terracotta"];
     if (!validColors.includes(color)) {
       helper.fail(
-        `The color you entered "${color}" is not one of the valid colors: "gray", "white and green", or "terracotta".`
+        helper.t(
+          "invalidColor",
+          'The color you entered "{{color}}" is not one of the valid colors: "gray", "white and green", or "terracotta".',
+          { color }
+        )
       );
       return;
     }
 
     if (color !== "gray" && color !== "grey") {
-      helper.fail(`That jar was trapped! Cedric barely avoided getting hurt!`);
+      helper.fail(helper.t("trapped", "That jar was trapped! Cedric barely avoided getting hurt!"));
       return;
     }
   } catch (err) {
@@ -24,5 +28,5 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success("You did it!");
+  helper.success(helper.t("success", "You did it!"));
 };

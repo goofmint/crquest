@@ -1,0 +1,8 @@
+{
+  "missingInstructions": "移動指示が入力されていないようです！ 例「left left left」のように、英語の単語をスペースで区切って入力してください。",
+  "invalidInstructions": "使えない移動指示が含まれています。使えるのは {{instructions}} です。",
+  "didNotReachDoor": "セドリックはその指示では神殿の扉までたどり着けませんでした！",
+  "wrongFirst": " 最初の指示が違います。「{{instruction}}」ではなく「left」です。",
+  "firstCorrect": " 最初の{{count}}個の指示「{{instructions}}」は合っています。",
+  "success": "やったね！"
+}

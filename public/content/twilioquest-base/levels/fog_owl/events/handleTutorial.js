@@ -34,33 +34,33 @@ async function runTutorial(world, worldState) {
     x: 528,
     y: 336,
   });
-  world.showNotification(`
+  world.showNotification(world.t("fogOwlTutorial.navigation", `
     <i>
       So this is the Fog Owl!<br/><br/>That platform looks like the <em>navigation 
       system</em> - I should be able to use it to travel to different parts of
       The Cloud.
     </i>
-  `);
+  `));
   await world.wait(6000);
 
   await world.tweenCameraToPosition({
     x: 732,
     y: 610,
   });
-  world.showNotification(`
+  world.showNotification(world.t("fogOwlTutorial.training", `
     <i>
       This area looks like some kind of VR training simulator.<br/><br/> I bet there are
       some training sims that can help <em>build my technical skills</em>!
     </i>
-  `);
+  `));
   await world.wait(6000);
 
   await world.tweenCameraToPlayer();
-  world.showNotification(`
+  world.showNotification(world.t("fogOwlTutorial.getStarted", `
     <i>
       Time to get started!<br/><br/> I might want to say hi to Cedric and the crew as well.
     </i>
-  `);
+  `));
   world.enablePlayerMovement();
 
   worldState.showNavMapArrow = true;

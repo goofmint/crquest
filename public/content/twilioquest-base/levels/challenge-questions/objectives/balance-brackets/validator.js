@@ -4,14 +4,16 @@ module.exports = async function (helper) {
     // cannot leave it), so the checks run there and a failed check is thrown as
     // an error. See docs/migration/validation-helper-worker.md.
     await helper.evaluateInQuestIdeUserCodeLocalScope(
-      () => {
+      ({ mismatch, undefinedFunction }) => {
         const fail = (message) => {
           throw new Error(message);
         };
 
         const assertTestCase = (testFunction) => (input, expected) => {
           const testResult = testFunction(input);
-          const message = `Expected "${expected}" from input "${input}", but received "${testResult}".`;
+          const values = { expected, input, received: testResult };
+          const message = mismatch.replace(/\{\{(expected|input|received)\}\}/g,
+            (_, key) => String(values[key]));
 
           if (!Object.is(testResult, expected)) {
             fail(message);
@@ -26,7 +28,7 @@ module.exports = async function (helper) {
         }
 
         if (!learnerFunction) {
-          fail("The function balanceBrackets is not defined!");
+          fail(undefinedFunction);
         }
 
         const test = assertTestCase(learnerFunction);
@@ -40,7 +42,10 @@ module.exports = async function (helper) {
 
         return { outcome: "ok" };
       },
-      {},
+      {
+        mismatch: helper.t("mismatch", 'Expected "{{expected}}" from input "{{input}}", but received "{{received}}".'),
+        undefinedFunction: helper.t("undefinedFunction", "The function balanceBrackets is not defined!"),
+      },
       "balance-brackets"
     );
   } catch (err) {
@@ -48,5 +53,5 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success("You did it!");
+  helper.success(helper.t("success", "You did it!"));
 };

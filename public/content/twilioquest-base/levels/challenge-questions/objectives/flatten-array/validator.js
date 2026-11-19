@@ -4,9 +4,7 @@ module.exports = async function (helper) {
     // cannot leave it), so the checks run there and a failed check is thrown as
     // an error. See docs/migration/validation-helper-worker.md.
     await helper.evaluateInQuestIdeUserCodeLocalScope(
-      () => {
-        const ARRAY_ELEMENT_DIFFERENT_ERROR_MESSAGE =
-          "One or more array elements are different or have different types.";
+      ({ mismatchedElement, mismatch, undefinedFunction }) => {
 
         const fail = (message) => {
           throw new Error(message);
@@ -42,7 +40,9 @@ module.exports = async function (helper) {
           const inputFormatted = formatByType(input);
           const testResultFormatted = formatByType(testResult);
 
-          return `Expected ${expectedFormatted} from input ${inputFormatted}, but received ${testResultFormatted}.`;
+          const values = { expected: expectedFormatted, input: inputFormatted, received: testResultFormatted };
+          return mismatch.replace(/\{\{(expected|input|received)\}\}/g,
+            (_, key) => String(values[key]));
         };
 
         const assertTestCase = (testFunction) => (input, expected) => {
@@ -66,7 +66,7 @@ module.exports = async function (helper) {
               testResult,
               (element, otherElement) => {
                 if (!Object.is(element, otherElement))
-                  fail(ARRAY_ELEMENT_DIFFERENT_ERROR_MESSAGE);
+                  fail(mismatchedElement);
 
                 return true;
               }
@@ -85,7 +85,7 @@ module.exports = async function (helper) {
         }
 
         if (!learnerFunction) {
-          fail("The function flattenArray is not defined!");
+          fail(undefinedFunction);
         }
 
         const test = assertTestCase(learnerFunction);
@@ -100,7 +100,11 @@ module.exports = async function (helper) {
 
         return { outcome: "ok" };
       },
-      {},
+      {
+        mismatchedElement: helper.t("mismatchedElement", "One or more array elements are different or have different types."),
+        mismatch: helper.t("mismatch", "Expected {{expected}} from input {{input}}, but received {{received}}."),
+        undefinedFunction: helper.t("undefinedFunction", "The function flattenArray is not defined!"),
+      },
       "flatten-array"
     );
   } catch (err) {
@@ -108,5 +112,5 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success("You did it!");
+  helper.success(helper.t("success", "You did it!"));
 };

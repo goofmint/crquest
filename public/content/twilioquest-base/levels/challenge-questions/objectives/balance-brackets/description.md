@@ -19,12 +19,12 @@ Create a function `balanceBrackets` that accepts an array of brackets. This func
 
 ## Examples
 
-- `["{", "}”]` -> `true`
+- `["{", "}"]` -> `true`
 - `["[", "(", "]", ")"]` -> `false`
 - `[]` -> `true`
-- `["{", "[", "}”]` -> `false`
+- `["{", "[", "}"]` -> `false`
 - `["]", "(", ")", "["]` -> `false`
-- `["(", ")”, "[", "(", "{", "}”, ")”, "]”]` -> `true`
+- `["(", ")", "[", "(", "{", "}", ")", "]"]` -> `true`
 
 <br>
 

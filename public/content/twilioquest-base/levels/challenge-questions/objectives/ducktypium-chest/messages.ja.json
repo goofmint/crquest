@@ -1,0 +1,7 @@
+{
+  "missingWords": "単語が入力されていないようです！ 例「{{words}}」のように、スペースで区切って入力してください。",
+  "missingSomeWords": "単語が足りません！ 次の3つの単語をすべて使ってください。{{words}}",
+  "invalidWords": "使えない単語が含まれています。使える単語は {{words}} です。",
+  "incorrectOrder": "単語の順番が違うようです！",
+  "success": "やったね！"
+}

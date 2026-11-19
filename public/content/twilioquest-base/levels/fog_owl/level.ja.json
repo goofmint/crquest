@@ -1,0 +1,17 @@
+{
+  "title": "フォグ・オウル号",
+  "description": "クラウドを巡る移動拠点。",
+  "questTitle": "フォグ・オウル号に乗船",
+  "questDescription": "航法マップを使ってクラウドを探索しましょう。VR 訓練で技術を磨くこともできます。",
+  "flavorTextOverrides": {
+    "crewPod": "このポッドは別のユーザー用に設定されているみたい。<span class=\"highlight\">自分の VR ポッド</span>を使おう。<span class=\"highlight\">上部に緑色のランプが点いた、開いているポッド</span>だ。",
+    "crewComplement": "ブリッジの乗組員4人分のベッドだ。オウル号が飛べるようになったら、任務のために<span class=\"highlight\">チームを集めよう</span>。",
+    "chestNothing": "<span class=\"highlight\">この宝箱</span>は開くかな？ 開かないみたいだ…。まあ、試してみる価値はあった。",
+    "replacementParts": "クラウド用神経インターフェースの予備部品だ。備えがあれば安心だ。",
+    "standupSet": "「0が8に何て言った？ <span class=\"highlight\">すてきなベルトだね！</span>」…残念ながら、この漫談の中ではこれが一番いい。舞台に上がる前に、もう少し練り直したほうがよさそうだ。",
+    "fuel": "この船は何を燃料にしているんだろう…。 ",
+    "navigationSystemOffline": "<span class=\"highlight\">航法装置</span>を使えば、船でクラウドのさまざまな場所へ行ける。まだオフラインみたいだ…。 ",
+    "battleTactics": "<span class=\"red\">レガシーシステムズ</span>の部隊に対する戦術のメモだ。船が動き出せば問題が起きると見込んでいるらしい…。 ",
+    "airlock": "エアロックだろう。仮想環境でも、開けたら<span class=\"highlight\">宇宙に吸い出される</span>んだろうか？ 確かめる気にはなれない。"
+  }
+}

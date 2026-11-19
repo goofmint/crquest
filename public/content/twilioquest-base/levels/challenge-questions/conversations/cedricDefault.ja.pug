@@ -1,0 +1,83 @@
+-
+  const STATE_KEY = "com.twilioquest.challenge-questions";
+  const worldState = getState(STATE_KEY);
+
+mixin what_they_do
+  response#what_they_do.
+    大変だ！ 彼らは何をしようとしているの？
+
+mixin transition_to_other_map
+  response#transition_to_other_map.
+    シミュレーションの別の区画に行こう！
+
+conversation(display_name="Cedric")
+  case lastResponse
+    when "bottom_of_this"
+      statement#final
+      responses
+
+    when "what_they_do"
+      statement#forge
+      responses
+        response#bottom_of_this.
+          真相を突き止めてみせる！
+
+    when "transition_to_computations"
+      statement#transition_to_map
+      responses
+      - worldState.chosenMap = 'default';
+
+    when "transition_to_power"
+      statement#transition_to_map
+      responses
+      - worldState.chosenMap = 'room2';
+
+    when "transition_to_bugs"
+        statement#transition_to_map
+        responses
+        - worldState.chosenMap = 'room3';
+
+    when "transition_to_other_map"
+      statement#where_to
+      responses
+        if worldState.currentMapName !== 'default'
+          response#transition_to_computations.
+            計算が行われる区画を再現して。
+        if worldState.currentMapName !== 'room2'
+          response#transition_to_power.
+            電力が生成される区画を再現して。
+        if worldState.currentMapName !== 'room3'
+          response#transition_to_bugs.
+            バグの修理が行われる区画を再現して。
+
+    default
+      if worldState.challengeMapsCompleted >= 1
+        statement#default_room2
+        responses
+          +transition_to_other_map
+      else
+        statement#default
+        responses
+          +what_they_do
+
+  statements
+    statement#default
+      text.
+        オペレーター！ 来てくれてうれしいです！ #[span.red レガシーシステムズ]が#[span.highlight JavaScript テストラボ]からダックティピウムのサンプルを盗みました。
+    statement#forge
+      text.
+        まだわかりません！ #[span.highlight 現地オペレーター]が、どうやら#[span.highlight ダークダックティピウム炉]と呼ばれるものの設計図の一部を見つけました。ここに再現できる部分を再現しました。このシミュレーションを探索して、その目的を突き止めてください！
+    statement#final
+      text.
+        またこのシミュレーションに戻ってきてください。#[span.highlight 現地オペレーター]がまもなく設計図の続きを持ち帰る予定です！
+    statement#where_to
+      text.
+        了解しました！ どの区画を再現しますか？
+    statement#transition_to_map
+      text.
+        いってらっしゃい！
+    statement#default_room2
+      text.
+        計算を解き明かすとはお見事です！ #[span.red レガシーシステムズ]は、あの機械でダークダックティピウムを合成していたことがわかりました！ #[span.highlight 現地オペレーター]が#[span.highlight ダークダックティピウム炉]の追加の設計図を見つけたので、再現できます。どの区画を調べたいか教えてくれれば、ご案内します！
+
+- setState(STATE_KEY, worldState);

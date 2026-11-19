@@ -1,0 +1,447 @@
+// Responses
+mixin where_am_i
+  response#where_am_i.
+    ここはどこ？
+
+mixin who_are_you
+  response#who_are_you.
+    あなたのことをもっと知りたい。自己紹介してくれる？
+
+mixin about_robot
+  response#about_robot.
+    あなたはロボットなの？
+
+mixin about_fun
+  response#about_fun.
+    じゃあ、趣味は何？
+
+mixin about_sad
+  response#about_sad.
+    それは残念だね。何か手伝えることはある？
+
+mixin back_to_main
+  response#back_to_main.
+    実は、ほかにも質問があって。
+
+mixin what_next
+  response#what_next.
+    次は何をすればいい？
+
+mixin about_tq_history
+  response#about_tq_history.
+    計画の歴史について教えてくれる？
+
+mixin about_tq_first_operators
+  response#about_tq_first_operators.
+    最初のオペレーターたち？ いつか会ってみたいな。
+
+mixin about_tq_code
+  response#about_tq_code.
+    オペレーターの掟って何？
+
+mixin about_tq_operator
+  response#about_tq_operator.
+    オペレーターはどんな仕事をするの？
+
+mixin about_tq_legacy_systems
+  response#about_tq_legacy_systems.
+    「レガシーシステムズ」について何がわかっているの？
+
+mixin about_tq_legacy_systems_bolder
+  response#about_tq_legacy_systems_bolder.
+    大胆になってきているって、どういうこと？
+
+mixin about_tq_legacy_systems_do
+  response#about_tq_legacy_systems_do.
+    どう対処するつもりなの？
+
+mixin about_twilio_what
+  response#about_twilio_what.
+    通信 API って、たとえばどんなもの？
+
+mixin about_twilio_name
+  response#about_twilio_name.
+    「Twilio」って変わった名前だね。どういう意味？
+
+mixin about_twilio_why
+  response#about_twilio_why.
+    どうして Twilio は TwilioQuest を作ったの？
+
+mixin about_world_cloud
+  response#about_world_cloud.
+    つまり、今いるのは文字通り「クラウド」の中なの？
+
+mixin about_world_everyone_else
+  response#about_world_everyone_else.
+    インターネットを使う人はみんなこのクラウドにいるの？
+
+mixin about_world_responsibility
+  response#about_world_responsibility.
+    それは残念だね。みんなにも、私たちのようにクラウドを理解してほしいな。
+
+mixin about_world_space
+  response#about_world_space.
+    クラウドは、私がもともと知っているものにたとえて見せているんだね。だから宇宙みたいに見えるの？
+
+mixin questions_about_world
+  response#questions_about_world.
+    ここはどこ？
+
+mixin more_questions_about_world
+  response#more_questions_about_world.
+    クラウドについて、もう少し聞いてもいい？
+
+mixin more_questions_about_twilio
+  response#more_questions_about_twilio.
+    Twilio について、ほかにも質問がある。
+
+mixin questions_about_twilio
+  response#questions_about_twilio.
+    そういえば、そもそも「Twilio」って何？
+
+mixin more_questions_about_tq
+  response#more_questions_about_tq.
+    TwilioQuest について、ほかにも質問がある。
+
+mixin questions_about_tq
+  response#questions_about_tq.
+    TwilioQuest 計画について、もっと教えてくれる？
+
+mixin more_questions_about_you
+  response#more_questions_about_you.
+    あなたについて、ほかにも質問していい？
+
+mixin questions_about_you
+  response#questions_about_you.
+    あなたのことをもっと知りたい。自己紹介してくれる？
+
+mixin questions_main
+  response#questions_main.
+    別の話をしよう。
+
+mixin how_get_here
+  response#how_get_here.
+    変なことを聞くけど、どうして私はここにいるの？
+
+mixin answer_some_questions
+  response#answer_some_questions.
+    今の話について、もう少し聞きたいことがある…
+
+conversation(display_name="Cedric")
+  case lastResponse
+    when "more_questions_about_tq"
+    when "questions_about_tq"
+      if lastResponse === "more_questions_about_tq"
+        statement#about_tq_brief
+      else
+        statement#about_tq_main
+      responses
+        +about_tq_history
+        +about_tq_operator
+        +about_tq_legacy_systems
+        +questions_main
+
+    when "about_tq_legacy_systems"
+      statement#about_tq_legacy_systems
+      responses
+        +about_tq_legacy_systems_bolder
+        +more_questions_about_tq
+
+    when "about_tq_legacy_systems_bolder"
+      statement#about_tq_legacy_systems_bolder
+      responses
+        +about_tq_legacy_systems_do
+        +more_questions_about_tq
+
+    when "about_tq_legacy_systems_do"
+      statement#about_tq_legacy_systems_do
+      responses
+        +about_tq_code
+        +more_questions_about_tq
+
+    when "about_tq_first_operators"
+      statement#about_tq_first_operators
+      responses
+        +more_questions_about_tq
+        +questions_main
+
+    when "about_tq_history"
+      statement#about_tq_history
+      responses
+        +more_questions_about_tq
+
+    when "about_tq_operator"
+      statement#about_tq_operator
+      responses
+        +about_tq_code
+        +more_questions_about_tq
+
+    when "about_tq_code"
+      statement#about_tq_code
+      responses
+        +more_questions_about_tq
+        +questions_main
+
+    when "more_questions_about_twilio"
+    when "questions_about_twilio"
+      if lastResponse === "more_questions_about_twilio"
+        statement#about_twilio_brief
+      else
+        statement#about_twilio_main
+      responses
+        +about_twilio_what
+        +about_twilio_name
+        +questions_main
+
+    when "about_twilio_what"
+      statement#about_twilio_what
+      responses
+        +more_questions_about_twilio
+        +questions_main
+
+    when "about_twilio_name"
+      statement#about_twilio_name
+      responses
+        +more_questions_about_twilio
+        +questions_main
+
+    when "more_questions_about_world"
+    when "questions_about_world"
+      if lastResponse === "more_questions_about_world"
+        statement#about_world_brief
+      else
+        statement#about_world_main
+      responses
+        +about_world_cloud
+        +about_world_everyone_else
+        +questions_main
+
+    when "about_world_responsibility"
+      statement#about_world_responsibility
+      responses
+        +more_questions_about_world
+        +questions_main
+
+    when "about_world_everyone_else"
+      statement#about_world_everyone_else
+      responses
+        +about_world_responsibility
+        +more_questions_about_world
+
+    when "about_world_cloud"
+      statement#about_world_cloud
+      responses
+        +about_world_space
+
+    when "about_world_space"
+      statement#about_world_space
+      responses
+        +more_questions_about_world
+        +questions_main
+
+    when "about_sad"
+      statement(expression="cedricHappy.png")#sad
+      responses
+        +more_questions_about_you
+        +questions_main
+
+    when "about_fun"
+      statement(expression="cedricSad.png")#fun
+      responses
+        +about_sad
+        +more_questions_about_you
+        +questions_main
+
+    when "about_robot"
+      statement#robot
+      responses
+        +more_questions_about_you
+        +questions_main
+
+    when "more_questions_about_you"
+    when "questions_about_you"
+      if lastResponse === "more_questions_about_you"
+        statement#about_you_brief
+      else
+        statement#about_you_main
+      responses
+        +about_robot
+        +about_fun
+        +questions_main
+
+    when "questions_main"
+    when "answer_some_questions"
+      if lastResponse === "questions_main"
+        statement#questions_main
+      else
+        statement#questions
+      responses
+        +questions_about_world
+        +questions_about_you
+        +questions_about_tq
+        +questions_about_twilio
+        +back_to_main
+
+    when "what_next"
+      statement#next
+      responses
+        +how_get_here
+        +answer_some_questions
+
+    when "how_get_here"
+      statement#how_get_here
+      responses
+        +what_next
+        +answer_some_questions
+
+    // This is the main conversation menu
+    when "back_to_main"
+    default
+      if lastResponse === "back_to_main"
+        statement#main
+      else
+        statement#default
+      responses
+        +what_next
+        +how_get_here
+        +answer_some_questions
+
+  statements
+    statement#about_tq_brief
+      text.
+        はい、オペレーター。何をお知りになりたいですか？
+
+    statement#about_tq_main
+      text.
+        #[span.highlight TwilioQuest] 計画は、クラウドの未開の領域を探索し、守ることを使命とする極秘組織です。あなたのような TwilioQuest の#[span.highlight オペレーター]が、この重要な任務の最前線を担っています。
+
+    statement#about_tq_legacy_systems
+      text.
+        残念ながら、#[span.red レガシーシステムズ]の具体的な計画や構成員について、わかっていることはわずかです。彼らは、蓄えた富と影響力を守ろうとする有力者の大きなネットワークを持っています。これまでは陰で活動していましたが、最近は日に日に手口が大胆になっています。
+
+    statement#about_tq_legacy_systems_bolder
+      text.
+        新たなセキュリティ侵害、SNS での偽情報の拡散、特権によるデータアクセスの悪用が起きない日はないほどです。一見すると無関係に思えますが、得られた情報からはつながっているようです。#[span.red レガシーシステムズ]による、より大きな攻勢の始まりにすぎないと考えています。
+
+    statement#about_tq_legacy_systems_do
+      text.
+        私たちは#[span.highlight オペレーター]を増やして対抗します。#[span.highlight オペレーターの掟]を守りながらクラウドを探索する仲間が多ければ多いほど、#[span.red レガシーシステムズ]の影響力を排除できる見込みが高まります。いかにクラウドが広くても、彼らが潜める場所は残しません。
+
+    statement#about_tq_history
+      text.
+        2013年、TwilioQuest 計画は少数の開発者、いわゆる#[span.highlight 最初のオペレーター]を訓練し、ソフトウェア開発の技術でクラウドを守る任務に送り出しました。今ではクラウド探索技術の進歩により、さらに多くの仲間を迎えられます。#[span.red レガシーシステムズ]も力を増しているようですから、幸いなことです。
+
+    statement#about_tq_first_operators
+      text.
+        いずれ会える機会が来ます。その前にフォグ・オウル号を探索に出られるよう整備し、あなたはオペレーターとしての訓練に専念してください。
+      speech.
+        いずれ会える機会が来ます。その前にフォグ・オウル号を探索に出られるよう整備し、あなたはオペレーターとしての訓練に専念してください。
+
+    statement#about_tq_operator
+      text.
+        オペレーターは正式な指揮系統には属さず、それに伴う職務もありません。ただし、オペレーターとして認められ、TwilioQuest 計画の支援を受けるには、#[span.highlight オペレーターの掟]を守る必要があります。
+
+    statement#about_tq_code
+      text.
+        オペレーターは、すべての人の#[span.highlight 希望、力、自由]を広げるコードを書くためだけに技術を使うと誓います。人から奪い、抑圧し、だますためのコードを書く人は、オペレーターとは呼べません。意図したかどうかにかかわらず、技能をそのように使う開発者は#[span.red レガシーシステムズ]の一員です。
+      speech.
+        オペレーターは、すべての人の希望、力、自由を広げるコードを書くためだけに技術を使うと誓います。人から奪い、抑圧し、だますためのコードを書く人は、オペレーターとは呼べません。技能をそのように使う開発者はレガシーシステムズの一員です。
+
+    statement#about_twilio_what
+      text.
+        Twilio の API を使うと、ソフトウェアから SMS、WhatsApp、ビデオ、音声、FAX、メールなど、さまざまな手段で通信できます。コンタクトセンター、二要素認証、AI ボットなどに使える高レベルなツールもあります。これらの API の使い方は、#[span.highlight VR 訓練室]の演習で学べます。
+
+    statement#about_twilio_name
+      text.
+        「Twilio」という名前に別の意味はありません。短く、同じ名前の .com ドメインが空いていたので、創業者たちが選びました。いつか社名を変えるだろうと思っていたそうですが、その日は結局来ませんでした。
+
+    statement#about_twilio_brief
+      text.
+        私の知っていることであれば、お話ししましょう。
+
+    statement#about_twilio_main
+      text.
+        #[a(href="https://www.twilio.com") Twilio] は、カリフォルニア州サンフランシスコを拠点に、通信 API とインフラを提供する企業です。TwilioQuest 計画の主なスポンサーですが、私たちの秘密活動については公式には関知していないことになっています。
+
+    statement#about_world_everyone_else
+      text.
+        ほかのインターネット利用者も確かにクラウドにいますが、彼らがクラウドを知覚するためのインターフェースは、あなたのほど高度ではありません。多くの人はクラウドの仮想世界で暮らし、働いていても、鍵穴からのぞくようにしか見ていないのです。
+
+    statement#about_world_responsibility
+      text.
+        クラウドのことを広く伝えるのは大切ですが、考えてみてください。蛇口からどうやって水が出るか、どうやってエンジンが列車を動かすかご存じですか？ こうした仕組みを作る人々が、私たちの安全や利益を考えてくれていると信じています。クラウドの仮想世界を作る私たちにも、同じ責任があります。
+
+    statement#about_world_space
+      text.
+        そのとおりです。広大な宇宙や、船でそこを旅することは、あなたの脳が理解できる概念です。神経インターフェースはこうした比喩を使って、クラウドの仮想世界を探索しやすく、理解しやすくしています。
+
+    statement#about_world_cloud
+      text.
+        「文字通り」は、いまどきの使い方で言えば、そうかもしれません。肉体は現実世界にありますが、クラウドと#[span.highlight 神経で直接つながって]います。現実のデータを処理するために身につけた感覚や認識の仕組みを使って、クラウドのデータを驚くほど高速に理解できます。
+      speech.
+        「文字通り」は、#[break(time="200ms")] #[prosody(pitch="high") いまどきの使い方で言えば？] #[break(time="200ms")] そうかもしれません。肉体は現実世界にありますが、クラウドと神経で直接つながっています。現実のデータの処理に使う感覚や認識の仕組みで、クラウドのデータを驚くほど高速に理解できます。
+
+    statement#about_world_brief
+      text.
+        クラウドについて、ほかに何をお聞きになりたいですか？
+
+    statement#about_world_main
+      text.
+        ここはクラウド探査船（CEV）の#[span.highlight フォグ・オウル号]です。ミーム・クラスターから約120万ティック離れた、#[span.highlight クラウド]の奥深くにある非公開の地点です。
+      speech.
+        ここはクラウド探査船フォグ・オウル号です。ミーム・クラスターから約120万ティック離れた、クラウドの奥深くにある非公開の地点です。
+
+    statement#about_you_brief
+      text.
+        構いません。何でもお聞きください。できる限りお答えします。
+      speech.
+        構いません。お聞きください。#[break(strength="strong")]できる限りお答えします。
+
+    statement#about_you_main
+      text.
+        興味を持っていただけるとは光栄です！ ご存じのとおり、私は#[span.highlight セドリック]。あなたの専属アシスタントで、フォグ・オウル号の副長を任されています。
+      speech.
+        興味を持っていただけるとは光栄です！ ご存じのとおり、私はセドリック。あなたの専属アシスタントで、フォグ・オウル号の副長を任されています。
+
+    statement#robot
+      text.
+        正確には違います。私は地球各地のデータセンターにある複数のサーバー上で動作する仮想知能プログラムです。クラウドでも現実世界でも、姿があったほうが便利なことが多いので、目の前の「ロボット」は私のアバターです。今は #[a(href="https://www.mistyrobotics.com/") Misty Robotics] の Misty II の機体を使っています。
+
+    statement#fun
+      text.
+        答えられるといいのですが。私のプログラムは多くの点で高度でも、人間の体験を十分には理解できていません。「楽しい」の意味は知っていますが、その感覚はわかりません。
+
+    statement#sad
+      text
+        p.
+          人間をもっとよく理解しようと、いろいろな SNS に登録しました。最近は YouTube チャンネルを作り、現実世界のアバターが新品を開封する様子を、携帯電話で撮った粗い動画にして投稿しています。
+        p.
+          お手伝いいただけるなら、「高評価ボタンを連打」したり、「ベルを鳴らして」今後の動画を見逃さないようにしていただけますか？
+      speech.
+        人間をもっとよく理解しようと、いろいろな SNS に登録しました。最近は YouTube チャンネルで、現実世界のアバターが新品を開封する粗い携帯電話の動画を投稿しています。お手伝いいただけるなら、#[break(strength="strong")]「#[emphasis(level="moderate") 高評価ボタンを連打]」したり、#[break(strength="medium")]「#[emphasis(level="moderate") ベルを鳴らして]」#[break(strength="medium")]今後の動画を見逃さないようにしていただけますか？
+
+    statement#questions_main
+      text.
+        ご要望に応じて、さらに詳しくご説明できます。
+
+    statement#questions
+      text.
+        クラウドに到着したばかりで、疑問も多いでしょう。できる限りお答えします。
+
+    statement#how_get_here
+      text.
+        クラウドに接続すると、一時的に短期記憶を失う場合があります。いずれ治まりますが、今の状況ややるべきことは#[span.highlight ジャーナル]で確認できます。上部メニューバーの本のアイコンをクリックするか、<span class="highlight">[J]</span> キーを押してください。
+      speech.
+        クラウドに接続すると、一時的に短期記憶を失う場合があります。今の状況ややるべきことはジャーナルで確認できます。上部メニューバーの本のアイコンをクリックするか、J キーを押してください。
+
+    statement#next
+      text.
+        私たちの任務はフォグ・オウル号の航法装置を試すことです。クラウドの新しい世界へ向かうには、#[span.highlight 私の左側にある航法装置を使って]ください。<br/><br/>腕を磨くなら、#[span.highlight 後ろの通路を進んだ先にある VR 訓練室]も役に立つでしょう。
+
+    statement#main
+      text.
+        かしこまりました。ご用件をどうぞ。
+
+    statement#default
+      text.
+        オペレーター。またお会いできてうれしいです。ご用件をどうぞ。

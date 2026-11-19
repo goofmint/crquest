@@ -1,0 +1,6 @@
+{
+  "success": "やったね！",
+  "mismatch": "入力 {{input}} に対して {{expected}} を期待しましたが、結果は {{received}} でした。",
+  "mismatchedElement": "配列の要素の一部が異なるか、要素の型が違います。",
+  "undefinedFunction": "関数 flattenArray が定義されていません！"
+}

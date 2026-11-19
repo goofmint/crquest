@@ -1,0 +1,10 @@
+{
+  "title": "文の単語を逆順に",
+  "description": "文中の単語の順序を逆にします。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "「ハック」をクリックして関数をテストしてください。"
+    }
+  ]
+}
