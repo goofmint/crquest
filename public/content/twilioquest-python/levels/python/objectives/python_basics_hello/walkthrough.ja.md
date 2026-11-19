@@ -139,10 +139,16 @@ cd ~/quest
 python3 salutation.py
 ```
 
-インストールの試練で Windows の `python.exe` を指定した場合は、PowerShell で次のように実行します。コマンドが見つからなければ、その試練で確認した実行ファイルのフルパスを指定してください。
+インストールの試練で Windows の `python.exe` を指定した場合は、PowerShell で次のように実行します。
 
 ```powershell
 python salutation.py
+```
+
+コマンドが見つからなければ、その試練で確認した実行ファイルのフルパスを使います。例のパスを置き換え、引用符と PowerShell の呼び出し演算子 `&` はそのまま残してください。
+
+```powershell
+& "C:\Program Files\Python313\python.exe" salutation.py
 ```
 
 正しく動けば、ターミナルに英語の「For the glory of Python!」が出ます。この先の試練でも、このようにメッセージを表示することがあります。

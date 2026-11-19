@@ -40,7 +40,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 Python コードを入力して Enter を押すと直接評価されます。たとえば `help()` を入力すると、Python の対話型ヘルプが開きます。
 
-使い終わったら次のコードを入力すると、REPL が終了してターミナルに戻ります。
+対話型ヘルプを開いた場合は、`help>` のプロンプトで `q` を入力し、Enter を押して `>>>` に戻ります。REPL を終了してターミナルに戻るには、次のコードを入力します。
 
 ```python
 quit()

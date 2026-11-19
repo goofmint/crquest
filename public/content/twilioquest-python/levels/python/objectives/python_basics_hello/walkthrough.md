@@ -174,10 +174,16 @@ If your installation provides the `python3` command, run the script like this:
 python3 salutation.py
 ```
 
-If you found `python.exe` on Windows in the installation trial, run this from PowerShell instead. If the command is unavailable, use the full path you found in the installation trial as the executable.
+If you found `python.exe` on Windows in the installation trial, run this from PowerShell instead.
 
 ```powershell
 python salutation.py
+```
+
+If PowerShell cannot find the command, use the full path from the installation trial. Replace the example path with your own, keeping the quotes and the PowerShell call operator `&`.
+
+```powershell
+& "C:\Program Files\Python313\python.exe" salutation.py
 ```
 
 If your code works as intended, you should see the text __For the glory of Python!__ printed out to your terminal! Many of the trials in this area will instruct you to print out text in this way.
