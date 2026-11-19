@@ -34,13 +34,13 @@ module.exports = async (helper) => {
     );
 
     if (passed) {
-      helper.success(`
+      helper.success(helper.t("success", `
         You've correctly selected and sorted the segments of our test arrays! Manipulating arrays will serve you well in the future.
-      `);
+      `));
     }
   } catch (e) {
-    helper.fail(`Something went wrong when we tried to run your array section sorting function.
+    helper.fail(helper.t("sortError", `Something went wrong when we tried to run your array section sorting function.
     
-    ${e}`);
+    {{e}}`, { e }));
   }
 };

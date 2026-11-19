@@ -5,7 +5,7 @@ module.exports = async (helper) => {
   const { branchName } = helper.validationFields;
 
   if (!branchName) {
-    helper.fail(`Don't forget to provide the name of the branch you created!`);
+    helper.fail(helper.t("missingBranch", "Don't forget to provide the name of the branch you created!"));
     return;
   }
 
@@ -29,27 +29,39 @@ module.exports = async (helper) => {
       !branches.includes(branchCheckedOutName)
     ) {
       helper.fail(
-        `We couldn't find the branch named "${branchName}" in your respository!`
+        helper.t(
+          "branchNotFound",
+          "We couldn't find the branch named \"{{branchName}}\" in your respository!",
+          { branchName }
+        )
       );
       return;
     }
 
     if (!branches.includes(branchCheckedOutName)) {
       helper.fail(
-        `We found your branch "${branchName}" but it looks like you haven't checked it out yet!`
+        helper.t(
+          "branchNotActive",
+          "We found your branch \"{{branchName}}\" but it looks like you haven't checked it out yet!",
+          { branchName }
+        )
       );
       return;
     }
 
     helper.success(
-      `It looks like you created and checked out the branch "${branchName}" correctly!`,
+      helper.t(
+        "created",
+        "It looks like you created and checked out the branch \"{{branchName}}\" correctly!",
+        { branchName }
+      ),
       [{ name: "OPEN_PIXEL_ART_BRANCH", value: branchName }]
     );
   } catch (err) {
     helper.fail(
-      `We ran into a problem trying to validate your branch was created!
+      helper.t("error", `We ran into a problem trying to validate your branch was created!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

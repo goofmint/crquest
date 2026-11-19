@@ -10,11 +10,11 @@ module.exports = async helper => {
 
     const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
-      helper.fail(`
+      helper.fail(helper.t("fileMissing", `
         We couldn't find your "laserConfiguration.js" script in your 
         JavaScript code folder. Does the file below exist? <br/><br/>
-        <span style="word-wrap:break-word">${programPath}</span>
-      `);
+        <span style="word-wrap:break-word">{{programPath}}</span>
+      `, { programPath }));
       return;
     }
 
@@ -26,7 +26,7 @@ module.exports = async helper => {
     if (tq._error) {
       console.log(tq._error);
       if (tq._error.name === 'ReferenceError') {
-        return helper.fail(`
+        return helper.fail(helper.t("definitionMissing", `
           It looks like a <span class="highlight">laserStatus</span> 
           variable was not defined in your
           code. At least, we didn't see it in the global scope of your script.
@@ -34,37 +34,37 @@ module.exports = async helper => {
           Did you name the variable 
           "<span class="highlight">laserStatus</span>"? Maybe double-check your
           spelling?
-        `);
+        `));
       } else {
-        return helper.fail(`
+        return helper.fail(helper.t("validationError", `
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq._error}
-        `);
+          {{value1}}
+        `, { value1: tq._error }));
       }
     }
 
     // Check for the correct value of the string
     if (tq.laserStatus !== 'OFF') {
-      return helper.fail(`
+      return helper.fail(helper.t("incorrectLaserStatus", `
         You declared the <span class="highlight">laserStatus</span> variable,
         but it was not set to the string value of "OFF". Check the Help section
         to see how you can declare string variables. The value you set it to
-        was: <strong>"${tq.laserStatus}"</strong>.
-      `);
+        was: <strong>"{{value1}}"</strong>.
+      `, { value1: tq.laserStatus }));
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       That did it! You override the laser configuration with your own 
       JavaScript code, and in moments the lasers fade away. <br/><br/>
       You can now proceed onward to the office.
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("executionError", `
       There was an error executing your JavaScript code. Please ensure that you
       can run it from the command line successfully and try again. Here's the 
       error we got: <br/><br/>
-      <span class="highlight">${e}</span>
-    `);
+      <span class="highlight">{{e}}</span>
+    `, { e }));
   }
 };

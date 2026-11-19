@@ -1,0 +1,27 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+// Responses
+mixin funny_way
+  response#funny_way.
+    ずいぶん変わった感謝の伝え方ですね。
+
+conversation(display_name="TwilioQuest の植物学者")
+  if lastResponse === "funny_way"
+    statement.
+      何です？ 自分がまるで役立たずというわけではないと証明した褒美に、勲章でも欲しいのですか？ あいにく持ち合わせていませんので、あなたのプログラミングが役に立ったと認めるだけで十分でしょう。
+
+  else if worldState.southWing.hadSavedConversation
+    statement.
+      主実験室の#[span.highlight ビーム 2 のアクセスコード]はもう渡したでしょう。ほかに何か？ それとも、研究資料の回収で忙しい私の時間をさらに奪うおつもりですか？
+    responses
+      +funny_way
+
+  else
+    - worldState.southWing.hadSavedConversation = true;
+    statement.
+      ようやく来ましたか。ほら、どうしてもというなら、主実験室の#[span.highlight ビーム 2 のアクセスコードをお持ちなさい]。私は避難する前に研究資料をまとめます。<br/><br/>……最初に思ったほど見込みがないわけではありませんでしたね。
+    responses
+      +funny_way
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

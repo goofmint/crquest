@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：木があれば橋を架ける",
+  "description": "条件分岐を<strong>複数の方向に分ける</strong>方法を学び、植物学者まで橋を延ばしましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標タブの指示に従ってプログラムを書き、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

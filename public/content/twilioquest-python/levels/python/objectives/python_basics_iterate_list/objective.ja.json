@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：リストの反復処理",
+  "description": "<span class=\"highlight\">リストの要素を順番に処理</span>するコードを書きましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

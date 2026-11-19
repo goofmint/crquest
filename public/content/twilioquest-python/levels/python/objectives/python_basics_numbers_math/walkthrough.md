@@ -31,7 +31,7 @@ You can find an exhaustive list [here](https://docs.python.org/3/library/operato
 
 ```python
 print(f"2 plus 2 equals { 2 + 2 }");
-print(f"8 minus 4 equals { 8 + 4 }");
+print(f"8 minus 4 equals { 8 - 4 }");
 print(f"12 divided by 4 equals { 12 / 4 }");
 print(f"11 times by 3 equals { 11 * 3 }");
 ```

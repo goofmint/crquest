@@ -1,0 +1,14 @@
+{
+  "title": "オープンソースに貢献：Git のインストール",
+  "description": "<strong>Git のコマンドラインツール</strong>をインストールし、パソコン上で Git リポジトリを扱えるようにしましょう。",
+  "validation_fields": [
+    {
+      "name": "gitPath",
+      "label": "目標の説明に従って Git の実行ファイルのパスを貼り付けてください。"
+    },
+    {
+      "name": "prompt",
+      "label": "パソコンに git が入っていることを確認したら、ハックを押してください。"
+    }
+  ]
+}

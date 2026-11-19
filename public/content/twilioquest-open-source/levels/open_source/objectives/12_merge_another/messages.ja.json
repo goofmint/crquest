@@ -1,0 +1,12 @@
+{
+  "missingOwner": "貢献したリポジトリの所有者名を入力してください！",
+  "missingRepo": "貢献したリポジトリ名を入力してください！",
+  "missingNumber": "貢献に使ったプルリクエストの番号を入力してください！",
+  "previousRepo": "Open Pixel Art への貢献は、ここでは再度登録できません！",
+  "notFound": "{{repositoryOwner}} のリポジトリ「{{repository}}」にプルリクエスト #{{prNumber}} が見つかりませんでした！",
+  "wrongOwner": "{{repositoryOwner}} のリポジトリ「{{repository}}」でプルリクエスト #{{prNumber}} が見つかりましたが、お使いの GitHub ユーザー「{{TQ_GITHUB_USERNAME}}」が作成したものではありません！",
+  "closed": "{{repositoryOwner}} のリポジトリ「{{repository}}」でプルリクエスト #{{prNumber}} が見つかりましたが、マージされずに閉じられています！",
+  "unmerged": "{{repositoryOwner}} のリポジトリ「{{repository}}」でプルリクエスト #{{prNumber}} が見つかりましたが、まだマージされていません！",
+  "merged": "{{repositoryOwner}} のリポジトリ「{{repository}}」で、プルリクエスト #{{prNumber}} のマージを確認しました！ オープンソースへの貢献、おめでとうございます！",
+  "error": "プルリクエストのマージを確認する際に問題が発生しました！\n\n{{err}}"
+}

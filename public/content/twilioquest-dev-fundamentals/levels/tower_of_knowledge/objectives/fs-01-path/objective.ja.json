@@ -1,0 +1,10 @@
+{
+  "title": "ファイルパスを探す",
+  "description": "ファイルへのパスを見つけましょう。",
+  "validation_fields": [
+    {
+      "name": "filePath",
+      "label": "セドリックの YouTube 動画へのパスを、英語のファイル名で入力してください。"
+    }
+  ]
+}

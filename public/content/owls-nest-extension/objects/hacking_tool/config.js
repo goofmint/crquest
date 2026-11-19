@@ -44,13 +44,13 @@ module.exports = {
         event.target.key === 'hacking_device' &&
         !levelState.hackingToolAcquired
       ) {
-        world.showNotification(`
+        world.showNotification(world.t('hackingToolPickedUp', `
           <i>With this hacking tool, I should be able to <span class="highlight">
           hack the terminal</span> controlling the laser barrier in this room!</i>
           <br/><br/>
           (To hack an object, walk up to it and press the <span class="highlight">
           spacebar</span> to bring up the hacking interface).
-        `);
+        `));
 
         levelState.hackingToolAcquired = true;
         self.playAnimation('empty', true);

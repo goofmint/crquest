@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：スクリプトの引数",
+  "description": "<strong>コマンドライン引数</strong>で、Python のコードに最初に処理するデータを渡します。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左の説明に従ってコマンドライン引数を使うプログラムを作り、ハックを押してください。"
+    }
+  ]
+}

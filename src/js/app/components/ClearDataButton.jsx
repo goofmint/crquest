@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import { removeAsync } from '../platform/fs';
 import db from '../common/database';
 import { hasValueAsync, deleteValueAsync } from '../platform/store';
@@ -26,7 +27,7 @@ async function clearStoreValues() {
   }
 }
 
-export default class ClearDataButton extends React.Component {
+class ClearDataButton extends React.Component {
   async confirmClear() {
     // The async message box is not modal, so ignore repeated clicks while it is open
     if (this.confirming) {
@@ -36,10 +37,10 @@ export default class ClearDataButton extends React.Component {
     try {
       return (
         (await showConfirm(
-          `All user data and progress will be deleted. Continue?`
+          this.props.t('ui.clearData.first')
         )) &&
         (await showConfirm(
-          `Seriously, we are about to delete all your items and re-set all your progress in the game. Are you very sure you want to do this?`
+          this.props.t('ui.clearData.second')
         ))
       );
     } finally {
@@ -90,7 +91,7 @@ export default class ClearDataButton extends React.Component {
       await removeAsync(config.codeStoragePath);
     } catch (error) {
       resumePersistence();
-      await reportFailure('Could not clear the saved game data', error);
+      await reportFailure(this.props.t('ui.clearData.error'), error);
       throw error;
     }
 
@@ -111,6 +112,7 @@ export default class ClearDataButton extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const clearButtonStyles = {
       fontFamily: 'Monaco, "Source Code Pro", Consolas, monospace',
       height: '48px',
@@ -118,7 +120,7 @@ export default class ClearDataButton extends React.Component {
 
     return (
       <Button
-        label="Erase Game Data"
+        label={t('ui.clearData.erase')}
         style={clearButtonStyles}
         className="fr bw3 f6 ma2"
         onClick={() => this.clearUserData()}
@@ -126,3 +128,5 @@ export default class ClearDataButton extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined, { withRef: true })(ClearDataButton);

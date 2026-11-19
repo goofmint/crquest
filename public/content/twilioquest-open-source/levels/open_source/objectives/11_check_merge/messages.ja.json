@@ -1,0 +1,7 @@
+{
+  "notFound": "Open Pixel Art のリモートリポジトリにプルリクエスト #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} が見つかりませんでした！",
+  "closed": "Open Pixel Art のリモートリポジトリにプルリクエスト #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} が見つかりましたが、マージされずに閉じられています！",
+  "unmerged": "Open Pixel Art のリモートリポジトリにプルリクエスト #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} が見つかりましたが、まだマージされていません！",
+  "merged": "Open Pixel Art のリモートリポジトリで、プルリクエスト #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} のマージを確認しました！ オープンソースへの貢献、おめでとうございます！",
+  "error": "Open Pixel Art のプルリクエストのマージを確認する際に問題が発生しました！\n\n{{err}}"
+}

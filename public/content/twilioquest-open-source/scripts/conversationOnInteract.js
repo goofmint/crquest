@@ -1,3 +1,14 @@
+const observationKeys = new Map([
+  [
+    "<i>The stoic guardian of the forest calmly acknowledges your presence, but does not seem interested in idle conversation...</i>",
+    "observation.guard",
+  ],
+  [
+    "<i>The vendors in the town square have a variety of wares from across The Cloud. You wish you have time to stop and browse.</i>",
+    "observation.vendor",
+  ],
+]);
+
 module.exports = function (self, event, world) {
   if (self !== event.target) {
     // This isn't our conversationalist
@@ -12,7 +23,8 @@ module.exports = function (self, event, world) {
   if (self.observation) {
     // The "observation" property can be set to have the Operator
     // make an observation about a character without kicking off a convo
-    world.showNotification(self.observation);
+    const key = observationKeys.get(self.observation);
+    world.showNotification(key ? world.t(key, self.observation) : self.observation);
     return;
   }
 

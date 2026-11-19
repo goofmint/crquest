@@ -1,0 +1,173 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  const allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4;
+  const hasPledgeScroll = Object.hasOwn(worldState.insideCatacombs, "hasPledgeScroll") && worldState.insideCatacombs.hasPledgeScroll === true;
+
+
+mixin personal_intro
+  response#personal_intro.
+    わっ、幽霊！ どちら様でしたっけ？
+
+mixin catacombs_introduction
+  response#catacombs_introduction.
+    地下墓地では何をすればいいですか？
+
+mixin get_started
+  response#get_started.
+    試練に挑んで、学院で自分に合う寮を見つけます。
+
+mixin proceed
+  response#proceed.
+    では行ってきます！
+
+mixin pledge_scroll
+  response#pledge_scroll.
+    誓約書を手に入れました。次は何をすればいいですか？
+
+mixin houses
+  response#houses.
+    学院の寮について詳しく教えてもらえますか？
+
+conversation(display_name="地下墓地の幽霊")
+  case lastResponse
+    when "houses"
+      statement#houses
+      responses
+        +get_started
+        +catacombs_introduction
+
+    when "personal_intro"
+      statement#personal_intro
+      responses
+        +get_started
+        +catacombs_introduction
+        +houses
+
+    when "catacombs_introduction"
+      statement#catacombs_introduction
+      responses
+        +get_started
+        +personal_intro
+        +houses
+
+    when "proceed"
+      statement#proceed
+
+    when "ack"
+      statement#ack
+      responses
+        +catacombs_introduction
+        +personal_intro
+        +houses
+
+    when "help"
+      statement#help
+      responses
+        +catacombs_introduction
+        +houses
+
+    when "pledge_scroll"
+      if hasPledgeScroll
+        statement#congratulations
+      else
+        statement#follow_up_greeting
+
+    when "get_started"
+      statement#get_started
+      responses
+        if worldState.insideCatacombs.hasCredentials
+          +proceed
+          +catacombs_introduction
+          +personal_intro
+          +houses
+        else
+          response#ack.
+            分かりました。地下墓地の奥へ進む前に、Twilio の認証情報を像に渡します。
+
+    default
+      if !worldState.insidePerimeter.ghost_introduction
+        - worldState.insidePerimeter.ghost_introduction = true;
+        statement#default
+        responses
+          +catacombs_introduction
+          +get_started
+          +houses
+
+      else
+        statement#follow_up_greeting
+        responses
+          if hasPledgeScroll
+            +pledge_scroll
+            +personal_intro
+            +houses
+          else
+            +catacombs_introduction
+            response#help.
+              試練を進めるのを手伝ってほしいです。
+
+  statements
+    statement#default
+      text.
+        おや、地下墓地にお客さんが来るなんて久しぶり！ 私はハティップ・レスタピ。ハティ先生と呼んでください。地下墓地を案内し、待ち受ける試練に挑む手助けをします。<br><br>
+        試練では API の力を操る腕が試され、どんな魔法が自分に合うかも分かります。コードで自分を表現すること？ 問題を解決すること？ 背後にある理論や科学を活用すること？ それとも日常の可能性を広げること？
+
+    statement#houses
+      text.
+        寮にはそれぞれ得意分野があります。正直、どの寮が何をしているのか、私には追いきれません。本人たちに聞くのがよいでしょう。
+
+    statement#catacombs_introduction
+      text.
+       地下墓地の各部屋は、学院にある 4 つの寮のマスコットが守っています。部屋ごとに異なる試練で実力を示すと、マスコットから解錠の呪文の断片をもらえます。呪文を完成させると、地下墓地の中央にある聖なる巻物の間の鍵を呼び出せます。<BR><BR>
+       鍵で部屋に入り、身につけた魔法が宿る誓約書を受け取ってください。
+
+    statement#get_started
+      if worldState.insideCatacombs.hasCredentials
+        text.
+          Twilio アカウントの認証情報を持参して、準備万端ですね。地下墓地へ進んでください。健闘を祈ります、オペレーター！
+      else
+        text.
+          始める前に、試練に挑む準備ができていることを騎士に示さなければなりません。Twilio の認証情報を探し、騎士に渡してください。
+
+    statement#proceed
+      text.
+        健闘を祈ります！ 手助けが必要なら、いつでも戻ってきてください。
+
+    statement#follow_up_greeting
+      if hasPledgeScroll
+        text.
+          オペレーター、また会いましたね！ 地下墓地の旅は順調ですか？
+
+      else if allComplete
+        text.
+          解錠の呪文がそろいましたね！ 呪文で鍵を呼び出し、地下墓地の中央にある聖なる巻物の間を開けて、誓約書を手に入れてください。
+
+      else if worldState.insideCatacombs.keySpellsObtained.length === 0
+        text.
+          オペレーター、また会いましたね！ 地下墓地の旅は順調ですか？ 聖なる巻物の間の鍵を呼び出す呪文は、まだ一つも見つけていないようですね。
+
+      else
+        text.
+          オペレーター、また会いましたね！ 地下墓地の旅は順調ですか？ 聖なる巻物の間の鍵を呼び出す呪文は、4 つのうち #{worldState.insideCatacombs.keySpellsObtained.length} つをそろえたところですね。
+
+
+    statement#congratulations
+      text.
+        お見事です！ 誓約書を地上にいる寮長のもとへ持っていき、正式に寮に入ってください。<br><br>
+        聞いたところでは、もうすぐ各寮がコードの腕を競う、寮の試練が始まるそうです。あなたはもう学院の一員としての実力を示しましたから、出場を考えてみては？
+
+    statement#ack
+      text.
+        究極の API 呪文書、<a href="https://twilio.com/console">Twilio Console</a> を開いてください。騎士が求める認証情報は、そこで見つかります。
+
+    statement#help
+      text.
+        YouTube の <a href="https://www.youtube.com/watch?v=GZvSYJDk-us">API 入門コース</a> を見てみてください！
+
+    statement#personal_intro
+      text.
+        私は<span class="highlight">ハティップ・レスタピ</span>。ハティ先生と呼んでください。地下墓地を案内し、待ち受ける試練に挑む手助けをします。
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

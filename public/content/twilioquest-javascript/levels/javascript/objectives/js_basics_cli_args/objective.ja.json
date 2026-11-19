@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：スクリプトの引数",
+  "description": "<strong>コマンドライン引数</strong>で渡されたデータを使ってコードを書きます。",
+  "validation_fields": [
+    {
+      "name": "one",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation, withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { context, setContext, getContext } from '../../common/context';
 import rank from '../../common/rank';
@@ -75,6 +76,7 @@ function WarpLink({
   levelMapName,
   closeMissionComputer,
 }) {
+  const { t } = useTranslation();
   return (
     <a
       href=""
@@ -91,7 +93,7 @@ function WarpLink({
         closeMissionComputer();
       }}
     >
-      Warp Here &gt;
+      {t('ui.mission.warpHere')}
     </a>
   );
 }
@@ -106,6 +108,7 @@ function WarpPointListItem({
   prereqs,
   closeMissionComputer,
 }) {
+  const { t } = useTranslation();
   const completedObjectives = getContext('completedObjectives');
   const areAnyPrereqsUnmet = prereqs.some(
     prereq => !completedObjectives[`${levelName}.${prereq}`]
@@ -117,7 +120,7 @@ function WarpPointListItem({
       <p>{description}</p>
       {areAnyPrereqsUnmet ? (
         <p>
-          <i className="fas fa-lock"></i> Locked
+          <i className="fas fa-lock"></i> {t('ui.mission.locked')}
         </p>
       ) : (
         <WarpLink
@@ -131,7 +134,7 @@ function WarpPointListItem({
   );
 }
 
-export default class MissionComputer extends React.Component {
+class MissionComputer extends React.Component {
   static propTypes = {
     close: PropTypes.func,
   };
@@ -155,6 +158,7 @@ export default class MissionComputer extends React.Component {
   // Depending on the current state of prerequisites, render launch button
   // or prereq list
   renderLaunchOrPrereqs() {
+    const { t } = this.props;
     const { completedObjectives } = this.context;
     const { prereqList } = this.state.selectedMission;
 
@@ -168,11 +172,10 @@ export default class MissionComputer extends React.Component {
         return (
           <div className="prereqs">
             <em>
-              <span className="highlight">Hold up, Operator!</span>
+              <span className="highlight">{t('ui.mission.operator')}</span>
             </em>
             <p>
-              Before you can take on this mission, you must complete these
-              mission objectives:
+              {t('ui.mission.prerequisites')}
             </p>
             {prereqList.map(({ key, title }) => {
               return (
@@ -199,7 +202,7 @@ export default class MissionComputer extends React.Component {
             this.props.close();
           }}
         >
-          LAUNCH MISSION
+          {t('ui.mission.launch')}
         </Button>
         {this.getDisplayableWarpPoints().length > 0 && (
           <a
@@ -212,7 +215,7 @@ export default class MissionComputer extends React.Component {
             }}
             href=""
           >
-            Warp Points &gt;
+            {t('ui.mission.warpPointsLink')}
           </a>
         )}
       </>
@@ -249,6 +252,7 @@ export default class MissionComputer extends React.Component {
   }
 
   renderSidebar() {
+    const { t } = this.props;
     const { selectedMission, showWarpPoints } = this.state;
     const { completedObjectives } = this.context;
     let contents;
@@ -262,7 +266,7 @@ export default class MissionComputer extends React.Component {
             alt={selectedMission.title}
           />
           <h2>{selectedMission.title}</h2>
-          <div className="progress">Warp Points</div>
+          <div className="progress">{t('ui.mission.warpPoints')}</div>
           <ul
             style={{
               listStyle: 'none',
@@ -286,7 +290,7 @@ export default class MissionComputer extends React.Component {
               this.setState({ showWarpPoints: false });
             }}
           >
-            {'< BACK'}
+            {t('ui.mission.back')}
           </Button>
         </>
       );
@@ -297,6 +301,7 @@ export default class MissionComputer extends React.Component {
         objCompleted,
         totalObjectives,
       } = calcPercentComplete(selectedMission, completedObjectives);
+      const missionRank = rank(objCompleted, totalObjectives);
 
       contents = (
         <>
@@ -307,11 +312,11 @@ export default class MissionComputer extends React.Component {
           />
           <h2>{selectedMission.title}</h2>
           <div className="progress">
-            {percentComplete}% Complete
+            {t('ui.mission.progress', { percent: percentComplete })}
             <br />
-            Rank:&nbsp;
+            {t('ui.hud.rank')}&nbsp;
             <span className="highlight">
-              {rank(objCompleted, totalObjectives)}
+              {missionRank === 'None' ? t('ui.hud.noRank') : missionRank}
             </span>
           </div>
           <p>{selectedMission.description}</p>
@@ -319,13 +324,14 @@ export default class MissionComputer extends React.Component {
         </>
       );
     } else {
-      contents = <h2 className="inactive">&lt; SELECT A MISSION</h2>;
+      contents = <h2 className="inactive">{t('ui.mission.select')}</h2>;
     }
 
     return <div className="missionDescription">{contents}</div>;
   }
 
   render() {
+    const { t } = this.props;
     const missions = this.state.missions.sort((a, b) => {
       const priority = (a.priority || 9999) - (b.priority || 9999);
       return priority;
@@ -333,7 +339,7 @@ export default class MissionComputer extends React.Component {
     return (
       <div className="MissionComputer">
         <MenuContainer
-          title="Select Training Mission"
+          title={t('ui.mission.selectTraining')}
           onClose={() => this.props.close()}
         >
           <div className="missions">
@@ -355,3 +361,5 @@ export default class MissionComputer extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(MissionComputer);

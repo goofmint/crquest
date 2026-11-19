@@ -12,9 +12,11 @@ import { migrateAnalyticsIdToUserGuid, initializeUserIdentity } from './user';
 import { initializeSystemInfo } from './system';
 import loadItemsFromDisk from './loadItemsFromDisk';
 import levelLoader from '../../common/levelLoader';
+import localizeQuestStatus from './localizeQuestStatus';
 import analytics from '../../common/analytics';
 import { syncBundledAssets } from '../../common/assetLoader';
 import { reduceEntries } from '../../common/context/schema';
+import { getLanguage, isSupportedLanguage, t } from '../../i18n';
 
 export default class ContextProvider extends React.Component {
   // Any data that will ever live in this component should have an entry here in
@@ -50,6 +52,7 @@ export default class ContextProvider extends React.Component {
     settings: {
       avatar: 1,
       name: '',
+      language: getLanguage(),
     },
     showMissionComputer: false,
     showOnboarding: false,
@@ -108,11 +111,19 @@ export default class ContextProvider extends React.Component {
             }
           }
         } catch (error) {
-          await reportFailure('Could not load the saved game data', error);
+          await reportFailure(t('errors.loadSave'), error);
           throw error;
         }
 
-        return state;
+        return {
+          ...state,
+          settings: {
+            ...state.settings,
+            language: isSupportedLanguage(state.settings?.language)
+              ? state.settings.language
+              : getLanguage(),
+          },
+        };
       },
       migrateAnalyticsIdToUserGuid,
       initializeUserIdentity,
@@ -147,6 +158,7 @@ export default class ContextProvider extends React.Component {
 
       try {
         await levelLoader.importLevels();
+        await localizeQuestStatus();
 
         const missions = await levelLoader.getFullMissionList();
         const numObjectives = missions.reduce((acc, mission) => {

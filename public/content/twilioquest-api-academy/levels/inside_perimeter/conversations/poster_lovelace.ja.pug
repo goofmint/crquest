@@ -1,0 +1,19 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="ラブレス寮のポスター")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">世界に名だたる秘術 API 学院、ラブレス寮主催の国際バーチャル芸術展<br><br>
+        開催決定<br><BR>
+        <span class="highlight">インターフェースの抽象化 // 抽象的なインターフェース</span><BR><BR>
+        4 つの寮から集まった 25 人以上の学生アーティストによる、コードアートと体験型の作品を展示します。</p>
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

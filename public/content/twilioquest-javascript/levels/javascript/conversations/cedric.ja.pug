@@ -1,0 +1,86 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+// Responses
+mixin what_research
+  response#what_research.
+    ここではどんな研究をしているのですか？
+
+mixin what_can_i_learn
+  response#what_can_i_learn.
+    このラボでは JavaScript について何を学べますか？
+
+conversation(display_name="セドリック")
+  - const savedDay = worldState && Object.values(worldState.room1_split.lasers).every(isOn => isOn);
+  - const pleaseHurry = worldState && worldState.room1 && worldState.room1.explosionTriggered;
+  if savedDay
+    statement#saved_day
+  else if pleaseHurry
+    statement#please_hurry
+  else
+    case lastResponse
+      when "what_research"
+        statement#what_research
+        responses
+          +what_can_i_learn
+
+      when "what_can_i_learn"
+        statement#what_can_i_learn
+        responses
+          +what_research
+
+      default
+        statement#default
+        responses
+          +what_can_i_learn
+          +what_research
+
+  statements
+    statement#saved_day
+      text.
+        ラボの爆発で生まれた次元の裂け目は消滅したようです。お見事です！ あなたならできると思っていました。
+      speech
+        prosody(rate="110%").
+          It would appear the dimensional rift caused by the lab explosion has
+          been eliminated. Well done! I knew you were up to the task.
+
+    statement#please_hurry
+      text.
+        オペレーター、情報によると、爆発で生じた#[span.red 次元の裂け目]はいまも広がっています。<br/><br/>右の部屋にいる#[span.highlight 主任研究員と協力してください]。彼女が解決に向けて動いています。
+      speech
+        prosody(rate="110%").
+          Operator. Our intelligence indicates that the
+          dimensional rift caused by the explosion in the lab is
+          still expanding. Please coordinate with the lead
+          scientist in the room to the right. She is currently working on a
+          solution.
+
+    statement#what_can_i_learn
+      text.
+        ラボを進むには、プログラミング言語の JavaScript に慣れる必要があります。その過程で、JavaScript ランタイムの #[a(href="https://www.nodejs.org") Node.js] をあなたのコンピューターにインストールし、JavaScript コードを書いて実行できるようになります。
+      speech
+        prosody(rate="110%").
+          Navigating the laboratory will require that you become familiar with
+          the JavaScript programming language. In doing so, you will also install
+          the node jay S JavaScript runtime on
+          your computer, enabling you to write and execute JavaScript code.
+
+    statement#what_research
+      text.
+        研究チームは現在、JavaScript の力の源だと考えられている新元素#[span.highlight ダックタイピウム]がエネルギーを生み出す性質を調べています。右のセキュリティ障壁を通り抜けて、研究データを自分の目で確認してみてください。
+      speech
+        prosody(rate="110%").
+          Presently, our research team is studying the energy-producing
+          properties of ducktypeum. a newly discovered element
+          that we believe is the source of JavaScript's power. Proceed through
+          the security barriers on the right to examine our research data
+          yourself.
+
+    statement#default
+      text.
+        オペレーター、#[span.highlight JavaScript テストラボ]の視察に来ていただき、ありがとうございます。TwilioQuest の科学者たちは、プログラミング言語 JavaScript の可能性を引き出す研究を進めています。
+      speech
+        prosody(rate="110%").
+          Operator. I am pleased you have come to observe our work at the
+          JavaScript test lab. TwilioQuest scientists are making
+          significant progress unlocking the potential of the JavaScript
+          programming language.

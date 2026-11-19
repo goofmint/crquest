@@ -71,6 +71,12 @@ The full path to your `python3` executable should be in the output of this comma
 
 `C:\Users\susan\AppData\Local\Microsoft\WindowsApps\python3.exe`
 
+If you installed Python from python.org and the previous command finds nothing, look for `python.exe` instead. Run the executable with `--version` to confirm that it is Python 3 before submitting its path.
+
+```bash
+Get-Command python.exe | Select-Object -ExpandProperty Definition
+```
+
 </details>
 
 <details>

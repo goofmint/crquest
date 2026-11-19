@@ -8,6 +8,7 @@ import { toAssetUrl, toAssetSrc } from '../../platform/assets';
 import TrackPlayer from './TrackPlayer';
 import { readDirectory, resolveAbsolutePath } from '../assetLoader';
 import levelLoader from '../levelLoader';
+import { t } from '../../i18n';
 
 const SUPPORTED_FILE_EXTENSIONS = ['.mp3', '.ogg', '.wav'];
 
@@ -89,7 +90,7 @@ class AudioManager {
       try {
         await this.loadState();
       } catch (error) {
-        await reportFailure('Could not load the saved audio settings', error);
+        await reportFailure(t('errors.loadAudio'), error);
         return;
       }
 
@@ -141,7 +142,7 @@ class AudioManager {
     try {
       await setValueAsync('audio', this.getState());
     } catch (error) {
-      await reportFailure('Could not save the audio settings', error);
+      await reportFailure(t('errors.saveAudio'), error);
     }
   }
 

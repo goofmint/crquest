@@ -7,7 +7,7 @@ The objective here is to [acquire a Twilio account](https://www.twilio.com/try-t
 Once you have [signed up for a Twilio account](https://www.twilio.com/try-twilio?utm_source=twilioquest-3), you will find your Twilio account credentials on [your Console home page](https://www.twilio.com/console).
 
 <center>
-<img src="images/basic_training/account-sid-auth-token.png" />
+<img src="images/basic_training/account-sid-auth-token.png" alt="Twilio Console home page. The Account SID appears in the ACCOUNT SID row. Select view in the AUTH TOKEN row below it to reveal the token." />
 </center>
 
 You might be wondering what these values are, and what they are used for.

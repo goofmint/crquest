@@ -1,0 +1,10 @@
+{
+  "title": "ファイルやディレクトリを見つける",
+  "description": "コンピューター上のファイルかディレクトリを見つけましょう。",
+  "validation_fields": [
+    {
+      "name": "directoryOrFileName",
+      "label": "ディレクトリかファイルの名前を入力してください。"
+    }
+  ]
+}

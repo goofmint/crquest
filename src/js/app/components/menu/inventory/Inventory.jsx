@@ -1,10 +1,11 @@
 import React from 'react';
+import { Trans, withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import ga from '../../../common/analytics';
 import CharacterDiagram from './CharacterDiagram';
 import ItemBrowser from './ItemBrowser';
 
-export default class Inventory extends React.Component {
+class Inventory extends React.Component {
   componentDidMount() {
     ga.pageview('/menu/inventory', 'Inventory Screen');
   }
@@ -17,10 +18,11 @@ export default class Inventory extends React.Component {
           <ItemBrowser />
         </div>
         <div className="tc pt2">
-          <strong>Drag/drop</strong> or <strong>double click</strong>
-          &nbsp;to equip items.
+          <Trans i18nKey="ui.inventory.equip" components={{ strong: <strong /> }} />
         </div>
       </div>
     );
   }
 }
+
+export default withTranslation()(Inventory);

@@ -148,10 +148,10 @@ async function notifyPlayerOfAbilityToTeleport(world) {
     }
   );
 
-  world.showNotification(`
+  world.showNotification(world.t("forge.morePlans", `
     <i>I should probably speak to Cedric to see if any more plans
     have been found for the <span class="highlight">Dark Ducktypium Forge</span>.</i>
-  `);
+  `));
 
   await world.wait(6000);
   await world.tweenCameraToPlayer();
@@ -221,9 +221,14 @@ module.exports = async function (event, world) {
   mapEvent.completionCallback(world);
 
   updateQuestLogWhenComplete({
-    notification:
-      'I\'ve completed everything in the <span class="highlight">Challenge Question</span> mission for now!',
-    log: "I've completed everything in the Challenge Question mission for now!",
+    notification: world.t(
+      "forge.completeNotification",
+      'I\'ve completed everything in the <span class="highlight">Challenge Question</span> mission for now!'
+    ),
+    log: world.t(
+      "forge.completeLog",
+      "I've completed everything in the Challenge Question mission for now!"
+    ),
     event,
     world,
     worldStateKey: WORLD_STATE_KEY,

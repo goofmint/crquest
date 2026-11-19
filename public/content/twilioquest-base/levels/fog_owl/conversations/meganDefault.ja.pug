@@ -1,0 +1,51 @@
+mixin dossier
+  response#dossier.
+    ［勤務記録を確認する］へえ、家族に空軍の人がいるんだね？
+
+mixin traffic
+  response#traffic.
+    航行中に気をつけたほうがいいことはある？
+
+mixin about
+  response#about.
+    名前と船での役割をもう一度教えてくれる？
+
+conversation(display_name="Megan")
+  case lastResponse
+    when "dossier"
+      statement#dossier
+      responses
+        +traffic
+
+    when "about"
+      statement#about
+      responses
+        +dossier
+
+    when "traffic"
+      statement#traffic
+      responses
+        +about
+
+    default
+      statement#default
+      responses
+        +traffic
+        +about
+
+  statements
+    statement#dossier
+      text.
+        第914空輸航空団の士官の娘としては、こう言わなくちゃね。「空は限界じゃない」。<br/><br/>でも正直、この船のほうが空軍のどのオンボロ機よりもずっと格好いいよ。
+
+    statement#traffic
+      text.
+        いくつかあるけど、私なら大丈夫。ロサンゼルスでの運転を切り抜けたら、危険なビット彗星も狭い論理ゲートもずっと怖くなくなるよ。
+
+    statement#about
+      text.
+        もちろん。メーガンだよ。光栄にもフォグ・オウル号の操縦士をしている。この船は夢みたいに操縦しやすいよ。
+
+    statement#default
+      text.
+        どうしたの、オペレーター？ どの航路にしようか？

@@ -1,0 +1,5 @@
+{
+  "success": "お見事です！",
+  "missingFunction": "関数 findLastFileInDir が定義されていません。",
+  "unexpectedResult": "「{{expected}}」が期待されましたが、「{{actual}}」が返りました。"
+}

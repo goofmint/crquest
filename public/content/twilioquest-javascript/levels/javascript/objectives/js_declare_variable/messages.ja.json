@@ -1,0 +1,8 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "やりました！ JavaScript コードでレーザーの設定を上書きすると、まもなくレーザーが消えました。<br/><br/>オフィスへ進めます。",
+  "incorrectLaserStatus": "<span class=\"highlight\">laserStatus</span> は宣言されていますが、文字列 \"OFF\" が設定されていません。文字列を格納する変数の宣言方法はヘルプタブを確認してください。設定されていた値は <strong>\"{{value1}}\"</strong> です。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">laserStatus</span> 変数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"laserConfiguration.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>"
+}

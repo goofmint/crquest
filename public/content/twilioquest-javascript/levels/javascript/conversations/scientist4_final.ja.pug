@@ -1,0 +1,35 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+mixin welcome
+  response#welcome.
+    どういたしまして。
+
+mixin follow_up
+  response#follow_up.
+    体調は大丈夫ですか？ ここ最近、現実がゆがむような経験を何度もしたでしょう。
+
+conversation(display_name="TwilioQuest の理論物理学者")
+  if lastResponse === "welcome"
+    statement.
+      はは、それはなかなかないでしょうね。時空を粘土みたいにこねるのが楽しいと思うなら別ですが。まあ、私は楽しいんですけど。
+
+    responses
+      +follow_up
+
+  else if lastResponse === "follow_up"
+    statement.
+      元気です。ただ、前は茶色い目だったはずなんですよね。99% 確かです。念のため母に赤ん坊の頃の写真を送ってもらいますが、まあ大したことじゃありません。この技術の応用を考えると、わくわくします！<br/><br/>多少の打ち身はありますが、あなたのおかげでこうして無事でいます。
+
+    responses
+      +welcome
+
+  else
+    statement.
+      #[span.highlight ダックタイピウム]の分子が安定しました！ クラウドと私たちを救ってくれただけでなく、JavaScript の謎を解くところまで一歩進めました。あなたは伝説に残りますよ。
+
+    responses
+      +welcome
+      +follow_up
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

@@ -4,6 +4,7 @@
 //! the backend, not invoked from a webview).
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 
 use tauri::{Manager, Runtime, Window};
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
@@ -16,12 +17,32 @@ const DIALOG_MESSAGE: &str = "Are you sure you want to quit TerminalQuest?";
 const OK_LABEL: &str = "OK";
 const CANCEL_LABEL: &str = "Cancel";
 
+#[derive(Clone, serde::Deserialize)]
+pub struct CloseDialogText {
+    pub title: String,
+    pub message: String,
+    pub ok: String,
+    pub cancel: String,
+}
+
+impl Default for CloseDialogText {
+    fn default() -> Self {
+        Self {
+            title: DIALOG_TITLE.into(),
+            message: DIALOG_MESSAGE.into(),
+            ok: OK_LABEL.into(),
+            cancel: CANCEL_LABEL.into(),
+        }
+    }
+}
+
 /// Tracks whether a confirmation dialog is already open, so that repeated
 /// close requests (clicking the close button again, Cmd+W) do not stack
 /// dialogs.
 #[derive(Default)]
 pub struct CloseConfirmation {
     open: AtomicBool,
+    text: Mutex<CloseDialogText>,
 }
 
 impl CloseConfirmation {
@@ -34,6 +55,18 @@ impl CloseConfirmation {
     /// Marks the dialog as closed.
     pub fn finish(&self) {
         self.open.store(false, Ordering::SeqCst);
+    }
+
+    pub fn set_text(&self, text: CloseDialogText) -> Result<(), String> {
+        *self.text.lock().map_err(|error| error.to_string())? = text;
+        Ok(())
+    }
+
+    fn dialog_text(&self) -> CloseDialogText {
+        self.text
+            .lock()
+            .map(|text| text.clone())
+            .unwrap_or_default()
     }
 }
 
@@ -48,15 +81,13 @@ fn ask_to_quit<R: Runtime, M: Manager<R>>(
         return;
     }
     let app = manager.app_handle().clone();
+    let text = confirmation.dialog_text();
     manager
         .dialog()
-        .message(DIALOG_MESSAGE)
-        .title(DIALOG_TITLE)
+        .message(text.message)
+        .title(text.title)
         .kind(MessageDialogKind::Info)
-        .buttons(MessageDialogButtons::OkCancelCustom(
-            OK_LABEL.to_string(),
-            CANCEL_LABEL.to_string(),
-        ))
+        .buttons(MessageDialogButtons::OkCancelCustom(text.ok, text.cancel))
         .show(move |quit| {
             app.state::<CloseConfirmation>().finish();
             if quit {
@@ -77,7 +108,7 @@ pub fn confirm_close<R: Runtime>(window: &Window<R>) {
 }
 
 #[cfg(target_os = "macos")]
-const QUIT_MENU_ID: &str = "quit-with-confirmation";
+pub const QUIT_MENU_ID: &str = "quit-with-confirmation";
 
 /// macOS: the standard Quit item (Cmd+Q, app menu) calls `terminate:`, which
 /// the runtime only reports after the fact (`RunEvent::Exit`): it emits neither
@@ -87,7 +118,7 @@ const QUIT_MENU_ID: &str = "quit-with-confirmation";
 #[cfg(target_os = "macos")]
 pub fn install_quit_menu<R: Runtime>(
     app: &tauri::App<R>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<tauri::menu::MenuItem<R>, Box<dyn std::error::Error>> {
     use tauri::menu::{Menu, MenuItemBuilder};
 
     let handle = app.handle();
@@ -101,13 +132,12 @@ pub fn install_quit_menu<R: Runtime>(
     // Menu::default puts the predefined Quit item last in the app submenu.
     let quit = app_submenu.items()?.pop().ok_or("the app menu is empty")?;
     app_submenu.remove(&quit)?;
-    app_submenu.append(
-        &MenuItemBuilder::with_id(QUIT_MENU_ID, format!("Quit {DIALOG_TITLE}"))
-            .accelerator("CmdOrCtrl+Q")
-            .build(handle)?,
-    )?;
+    let quit = MenuItemBuilder::with_id(QUIT_MENU_ID, format!("Quit {DIALOG_TITLE}"))
+        .accelerator("CmdOrCtrl+Q")
+        .build(handle)?;
+    app_submenu.append(&quit)?;
     app.set_menu(menu)?;
-    Ok(())
+    Ok(quit)
 }
 
 /// Handles the replaced Quit item: confirm, then exit (no window close is
@@ -123,6 +153,31 @@ pub fn on_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, id: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn close_dialog_defaults_to_english() {
+        let text = CloseConfirmation::default().dialog_text();
+        assert_eq!(text.title, "TerminalQuest");
+        assert_eq!(text.message, "Are you sure you want to quit TerminalQuest?");
+        assert_eq!(text.ok, "OK");
+        assert_eq!(text.cancel, "Cancel");
+    }
+
+    #[test]
+    fn close_dialog_reads_updated_text() {
+        let confirmation = CloseConfirmation::default();
+        confirmation
+            .set_text(CloseDialogText {
+                title: "TerminalQuest".into(),
+                message: "TerminalQuest を終了しますか？".into(),
+                ok: "OK".into(),
+                cancel: "キャンセル".into(),
+            })
+            .unwrap();
+        let text = confirmation.dialog_text();
+        assert_eq!(text.message, "TerminalQuest を終了しますか？");
+        assert_eq!(text.cancel, "キャンセル");
+    }
 
     #[test]
     fn only_one_dialog_can_be_open() {

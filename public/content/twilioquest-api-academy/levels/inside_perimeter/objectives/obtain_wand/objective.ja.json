@@ -1,0 +1,14 @@
+{
+  "title": "API 学院：API の調べ方",
+  "description": "保管箱を開けて杖を手に入れるには、<span class=\"highlight\">ドキュメント</span>を使って API を調べる方法を学ぶ必要があります。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "[Twilio Programmable SMS API](https://www.twilio.com/docs/sms) の資料で、メッセージ本体、メッセージに添付されたメディア、または Messaging Service を扱うリソースを探してください。いずれか一つのリソース名を英語で入力してください。"
+    },
+    {
+      "name": "answer2",
+      "label": "[Message Resource](https://www.twilio.com/docs/sms/api/message-resource) の資料で、メッセージの本文を表すプロパティ名を英語で入力してください。"
+    }
+  ]
+}

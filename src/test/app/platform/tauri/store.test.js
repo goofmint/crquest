@@ -67,6 +67,96 @@ describe('async variants', () => {
     expect(store.save).toHaveBeenCalledTimes(3);
   });
 
+  test('a failed save restores the previous value before another mutation persists', async () => {
+    const store = makeStore();
+    store.data.set('settings', { language: 'en' });
+    const firstSave = Promise.withResolvers();
+    const saving = Promise.withResolvers();
+    let persisted;
+    store.save.mockImplementationOnce(() => {
+      saving.resolve();
+      return firstSave.promise;
+    }).mockImplementation(async () => {
+      persisted = new Map(store.data);
+    });
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+
+    const language = mod.setValueAsync('settings', { language: 'ja' });
+    const failure = expect(language).rejects.toThrow('disk full');
+    await saving.promise;
+    const read = mod.getValueAsync('settings');
+    const xp = mod.setValueAsync('xp', 7);
+    expect(store.set).toHaveBeenCalledTimes(1);
+
+    firstSave.reject('disk full');
+    await failure;
+    await expect(read).resolves.toEqual({ language: 'en' });
+    await xp;
+    expect(persisted).toEqual(new Map([
+      ['settings', { language: 'en' }],
+      ['xp', 7],
+    ]));
+  });
+
+  test('rolls back the creation of a missing key and deletion of a null value', async () => {
+    const store = makeStore();
+    store.data.set('present', null);
+    store.save.mockRejectedValueOnce('write failed').mockRejectedValueOnce('write failed');
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+
+    await expect(mod.setValueAsync('missing', 1)).rejects.toThrow('write failed');
+    await expect(mod.hasValueAsync('missing')).resolves.toBe(false);
+    await expect(mod.deleteValueAsync('present')).rejects.toThrow('write failed');
+    await expect(mod.getValueAsync('present')).resolves.toBeNull();
+    await expect(mod.hasValueAsync('present')).resolves.toBe(true);
+  });
+
+  test('closes a cache that cannot be restored before opening a clean store', async () => {
+    const dirty = makeStore();
+    dirty.data.set('settings', { language: 'en' });
+    dirty.set.mockImplementationOnce(async (key, value) => void dirty.data.set(key, value))
+      .mockRejectedValueOnce('restore failed');
+    dirty.save.mockRejectedValueOnce('save failed');
+    const clean = makeStore();
+    clean.data.set('settings', { language: 'en' });
+    mocks.load.mockResolvedValueOnce(dirty).mockResolvedValueOnce(clean);
+    const mod = await loadModule();
+
+    await expect(mod.setValueAsync('settings', { language: 'ja' })).rejects.toThrow('save failed');
+    expect(dirty.close).toHaveBeenCalledOnce();
+    await mod.setValueAsync('xp', 7);
+    expect(mocks.load).toHaveBeenCalledTimes(2);
+    expect(dirty.save).toHaveBeenCalledOnce();
+    expect(clean.data).toEqual(new Map([
+      ['settings', { language: 'en' }],
+      ['xp', 7],
+    ]));
+  });
+
+  test('blocks other operations while restoring and closing the cache both fail', async () => {
+    const store = makeStore();
+    store.data.set('settings', { language: 'en' });
+    store.set.mockImplementationOnce(async (key, value) => void store.data.set(key, value))
+      .mockRejectedValueOnce('restore failed')
+      .mockRejectedValueOnce('restore failed');
+    store.save.mockRejectedValueOnce('save failed');
+    store.close.mockRejectedValue('close failed');
+    mocks.load.mockResolvedValue(store);
+    const mod = await loadModule();
+
+    await expect(mod.setValueAsync('settings', { language: 'ja' })).rejects.toThrow('save failed');
+    await expect(mod.setValueAsync('xp', 7)).rejects.toThrow('close failed');
+    expect(store.data.has('xp')).toBe(false);
+    expect(store.save).toHaveBeenCalledOnce();
+
+    await expect(mod.getValueAsync('settings')).resolves.toEqual({ language: 'en' });
+    await mod.setValueAsync('xp', 7);
+    expect(store.data.get('xp')).toBe(7);
+    expect(store.save).toHaveBeenCalledTimes(2);
+  });
+
   test('rejects values that cannot be serialized', async () => {
     mocks.load.mockResolvedValue(makeStore());
     const mod = await loadModule();

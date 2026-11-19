@@ -5,14 +5,20 @@ module.exports = async (helper) => {
 
   if (!TQ_OPEN_PIXEL_ART_DIR) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingDirectory",
+        "You do not have the environment variable <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
 
   if (!TQ_OPEN_PIXEL_ART_BRANCH) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_OPEN_PIXEL_ART_BRANCH</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingBranch",
+        "You do not have the environment variable <span class=\"highlight\">TQ_OPEN_PIXEL_ART_BRANCH</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
@@ -40,19 +46,27 @@ module.exports = async (helper) => {
 
     if (!branchList.includes(TQ_OPEN_PIXEL_ART_BRANCH)) {
       helper.fail(
-        `The latest commit on master "${latestMasterCommit}" wasn't found in your branch "${TQ_OPEN_PIXEL_ART_BRANCH}"!`
+        helper.t(
+          "commitMissing",
+          "The latest commit on master \"{{latestMasterCommit}}\" wasn't found in your branch \"{{TQ_OPEN_PIXEL_ART_BRANCH}}\"!",
+          { latestMasterCommit, TQ_OPEN_PIXEL_ART_BRANCH }
+        )
       );
       return;
     }
 
     return helper.success(
-      `We found the latest commit on master in your branch "${TQ_OPEN_PIXEL_ART_BRANCH}"!`
+      helper.t(
+        "commitFound",
+        "We found the latest commit on master in your branch \"{{TQ_OPEN_PIXEL_ART_BRANCH}}\"!",
+        { TQ_OPEN_PIXEL_ART_BRANCH }
+      )
     );
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate if your branch had master merged in!
+      helper.t("error", `Something went wrong when we tried to validate if your branch had master merged in!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

@@ -1,0 +1,33 @@
+{
+  "menu": {
+    "help": "Help",
+    "toggleDevtools": "Toggle Developer Tools",
+    "syncAssets": "Sync Bundled Assets",
+    "openUserData": "Open User Data",
+    "openSaveFile": "Open Save File",
+    "showSpector": "Show Spector.js UI",
+    "captureWithSpector": "Capture Frame with Spector.js",
+    "quit": "Quit TerminalQuest"
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "quitTitle": "TerminalQuest",
+    "quitMessage": "Are you sure you want to quit TerminalQuest?"
+  },
+  "errors": {
+    "failed": "{{action}} failed: {{message}}",
+    "missingMenuItem": "The menu item \"{{item}}\" was not provided",
+    "unknownMenuId": "Unknown menu item id: {{id}}",
+    "helpMenu": "Help menu",
+    "setupHelp": "Setting up the Help menu",
+    "syncAssets": "Sync Bundled Assets",
+    "updateTexts": "Updating the system menu and dialogs",
+    "openUserData": "Opening the user data directory",
+    "openSaveFile": "Opening the save file",
+    "openLink": "Opening {{url}}",
+    "toggleDevtools": "Toggling Developer Tools",
+    "toggleHelpDevtools": "Toggling the developer tools",
+    "invalidDirectory": "Tauri open dialog returned neither a path nor null"
+  }
+}

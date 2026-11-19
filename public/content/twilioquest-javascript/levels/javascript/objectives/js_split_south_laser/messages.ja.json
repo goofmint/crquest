@@ -1,0 +1,11 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "比較スクリプトが動き、停止ビーム 2 が点灯しました！",
+  "sameArguments": "大文字小文字を無視したときに両方の引数が同じなら、\"0\" を出力してください。",
+  "firstAfterSecond": "最初の引数がアルファベット順で 2 番目の引数より後なら、\"1\" を出力してください。",
+  "firstBeforeSecond": "最初の引数がアルファベット順で 2 番目の引数より前なら、\"-1\" を出力してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"sortOrder.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "accessCodeMissing": "植物学者のアクセスコードを入手するまで、このレーザーは起動できません。詳しくは目標タブを確認してください。",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

@@ -95,8 +95,11 @@ module.exports = function (event, world) {
         fadeOut: true,
         floors: [
           {
-            title: "G. Lobby",
-            description: "The entrance to the Tower of Infinite Knowledge.",
+            title: world.t("lobbyTitle", "G. Lobby"),
+            description: world.t(
+              "lobbyDescription",
+              "The entrance to the Tower of Infinite Knowledge."
+            ),
             onSelect: createChangeFloorHandler(world, [
               "tower_of_knowledge",
               "player_entry2",
@@ -104,9 +107,11 @@ module.exports = function (event, world) {
             ]),
           },
           {
-            title: "L1. File System Fundamentals",
-            description:
+            title: world.t("fileSystemTitle", "L1. File System Fundamentals"),
+            description: world.t(
+              "fileSystemDescription",
               "Learn about how the file system on your computer works.",
+            ),
             onSelect: createChangeFloorHandler(world, [
               "tower_of_knowledge",
               "player_entry1",
@@ -114,8 +119,11 @@ module.exports = function (event, world) {
             ]),
           },
           {
-            title: "L2. Terminal Fundamentals",
-            description: "Learn what how to use your computer's Terminal.",
+            title: world.t("terminalTitle", "L2. Terminal Fundamentals"),
+            description: world.t(
+              "terminalDescription",
+              "Learn how to use your computer's Terminal."
+            ),
             onSelect: createChangeFloorHandler(world, [
               "tower_of_knowledge",
               "player_entry1",
@@ -173,7 +181,10 @@ module.exports = function (event, world) {
           props: {
             url: "https://www.youtube.com/embed/lZ7Kix9bjPI",
             shouldUseTqChrome: true,
-            title: "What is a terminal and why should I learn about it?",
+            title: world.t(
+              "terminalVideo",
+              "What is a terminal and why should I learn about it?"
+            ),
             width: "80vw",
             height: "80vh",
             fadeIn: true,
@@ -190,7 +201,10 @@ module.exports = function (event, world) {
           props: {
             url: "https://www.youtube.com/embed/2zLQwOiIac8",
             shouldUseTqChrome: true,
-            title: "What is the file system and why should I learn about it?",
+            title: world.t(
+              "fileSystemVideo",
+              "What is the file system and why should I learn about it?"
+            ),
             width: "80vw",
             height: "80vh",
             fadeIn: true,

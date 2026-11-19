@@ -34,7 +34,7 @@ git merge master
 
 When you ran the merge command you'll likely have seen a lot of output telling you about how the merge went. Git will tell you if it tried to auto-merge any files and whether there were conflicts while trying to merge.
 
-If you did not see any `CONFLICT` messages then you're in luck! Git doesn't need any help resolving your merge!
+If the merge completed successfully without any `CONFLICT` messages, skip the manual resolution and commit steps and go to **Verify**.
 
 We can get some more information about the current state of our merge by running the `git status` command. This will tell us a lot of information.
 
@@ -51,7 +51,7 @@ Unmerged paths:
 
 [Its time to resolve the conflicts!](https://help.github.com/en/articles/resolving-a-merge-conflict-using-the-command-line)
 
-Once you've resolved your merge conflicts, you need to commit that resolution so git knows your final decision! We're leaving the `-m` off this time so we can use git's auto generated merge message.
+If there were conflicts, resolve them and stage the resolved files with `git add` before committing. Leave off `-m` to use Git's generated merge message.
 
 ## Commit it
 
@@ -77,10 +77,10 @@ If everything worked correctly you should be back on the terminal and outside of
 
 Let's double check everything is fine by running `git status` one last time. We should now see a message like `nothing to commit, working tree clean` indicating we're all up to date.
 
-Additionally, lets run `git log` to find our merge commit. Your most recent commit should have the message you entered in vim for your commit. If you left the auto generated message it will look something like this:
+If Git created a merge commit, use `git log` to find it. The most recent commit will show the message you entered in the editor or a generated message like this:
 
 ```bash
 Merge branch 'master' into <%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>
 ```
 
-Once you've merged master into your branch, `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>`, go ahead and hit `HACK` on the right!
+When the merge reports that your branch is already up to date or completes as a fast-forward, there is no new merge commit to look for. Once your branch `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>` contains the latest master commit, click `HACK` on the right.

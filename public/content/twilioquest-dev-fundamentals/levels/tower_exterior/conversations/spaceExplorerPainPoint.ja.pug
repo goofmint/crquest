@@ -1,0 +1,28 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals');
+
+conversation(display_name="クラウド探検家")
+  case lastResponse
+    when "wait_i_helped"
+      - worldState.towerExterior.openedPainPointCollector = true;
+      statement#survey
+      responses
+
+    default
+      statement#default
+      responses
+        response#wait_i_helped.
+          ちょっと待って、私も手伝ったんですよ！ まあいいや……。どうやって使うんですか？
+
+  statements
+    statement#default
+      text.
+        やったぞ！ この<span class="highlight">新人開発者お困りごと収集機</span>を、僕一人で直したんだ！
+
+    statement#survey
+      text.
+        何かの……URL？ これはまた懐かしいな！ とりあえず、まずはここをクリックしてみてくれ。
+        <br/>
+        <br/>
+        <a href="https://airtable.com/shr9X0OZGeoEjcsob">新人開発者お困りごと収集機を開く</a>
+
+- setState('com.twilioquest.developer-fundamentals', worldState);

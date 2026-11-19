@@ -1,0 +1,6 @@
+{
+  "missingUsername": "GitHub アカウントのユーザー名を入力してください！",
+  "found": "GitHub ユーザー {{username}} が見つかりました。お見事です！",
+  "notFound": "GitHub ユーザー {{username}} が見つかりませんでした。名前のつづりを確認してください。",
+  "error": "GitHub ユーザー名の確認中に問題が発生しました！\n\n{{err}}"
+}

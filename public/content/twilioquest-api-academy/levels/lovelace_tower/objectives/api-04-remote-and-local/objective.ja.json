@@ -1,0 +1,10 @@
+{
+  "title": "API 学院：リモートとローカル",
+  "description": "API からデータを取得し、ローカルで処理して結果を返す非同期関数を書きましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "divination API に fetch リクエストを送り、応答をローカルで処理して結果を返す getFilteredAuthors 関数を実装してください。"
+    }
+  ]
+}

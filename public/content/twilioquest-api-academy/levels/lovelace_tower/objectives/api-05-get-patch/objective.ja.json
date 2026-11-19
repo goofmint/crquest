@@ -1,0 +1,10 @@
+{
+  "title": "API 学院：GET と PATCH",
+  "description": "API から GET でデータを取得し、応答のデータを使って PATCH を送る非同期関数を書きましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "divination API に GET を送り、壊れた碑文を直して PATCH を返す getAndPatchCorruptedInscription 関数を実装してください。"
+    }
+  ]
+}

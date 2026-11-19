@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import numeral from 'numeral';
 import sharedListener from '../common/listener';
 import { context, setContext, emitter } from '../common/context';
@@ -7,14 +8,13 @@ import CharacterAvatar from './CharacterAvatar';
 import { showConfirm } from '../platform/dialog';
 
 const DEF_TITLE = 'TerminalQuest';
-const DEF_DESC = 'Explore The Cloud and build your programming skills!';
 
-export default class HUDBar extends React.Component {
+class HUDBar extends React.Component {
   static contextType = context;
 
   state = {
     currentObjectiveTitle: DEF_TITLE,
-    currentObjective: DEF_DESC,
+    currentObjective: null,
     showFogOwlButton: false
   };
 
@@ -56,9 +56,7 @@ export default class HUDBar extends React.Component {
 
   // Update quest title and description for current level
   updateQuestStatus() {
-    const levelQuestStatus = this.context.questStatus ?
-      this.context.questStatus[this.context.currentLevel.levelName] :
-      {};
+    const levelQuestStatus = this.context.questStatus?.[this.context.currentLevel?.levelName];
     
     this.setState({
       currentObjectiveTitle: levelQuestStatus ?
@@ -91,7 +89,7 @@ export default class HUDBar extends React.Component {
     this.confirmingFogOwl = true;
     let confirmed;
     try {
-      confirmed = await showConfirm('Return to the Fog Owl?');
+      confirmed = await showConfirm(this.props.t('ui.hud.returnConfirm'));
     } finally {
       this.confirmingFogOwl = false;
     }
@@ -106,6 +104,11 @@ export default class HUDBar extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
+    const playerRank = rank(
+      Object.keys(this.context.completedObjectives).length,
+      this.context.numObjectives
+    );
     return (
       <div className="HUDBar">
         <section className="user" onClick={() => this.toggleMenu('inventory')}>
@@ -113,40 +116,40 @@ export default class HUDBar extends React.Component {
           <div>
             {this.context.settings.name}
             <p>
-              XP: <span>{numeral(this.context.xp).format('0,0')}</span>&nbsp;
-              Rank: <span>
-                {rank(Object.keys(this.context.completedObjectives).length, this.context.numObjectives)}
+              {t('ui.hud.xp')} <span>{numeral(this.context.xp).format('0,0')}</span>&nbsp;
+              {t('ui.hud.rank')} <span>
+                {playerRank === 'None' ? t('ui.hud.noRank') : playerRank}
               </span>
             </p>
           </div>
         </section>
         <section className="buttons">
           <div className="relative" onClick={() => this.toggleMenu('inventory')}>
-            <img src="images/app/hud_bar/inventory.png" alt="Inventory (1)" />
+            <img src="images/app/hud_bar/inventory.png" alt={t('ui.hud.inventoryShortcut')} />
             <p>1</p>
-            <span className="tooltip">Inventory</span>
+            <span className="tooltip">{t('ui.menu.inventory')}</span>
           </div>
           <div className="relative" onClick={() => this.toggleMenu('journal')}>
-            <img src="images/app/hud_bar/book.png" alt="Journal (2)" />
+            <img src="images/app/hud_bar/book.png" alt={t('ui.hud.journalShortcut')} />
             <p>2</p>
-            <span className="tooltip">Journal</span>
+            <span className="tooltip">{t('ui.menu.journal')}</span>
           </div>
           <div className="relative" onClick={() => this.toggleMenu('settings')}>
-            <img src="images/app/hud_bar/settings.png" alt="Settings (3)" />
+            <img src="images/app/hud_bar/settings.png" alt={t('ui.hud.settingsShortcut')} />
             <p>3</p>
-            <span className="tooltip">Settings</span>
+            <span className="tooltip">{t('ui.menu.settings')}</span>
           </div>
           <div className="relative" onClick={() => this.toggleMenu('help')}>
-            <img src="images/app/hud_bar/help.png" alt="Help (4)" />
+            <img src="images/app/hud_bar/help.png" alt={t('ui.hud.helpShortcut')} />
             <p>4</p>
-            <span className="tooltip">Help</span>
+            <span className="tooltip">{t('ui.menu.help')}</span>
           </div>
 
           {this.state.showFogOwlButton && (
             <section className="fogOwl" onClick={() => this.returnToFogOwl()}>
-              <img src="images/app/fog_owl.gif" alt="Return to Fog Owl (5)" />
+              <img src="images/app/fog_owl.gif" alt={t('ui.hud.returnShortcut')} />
               <p>5</p>
-              <span className="tooltip">Return to Fog Owl</span>
+              <span className="tooltip">{t('ui.hud.return')}</span>
             </section>
           )}
 
@@ -159,10 +162,12 @@ export default class HUDBar extends React.Component {
             {this.state.currentObjectiveTitle}
           </span>
           <span>
-            {this.state.currentObjective}
+            {this.state.currentObjective ?? t('ui.hud.defaultObjective')}
           </span>
         </section>
       </div>
     );
   }
 }
+
+export default withTranslation(undefined)(HUDBar);

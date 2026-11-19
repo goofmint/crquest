@@ -1,0 +1,12 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "照準クラスが機能し、レーザーがダックタイピウムの結晶の中心に向けて照射されました。このレーザーは復旧しました！",
+  "callError": "TargetingSolution のコンストラクターまたはメソッドの実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "invalidTargetFormat": "<span class=\"highlight\">TargetingSolution</span> クラスの <span class=\"highlight\">target</span> メソッドが所定の形式の文字列を返しませんでした。括弧、カンマ、空白を含め、<span class=\"highlight\">(x, y, z)</span> の形式にしてください。",
+  "missingTargetMethod": "TargetingSolution に target メソッドが必要です。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">TargetingSolution</span> クラスが見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"targetingSolution.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "accessCodeMissing": "物理学者のアクセスコードを入手するまで、このレーザーは起動できません。詳しくは目標タブを確認してください。",
+  "invalidDefinition": "<span class=\"highlight\">TargetingSolution</span> という変数はありますが、クラスではありません。JavaScript のクラスの定義方法はヘルプタブを確認してください。"
+}

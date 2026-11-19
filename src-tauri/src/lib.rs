@@ -7,6 +7,7 @@ mod help_menu;
 
 use std::collections::HashMap;
 use tauri::ipc::CommandScope;
+use tauri::Manager;
 
 use exec::{FailureKind, ProgramEntry, RunFailure, RunOptions, RunOutput};
 
@@ -129,8 +130,12 @@ pub fn run() {
         .setup(|app| {
             // The quit menu first (macOS): the Help items are added to its menu.
             #[cfg(target_os = "macos")]
-            close::install_quit_menu(app)?;
-            help_menu::install(app)?;
+            let quit = close::install_quit_menu(app)?;
+            app.manage(help_menu::install(
+                app,
+                #[cfg(target_os = "macos")]
+                quit,
+            )?);
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -166,7 +171,8 @@ pub fn run() {
             is_dev,
             open_devtools,
             toggle_devtools,
-            help_menu::enable_help_menu
+            help_menu::enable_help_menu,
+            help_menu::set_shell_texts
         ])
         .run(context())
         .expect("error while running TerminalQuest");

@@ -1,0 +1,33 @@
+{
+  "menu": {
+    "help": "ヘルプ",
+    "toggleDevtools": "開発者ツールを切り替える",
+    "syncAssets": "同梱アセットを同期する",
+    "openUserData": "ユーザーデータを開く",
+    "openSaveFile": "セーブファイルを開く",
+    "showSpector": "Spector.js の画面を表示する",
+    "captureWithSpector": "Spector.js でフレームをキャプチャする",
+    "quit": "TerminalQuest を終了"
+  },
+  "dialog": {
+    "ok": "OK",
+    "cancel": "キャンセル",
+    "quitTitle": "TerminalQuest",
+    "quitMessage": "TerminalQuest を終了しますか？"
+  },
+  "errors": {
+    "failed": "{{action}}に失敗しました。{{message}}",
+    "missingMenuItem": "メニュー項目「{{item}}」が見つかりません。",
+    "unknownMenuId": "不明なメニュー項目 ID: {{id}}",
+    "helpMenu": "ヘルプメニューの操作",
+    "setupHelp": "ヘルプメニューの設定",
+    "syncAssets": "同梱アセットの同期",
+    "updateTexts": "システムメニューとダイアログの表示更新",
+    "openUserData": "ユーザーデータフォルダーを開く操作",
+    "openSaveFile": "セーブファイルを開く操作",
+    "openLink": "{{url}} を開く操作",
+    "toggleDevtools": "開発者ツールの切り替え",
+    "toggleHelpDevtools": "開発者ツールの切り替え",
+    "invalidDirectory": "Tauri のフォルダー選択ダイアログから無効な値が返されました。"
+  }
+}

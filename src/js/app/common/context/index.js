@@ -13,15 +13,17 @@ import {
 } from './sync';
 import { setValueAsync } from '../../platform/store';
 import { reportFailure } from '../reportFailure';
+import { t } from '../../i18n';
 
 // Saves triggered by setContext are applied one after another, in call order
 // (an asynchronous store may otherwise apply a later value first). A failed
 // save does not block the later ones; its caller still gets the error.
 let saveChain = Promise.resolve();
 let persistenceSuppressed = false;
+let pendingLanguage;
 
-function enqueueSave(key, value) {
-  const save = saveChain.then(() => setValueAsync(key, value));
+function enqueueSave(write) {
+  const save = saveChain.then(write);
   saveChain = save.catch(() => {});
   return save;
 }
@@ -31,6 +33,18 @@ function enqueueSave(key, value) {
  */
 export function flushPendingSaves() {
   return saveChain;
+}
+
+// Language takes effect on the next boot. Persist it in the same queue as
+// other settings without publishing a language change in the current session.
+export function saveLanguagePreference(language) {
+  return enqueueSave(async () => {
+    if (persistenceSuppressed) {
+      throw new Error('Game data is being erased');
+    }
+    await setValueAsync('settings', { ...getContext('settings'), language });
+    pendingLanguage = language;
+  });
 }
 
 /**
@@ -113,8 +127,13 @@ export function setContext(newContext) {
           console.warn(`Not saving "${key}": the game data is being erased`);
         } else {
           // Not awaited: the event order of the loop stays as before.
-          enqueueSave(key, value).catch(error =>
-            reportFailure(`Could not save "${key}"`, error)
+          enqueueSave(() => setValueAsync(
+            key,
+            key === 'settings' && pendingLanguage
+              ? { ...value, language: pendingLanguage }
+              : value
+          )).catch(error =>
+            reportFailure(t('errors.saveField', { key }), error)
           );
         }
       }

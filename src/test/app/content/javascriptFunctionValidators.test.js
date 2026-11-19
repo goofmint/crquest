@@ -91,7 +91,7 @@ afterEach(() => {
   fs.rmSync(workspace, { recursive: true, force: true });
 });
 
-const run = async (objective, file, code) => {
+const run = async (objective, file, code, messages = {}) => {
   if (code !== undefined) {
     fs.writeFileSync(path.join(workspace, file), code);
   }
@@ -103,7 +103,8 @@ const run = async (objective, file, code) => {
       validationFields: {},
     },
     callback,
-    {}
+    {},
+    messages
   );
   await requireValidator(objective)(helper);
   expect(callback).toHaveBeenCalledTimes(1);
@@ -112,6 +113,27 @@ const run = async (objective, file, code) => {
 };
 
 const THROWS = 'There was an error executing your JavaScript code';
+
+test.each([
+  [
+    'the first call',
+    "function construct(name) { return { name, material: 'human', assemble: false, duration: 999 }; }",
+    ['「assemble」の値は true にしてください。', '「duration」の値は 1000 にしてください。'],
+  ],
+  [
+    'the second call',
+    "function construct() { return { name: 'Gene', material: 'human', assemble: true, duration: 1000 }; }",
+    ['「name」の値は Irene にしてください。'],
+  ],
+])('localizes property mismatches for %s of construct', async (_, code, details) => {
+  const messages = JSON.parse(fs.readFileSync(path.join(
+    PACKAGE_PATH, 'levels/javascript/objectives/instantiation/messages.ja.json'
+  ), 'utf8'));
+  const result = await run('instantiation', 'construction.js', code, messages);
+
+  expect(result.ok).toBe(false);
+  expect(result.message).toContain(details.join('<br/>'));
+});
 
 // Cases shared by every validator of a function: [description, code, expectation]
 // expectation: true (passes) or a RegExp the failure message must match

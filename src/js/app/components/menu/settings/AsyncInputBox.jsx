@@ -1,14 +1,17 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { keypress } from 'keypress.js';
 import InlineButton from './InlineButton';
 import InputTextField from './InputTextField';
+import { isComposingKeypress } from '../../../common/isComposingKeypress';
 
-export default class AsyncInputBox extends React.Component {
+class AsyncInputBox extends React.Component {
   static propTypes = {
     onFocus: PropTypes.func,
     onBlur: PropTypes.func,
     autoFocus: PropTypes.bool,
+    inputLabel: PropTypes.string,
     defaultButtonLabel: PropTypes.string,
     resolvingButtonLabel: PropTypes.string,
     enableSubmitHotkey: PropTypes.bool,
@@ -16,8 +19,6 @@ export default class AsyncInputBox extends React.Component {
   };
 
   static defaultProps = {
-    defaultButtonLabel: 'Submit',
-    resolvingButtonLabel: 'Submitting...',
     autoFocus: true,
     enableSubmitHotkey: true,
     onSuccess: () => {},
@@ -36,12 +37,16 @@ export default class AsyncInputBox extends React.Component {
     message: '',
   };
 
+  buttonRef = React.createRef();
+
   attachSubmitHotkey() {
     this.keyPressListener = new keypress.Listener();
 
-    this.keyPressListener.simple_combo('enter', () =>
-      this.buttonRef.current.click()
-    );
+    this.keyPressListener.simple_combo('enter', event => {
+      if (!isComposingKeypress(event)) {
+        this.buttonRef.current.click();
+      }
+    });
   }
 
   deattachSubmitHotKey() {
@@ -52,8 +57,6 @@ export default class AsyncInputBox extends React.Component {
 
   componentDidMount() {
     const { enableSubmitHotkey } = this.props;
-
-    this.buttonRef = React.createRef();
 
     if (enableSubmitHotkey) {
       this.attachSubmitHotkey();
@@ -85,12 +88,14 @@ export default class AsyncInputBox extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     const { onFocus, onBlur, onSubmit, autoFocus } = this.props;
     const { currentState, value } = this.state;
 
     return (
       <>
         <InputTextField
+          aria-label={this.props.inputLabel}
           onFocus={onFocus}
           onBlur={onBlur}
           onChange={evt => {
@@ -124,12 +129,12 @@ export default class AsyncInputBox extends React.Component {
                 this.setState({
                   currentState: this.states.VALID,
                   value: '',
-                  message: message || 'Success!',
+                  message: message || t('ui.asyncInput.success'),
                 });
               } else {
                 this.setState({
                   currentState: this.states.INVALID,
-                  message: message || 'Error!',
+                  message: message || t('ui.asyncInput.error'),
                 });
               }
             });
@@ -155,9 +160,9 @@ export default class AsyncInputBox extends React.Component {
       case this.states.INVALID:
       case this.states.VALID:
       default:
-        return this.props.defaultButtonLabel;
+        return this.props.defaultButtonLabel ?? this.props.t('ui.asyncInput.submit');
       case this.states.RESOLVING:
-        return this.props.resolvingButtonLabel;
+        return this.props.resolvingButtonLabel ?? this.props.t('ui.asyncInput.submitting');
     }
   }
 
@@ -182,3 +187,5 @@ export default class AsyncInputBox extends React.Component {
     }
   }
 }
+
+export default withTranslation(undefined)(AsyncInputBox);

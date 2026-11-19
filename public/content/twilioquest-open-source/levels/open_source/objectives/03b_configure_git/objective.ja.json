@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：Git を設定",
+  "description": "リポジトリへの変更に関連づける<strong>ユーザー名とメールアドレス</strong>を設定します。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "Git にユーザー名とメールアドレスを設定したら、ハックを押してください。"
+    }
+  ]
+}

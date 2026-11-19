@@ -1,4 +1,5 @@
 import config from '../config/config';
+import { t } from '../i18n';
 import {
   getContext,
   setContext
@@ -12,7 +13,7 @@ async function getOperationFromBackend(joinCode) {
     if (response.status === 404) {
       return {
         success: false,
-        message: "This operation does not exist!",
+        message: t('ui.operations.missing'),
       };
     }
 
@@ -23,7 +24,7 @@ async function getOperationFromBackend(joinCode) {
       
       return {
         success: false,
-        message: "Something went wrong!",
+        message: t('ui.membership.requestError'),
       };
     }
 
@@ -36,7 +37,7 @@ async function getOperationFromBackend(joinCode) {
     
     return {
       success: false,
-      message: "Something went wrong!",
+      message: t('ui.membership.requestError'),
     };
   }
 }
@@ -96,14 +97,14 @@ function joinOperation(id) {
     if (id === '') {
       return resolve({
         success: false,
-        message: 'You need to enter a code!',
+        message: t('ui.membership.codeRequired'),
       });
     }
 
     if (isOperationAlreadyJoined(id)) {
       return resolve({
         success: false,
-        message: "You're already in this operation!",
+        message: t('ui.operations.already'),
       });
     }
 
@@ -122,7 +123,7 @@ function joinOperation(id) {
 
     return resolve({
       success: true,
-      message: `Joined: "${operation.data.displayName}"!`,
+      message: t('ui.membership.joined', { name: operation.data.displayName }),
     });
   });
 }

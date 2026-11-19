@@ -1,0 +1,7 @@
+{
+  "needAnswers": "両方の質問に答えてください！",
+  "wrongCity": "探している都市とは違います。REPL に <span class=\"highlight\">copyright()</span> と入力してください。著作権者の一つは「A」で始まるヨーロッパの都市にあります。",
+  "wrongNumber": "答えが違います。「24 / 3」は 24 を 3 で割る Python の式です。REPL にもう一度入力し、結果を確認してください。",
+  "success": "お見事！ 試行錯誤の試練を突破しました。<br/><br/>REPL には <span class=\"highlight\">help()</span> や <span class=\"highlight\">copyright()</span> といった組み込み関数があります。<br/><br/>Python のコードも実行できます。<span class=\"highlight\">24 / 3</span> と入力すると、24 を 3 で割った結果の <span class=\"highlight\">8</span> が返りました。",
+  "verifyAnswers": "答えを確認できませんでした。もう一度お試しください。"
+}

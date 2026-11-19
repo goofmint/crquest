@@ -4,7 +4,7 @@
 <h3>Requirements</h3>
 <ul>
   <li>Create an async function called "getAndPatchCorruptedInscription".</li>
-  <li>This function receives a number.</li>
+  <li>The function receives a guid string. Use this value as the guid in the PATCH request body.</li>
   <li>Fetch and parse the corrupted inscription from the "divination" endpoint.</li>
   <li>Get the inscription fragments from the scrolls that litter the library.</li>
   <li>Send the patched inscription as well as the guid to the "divination" endpoint.</li>

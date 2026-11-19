@@ -1,0 +1,42 @@
+// Partial conversation template for the initial scientist conversation
+case lastResponse
+  when "oh_no"
+    statement.
+      大したことじゃないんです。ただ……#[span.highlight ダックタイピウム]を安定させるために、部屋の中央にある#[span.highlight 4 本の分子停止ビームをすべて起動する]必要があります。手順は全自動ですが、パスワードが必要で。ええと……今、思い出せないんです。
+    responses
+      response#reset_password.
+        それは困りましたね。パスワードはリセットできますか？
+
+  when "reset_password"
+    statement.
+      できます。でも停止ビームのパスワードをまた忘れたなんて知られたら、ラボでずっとからかわれます！ 実は、私の後ろの通路を行った先にあるオフィスで、#[span.highlight 紙に書いておいた]んですが……。
+    responses
+      response#also_forgot.
+        でもまだここに立っているということは、ひょっとして……。
+
+  when "also_forgot"
+    statement.
+      ええと、パスワードを取りに戻ろうとしたとき、オフィスへ続く#[span.highlight セキュリティ障壁]も全部作動させてしまったかもしれません。どうか責めないでください。忙しい研究者なんです！ 責めたりしませんよね？
+    responses
+      response#its_okay.
+        もちろん。誰でも間違えることはあります。
+
+  when "its_okay"
+    statement.
+      ありがとうございます。オペレーターはこういう問題に強いと聞きました。#[span.highlight 私のオフィスに入ってパスワードを取ってくる]ことはできますか？ 助けてもらえたら、本当に感謝します。
+    responses
+      response#you_bet.
+        任せてください。やってみます。
+
+  when "you_bet"
+    statement.
+      助かります！ 私の後ろのセキュリティ障壁を抜けてください。停止ビームのパスワードは#[span.highlight 私の机の上の紙に書いてあります]。
+    // Flag that the scientist initial conversation has been finished
+    - worldState.room1.scientistInitalConvo = true;
+
+  default
+    statement.
+      あ、こんにちは。研究の視察に来たオペレーターですね。いいところに来ました！ 史上初めて、#[span.highlight ダックタイピウム]の分子をひとつ安定させる直前なんです！<br/><br/>ただ、実験の手順に#[span.highlight ほんの小さな、ほとんど取るに足らない問題]がありまして……。
+    responses
+      response#oh_no.
+        おっと、何があったんですか？

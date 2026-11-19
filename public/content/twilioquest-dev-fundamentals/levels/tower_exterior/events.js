@@ -5,9 +5,9 @@ const viewTower = require("./events/viewTower");
 const WORLD_STATE_KEY = "com.twilioquest.developer-fundamentals";
 const TOOLBOX_COUNT_TO_FIND = 3;
 const toolBoxContents = [
-  'This box contains a diagram labeled "file tree". Maybe there will be a nice forest inside the tower?',
-  'This box contains a weird bunch of text called a "terminal". This must be how the dinosaurs used computers!',
-  'This box contains a list of "shells". I wonder if they\'ll be sold over by the seashore.',
+  ["toolboxFileTree", 'This box contains a diagram labeled "file tree". Maybe there will be a nice forest inside the tower?'],
+  ["toolboxTerminal", 'This box contains a weird bunch of text called a "terminal". This must be how the dinosaurs used computers!'],
+  ["toolboxShells", 'This box contains a list of "shells". I wonder if they\'ll be sold over by the seashore.'],
 ];
 
 const INITIAL_STATE = {
@@ -50,23 +50,30 @@ module.exports = function (event, world) {
     }
 
     const toolboxCountFound = worldState.towerExterior.toolboxesFound.length;
+    const content = toolBoxContents[toolboxCountFound - 1];
+    const summary = content ? world.t(...content) + " <br/><br/> " : "";
     if (toolboxCountFound >= TOOLBOX_COUNT_TO_FIND) {
       // There are 6 toolboxes, player can find more than 3.
       world.showNotification(
-        `${
-          toolBoxContents[toolboxCountFound - 1]
-        } <br/><br/> I\'ve found all the toolboxes I needed to fix the <span class="highlight">New Developer Pain Point Collector!</span>`
+        summary + world.t(
+          "toolboxesComplete",
+          'I\'ve found all the toolboxes I needed to fix the <span class="highlight">New Developer Pain Point Collector!</span>'
+        )
       );
     } else {
       const remainingToolBoxes = TOOLBOX_COUNT_TO_FIND - toolboxCountFound;
-
-      world.showNotification(
-        `${
-          toolBoxContents[toolboxCountFound - 1]
-        } <br/><br/> <span class="highlight">I still need to find ${remainingToolBoxes} more toolbox${
-          remainingToolBoxes > 1 ? "es" : ""
-        }!</span>`
-      );
+      const remainingMessage = remainingToolBoxes === 1
+        ? world.t(
+            "toolboxRemaining",
+            '<span class="highlight">I still need to find {{count}} more toolbox!</span>',
+            { count: remainingToolBoxes }
+          )
+        : world.t(
+            "toolboxesRemaining",
+            '<span class="highlight">I still need to find {{count}} more toolboxes!</span>',
+            { count: remainingToolBoxes }
+          );
+      world.showNotification(summary + remainingMessage);
     }
   }
 
@@ -95,14 +102,20 @@ module.exports = function (event, world) {
     event.target.key === "door-dev-tower"
   ) {
     if (worldState.towerExterior.openedPainPointCollector) {
-      world.showNotification("The tower is open now!");
+      world.showNotification(world.t("towerOpen", "The tower is open now!"));
     } else if (toolboxCountFound >= TOOLBOX_COUNT_TO_FIND) {
       world.showNotification(
-        'I should speak to the <span class="highlight">Cloud Explorer</span> now that the <span class="highlight">New Developer Pain Point Collector</span> is fixed!'
+        world.t(
+          "speakToExplorer",
+          'I should speak to the <span class="highlight">Cloud Explorer</span> now that the <span class="highlight">New Developer Pain Point Collector</span> is fixed!'
+        )
       );
     } else {
       world.showNotification(
-        "The tower doors won't budge... I should keep looking around and see if there's a way to open them."
+        world.t(
+          "towerLocked",
+          "The tower doors won't budge... I should keep looking around and see if there's a way to open them."
+        )
       );
     }
   }

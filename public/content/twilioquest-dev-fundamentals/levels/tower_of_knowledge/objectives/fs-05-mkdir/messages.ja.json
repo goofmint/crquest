@@ -1,0 +1,8 @@
+{
+  "missingInput": "ハック画面に新しく作ったディレクトリへのパスを入力してください。",
+  "missingDirectory": "入力されたパス「{{newDirPath}}」にディレクトリが見つかりませんでした。",
+  "outsideWorkingDirectory": "新しいディレクトリ「{{newDirPath}}」は見つかりました。先ほど指定した作業ディレクトリ「{{workingDirectory}}」の中に作成してください。",
+  "incorrectEntryType": "「{{newDirPath}}」は見つかりましたが、ディレクトリではありません。作成に使ったコマンドを確認してください。",
+  "validationError": "作業ディレクトリの確認中にエラーが発生しました。\n\n{{error}}",
+  "success": "新しいディレクトリが見つかりました。お見事です！"
+}

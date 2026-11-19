@@ -4,7 +4,7 @@ module.exports = async helper => {
   const { repositoryFilePath } = helper.validationFields;
 
   if (!repositoryFilePath) {
-    helper.fail(`Don't forget to provide a repository file path!`);
+    helper.fail(helper.t("missingPath", "Don't forget to provide a repository file path!"));
     return;
   }
 
@@ -13,7 +13,11 @@ module.exports = async helper => {
 
     if (directoryExists !== 'dir') {
       helper.fail(
-        `We could not find a directory at the path you provided! -> ${repositoryFilePath}`
+        helper.t(
+          "notDirectory",
+          "We could not find a directory at the path you provided! -> {{repositoryFilePath}}",
+          { repositoryFilePath }
+        )
       );
       return;
     }
@@ -23,7 +27,11 @@ module.exports = async helper => {
 
     if (packageFileExists !== 'file') {
       helper.fail(
-        `We could not find the package file in your provided repository! Was it cloned correctly? -> ${packagePath}`
+        helper.t(
+          "missingPackage",
+          "We could not find the package file in your provided repository! Was it cloned correctly? -> {{packagePath}}",
+          { packagePath }
+        )
       );
       return;
     }
@@ -32,18 +40,22 @@ module.exports = async helper => {
 
     if (packageContents.name !== 'open-pixel-art') {
       helper.fail(
-        `The package file in that repository was not for the correct project! Was it cloned correctly? -> ${packagePath}`
+        helper.t(
+          "wrongPackage",
+          "The package file in that repository was not for the correct project! Was it cloned correctly? -> {{packagePath}}",
+          { packagePath }
+        )
       );
       return;
     }
 
     helper.success(
-      `It looks like you've cloned the Open Pixel Art repository correctly!`,
+      helper.t("cloned", "It looks like you've cloned the Open Pixel Art repository correctly!"),
       [{ name: 'OPEN_PIXEL_ART_DIR', value: repositoryFilePath }]
     );
   } catch (err) {
-    helper.fail(`Something went wrong while we were trying to validate your repository clone!
+    helper.fail(helper.t("error", `Something went wrong while we were trying to validate your repository clone!
     
-    ${err}`);
+    {{err}}`, { err }));
   }
 };

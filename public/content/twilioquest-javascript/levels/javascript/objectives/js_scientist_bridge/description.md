@@ -14,7 +14,7 @@ This time, you'll need to create an enchanced version of the Tree Life Detector 
 
 ## An enhanced Tree Life Detector
 
-Create a file called `enhancedLifeDetector.js` in your code folder. This program will take a single **command line argument** - a single-digit `Number` indicating the current life status of a tree. It then prints out a human-readable string of text indicating the current status of a tree.
+Create a file called `enhancedLifeDetector.js` in your code folder. This program will take a single **command line argument** - a `Number` indicating the current life status of a tree. It then prints out a human-readable string of text indicating the current status of a tree.
 
 Nearby, you see a mapping of tree life status IDs to human-readable strings with more statuses than just `alive` and `other`:
 
@@ -30,7 +30,7 @@ When your script is executed, it should print out the proper human-readable stri
 If the script is executed like this:
 
 ```bash
-node treeLifeDetector.js 2
+node enhancedLifeDetector.js 2
 ```
 
 It should print the string `shedding`. If the number passed in is not 0, 1, or 2, your script should print `other`.

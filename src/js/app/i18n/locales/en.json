@@ -1,0 +1,40 @@
+{
+  "loading": {
+    "title": "Loading",
+    "interact": "Interact with spacebar.",
+    "move": "Move with arrow keys or WASD."
+  },
+  "errors": {
+    "loadSave": "Could not load the saved game data",
+    "saveField": "Could not save \"{{key}}\"",
+    "loadAudio": "Could not load the saved audio settings",
+    "saveAudio": "Could not save the audio settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "versionError": "failed to load version: {{error}}",
+    "hideGuid": "Hide",
+    "showGuid": "Show Player GUID",
+    "user": "User Settings",
+    "language": "Language",
+    "confirmLanguageChange": "The game will reload to apply the language change. Continue?",
+    "languageError": "Could not save the language setting. Please try again.",
+    "name": "Name",
+    "avatar": "Avatar",
+    "teams": "Adventure Teams",
+    "teamsDescription": "If you were given an adventure team join code, type it in to send your achievements and XP to the leaderboard.",
+    "operationsDescription": "If you were given an operation join code, type it in to send your achievements and XP to the leaderboard.",
+    "joinCode": "Join Code",
+    "saved": "All changes saved.",
+    "tabs": {
+      "Audio": "Audio",
+      "User": "User",
+      "Variables": "Variables",
+      "Extensions": "Extensions",
+      "Teams": "Teams",
+      "Operations": "Operations",
+      "Unlocks": "Unlocks",
+      "Credits": "Credits"
+    }
+  }
+}

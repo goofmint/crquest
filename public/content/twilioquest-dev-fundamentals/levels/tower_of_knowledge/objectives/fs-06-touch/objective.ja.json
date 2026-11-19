@@ -1,0 +1,10 @@
+{
+  "title": "ファイルを作る",
+  "description": "新しく作ったディレクトリにファイルを作りましょう。",
+  "validation_fields": [
+    {
+      "name": "newFileName",
+      "label": "作成したファイルの名前を入力してください。"
+    }
+  ]
+}

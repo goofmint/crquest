@@ -1,0 +1,25 @@
+mixin fragment
+    response#read.
+        巻物を読む。
+
+conversation(display_name="碑文の断片")
+    case lastResponse
+        when "read"
+            statement#fragment
+
+        default
+            statement#default
+            responses
+                +fragment
+
+    statements
+        statement#default
+            text.
+                この巻物には、傷んでいない碑文の一節が残っているようです！
+        statement#fragment
+            text.
+                <p>碑文の断片には、次のように記されています。<br><br>
+                <em><span class="highlight">Oh, great creators of The Cloud, let me apply
+                This divination spell, newly formed through a simple phrase,
+                Strung together thanks to a most helpful API,</span></em><br><br>
+                <span style="text-align:center"><em>*英語の文をそのまま QuestIDE にコピーしてください*</em></span></p>

@@ -1,0 +1,32 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin excerpt
+  response#excerpt.
+    本文の抜粋
+
+conversation(display_name="ラブレスの書　第 2 巻")
+  case lastResponse
+
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center"><span class="highlight"><a href="https://sci-hub.ru/https://dl.acm.org/doi/fullHtml/10.1145/2896587">API の使いやすさを向上させる</a></span><br><br>
+        Brad A. Myers、Jeffrey Stylos 著</p>
+
+    statement#excerpt
+      text.
+        「API 自体から使いにくさの原因を取り除けない場合でも、利用者を支援する方法は数多くある。最も分かりやすいのは、API の利用者から不満が寄せられがちなドキュメントとサンプルコードを改善することだ。<span class="highlight">既知の問題について、利用者が解決策にたどり着けるよう設計者が明示的に案内できる……</span>」（68 ページ）
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

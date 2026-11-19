@@ -453,7 +453,10 @@ describe('executeCodeString', () => {
   });
 
   test('rejects with a NiceError when the program cannot be spawned', async () => {
-    const helper = { exec: vi.fn().mockRejectedValue(new Error('ENOENT')) };
+    const helper = {
+      exec: vi.fn().mockRejectedValue(new Error('ENOENT')),
+      t: (_, fallback) => fallback,
+    };
     await expect(executeCodeString(helper, 'x', 'code')).rejects.toBeInstanceOf(
       NiceError
     );
@@ -466,7 +469,10 @@ describe('executeCodeString', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const killed = Object.assign(new Error('timed out'), { killed: true });
-      const helper = { exec: vi.fn().mockRejectedValue(killed) };
+      const helper = {
+        exec: vi.fn().mockRejectedValue(killed),
+        t: (_, fallback) => fallback,
+      };
       const error = await executeCodeString(helper, 'x', 'code').catch(e => e);
       expect(error).toBeInstanceOf(NiceError);
       expect(error.message).toContain('validating your Node.js code');

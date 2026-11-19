@@ -1,0 +1,19 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+
+conversation(display_name="学院掲示板")
+  case lastResponse
+
+    default
+        statement#default
+
+  statements
+    statement#default
+      text.
+        秘術 API 学院へようこそ！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Transition } from 'react-transition-group';
 import { setContext } from '../../../common/context';
 import ga from '../../../common/analytics';
@@ -24,6 +25,7 @@ const withAssetLoader = WrappedComponent => {
 };
 
 const NavMap = ({ hide, displayFsmState, finishTransition }) => {
+  const { t } = useTranslation();
   const {
     backgroundColor,
     isLoaded: isNavMapLoaded,
@@ -151,8 +153,8 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
     }
 
     if (!nextSelectedKey) {
-      if (planets.length === 0) return 'No Destinations...';
-      else return 'Navigation Loading...';
+      if (planets.length === 0) return t('ui.map.empty');
+      else return t('ui.map.loading');
     }
 
     return '...';
@@ -167,8 +169,8 @@ const NavMap = ({ hide, displayFsmState, finishTransition }) => {
       return selectedMission.description;
     }
 
-    if (planets.length === 0) return 'No intelligence report to assign...';
-    else return 'Loading intelligence report...';
+    if (planets.length === 0) return t('ui.map.noReport');
+    else return t('ui.map.loadingReport');
   };
 
   const selectPlanet = levelKey => {

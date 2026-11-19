@@ -1,0 +1,51 @@
+mixin dossier
+  response#dossier.
+    ［勤務記録を確認する］開発者の指導はお手のものみたいだけど、平和部隊にいたこともあるの？
+
+mixin about
+  response#about.
+    名前と船での役割をもう一度教えてくれる？
+
+mixin whats_this
+  response#whats_this.
+    船のこの区画は何に使うの？
+
+conversation(display_name="Craig")
+  case lastResponse
+    when "dossier"
+      statement#dossier
+      responses
+        +whats_this
+
+    when "about"
+      statement#about
+      responses
+        +dossier
+
+    when "whats_this"
+      statement#whats_this
+      responses
+        +about
+
+    default
+      statement#default
+      responses
+        +whats_this
+        +about
+
+  statements
+    statement#dossier
+      text.
+        そのとおり！ 平和部隊でガイアナに行って、コンピューターの使い方を教えてたんだ。それ以来、技術は驚くほど進化したよ。クラウドに神経を直接つなげられたら、あの頃もずっと楽だったはずさ。
+
+    statement#whats_this
+      text.
+        ここには TwilioQuest 計画の最新の教育技術、VR 訓練シミュレーターがある！ 端末に近づいて<span class="highlight">スペースキー</span>を押すと、プログラミングの腕を磨ける訓練一覧が表示されるよ。好きなものを選んで探索してみよう！<br/><br/>訓練ミッションはどんどん追加されるから、時々見に来てね。
+
+    statement#about
+      text.
+        もちろん！ クレイグだよ。開発者で、フォグ・オウル号の訓練担当でもある。<br/><br/>クラウドでどんな難題に遭遇しても対応できるよう、VR 訓練プラットフォームのシミュレーションを作ってるんだ。
+
+    statement#default
+      text.
+        やあ、オペレーター！ 新しいことを学ぶには絶好の日だと思わない？

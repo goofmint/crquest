@@ -1,0 +1,11 @@
+{
+  "missingAnswers": "すべての質問に答えてください。",
+  "invalidFirst": "「{{answer1}}」は有効な答えではありません。「a」「b」「c」「d」から選んでください。",
+  "incorrectFirst": "最初の答えが違います。「{{method}}」<b>は</b> HTTP メソッドです。<a href=\"https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods\">MDN の HTTP メソッドの解説</a>か、ハック画面の説明を確認してください。",
+  "incorrectSecond": "二つ目の答えが違います。{{hint}} <a href=\"https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods\">MDN の HTTP メソッドの解説</a>か、ハック画面の説明を確認してください。",
+  "incorrectThird": "三つ目の答えが違います。<a href=\"https://www.twilio.com/docs/sms/api/message-resource#create-a-message-resource\">Twilio Programmable SMS のメッセージ作成方法</a>に手がかりがあります！",
+  "success": "正解です！ 適切な HTTP メソッドで効率よく目的を達成できることを証明し、フォン・ノイマン寮の鍵の呪文の断片を手に入れました。",
+  "postHint": "POST は、リクエストの本文で新しい情報をサーバーに送信するために使います。",
+  "putHint": "PUT は、リクエストで送ったデータで、サーバー上の対象リソースを置き換えるために使います。",
+  "readHint": "READ は有効な HTTP メソッドではありません。"
+}

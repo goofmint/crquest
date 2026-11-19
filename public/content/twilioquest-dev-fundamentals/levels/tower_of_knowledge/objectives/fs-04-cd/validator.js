@@ -9,14 +9,20 @@ module.exports = async function (helper) {
 
     if (!pwd1) {
       helper.fail(
-        "You need to provide a file path for the <em>first</em> present working directory in the Hack Interface!"
+        helper.t(
+          "missingFirstPath",
+          "You need to provide a file path for the <em>first</em> present working directory in the Hack Interface!"
+        )
       );
       return;
     }
 
     if (!pwd2) {
       helper.fail(
-        "You need to provide a file path for the <em>second</em> present working directory in the Hack Interface!"
+        helper.t(
+          "missingSecondPath",
+          "You need to provide a file path for the <em>second</em> present working directory in the Hack Interface!"
+        )
       );
       return;
     }
@@ -26,7 +32,11 @@ module.exports = async function (helper) {
 
     if (!helper.areArrayContentsEqual(pathParts1, expectedPathParts1)) {
       helper.fail(
-        `Your entered file path "${pwd1}" did not match the expected path after changing to the "robot_thoughts" directory.`
+        helper.t(
+          "incorrectFirstPath",
+          'Your entered file path "{{pwd1}}" did not match the expected path after changing to the "robot_thoughts" directory.',
+          { pwd1 }
+        )
       );
       return;
     }
@@ -36,7 +46,11 @@ module.exports = async function (helper) {
 
     if (!helper.areArrayContentsEqual(pathParts2, expectedPathParts2)) {
       helper.fail(
-        `Your entered file path "${pwd2}" did not match the expected path after trying to change to the "fog_owl_computations.csv" file.`
+        helper.t(
+          "incorrectSecondPath",
+          'Your entered file path "{{pwd2}}" did not match the expected path after trying to change to the "fog_owl_computations.csv" file.',
+          { pwd2 }
+        )
       );
       return;
     }
@@ -45,7 +59,10 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success(`
-    Hurray! You figured out the new present working directories correctly!
-`);
+  helper.success(
+    helper.t(
+      "success",
+      "\n    Hurray! You figured out the new present working directories correctly!\n"
+    )
+  );
 };

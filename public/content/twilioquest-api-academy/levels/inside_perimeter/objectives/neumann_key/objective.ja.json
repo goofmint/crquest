@@ -1,0 +1,18 @@
+{
+  "title": "API 学院：HTTP メソッド",
+  "description": "HTTP メソッドの知識を示し、フォン・ノイマン寮のマスコットから鍵の呪文の一部を受け取りましょう。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "次のうち HTTP メソッドではないものはどれですか？<br>A: GET<br>B: POST<br>C: UPDATE<br>D: DELETE"
+    },
+    {
+      "name": "answer2",
+      "label": "API でリモートサーバーの情報を参照するときは、どの HTTP メソッドを使いますか？"
+    },
+    {
+      "name": "answer3",
+      "label": "Twilio Programmable SMS API でメッセージを作成して送信するには、どの HTTP メソッドを使いますか？"
+    }
+  ]
+}

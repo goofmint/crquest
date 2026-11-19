@@ -1,0 +1,7 @@
+{
+  "missingDirectory": "環境変数 <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingBranch": "環境変数 <span class=\"highlight\">TQ_OPEN_PIXEL_ART_BRANCH</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "commitMissing": "master の最新コミット「{{latestMasterCommit}}」が、ブランチ「{{TQ_OPEN_PIXEL_ART_BRANCH}}」に見つかりませんでした！",
+  "commitFound": "master の最新コミットが、ブランチ「{{TQ_OPEN_PIXEL_ART_BRANCH}}」に見つかりました！",
+  "error": "ブランチに master がマージされたか確認する際に問題が発生しました！\n\n{{err}}"
+}

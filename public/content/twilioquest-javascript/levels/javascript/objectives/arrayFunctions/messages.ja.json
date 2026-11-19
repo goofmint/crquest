@@ -1,0 +1,10 @@
+{
+  "sortError": "配列の一部を並べ替える関数を実行できませんでした。{{e}}",
+  "success": "テスト用の配列から指定の範囲を正しく切り出し、並べ替えられました！ 配列の操作はこれからも役に立ちます。",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。",
+  "assertionFileMissing": "JavaScript の作業用フォルダーに \"{{fileName}}\" が見つかりませんでした。\"{{programPath}}\" が存在するか確認してください。",
+  "assertionFailed": "検証した結果が期待値と一致しませんでした。詳細：<br/><br/>{{errorMessage}}",
+  "assertionUnexpectedError": "検証中に予期しないエラーが発生しました。<br/><br/>\"{{errorMessage}}\"",
+  "assertionIncomplete": "検証スクリプトが正常に終了しなかったため、検証 ID \"{{validationId}}\" が出力されませんでした。"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "ディレクトリを作る",
+  "description": "自分のファイルを置くためのディレクトリを作りましょう。",
+  "validation_fields": [
+    {
+      "name": "newDirPath",
+      "label": "作成したディレクトリへのパスを入力してください。"
+    }
+  ]
+}

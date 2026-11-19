@@ -1,0 +1,79 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin busy
+  response#busy.
+    寮の試練が終わったら声をかけてください。そのときに手伝います。
+
+mixin wrong_1
+  response#wrong_1.
+    モニターが逆さまなんじゃ？ 冗談です……。
+
+mixin wrong_2
+  response#wrong_2.
+    コードが間違っているはず。コードは 1 行ずつ同期的にしか実行されない。
+
+mixin right
+  response#right.
+    もしかして、非同期関数がありますか？
+
+conversation(display_name="ラブレス寮の生徒")
+  case lastResponse
+
+    when "busy"
+      statement#busy
+
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +right
+        +wrong_1
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_2
+        +right
+        +wrong_1
+
+
+  statements
+    statement#default
+      text.
+        ラブレス塔のここまで来られたなら、きっと詳しいですよね。上級占術の問題を手伝ってくれませんか？<br><br>
+        書いたコードの関数が、思った順番で実行されないんです。何が原因だと思いますか？
+
+    statement#busy
+      text.
+        分かりました、オペレーター！ 試練の健闘を祈ります。
+
+    statement#wrong_1
+      text.
+        面白いですね、オペレーター。でも真面目に、コードが順番どおりに動かない理由に心当たりはありませんか？
+
+    statement#wrong_2
+      text.
+        同期コードと言われて、非同期コードについて習ったのを思い出しました。処理をブロックしない関数を同時にいくつも動かせるのは確かです。習ったのは本当なんですが、細かいところが思い出せません！<br><br>
+        何がこの非同期実行の原因でしょうか？
+
+    statement#right
+      text.
+        それです！ HTTP リクエストを 2 回送っているので、非同期関数の結果が返ってから処理を進めるには、#[span.highlight await]キーワードを使う必要があるんですね。<br><br>
+        きっと答えが分かると思っていました。ありがとう、オペレーター！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

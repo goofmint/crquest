@@ -1,0 +1,16 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="ホッパー寮のポスター")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">学院の皆さん、ホッパー寮主催のベータテスト大会へ！ 最新ツールを公開前に試すチャンスです。率直な感想を聞かせてください。デバッグの楽しさを味わいましょう！<BR><BR>
+        <span class="highlight">ホッパー・テスト部</span>は毎月第 2 火曜日、温室で集まります。テストや品質保証の経験は不要です！</p>
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

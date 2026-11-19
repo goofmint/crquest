@@ -1,0 +1,9 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "起動処理を置き換えると、目の前にエネルギーの橋が延びました。<strong>植物学者を探して先へ進みましょう</strong>！",
+  "incorrectExtendMessage": "引数に \"EXTEND\" を渡したときは、\"Extending bridge!\" を出力してください。<strong>ヘルプタブ</strong>のひな型を確認しましょう。",
+  "incorrectOutput": "特別な引数の <strong>EXTEND</strong> を渡さずに実行したときは、何も出力しないでください。実際の出力：<br/><br/>{{value1}}",
+  "fileMissing": "JavaScript のコード用フォルダーに \"northBridgeControl.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

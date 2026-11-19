@@ -1,0 +1,10 @@
+{
+  "missingDirectory": "環境変数 <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingLocalName": "環境変数 <span class=\"highlight\">TQ_LOCAL_GIT_USER_NAME</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingGitHubUser": "環境変数 <span class=\"highlight\">TQ_GITHUB_USERNAME</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingPixels": "指定されたリポジトリに pixels.json が見つかりませんでした。削除されていないか確認してください。→ {{pixelsPath}}",
+  "pixelNotFound": "_data/pixels.json に GitHub ユーザー名 {{TQ_GITHUB_USERNAME}} のピクセルが見つかりませんでした！",
+  "commitNotFound": "「_data/pixels.json」の変更に Git ユーザー名 {{TQ_LOCAL_GIT_USER_NAME}} が付いたコミットが見つかりませんでした。変更をコミットしたか確認してください。",
+  "edited": "新しいピクセルを正しく追加し、コミットできています！",
+  "error": "新しいピクセルが追加されたか確認する際に問題が発生しました！\n\n{{error}}"
+}

@@ -4,7 +4,7 @@ module.exports = async function (helper) {
     // cannot leave it), so the checks run there and a failed check is thrown as
     // an error. See docs/migration/validation-helper-worker.md.
     await helper.evaluateInQuestIdeUserCodeLocalScope(
-      () => {
+      ({ expectedLabel, receivedLabel, undefinedFunction }) => {
         const fail = (message) => {
           throw new Error(message);
         };
@@ -104,9 +104,9 @@ module.exports = async function (helper) {
         const assertTestCase = (testFunction) => (input, expected) => {
           const testResult = testFunction(input);
           const errorMessage = `<div style="text-align:left;overflow: scroll;">
-    <span class="highlight">Expected</span>
+    <span class="highlight">${expectedLabel}</span>
     <pre>${JSON.stringify(expected, undefined, 2)}</pre>
-    </pre><span class="highlight">But received</span><pre>${JSON.stringify(
+    </pre><span class="highlight">${receivedLabel}</span><pre>${JSON.stringify(
       testResult,
       undefined,
       2
@@ -126,7 +126,7 @@ module.exports = async function (helper) {
         }
 
         if (!learnerFunction) {
-          fail("The function monitorReservoirs is not defined!");
+          fail(undefinedFunction);
         }
 
         const test = assertTestCase(learnerFunction);
@@ -190,7 +190,11 @@ module.exports = async function (helper) {
 
         return { outcome: "ok" };
       },
-      {},
+      {
+        expectedLabel: helper.t("expected", "Expected"),
+        receivedLabel: helper.t("received", "But received"),
+        undefinedFunction: helper.t("undefinedFunction", "The function monitorReservoirs is not defined!"),
+      },
       "03-debugging-1"
     );
   } catch (err) {
@@ -198,5 +202,5 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success("You did it!");
+  helper.success(helper.t("success", "You did it!"));
 };

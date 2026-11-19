@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：関数の引数",
+  "description": "<span class=\"highlight\">引数を受け取り</span>、その値に応じて処理を変える関数を作ります。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

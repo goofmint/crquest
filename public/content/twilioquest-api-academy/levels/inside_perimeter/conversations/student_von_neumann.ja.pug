@@ -1,0 +1,64 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    学院を見て回って、生徒たちと会っています。フォン・ノイマン寮について教えてもらえますか？
+
+mixin more_info
+  response#more_info.
+    魔法薬部について詳しく教えてください！
+
+mixin one_sentence
+  response#one_sentence.
+    API の魅力を一言で言うと何ですか？
+
+conversation(display_name="フォン・ノイマン寮の生徒代表　ジーン")
+  case lastResponse
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        こんにちは、オペレーター。秘術 API 学院での時間は楽しめていますか？
+
+    statement#one_sentence
+      text.
+        API があれば、開発者は既存の機能を活用でき、すべてを一から作る手間が省けます。<br><br>
+        ライブラリや SDK にまとまった機能は特に便利です……。フォン・ノイマン寮の魔法薬で取り込む場合もね。API は新しい力を手に入れやすくし、より多くの開発者が少ない学習負担で、より多くのことを成し遂げられるようにします。これが効率と生産性そのものでなければ、寮の試練でホッパー寮を応援すると厳かに誓います！
+
+    statement#more_info
+      text.
+        魔法薬部では今年、API の術の「科学展」を開き、開発してきたさまざまな API の活用法を紹介する予定です。<br><br>
+        効率と生産性のため、API をどう組み合わせれば新しい解決策が生まれるかをいつも研究しています。正しい調合式を見つけ、適した材料を煮込み、API の強壮剤をひと振り。それで API の秘薬が作れます……。
+
+    statement#house
+      text.
+        <span class="highlight">フォン・ノイマン寮</span>では、理論を実践につなげます。効率を大切にし、API を使って大規模に使える解決策や、長く使えるシステムを設計します。理論家の生徒でさえ、化学実験室で API の解決策から最も価値のある機能を抽出しています。学院の魔法薬部も運営していますよ。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,6 +1,7 @@
 import path from 'path';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import { Converter } from 'showdown';
 import { keypress } from 'keypress.js';
 import ga from '../../../common/analytics';
@@ -14,7 +15,8 @@ import {
 import Button from '../../Button';
 import ValidationHelper from './ValidationHelper';
 import levelLoader from '../../../common/levelLoader';
-import { requireFromExtension } from '../../../common/assetLoader';
+import { readContentMessages, requireFromExtension } from '../../../common/assetLoader';
+import { isComposingKeypress } from '../../../common/isComposingKeypress';
 import World from '../../../common/world';
 import CopyDebugInfoButton from './CobyDebugInfoButton';
 import { showAlert, showDirectoryDialog } from '../../../platform/dialog';
@@ -25,15 +27,15 @@ const MD = new Converter({
 MD.setFlavor('vanilla');
 
 const STATUS = {
-  INITIALIZING: '** ANALYZING **',
-  LOCKED: '** LOCKED **',
-  HACKING: '** HACKING **',
-  CLEAR: '** CLEAR **',
-  SUCCESS: '** SUCCESS **',
-  FAIL: '** FAILED **',
+  INITIALIZING: 'ui.validator.analyzing',
+  LOCKED: 'ui.validator.locked',
+  HACKING: 'ui.validator.hacking',
+  CLEAR: 'ui.validator.clear',
+  SUCCESS: 'ui.validator.success',
+  FAIL: 'ui.validator.failed',
 };
 
-export default class Validator extends React.Component {
+class Validator extends React.Component {
   static propTypes = {
     hackObject: PropTypes.object,
     objective: PropTypes.object,
@@ -61,8 +63,10 @@ export default class Validator extends React.Component {
 
     // Set up a listener for the enter key
     this.keypressListener = new keypress.Listener();
-    this.keypressListener.simple_combo('enter', () => {
-      this.validate();
+    this.keypressListener.simple_combo('enter', event => {
+      if (!isComposingKeypress(event)) {
+        this.validate();
+      }
     });
     // Initially, turn off until an objective has been loaded
     this.keypressListener.stop_listening();
@@ -134,7 +138,10 @@ export default class Validator extends React.Component {
         this.props.objective.objectivePath,
         'validator.js'
       );
-      const validate = await requireFromExtension(modulePath);
+      const [validate, messages] = await Promise.all([
+        requireFromExtension(modulePath),
+        readContentMessages(modulePath),
+      ]);
 
       // Set up validation context
       const validationContext = {
@@ -178,7 +185,8 @@ export default class Validator extends React.Component {
       const helper = new ValidationHelper(
         validationContext,
         validationCallback,
-        this.props.hackObject.level
+        this.props.hackObject.level,
+        messages
       );
 
       // Attempt configured validation
@@ -385,12 +393,12 @@ export default class Validator extends React.Component {
     let directoryPath;
     try {
       directoryPath = await showDirectoryDialog({
-        title: field.label ? field.label.replace(/<[^>]*>/g, '') : 'Choose a folder',
+        title: field.label ? field.label.replace(/<[^>]*>/g, '') : this.props.t('ui.validator.directoryTitle'),
         defaultPath: currentValue || undefined,
       });
     } catch (error) {
       await showAlert(
-        `The folder dialog could not be opened. Please try again.\n\n${error.message}`
+        this.props.t('ui.validator.directoryError', { error: error.message })
       );
       return;
     }
@@ -460,6 +468,7 @@ export default class Validator extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     let content = [];
 
     // Display feedback instead of fields if applicable
@@ -469,7 +478,7 @@ export default class Validator extends React.Component {
           <p dangerouslySetInnerHTML={{ __html: this.state.feedback }} />
           <p>
             <button onClick={() => this.doReset()}>
-              &lt; Back to tutorial
+              {t('ui.validator.back')}
             </button>
           </p>
         </div>
@@ -481,7 +490,7 @@ export default class Validator extends React.Component {
           content.push(
             <div key="questide" className="ide-prompt">
               <Button onClick={() => this.props.launchIde()}>
-                <i className="fas fa-file-alt" /> Show Tutorial
+                <i className="fas fa-file-alt" /> {t('ui.validator.tutorial')}
               </Button>
             </div>
           );
@@ -489,7 +498,7 @@ export default class Validator extends React.Component {
           content.push(
             <div key="questide" className="ide-prompt">
               <Button onClick={() => this.props.launchIde()}>
-                <i className="fas fa-code" /> Show Code Editor
+                <i className="fas fa-code" /> {t('ui.validator.editor')}
               </Button>
             </div>
           );
@@ -550,7 +559,7 @@ export default class Validator extends React.Component {
                   htmlFor={`input-${field.name}-true`}
                   style={{ display: 'inline-block', padding: '0 20px 0 5px' }}
                 >
-                  True
+                  {t('ui.validator.true')}
                 </label>
                 <input
                   type="radio"
@@ -568,7 +577,7 @@ export default class Validator extends React.Component {
                   htmlFor={`input-${field.name}-false`}
                   style={{ display: 'inline-block', padding: '0 5px' }}
                 >
-                  False
+                  {t('ui.validator.false')}
                 </label>
               </div>
             );
@@ -591,7 +600,7 @@ export default class Validator extends React.Component {
                   onBlur={() => this.validationFieldBlur()}
                 />
                 <Button
-                  label="Choose Folder"
+                  label={t('ui.validator.chooseFolder')}
                   onClick={e => {
                     e.preventDefault();
                     this.chooseDirectory(field, currentValue);
@@ -631,7 +640,7 @@ export default class Validator extends React.Component {
     return (
       <div className="Validator">
         <div className={`status-readout ${this.state.statusColor}`}>
-          <div>{this.state.statusReadout}</div>
+          <div>{t(this.state.statusReadout)}</div>
         </div>
         <div className="validation-input">
           {content}
@@ -642,18 +651,19 @@ export default class Validator extends React.Component {
                   copiedObjectiveDebugInfo: false,
                 })
               }
+              copiedMessage={t('ui.validator.copied')}
               shouldNotify={this.state.copiedObjectiveDebugInfo}
               doesFeedbackExist={this.state.feedback}
               onClick={() => this.copyObjectiveDebugInfo()}
             >
-              Copy debug info
+              {t('ui.validator.copy')}
             </CopyDebugInfoButton>
           </p>
         </div>
         <div className="validation-button">
           {this.state.statusReadout === STATUS.FAIL ? null : (
             <Button
-              label={this.state.feedback ? 'DONE' : 'HACK'}
+              label={this.state.feedback ? t('ui.validator.done') : t('ui.validator.hack')}
               onClick={() =>
                 this.state.feedback ? this.props.onDone() : this.validate()
               }
@@ -665,3 +675,5 @@ export default class Validator extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(Validator);

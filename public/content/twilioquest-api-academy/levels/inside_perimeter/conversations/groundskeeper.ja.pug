@@ -1,0 +1,106 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin personal_intro
+  response#personal_intro.
+    学院では何をしているのですか？
+
+mixin inside_introduction
+  response#inside_introduction.
+    入学できてうれしいですが、次に何をすればよいか分かりません。
+
+mixin get_started
+  response#get_started.
+    杖を探しに行ってきます！
+
+mixin wand
+  response#wand.
+    杖を見つけました。どう使うのですか？ 次は何をすればよいですか？
+
+conversation(display_name="秘術 API 学院の管理人")
+  case lastResponse
+    when "personal_intro"
+      statement#personal_intro
+      responses
+        +get_started
+        +inside_introduction
+
+    when "inside_introduction"
+      statement#inside_introduction
+      responses
+        +get_started
+        +personal_intro
+
+    when "help"
+      statement#help
+
+    when "wand"
+      statement#congratulations
+
+    when "get_started"
+      statement#get_started
+
+    default
+      if !worldState.insidePerimeter.groundskeeper_introduction
+        - worldState.insidePerimeter.groundskeeper_introduction = true;
+        statement#default
+        responses
+          +get_started
+          +personal_intro
+
+      else
+        statement#follow_up_greeting
+        responses
+            +wand
+            +get_started
+            response#help.
+              杖が見つからないので手伝ってください。
+            +personal_intro
+
+  statements
+    statement#default
+      text.
+        おお、途中入学の生徒さんですね！ 秘術 API 学院へようこそ。私は学院の管理人です。この場所がうまく回るように世話をしています。校舎はあちらの上の方ですが、勉強を始める前に必要なものがあります。まずは杖です。支給用の杖は切らしていますが、道具小屋に予備があったはずです。
+
+    statement#inside_introduction
+      text.
+        杖は呪文を唱え、API の術を練習するために使います。先へ進むには杖が必要です。敷地を探してみましょう。私の道具小屋も自由に見てください。<br><br>
+        杖を見つけたら持ってきてください。使い方を教えましょう。
+
+
+    statement#get_started
+      text.
+        杖を見つけて戻ったら、呪文を教えますよ。
+
+    statement#follow_up_greeting
+      text.
+        おかえりなさい。道具小屋で古い杖を見つけましたか？ 見つけたら、誓約書を手に入れるために地下墓地へ進んでください。
+
+    statement#congratulations
+      if worldState.insidePerimeter.hasWand
+        if !worldState.spellsEarned.includes('disappear')
+          - worldState.spellsEarned.push('disappear')
+        text.
+          お見事！ 杖を手に入れたので、最初の呪文を学べます。簡単で強力な#[span.highlight 消失の呪文]を使えば、道をふさぐ物を消せます。敷地の秘密を探るときにも役に立つかもしれません。<br><br>
+          次は寮に入るための誓約書を手に入れましょう。学院の生徒は皆、地下墓地の奥から誓約書を取り出して、自分の本質を確かめます。健闘を祈ります！
+
+      else
+        text.
+          まだ杖を持っていないようですね。道具小屋を確認してください！
+
+    statement#ack
+      text.
+        究極の API 呪文書、<a href="https://twilio.com/console">Twilio Console</a> を開いてください。像が求める認証情報は、そこで見つかります。
+
+    statement#help
+      text.
+        道具小屋は右の方です。杖は古い箱に入れたと思うので、中を探してみてください。見つけたら、持ち主にふさわしいか試す質問が出るかもしれません。杖とは気難しいものなんです！<br><br>
+        答えに迷ったら、この<a href="https://www.twilio.com/docs/api">初年度向けの API 教科書</a>を参考にしてください。
+
+    statement#personal_intro
+      text.
+        学院の管理人です。施設を管理し、迷子になった生徒や、あなたのような新入生を手助けしています！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

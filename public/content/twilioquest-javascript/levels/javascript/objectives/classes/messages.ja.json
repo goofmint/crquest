@@ -1,0 +1,16 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "やりました！ 物質実体化装置のコンソールが復旧し、部屋の中央の装置が一部動くようになりました。",
+  "callError": "Materialize のコンストラクターまたはメソッドの実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "inactiveTarget": "起動していない場合、Materializer の materialize メソッドは undefined を返してください。",
+  "materializeTarget": "起動済みの場合、Materializer の materialize メソッドは対象の \"Gene\" を返してください。",
+  "activateState": "Materializer の activate メソッドを実行したら、activated を true にしてください。",
+  "missingMaterialize": "Materializer に materialize メソッドが必要です。",
+  "missingActivate": "Materializer に activate メソッドが必要です。",
+  "initialState": "Materializer の activated プロパティの初期値は false にしてください。",
+  "invalidTarget": "Materializer のコンストラクターから target を正しく読み取れていないようです。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">Materializer</span> クラスが見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"classes.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "invalidDefinition": "<span class=\"highlight\">Materializer</span> という変数はありますが、クラスではありません。JavaScript のクラスの定義方法はヘルプタブを確認してください。"
+}

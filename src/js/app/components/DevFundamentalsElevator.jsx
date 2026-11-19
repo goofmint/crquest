@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Transition } from 'react-transition-group';
 import useAssetLoader, {
   AssetLoaderProvider,
@@ -16,6 +17,7 @@ const withAssetLoader = WrappedComponent => {
 };
 
 const FloorTitle = ({ title }) => {
+  const { t } = useTranslation();
   const { assets } = useAssetLoader();
 
   return (
@@ -44,6 +46,7 @@ const FloorTitle = ({ title }) => {
           {title}
         </h2>
         <NavMapButton
+          label={t('ui.elevator.floorStatus')}
           config={{
             sheet: assets.completedCheckBox,
             tileWidth: 15,
@@ -84,6 +87,7 @@ const FloorEntry = ({
   onTitleClick,
   onSelectClick,
 }) => {
+  const { t } = useTranslation();
   const { assets } = useAssetLoader();
 
   return (
@@ -103,6 +107,7 @@ const FloorEntry = ({
       </div>
       <NavMapButton
         onClick={onSelectClick}
+        label={t('ui.elevator.selectFloor', { floor: title })}
         config={{
           sheet: assets.elevatorButton,
           tileWidth: 24,
@@ -137,6 +142,7 @@ const DevFundamentalsElevator = ({
   fadeOut = false,
   floors = [],
 }) => {
+  const { t } = useTranslation();
   const { isLoaded: areAssetsLoaded, assets } = useAssetLoader();
   const outerNodeRef = useRef(null);
   const innerNodeRef = useRef(null);
@@ -261,9 +267,10 @@ const DevFundamentalsElevator = ({
                         flex: 1,
                       }}
                     >
-                      {'Floor Directory'}
+                      {t('ui.elevator.directory')}
                     </h1>
                     <NavMapButton
+                      label={t('ui.overlay.close')}
                       onClick={hide}
                       config={{
                         sheet: assets.buttonX,

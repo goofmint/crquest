@@ -17,26 +17,27 @@ module.exports = async helper => {
 
     if (response.ok) {
       // 204 indicates success
-      helper.success(`
+      helper.success(helper.t('planted', `
         Thanks for helping plant a tree in Australia!
-      `);
+      `));
     } else {
       if (response.status === 403) {
-        return helper.success(`
+        return helper.success(helper.t('alreadyPlanted', `
           You've already planted this tree - good for you!
-        `);
+        `));
       } else {
-        return helper.fail(`
+        return helper.fail(helper.t('requestFailed', `
           Sorry, something went wrong submitting your request. Try again later!
-        `);
+        `));
       }
     }
   } catch (err) {
     console.log(err);
-    helper.fail(
+    helper.fail(helper.t('failed',
       `Something went wrong when we tried to plant a tree on your behalf:
       <br/></br/>
-      ${err}`
-    );
+      {{error}}`,
+      { error: err }
+    ));
   }
 };

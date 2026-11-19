@@ -1,0 +1,9 @@
+{
+  "title": "JavaScript ラボ：配列の要素にアクセス",
+  "description": "<strong>インデックス</strong>で配列内のデータにアクセスする方法を学びます。",
+  "validation_fields": [
+    {
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

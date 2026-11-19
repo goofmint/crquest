@@ -1,0 +1,14 @@
+{
+  "title": "API 学院：API とは",
+  "description": "<strong>チューリング寮</strong>の知識の宝箱を開けるには、まず API を定義する必要があります。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "空欄を埋めてください。「API」は「Application Programming &#95;&#95;&#95;&#95;&#95;&#95;&#95;&#95;&#95;&#95;」の略です。"
+    },
+    {
+      "name": "answer2",
+      "label": "上の「コードエディターを表示」を押して JavaScript のコードを見てください。文字列をすべて大文字に変換する文字列関数の名前は何ですか？"
+    }
+  ]
+}

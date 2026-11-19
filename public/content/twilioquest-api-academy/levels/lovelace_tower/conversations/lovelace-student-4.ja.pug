@@ -1,0 +1,80 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin busy
+  response#busy.
+    今は止まれません。この調子で先に進みます！
+
+mixin wrong_1
+  response#wrong_1.
+    ローカル API は同じ市外局番の中で使い、リモート API はクラウドのどこからでも使える。
+
+mixin wrong_2
+  response#wrong_2.
+    違いはない。API にとってローカルもリモートも同じ意味だ。
+
+mixin right
+  response#right.
+    ローカル API は自分の端末で直接動き、リモート API は多くの場合自分のものではないサーバーで動く。
+
+conversation(display_name="ラブレス寮の生徒")
+  case lastResponse
+
+    when "busy"
+      statement#busy
+
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +wrong_1
+        +right
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_1
+        +wrong_2
+        +right
+
+  statements
+    statement#default
+      text.
+        わあ、ラブレス塔の部屋は残り一つ。すごい勢いで寮の試練を進めていますね！<br><br>
+        少しだけ課題を手伝ってくれませんか？ 締め切りまであと 1 時間くらいなんです……。<br><br>
+        #[span.highlight ローカル] API と#[span.highlight リモート] API の違いは何ですか？
+
+    statement#busy
+      text.
+        大丈夫です。試練をすべて終えてからラブレス塔に戻ってきてもいいですから。私はここで問題を解いてみます。あとでまた会いに来てください！
+
+    statement#wrong_1
+      text.
+        うーん、少し違う気がします。リモート API はどこからでも使えますが、自分のコンピューターに置く必要がないからですよね。ローカル API は仕組みが違いませんでしたっけ？<br><br>
+        どんな違いでしょう？
+
+    statement#wrong_2
+      text.
+        最初に試した答えですが、違うんです！ 違いはコードが実際に実行される場所にあるはずです。<br><br>
+        では何が違うんでしょう……。授業をちゃんと聞けばよかったです。
+
+    statement#right
+      text.
+        そうです！ リモート API の実装は自分の端末ではなく別の場所で動くので、手元にはない計算能力や規模を使えるんですね。ローカル API は言語そのものやインターネットから取得したパッケージに含まれることがあり、自分のコンピューターや端末で実行されます。<br><br>
+        そばにいてもらうだけで、すっかり思い出せました！ ありがとう、オペレーター！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

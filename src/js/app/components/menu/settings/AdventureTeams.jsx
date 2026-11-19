@@ -1,16 +1,19 @@
 import React, { Fragment } from 'react';
+import { withTranslation } from 'react-i18next';
 import AsyncInputBox from './AsyncInputBox';
 import { joinTeam, getJoinedTeams, disconnectTeam } from '../../../common/teams';
 
-export class JoinTeam extends React.Component {
+class JoinTeamView extends React.Component {
   render() {
+    const { t } = this.props;
     const { enableSubmitHotkey, onSuccess = () => {} } = this.props;
     return (
       <AsyncInputBox
+        inputLabel={t('ui.membership.code')}
         onFocus={this.props.onFocus}
         onBlur={this.props.onBlur}
-        defaultButtonLabel="Join"
-        resolvingButtonLabel="Joining..."
+        defaultButtonLabel={t('ui.membership.join')}
+        resolvingButtonLabel={t('ui.membership.joining')}
         onSubmit={joinTeam}
         onSuccess={onSuccess}
         enableSubmitHotkey={enableSubmitHotkey}
@@ -19,13 +22,14 @@ export class JoinTeam extends React.Component {
   }
 }
 
-export class CurrentTeam extends React.Component {
+class CurrentTeamView extends React.Component {
   render() {
+    const { t } = this.props;
     const teams = getJoinedTeams();
     
     return (
       <>
-        <h4 className="mt4">Current Team(s)</h4>
+        <h4 className="mt4">{t('ui.teams.current')}</h4>
         {teams ? 
           teams.map(
             team => (
@@ -34,15 +38,19 @@ export class CurrentTeam extends React.Component {
               <div className={`mb3 red`}>
                 <span className={`pb1 bb b--red pointer`}
                     onClick={() => disconnectTeam(team)}>
-                  Leave Team
+                  {t('ui.teams.leave')}
                 </span>
               </div>
             </Fragment>
           )
           ) : (
-          <p>You're not on a team right now.</p>
+          <p>{t('ui.teams.empty')}</p>
         )}
       </>
     );
   }
 }
+
+export const JoinTeam = withTranslation()(JoinTeamView);
+
+export const CurrentTeam = withTranslation()(CurrentTeamView);

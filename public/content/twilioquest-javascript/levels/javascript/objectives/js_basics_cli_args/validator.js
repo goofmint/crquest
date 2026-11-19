@@ -13,11 +13,11 @@ module.exports = async (helper) => {
 
     const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
-      helper.fail(`
+      helper.fail(helper.t("fileMissing", `
         We couldn't find your "divideByTwo.js" script in your 
         JavaScript code folder. Does the file below exist? <br/><br/>
-        <span style="word-wrap:break-word">${programPath}</span>
-      `);
+        <span style="word-wrap:break-word">{{programPath}}</span>
+      `, { programPath }));
       return;
     }
 
@@ -26,28 +26,28 @@ module.exports = async (helper) => {
     const { stdout } = await executeCodeString(helper, TQ_NODE_EXE, userCode, ["128"]);
 
     if (!stdout.includes("64")) {
-      helper.fail(`
+      helper.fail(helper.t("divideResult", `
         When we executed your script, it didn't print out the result of dividing
         the input number by two.
         <br/><br/>
         
         Make sure to <em>change the final line of code</em> in the example
         given in the Help tab.
-      `);
+      `));
       return;
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       You replace the missing division script, and the lasers fade away.
       <br/><br/>
       <strong>Go grab the laser password</strong> from the scientist's desk!
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("executionError", `
       There was an error executing your JavaScript code. Please ensure that you
       can run it successfully and try again. Here's the error we got - sorry
       if the formatting is ugly: <br/><br/>
-      ${e}
-    `);
+      {{e}}
+    `, { e }));
   }
 };

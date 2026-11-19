@@ -1,7 +1,9 @@
 import React, { Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAudioManager } from '../../../common/audio/index';
 
 function VolumeControl({ title, audioType }) {
+  const { t } = useTranslation();
   const { audioState, audioManager, syncAudioState } = useAudioManager();
   const { muted, volume } = audioState[audioType];
   let icon;
@@ -33,7 +35,7 @@ function VolumeControl({ title, audioType }) {
         <img
           className="h1"
           src={`images/app/audio/speaker_${icon}.png`}
-          alt="Speaker On"
+          alt={muted ? t('ui.audio.speakerMuted') : t('ui.audio.speakerOn')}
         />
       </td>
       <td>
@@ -45,6 +47,7 @@ function VolumeControl({ title, audioType }) {
             }}
             disabled={muted}
             className={`pointer ${muted ? 'o-50' : ''}`}
+            aria-label={title}
             type="range"
             min={1}
             max={100}
@@ -74,7 +77,7 @@ function VolumeControl({ title, audioType }) {
             syncAudioState();
           }}
         >
-          {muted ? 'Unmute' : 'Mute'}
+          {muted ? t('ui.audio.unmute') : t('ui.audio.mute')}
         </span>
       </td>
     </tr>
@@ -82,15 +85,16 @@ function VolumeControl({ title, audioType }) {
 }
 
 export default function AudioTab() {
+  const { t } = useTranslation();
   return (
     <Fragment>
-      <h3>Audio/Music Settings</h3>
+      <h3>{t('ui.audio.title')}</h3>
       <table>
         <tbody>
-          <VolumeControl title="Master Volume" audioType="master" />
-          <VolumeControl title="Music Volume" audioType="music" />
-          <VolumeControl title="Voice Over Volume" audioType="vo" />
-          <VolumeControl title="SFX Volume" audioType="sfx" />
+          <VolumeControl title={t('ui.audio.master')} audioType="master" />
+          <VolumeControl title={t('ui.audio.music')} audioType="music" />
+          <VolumeControl title={t('ui.audio.voice')} audioType="vo" />
+          <VolumeControl title={t('ui.audio.sfx')} audioType="sfx" />
         </tbody>
       </table>
     </Fragment>

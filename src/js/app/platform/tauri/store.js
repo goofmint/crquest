@@ -15,7 +15,9 @@ import { load } from '@tauri-apps/plugin-store';
 import { rejectAsError } from './errors';
 import { STORE_FILE } from './storeFile';
 
-let storePromise;
+let cachedStore;
+let pendingOperation = Promise.resolve();
+let pendingRecovery;
 
 // `load()` of tauri-plugin-store ignores every error while reading the file
 // (a corrupt or unreadable file silently yields an empty store, and the next
@@ -40,23 +42,57 @@ async function openStore() {
   return store;
 }
 
-function getStore() {
-  if (!storePromise) {
-    const opening = openStore();
-    storePromise = opening;
-    opening.catch(() => {
-      if (storePromise === opening) {
-        storePromise = undefined;
-      }
-    });
+async function recoverStore() {
+  if (!pendingRecovery) {
+    return;
   }
-  return storePromise;
+
+  try {
+    await pendingRecovery();
+  } catch {
+    // Discard the resource itself. Loading again without closing it would
+    // return the same native cache, which can also be saved on app exit.
+    await rejectAsError(cachedStore.close());
+    cachedStore = undefined;
+  }
+  pendingRecovery = undefined;
+}
+
+function withStore(operation) {
+  const result = pendingOperation.then(async () => {
+    // If both restoration and close failed, retry recovery before any later
+    // operation can observe or persist values from the dirty native cache.
+    await recoverStore();
+    cachedStore ??= await openStore();
+    return operation(cachedStore);
+  });
+  pendingOperation = result.catch(() => {});
+  return result;
+}
+
+function mutateStore(key, mutate) {
+  return withStore(async store => {
+    const previousValue = await rejectAsError(store.get(key));
+    try {
+      await rejectAsError(mutate(store));
+      await rejectAsError(store.save());
+    } catch (error) {
+      pendingRecovery = () => rejectAsError(previousValue === undefined
+        ? store.delete(key)
+        : store.set(key, previousValue));
+      try {
+        await recoverStore();
+      } catch {
+        // Preserve the initial failure. The next operation retries recovery.
+      }
+      throw error;
+    }
+  });
 }
 
 /** Resolves the stored value, or `undefined` when the key does not exist. */
 export async function getValueAsync(key) {
-  const store = await getStore();
-  return rejectAsError(store.get(key));
+  return withStore(store => rejectAsError(store.get(key)));
 }
 
 /** Persists the value. Rejects for `undefined` (not JSON-serializable). */
@@ -64,19 +100,14 @@ export async function setValueAsync(key, value) {
   if (value === undefined || typeof value === 'function') {
     throw new TypeError(`Cannot store ${typeof value} for key "${key}"`);
   }
-  const store = await getStore();
-  await rejectAsError(store.set(key, value));
-  await rejectAsError(store.save());
+  return mutateStore(key, store => store.set(key, value));
 }
 
 export async function hasValueAsync(key) {
-  const store = await getStore();
-  return rejectAsError(store.has(key));
+  return withStore(store => rejectAsError(store.has(key)));
 }
 
 /** Removes the key; deleting a missing key is not an error. */
 export async function deleteValueAsync(key) {
-  const store = await getStore();
-  await rejectAsError(store.delete(key));
-  await rejectAsError(store.save());
+  return mutateStore(key, store => store.delete(key));
 }

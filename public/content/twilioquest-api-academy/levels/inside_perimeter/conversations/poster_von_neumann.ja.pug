@@ -1,0 +1,16 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="フォン・ノイマン寮のポスター")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">API、SDK、HTTP、REST。それぞれの要点だけを取り出して知りたいですか？ 期末試験を乗り切るのに、API の濃縮液はいかがでしょうか？ フォン・ノイマン寮が支援する魔法薬部では、今年の<span class="highlight">API の術「科学展」</span>で新しい API 魔法薬を紹介します。<BR><BR>
+        冷たい飲み物に加え、API の無駄を煮詰めて取り除くワークショップもあります。いちばん見事な API の組み合わせには、新品の大釜を贈ります！</p>
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

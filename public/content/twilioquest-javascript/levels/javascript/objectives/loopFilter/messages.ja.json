@@ -1,0 +1,12 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "やりました！ セキュリティノードをハックすると、Infinite Loop のマスターパスワードの<span class=\"highlight\">3 番目の文字</span>を示すインデックスが現れました。<br/><br/><span class=\"highlight\">[2][5]</span><br/><br/>パスワードを調べるには、合計 6 つのインデックスが必要です。",
+  "callError": "scanAndFilter 関数の実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "incorrectArray": "関数は配列を返しましたが、期待した内容と異なります。ヘルプタブと目標タブを確認し、戻り値の配列が正しいか確かめてください。",
+  "notArray": "関数の戻り値が配列ではありません。絞り込んだ文字列の配列を返してください。",
+  "missingReturnValue": "関数がまだ値を返していないようです。関数を閉じる「}」の前で <span class=\"highlight\">return</span> を使い、処理の結果を返してください。ヘルプタブのひな型が参考になります。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">scanAndFilter</span> 関数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"freightFilter.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "invalidDefinition": "<span class=\"highlight\">scanAndFilter</span> という変数はありますが、呼び出せる関数ではありません。JavaScript の呼び出せる関数の定義方法はヘルプタブを確認してください。"
+}

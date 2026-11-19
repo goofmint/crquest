@@ -1,0 +1,17 @@
+{
+  "toolboxFileTree": "工具箱の中には「ファイルツリー」と書かれた図が入っています。塔の中にきれいな森でもあるのでしょうか？",
+  "toolboxTerminal": "工具箱の中には「ターミナル」という不思議な文字の並びが入っています。恐竜の時代には、こんなふうにコンピューターを使っていたのでしょうか！",
+  "toolboxShells": "工具箱の中には「シェル」の一覧が入っています。海辺で売っている貝殻でしょうか？",
+  "toolboxesComplete": "<span class=\"highlight\">新人開発者お困りごと収集機</span>の修理に必要な工具箱がすべて見つかりました！",
+  "toolboxRemaining": "<span class=\"highlight\">あと {{count}} 個の工具箱を見つけましょう！</span>",
+  "toolboxesRemaining": "<span class=\"highlight\">あと {{count}} 個の工具箱を見つけましょう！</span>",
+  "towerOpen": "塔の扉が開きました！",
+  "speakToExplorer": "<span class=\"highlight\">新人開発者お困りごと収集機</span>が直ったので、<span class=\"highlight\">クラウド探検家</span>に話しかけましょう！",
+  "towerLocked": "塔の扉はびくともしません……。開ける方法がないか、辺りを探してみましょう。",
+  "questTitle": "塔に入る",
+  "questFindEntrance": "無限知識の塔の入口を探しましょう！",
+  "questFindWayInside": "塔に入る方法を見つけましょう。",
+  "questFindToolboxes": "残りの工具箱を探しましょう！",
+  "questTalkToExplorer": "クラウド探検家にもう一度話しかけましょう。",
+  "questEnterTower": "いよいよ塔に入るときです！"
+}

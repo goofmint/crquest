@@ -6,26 +6,35 @@ module.exports = async function (helper) {
     const playerWords = words.split(" ");
 
     if (playerWords.length === 1 && playerWords[0] === "") {
-      helper.fail(`There does not seem to be any words here! There should be a single string separated by spaces. Like this: '${validWords.join(" ")}'.`);
+      helper.fail(helper.t(
+        "missingWords",
+        "There does not seem to be any words here! There should be a single string separated by spaces. Like this: '{{words}}'.",
+        { words: validWords.join(" ") }
+      ));
       return;
     }
 
     if (playerWords.length !== correctWordOrder.length) {
-      helper.fail(`One or more words is missing! You must use all three of the following words: ${validWords.join(", ")}`);
+      helper.fail(helper.t(
+        "missingSomeWords",
+        "One or more words is missing! You must use all three of the following words: {{words}}",
+        { words: validWords.join(", ") }
+      ));
       return;
     }
     
     // Checking to see if any words provided by the player are invalid
     if (playerWords.some(word => !validWords.includes(word))) {
-      helper.fail(
-        `Not all of your words are valid! The only valid words are: ${validWords.join(
-          " "
-        )}.`);
+      helper.fail(helper.t(
+        "invalidWords",
+        "Not all of your words are valid! The only valid words are: {{words}}.",
+        { words: validWords.join(" ") }
+      ));
         return;
     }
 
     if (!correctWordOrder.every((word, idx) => word === playerWords[idx])) {
-      helper.fail("The words do not seem to be in the correct order!");
+      helper.fail(helper.t("incorrectOrder", "The words do not seem to be in the correct order!"));
       return;
     }
   } catch (err) {
@@ -33,5 +42,5 @@ module.exports = async function (helper) {
     return;
   }
 
-  helper.success("You did it!");
+  helper.success(helper.t("success", "You did it!"));
 };

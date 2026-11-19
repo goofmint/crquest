@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin documentation
+  response#documentation.
+    API のドキュメントを読んで学んだことを、実際のコードに活かすにはどうすればよいですか？
+
+conversation(display_name="ほこりをかぶったエイダ・ラブレスの像")
+  case lastResponse
+    when "documentation"
+      statement#documentation
+
+    default
+      statement#default
+      responses
+        +documentation
+
+  statements
+    statement#default
+      text.
+        ラブレス寮では、理解することが表現の鍵だと学びます。API のドキュメントを読み、必要な答えを探すことが、ラブレス寮の力を高めます。
+
+    statement#documentation
+      text.
+        ドキュメントを読むには論理的に考え、内容を理解する力が要ります。実際に活用するには想像力と創造性も要ります。そう思いませんか、オペレーター？
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

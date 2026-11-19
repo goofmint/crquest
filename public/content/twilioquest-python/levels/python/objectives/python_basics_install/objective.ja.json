@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：Python 3 のインストール",
+  "description": "Python のコードを書いて実行できるように、<span class=\"highlight\">Python インタープリター</span>をインストールしましょう。",
+  "validation_fields": [
+    {
+      "name": "pythonPath",
+      "label": "チュートリアルにある方法で調べた Python インタープリターのパスを入力してください。"
+    }
+  ]
+}

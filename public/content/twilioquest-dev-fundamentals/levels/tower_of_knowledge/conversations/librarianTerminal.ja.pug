@@ -1,0 +1,27 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="司書")
+  case lastResponse
+    when "what_learn"
+      statement#watch_video
+      responses
+
+    default
+      statement#default
+      responses
+        response#what_learn.
+          完成したら、ここでは何を学べるんですか？
+
+  statements
+    statement#default
+      text.
+        図書館の 2 階へようこそ。ここは<span class="highlight">ターミナル</span>のフロアです！ 見てのとおり、まだ建設中ですが……。
+
+    statement#watch_video
+      text.
+        「ターミナルを開く」って何をすることだろうと思ったことがあるなら、この階が役立ちます。
+        <br/><br/>
+        テレビにセットしてあるビデオカセットで、完成したらどんなことを学べるのか見てみましょう！
+
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

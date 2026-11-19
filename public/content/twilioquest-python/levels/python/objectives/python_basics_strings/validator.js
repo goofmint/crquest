@@ -22,27 +22,27 @@ module.exports = async (helper) => {
 
     // Check the output for the target string
     if (stdout.indexOf("I AM SO STOKED!!!") < 0) {
-      throw new NiceError(`
+      throw new NiceError(helper.t("wrongTransform", `
         It looks like your code is not quite stoked enough yet. Make sure to:
         <br/>
         - Transform the input string to <span class="highlight">all caps</span></br>
         - Append <span class="highlight">three exclamation points</span> to the end</br>
         - <span class="highlight">print()</span> the resulting transformed string
-      `);
+      `));
     }
 
     // If we make it this far, we've passed validation
-    helper.success(`
+    helper.success(helper.t("success", `
       EXCELLENT!!! You have completed the <em>Trial of Words</em>.
-    `);
+    `));
   } catch (e) {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("executionFailed", `
         Sorry! We couldn't successfully run your Python script.
-      `);
+      `));
     }
   }
 };

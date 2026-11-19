@@ -1,0 +1,11 @@
+{
+  "missingGitHubUser": "環境変数 <span class=\"highlight\">TQ_GITHUB_USERNAME</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingDirectory": "環境変数 <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingRemote": "「upstream」という名前のリモートが見つかりませんでした。リモートを追加したか確認してください。",
+  "wrongRemote": "「upstream」リモートは見つかりましたが、URL が正しくないようです。\n\n正しい URL は https://github.com/twilio-labs/open-pixel-art.git です。\n\nターミナルで git remote -v を実行し、確認してください！",
+  "upstreamUnavailable": "Open Pixel Art リポジトリに接続できませんでした！\n\n{{status}} {{statusText}}",
+  "forkUnavailable": "ユーザー「{{TQ_GITHUB_USERNAME}}」の「open-pixel-art」リポジトリが見つかりませんでした！\n\n{{status}} {{statusText}}",
+  "outOfSync": "Open Pixel Art リポジトリとユーザー「{{TQ_GITHUB_USERNAME}}」の「open-pixel-art」リポジトリは同期されていません。最後の同期後に変更が追加されたかもしれません。もう一度同期してください！",
+  "synced": "Open Pixel Art リポジトリとユーザー「{{TQ_GITHUB_USERNAME}}」の「open-pixel-art」リポジトリが同期されています！ ほかのユーザーが変更を加えると、今後同期がずれることがあります。",
+  "error": "Open Pixel Art のフォークの同期を確認する際に問題が発生しました！\n\n{{err}}"
+}

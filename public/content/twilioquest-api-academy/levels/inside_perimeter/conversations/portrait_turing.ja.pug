@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example
+  response#example.
+    API の例を教えてくれませんか？
+
+conversation(display_name="驚く魔女スーザンの肖像")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        JavaScript を選んだ生徒はいいですね……。Twilio がサーバー側のヘルパーライブラリも、ブラウザー用の SDK も用意してくれるんですか？
+
+    statement#example
+      text.
+        <a href="https://api.nasa.gov/index.html">NASA Open APIs</a> で NASA を、つまり宇宙全体を探検できます。毎日新しい宇宙の写真が欲しいですか？ 火星の天気は？ 火星探査車の写真は？ API ライブラリの力には、驚かされるばかりです。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -7,21 +7,30 @@ module.exports = async (helper) => {
 
   if (!TQ_OPEN_PIXEL_ART_DIR) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingDirectory",
+        "You do not have the environment variable <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
 
   if (!TQ_LOCAL_GIT_USER_NAME) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_LOCAL_GIT_USER_NAME</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingLocalName",
+        "You do not have the environment variable <span class=\"highlight\">TQ_LOCAL_GIT_USER_NAME</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
 
   if (!TQ_GITHUB_USERNAME) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_GITHUB_USERNAME</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingGitHubUser",
+        "You do not have the environment variable <span class=\"highlight\">TQ_GITHUB_USERNAME</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
@@ -32,7 +41,11 @@ module.exports = async (helper) => {
 
     if (pixelFileExists !== "file") {
       helper.fail(
-        `We could not find the pixels.json file in your provided repository! Has it been removed? -> ${pixelsPath}`
+        helper.t(
+          "missingPixels",
+          "We could not find the pixels.json file in your provided repository! Has it been removed? -> {{pixelsPath}}",
+          { pixelsPath }
+        )
       );
       return;
     }
@@ -46,7 +59,11 @@ module.exports = async (helper) => {
 
     if (!isPixelPresentWithUsername) {
       helper.fail(
-        `We didn't find a pixel in the _data/pixels.json file with your git username, ${TQ_GITHUB_USERNAME}!`
+        helper.t(
+          "pixelNotFound",
+          "We didn't find a pixel in the _data/pixels.json file with your git username, {{TQ_GITHUB_USERNAME}}!",
+          { TQ_GITHUB_USERNAME }
+        )
       );
       return;
     }
@@ -82,19 +99,23 @@ module.exports = async (helper) => {
         .includes(TQ_LOCAL_GIT_USER_NAME.toLowerCase())
     ) {
       helper.fail(
-        `We didn't find a commit with your git username, ${TQ_LOCAL_GIT_USER_NAME}, on it for the "_data/pixels.json" file! Have you committed your changes?`
+        helper.t(
+          "commitNotFound",
+          "We didn't find a commit with your git username, {{TQ_LOCAL_GIT_USER_NAME}}, on it for the \"_data/pixels.json\" file! Have you committed your changes?",
+          { TQ_LOCAL_GIT_USER_NAME }
+        )
       );
       return;
     }
 
     helper.success(
-      `It looks like you've correctly added and committed your new pixel!`
+      helper.t("edited", "It looks like you've correctly added and committed your new pixel!")
     );
   } catch (err) {
     helper.fail(
-      `We ran into a problem trying to validate you added your new pixel!
+      helper.t("error", `We ran into a problem trying to validate you added your new pixel!
       
-      ${err.message}`
+      {{error}}`, { error: err.message })
     );
     console.error(err);
   }

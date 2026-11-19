@@ -1,0 +1,10 @@
+{
+  "title": "API 学院：fetch リクエスト",
+  "description": "API から魔法の言葉を取得する非同期関数を書きましょう。",
+  "validation_fields": [
+    {
+      "name": "magicalPhrase",
+      "label": "API から返ってきた魔法の言葉をそのまま貼り付けてください。"
+    }
+  ]
+}

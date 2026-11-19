@@ -26,7 +26,7 @@ That message starts with a preset message which you can adjust to talk about wha
 
 Many repositories you contribute to in the future will have these customized presets. The preset for Open Pixel Art has a checklist of items for you to verify before opening.
 
-We should have adhered to them back when we added our pixel, but double check them now! Checkboxes in GitHub markdown are created with the code `- [ ]`. To mark them as checked, put an `x` between the square brackets, so they look like this `- [ x ]`.
+We should have adhered to them back when we added our pixel, but double check them now! Checkboxes in GitHub markdown are created with the code `- [ ]`. To mark them as checked, replace the space between the square brackets with `x`, like this: `- [x]`.
 
 Once you've confirmed the checklist, click the `Create Pull Request` button!
 

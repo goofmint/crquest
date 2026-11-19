@@ -1,7 +1,8 @@
 -
   const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
   const worldState = getState(STATE_KEY);
-  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;
+  const allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4;
+  const hasPledgeScroll = Object.hasOwn(worldState.insideCatacombs, "hasPledgeScroll") && worldState.insideCatacombs.hasPledgeScroll === true;
     
 
 mixin personal_intro
@@ -67,7 +68,10 @@ conversation(display_name="Ghost of the Catacombs")
         +houses
 
     when "pledge_scroll"
-      statement#congratulations
+      if hasPledgeScroll
+        statement#congratulations
+      else
+        statement#follow_up_greeting
 
     when "get_started"
       statement#get_started
@@ -93,7 +97,7 @@ conversation(display_name="Ghost of the Catacombs")
       else
         statement#follow_up_greeting
         responses
-          if allComplete
+          if hasPledgeScroll
             +pledge_scroll
             +personal_intro
             +houses 
@@ -140,9 +144,13 @@ conversation(display_name="Ghost of the Catacombs")
         Good luck! Come back and see me if you need help.
 
     statement#follow_up_greeting
-      if allComplete
+      if hasPledgeScroll
         text.
           Operator, hello again! How are you faring on your journey through the Catacombs?
+
+      else if allComplete
+        text.
+          You have all four pieces of the Unlocking Spell! Use the spell to summon the key, open the Sacred Scroll Room in the center of the Catacombs, and retrieve your pledge scroll.
 
       else if worldState.insideCatacombs.keySpellsObtained.length === 0
         text.

@@ -1,0 +1,40 @@
+// Responses
+mixin where_should_go
+  response#where_should_go.
+    次はどこへ行けばいいですか？
+
+mixin about
+  response#about.
+    ステーションではどんな研究をしているのですか？
+
+conversation(display_name="ドリンク配膳ロボット")
+  case lastResponse
+    when "about"
+      statement#about
+      responses
+        +where_should_go
+
+    when "where_should_go"
+      statement#where_should_go
+      responses
+        +about
+
+    default
+      statement#default
+      responses
+        +where_should_go
+        +about
+
+  statements
+
+    statement#where_should_go
+      text.
+        現在のアクセスカードでダックタイピウム研究区画に移動可能です。当機の娯楽用液体貯蔵設備の背後にある通路をお進みください。<br/><br/><i>[しばらく不思議そうにロボットを見つめたあと、バーの後ろの出入口を通れという意味だと気づいた。]</i>
+
+    statement#about
+      text.
+        エラー。当機が提供を許可されているのは道案内と、状況に応じた喉の渇き対策技術です。マンゴーとドラゴンフルーツの液体インフュージョンはいかがでしょうか？ 経口でも静脈経由でも投与できます。
+
+    statement#default
+      text.
+        こんにちは。ドリンク配膳ロボットです。当機は道案内と、状況に応じた喉の渇き対策技術の提供を許可されています。

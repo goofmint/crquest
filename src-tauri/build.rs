@@ -10,6 +10,7 @@ fn main() {
             "open_devtools",
             "toggle_devtools",
             "enable_help_menu",
+            "set_shell_texts",
         ]),
     ))
     .expect("failed to run tauri-build");

@@ -17,13 +17,22 @@ module.exports = async function (helper) {
 
   try {
     if (!newFileName) {
-      helper.fail("You must provide the name of your newly created file!");
+      helper.fail(
+        helper.t(
+          "missingInput",
+          "You must provide the name of your newly created file!"
+        )
+      );
       return;
     }
 
     if (!(await exists(helper, newFilePath))) {
       helper.fail(
-        `TwilioQuest could not find the file "${newFileName}" in "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR}"! Make sure your newly created file is in the right directory!`
+        helper.t(
+          "missingFile",
+          'TwilioQuest could not find the file "{{newFileName}}" in "{{directory}}"! Make sure your newly created file is in the right directory!',
+          { newFileName, directory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR }
+        )
       );
       return;
     }
@@ -32,21 +41,30 @@ module.exports = async function (helper) {
 
     if (!fileStats.isFile()) {
       helper.fail(
-        `TwilioQuest found "${newFileName}" in "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR}", but it isn't a file! Double check that you're using the right command when making your file!`
+        helper.t(
+          "incorrectEntryType",
+          'TwilioQuest found "{{newFileName}}" in "{{directory}}", but it isn\'t a file! Double check that you\'re using the right command when making your file!',
+          { newFileName, directory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR }
+        )
       );
       return;
     }
   } catch (err) {
     helper.fail(
-      `TwilioQuest ran into an issue when checking for your newly created file!
-      
-      ${err}`
+      helper.t(
+        "validationError",
+        "TwilioQuest ran into an issue when checking for your newly created file!\n      \n      {{error}}",
+        { error: err }
+      )
     );
     return;
   }
 
   helper.success(
-    "TwilioQuest was able to find your newly created file! Good job!",
+    helper.t(
+      "success",
+      "TwilioQuest was able to find your newly created file! Good job!"
+    ),
     [
       {
         name: "DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_FILE",

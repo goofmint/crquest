@@ -1,0 +1,18 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="ラブレスの秘密図書館の扉")
+  case lastResponse
+
+    default
+      if !worldState.obj4Complete
+        statement#default
+
+  statements
+    statement#default
+      text.
+        この秘密の場所に入るには、#[span.highlight 占術の呪文]が必要です。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

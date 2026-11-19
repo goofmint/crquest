@@ -96,6 +96,9 @@ const createHelper = ({
   const helper = {
     env,
     validationFields,
+    t: (_, fallback, vars = {}) => fallback.replace(/\{\{(\w+)\}\}/g, (match, key) =>
+      Object.hasOwn(vars, key) ? String(vars[key]) : match
+    ),
     success: vi.fn(),
     fail: vi.fn(),
     getNormalizedInput: (key, { lowerCase = true } = {}) => {

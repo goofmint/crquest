@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin apis
+  response#apis.
+    なぜ API はそんなに強力なのですか？
+
+conversation(display_name="ほこりをかぶったジョン・フォン・ノイマンの像")
+  case lastResponse
+    when "apis"
+      statement#apis
+
+    default
+      statement#default
+      responses
+        +apis
+
+  statements
+    statement#default
+      text.
+        フォン・ノイマン寮では、効率と論理が魔法の根本にあります。GET リクエストは情報を取得し、POST リクエストは情報を送信するために使う。この違いを知っていることが、API を使ったコードの効率を高めます。
+
+    statement#apis
+      text.
+        私はかつて生きていた人間の記憶にすぎませんが、少し自慢させてください。人の思考が現実の世界を形作ると信じて、かつて「世紀の人物」と呼ばれたことがあります。それが秘術 API 学院ほど当てはまる場所はありません。私は薄暗い地下墓地に埋もれたほこりだらけの像ですが、生徒たちが頭の中で城を設計し、API を使って現実のものにしていく姿を、何代にもわたり見てきました。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

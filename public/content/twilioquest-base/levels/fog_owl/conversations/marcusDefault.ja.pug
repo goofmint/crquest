@@ -1,0 +1,51 @@
+mixin dossier
+  response#dossier.
+    ［勤務記録を確認する］スペリング大会の出題者からクラウド探査船の機関長になるなんて、もったいないね。
+
+mixin what_this
+  response#what_this.
+    船のこの区画は何をする場所？
+
+mixin about
+  response#about.
+    名前と船での役割をもう一度教えてくれる？
+
+conversation(display_name="Marcus")
+  case lastResponse
+    when "dossier"
+      statement#dossier
+      responses
+        +what_this
+
+    when "what_this"
+      statement#what_this
+      responses
+        +about
+
+    when "about"
+      statement#about
+      responses
+        +dossier
+
+    default
+      statement#default
+      responses
+        +what_this
+        +about
+
+  statements
+    statement#what_this
+      text.
+        ここは機関デッキだ。フォグ・オウル号の心臓部、最新式の<span class="highlight">パケット伝送ドライブ</span>を管理している。この駆動装置で、クラウドに接続したオペレーターの一団を、仮想世界の間で驚くほど速く移動させられるんだ。<br/><br/>この技術があれば、ようやくレガシーシステムズの一歩先を行けるはずさ。
+
+    statement#dossier
+      text.
+        はは、そんなことまで書いてあったか。技術力だけじゃなく、発音の明瞭さにも自信があるんだ。言葉の由来に詳しいと、思った以上に役立つぞ。
+
+    statement#about
+      text.
+        もちろん。フォグ・オウル号の機関長、マーカスだ。この鳥が元気よく歌い続けられるようにしている。今はいい調子だよ。どこかに不調が出たら、すぐに知らせる。
+
+    statement#default
+      text.
+        オペレーター。全システム正常、こちらは問題なしだ。

@@ -13,4 +13,10 @@ Execute your code using the `python3` command you installed earlier.
 python3 salutation.py
 ```
 
+On Windows, if your Python 3 installation provides `python.exe` instead, run:
+
+```powershell
+python salutation.py
+```
+
 When your code successfully prints this greeting, __paste the full path to your code in the text field__ on the right and click *HACK*. Your code will be evaluated for this trial, and we will save this folder location for future trials.

@@ -1,0 +1,18 @@
+{
+  "title": "API 学院：SDK とライブラリ",
+  "description": "SDK とライブラリについて答えると、チューリング寮の鍵の呪文の一部が手に入ります。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "SDK は何の略ですか？ 英語で答えてください。"
+    },
+    {
+      "name": "answer2",
+      "label": "Twilio がサーバー側のヘルパーライブラリを提供していない言語はどれですか？ A: Node.js、B: C++、C: PHP、D: Ruby、E: Python。 A〜E の英字 1 文字で答えてください。"
+    },
+    {
+      "name": "answer3",
+      "label": "ライブラリは認証などサーバーとの低水準のやり取りを抽象化し、API を扱いやすくできる。正しければ true、誤りなら false と入力してください。"
+    }
+  ]
+}

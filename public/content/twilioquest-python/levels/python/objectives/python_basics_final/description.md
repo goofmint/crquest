@@ -6,7 +6,11 @@ const pystate = levelState.pythonWorldState;
 <div style="font-size: 22px;border-bottom: 2px dashed;padding:10px 0;">
 <b>Current Puzzle Status:&nbsp;</b> 
 <b style="color:<%= pystate.canSolvePuzzle ? 'green' : 'red' %>">
-  <%= pystate.canSolvePuzzle ? 'Solvable' : 'Unsolvable - See Below' %>
+  <% if (pystate.canSolvePuzzle) { %>
+    Solvable
+  <% } else { %>
+    Unsolvable - See Below
+  <% } %>
 </b>
 <span style="height: 10px;display:block;"></span>
 <b>Clues Found:&nbsp;</b> 

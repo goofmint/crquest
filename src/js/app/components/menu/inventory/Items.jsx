@@ -52,7 +52,7 @@ export default class Items extends React.Component {
             className="h3 mb1"
             draggable="false"
             src={item.iconPath}
-            alt={item.name}
+            alt=""
           />
           <div>{item.displayName}</div>
         </ItemPopover>

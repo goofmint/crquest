@@ -1,0 +1,6 @@
+{
+  "wrongPlace": "入力した名前「<span class=\"highlight\">{{name}}</span>」の前に <span class=\"highlight\">{{place}}</span> を付けて出力してください。<br/><br/>テストの入力とスクリプトの出力は、コード用フォルダーの <em>output.txt</em> で確認できます。",
+  "missingNames": "渡した 5 人の名前が出力されませんでした。引数の名前をすべて出力し、順番を 1 から付けてください。",
+  "success": "すばらしい！ <em>反復処理の試練</em>を突破しました。",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

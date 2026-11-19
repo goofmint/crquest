@@ -1,0 +1,25 @@
+- const STATE_KEY = 'com.twilioquest.owls_nest';
+- const worldState = getState(STATE_KEY);
+
+conversation(display_name="Ryan")
+  case lastResponse
+    when "you_okay"
+      statement#you_okay
+      responses
+
+    default
+      statement#thanks
+      responses
+        response#you_okay.
+          ありがとう、急いで向かいます。あなたは大丈夫ですか？
+
+  statements
+    statement#you_okay
+      text.
+        君のおかげで何とかなりそうだ。でも、差し支えなければここで少し休むよ。怖いわけじゃない。今週サッカーで太ももの裏を痛めたんだ。そう、足のせいだよ。<br/><br/>コードを使う操作盤は<span class="highlight">フォグ・オウルのすぐ横</span>にある。
+    statement#thanks
+      text.
+        助けに来てくれてありがとう！ ほら、このハードウェアトークンを持っていってくれ。フォグ・オウルの自爆を中止するための管理者キーが入っている。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,6 @@
+{
+  "allClues": "幽霊の姿が消え、肩の荷が少し下りた気がします。<br/><br/>賢者たちのおかげで、Python の知識の杖を手に入れるための<em>手がかりがすべてそろいました</em>。",
+  "clueProgress": "幽霊の姿が消え、肩の荷が少し下りた気がします。<br/><br/>賢者のおかげで、Python の知識の杖を手に入れるための<em>手がかりを {{cluesTotal}} 個のうち {{cluesFound}} 個集めました</em>。",
+  "completionNotification": "<span class=\"highlight\">Python の神殿</span>でできることは、ひとまずすべて終わった！",
+  "completionLog": "Python の神殿でできることは、ひとまずすべて終わった！"
+}

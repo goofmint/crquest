@@ -1,0 +1,41 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="基礎を育む年鑑")
+  case lastResponse
+    when "chapter_2"
+      statement#chapter_2
+      responses
+        response#chapter_1.
+          第 1 章　基礎知識の整理
+
+    when "chapter_1"
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　塔にある資料
+
+    default
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　塔にある資料
+
+  statements
+    statement#default
+      text.
+        <span class="highlight">第 3 巻（全 4 巻） 第 1 章　基礎知識の整理</span><br><br>
+        司書は当初、ソフトウェア開発の知識を集めるためにプログラムされました。しかし、集めた知識を塔の中で整理することも同じくらい重要だと気づきました。プログラミングを学ぶ前の新人開発者にも、コンピューターを開発者らしく使うための基礎を身につけてほしい、と考えたのです。
+
+    statement#chapter_1
+      text.
+        <span class="highlight">第 3 巻（全 4 巻） 第 1 章　基礎知識の整理</span><br><br>
+        司書は当初、ソフトウェア開発の知識を集めるためにプログラムされました。しかし、集めた知識を塔の中で整理することも同じくらい重要だと気づきました。プログラミングを学ぶ前の新人開発者にも、コンピューターを開発者らしく使うための基礎を身につけてほしい、と考えたのです。
+
+    statement#chapter_2
+      text.
+        <span class="highlight">第 3 巻（全 4 巻） 第 2 章　塔にある資料</span><br><br>
+        塔を訪れた旅人は、どの階からでも自由に見学できます。各階にはテーマに沿ったビデオカセットがあり、教材を順にたどって学習できるようになっています。<br><br>
+
+        司書が残した本には、塔の最新の歴史が記録されています。ときには日記代わりに、不安を（それも日に日に増す不安を！）書き留めることもあります。<span class="highlight">レガシーシステムズ</span>が、塔の特に重要な資料を盗みに来たのではないかという不安です……。
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

@@ -21,42 +21,42 @@ module.exports = async (helper) => {
     // The player needs to find all the clues first before attempting to solve
     // the puzzle
     if (!pythonWorldState.canSolvePuzzle) {
-      throw new NiceError(`
+      throw new NiceError(helper.t("needClues", `
         You haven't yet found all the clues necessary to solve this puzzle.
         Keep searching the chamber to find them!
-      `);
+      `));
     }
 
     if (!puzzleAnswer) {
-      throw new NiceError(`
+      throw new NiceError(helper.t("needAnswer", `
         Please submit an answer - you are looking for a five-letter word inside
         the puzzle!
-      `);
+      `));
     }
 
     // Check if the answer submitted is in the list of acceptable answers
     if (!ANSWERS.includes(puzzleAnswer.toLowerCase())) {
-      throw new NiceError(`
+      throw new NiceError(helper.t("wrongAnswer", `
         Hmmm, the answer you submitted is not one of the five-letter words in
         the puzzle. Check the "Help" section again - it now contains
         further assistance on how to solve the puzzle.
-      `);
+      `));
     }
 
     // We got it!
-    helper.success(`
-      That's right! "${puzzleAnswer}" is one of the five-letter words in the
+    helper.success(helper.t("success", `
+      That's right! "{{puzzleAnswer}}" is one of the five-letter words in the
       puzzle. You have proven yourself worthy of citizenship in the City of
       Python!
-    `);
+    `, {puzzleAnswer}));
   } catch (e) {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("validateAnswer", `
         Sorry! We couldn't validate your puzzle answer. Please try again.
-      `);
+      `));
     }
   }
 };

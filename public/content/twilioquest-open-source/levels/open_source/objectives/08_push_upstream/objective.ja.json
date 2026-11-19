@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：変更をプッシュ",
+  "description": "加えた変更を GitHub 上のフォーク先に<strong>プッシュ</strong>しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "ピクセルの変更をプッシュしたら、ハックを押してください。"
+    }
+  ]
+}

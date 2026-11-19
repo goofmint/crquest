@@ -9,7 +9,7 @@ LEARNING HOW TO USE MULTIPLE TOOLS AT ONCE IS HARD... BUT HOUSE HOPPER BETA TEST
 </p>
 
 <p>
-IT SEEMS LIKE <a href="HTTPS://WWW.TWILIO.COM/DOCS/OPENAPI/USING-TWILIO-POSTMAN-COLLECTIONS#SEND-AN-SMS" target="blank" rel="noreferrer noopener">TWILIO'S POSTMAN DOCUMENTATION</a> IS PROBABLY THE PLACE TO LOOK FOR THIS.
+IT SEEMS LIKE <a href="https://www.twilio.com/docs/openapi/using-twilio-postman-collections#send-an-sms" target="blank" rel="noreferrer noopener">TWILIO'S POSTMAN DOCUMENTATION</a> IS PROBABLY THE PLACE TO LOOK FOR THIS.
 </p>
 
 </blockquote>

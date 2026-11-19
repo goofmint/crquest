@@ -1,0 +1,32 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin excerpt
+  response#excerpt.
+    本文の抜粋
+
+conversation(display_name="ラブレスの書　第 4 巻")
+  case lastResponse
+
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center"><span class="highlight"><a href="https://www.cs.mcgill.ca/~martin/papers/software2009a.pdf">なぜ API は学びにくいのか？<br><br>開発者の回答</a></span><br><br>
+        Martin P. Robillard 著</p>
+
+    statement#excerpt
+      text.
+        「利用者はなぜ、API の大まかな設計やその意図を知る必要があるのだろうか？ ……実際には、<span class="highlight">初歩的な利用を超えると多くの判断が必要になり、そのときに全体の設計が手がかりになる</span>」（31 ページ）
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

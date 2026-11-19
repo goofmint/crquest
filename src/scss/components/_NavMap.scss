@@ -9,6 +9,20 @@
   }
 }
 
+.nav-map__button {
+  position: relative;
+}
+
+.nav-map__button-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #282032;
+  font: 700 20px $game-font-stack;
+  pointer-events: none;
+}
+
 .levelSelect__container {
   display: flex;
   align-items: center;

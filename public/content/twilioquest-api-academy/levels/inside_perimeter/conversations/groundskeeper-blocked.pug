@@ -1,7 +1,8 @@
 -
   const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
   const worldState = getState(STATE_KEY);
-  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;   
+  const allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4;
+  const hasPledgeScroll = Object.hasOwn(worldState.insideCatacombs, "hasPledgeScroll") && worldState.insideCatacombs.hasPledgeScroll === true;
 
 mixin gauntlet
   response#gauntlet.
@@ -21,11 +22,15 @@ conversation(display_name="Arcane Academy Groundskeeper")
   statements
 
     statement#default
-      if allComplete
+      if hasPledgeScroll
         text.
           Well, this is exciting! You're just in time for the House Gauntlet, which is set to start in no time! 
           Head straight on to the Main Hall, where you will find the House Fire being prepared for the House Ceremony. 
           I hope you've been thinking about which house you'd like to join!
+
+      else if allComplete
+        text.
+          You have all four pieces of the Unlocking Spell. Retrieve your pledge scroll from the Sacred Scroll Room at the center of the Catacombs before heading to the Main Hall.
 
       else
         text.

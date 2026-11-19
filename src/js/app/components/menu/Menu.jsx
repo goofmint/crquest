@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import sharedListener from '../../common/listener';
 import { context, setContext } from '../../common/context';
 import Help from './Help';
@@ -6,7 +7,7 @@ import Inventory from './inventory/Inventory';
 import Journal from './Journal';
 import Settings from './settings/Settings';
 
-export default class Menu extends React.Component {
+class Menu extends React.Component {
   static contextType = context;
 
   componentDidMount() {
@@ -38,6 +39,7 @@ export default class Menu extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     if (!this.context.currentMenu) return null;
 
     return (
@@ -56,20 +58,22 @@ export default class Menu extends React.Component {
           {this.isActive('help') && <Help />}
 
           <div className="menu-tabs">
-            {this.renderMenuTab('inventory', 'Inventory')}
-            {this.renderMenuTab('journal', 'Journal')}
-            {this.renderMenuTab('settings', 'Settings')}
-            {this.renderMenuTab('help', 'Help')}
+            {this.renderMenuTab('inventory', t('ui.menu.inventory'))}
+            {this.renderMenuTab('journal', t('ui.menu.journal'))}
+            {this.renderMenuTab('settings', t('ui.menu.settings'))}
+            {this.renderMenuTab('help', t('ui.menu.help'))}
           </div>
 
           <div
             className="menu-close pointer"
             onClick={() => this.navigate(null)}
           >
-            <img src="images/app/menu/close.png" alt="Close Menu" />
+            <img src="images/app/menu/close.png" alt={t('ui.menu.close')} />
           </div>
         </div>
       </div>
     );
   }
 }
+
+export default withTranslation(undefined)(Menu);

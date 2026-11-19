@@ -1,0 +1,10 @@
+{
+  "title": "ファイルを削除する",
+  "description": "前の課題で作ったファイルを削除しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "ファイルを削除したら HACK を押してください。"
+    }
+  ]
+}

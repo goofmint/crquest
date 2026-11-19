@@ -1,0 +1,6 @@
+{
+  "notFound": "Open Pixel Art のリモートリポジトリにプルリクエスト #{{prNumber}} が見つかりませんでした！",
+  "wrongOwner": "Open Pixel Art のリモートリポジトリにプルリクエスト #{{prNumber}} が見つかりましたが、お使いの GitHub ユーザー「{{TQ_GITHUB_USERNAME}}」が作成したものではありません！",
+  "found": "Open Pixel Art のリモートリポジトリに、GitHub ユーザー「{{TQ_GITHUB_USERNAME}}」のプルリクエスト #{{prNumber}} が見つかりました！",
+  "error": "Open Pixel Art のプルリクエストを確認する際に問題が発生しました！\n\n{{err}}"
+}

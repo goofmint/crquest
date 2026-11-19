@@ -3,11 +3,12 @@ import { existsAsync } from '../../platform/fs';
 import { toAssetSrc } from '../../platform/assets';
 import {
   readDirectory,
-  readFile,
+  readLocalizedJson,
   resolveAbsolutePath,
 } from '../../common/assetLoader';
 
 const ITEMS_DIR = 'items';
+const ITEM_TRANSLATION_FIELDS = { displayName: true, description: true };
 
 export default async function loadItemsFromDisk() {
   const items = {};
@@ -23,8 +24,7 @@ export default async function loadItemsFromDisk() {
     }
 
     const jsonPath = path.join(itemPath, 'index.json');
-    const jsonContents = await readFile(jsonPath);
-    const config = JSON.parse(jsonContents);
+    const config = await readLocalizedJson(jsonPath, ITEM_TRANSLATION_FIELDS);
 
     items[config.name] = Object.assign(
       {

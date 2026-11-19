@@ -34,26 +34,27 @@ module.exports = function (event, world) {
     event.npc &&
     event.npc.conversation.indexOf("ghost_clue") === 0
   ) {
-    let message = `
-      <em>
-        you now have ${pystate.cluesFound} of the ${pystate.cluesTotal} clues
-      </em>
-    `;
-    if (pystate.cluesFound === pystate.cluesTotal) {
-      message = `<em>you now have all the clues</em>`;
-    }
-
-    world.showNotification(`
+    const allClues = pystate.cluesFound === pystate.cluesTotal;
+    const message = allClues
+      ? '<em>you now have all the clues</em>'
+      : `<em>you now have ${pystate.cluesFound} of the ${pystate.cluesTotal} clues</em>`;
+    const fallback = `
       The ghostly figure dissipates, and you feel as if a small weight has been
       lifted off your shoulders.<br/><br/> With the sage's help, ${message}
       you need to recover the Staff of Pythonic Knowledge.
-    `);
+    `;
+    world.showNotification(allClues
+      ? world.t("allClues", fallback)
+      : world.t("clueProgress", fallback, {
+        cluesFound: pystate.cluesFound,
+        cluesTotal: pystate.cluesTotal,
+      }));
   }
 
   updateQuestLogWhenComplete({
-    notification:
-      'I\'ve completed everything in the <span class="highlight">Pythonic Temple</span> for now!',
-    log: "I've completed everything in the Pythonic Temple for now!",
+    notification: world.t("completionNotification",
+      'I\'ve completed everything in the <span class="highlight">Pythonic Temple</span> for now!'),
+    log: world.t("completionLog", "I've completed everything in the Pythonic Temple for now!"),
     event,
     world,
     worldStateKey: WORLD_STATE_KEY,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent, screen } from '@testing-library/react';
 
 vi.mock('../../../js/app/platform/paths', () => ({
   getGamePackageVersion: vi.fn(),
@@ -8,11 +8,14 @@ vi.mock('../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { pageview: vi.fn(), analyticsId: 'guid' },
 }));
-vi.mock('../../../js/app/common/listener', () => ({ __esModule: true, default: {} }));
+vi.mock('../../../js/app/common/listener', () => ({ __esModule: true, default: { stop_listening: vi.fn(), listen: vi.fn() } }));
 vi.mock('../../../js/app/common/context', () => ({
   setContext: vi.fn(),
   getContext: vi.fn(),
+  flushPendingSaves: vi.fn(),
+  saveLanguagePreference: vi.fn(),
 }));
+vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn() }));
 vi.mock('../../../js/app/components/ClearDataButton', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/AvatarSelector', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/menu/settings/EnvironmentVariables', () => ({ default: () => null }));
@@ -31,6 +34,8 @@ vi.mock('../../../js/app/components/menu/settings/Extensions', () => ({ default:
 
 import Settings from '../../../js/app/components/menu/settings/Settings';
 import { getGamePackageVersion } from '../../../js/app/platform/paths';
+import { flushPendingSaves, saveLanguagePreference, setContext } from '../../../js/app/common/context';
+import { showConfirm } from '../../../js/app/platform/dialog';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const versionText = (container) =>
@@ -74,5 +79,67 @@ describe('Settings game version', () => {
     await act(flush);
     expect(setState).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('Settings language selector', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getGamePackageVersion.mockResolvedValue('1.2.3');
+  });
+
+  test('keeps the current language when the player cancels', async () => {
+    let answerConfirmation;
+    showConfirm.mockReturnValue(new Promise(resolve => {
+      answerConfirmation = resolve;
+    }));
+    render(<Settings subnav="User" name="Player" />);
+    const language = screen.getByLabelText('Language');
+    const variables = screen.getByRole('button', { name: 'Variables' });
+    await act(async () => fireEvent.change(language, { target: { value: 'ja' } }));
+
+    expect(variables).toBeDisabled();
+    fireEvent.click(variables);
+    expect(setContext).not.toHaveBeenCalled();
+
+    await act(async () => answerConfirmation(false));
+    expect(showConfirm).toHaveBeenCalledOnce();
+    expect(saveLanguagePreference).not.toHaveBeenCalled();
+    expect(language).toHaveValue('en');
+    expect(language).toBeEnabled();
+    expect(variables).toBeEnabled();
+    fireEvent.click(variables);
+    expect(setContext).toHaveBeenCalledWith({
+      currentMenu: { name: 'settings', subnav: 'Variables' },
+    });
+  });
+
+  test('reports persistence failure and allows retrying', async () => {
+    showConfirm.mockResolvedValue(true);
+    let rejectSave;
+    saveLanguagePreference.mockReturnValueOnce(new Promise((_, reject) => {
+      rejectSave = reject;
+    }));
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      render(<Settings subnav="User" name="Player" />);
+      const language = screen.getByLabelText('Language');
+      const variables = screen.getByRole('button', { name: 'Variables' });
+      await act(async () => fireEvent.change(language, { target: { value: 'ja' } }));
+
+      expect(saveLanguagePreference).toHaveBeenCalledWith('ja');
+      expect(variables).toBeDisabled();
+      fireEvent.click(variables);
+      expect(setContext).not.toHaveBeenCalled();
+
+      await act(async () => rejectSave(new Error('save failed')));
+      expect(flushPendingSaves).not.toHaveBeenCalled();
+      expect(screen.getByRole('alert')).toHaveTextContent('Could not save the language setting');
+      expect(language).toHaveValue('en');
+      expect(language).toBeEnabled();
+      expect(variables).toBeEnabled();
+    } finally {
+      error.mockRestore();
+    }
   });
 });

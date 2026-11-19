@@ -9,11 +9,11 @@ module.exports = async helper => {
         throw new Error('not found: git');
       }
     } catch (err) {
-      helper.fail(`
+      helper.fail(helper.t("gitMissing", `
         We tried to find a local "git" installation on your computer, but we could not!
 
-        ${err}
-      `);
+        {{err}}
+      `, { err }));
       return;
     }
 
@@ -38,10 +38,10 @@ module.exports = async helper => {
 
     if (gitDir !== '.git') {
       helper.fail(
-        `We didn't find a .git directory in your JavaScript workspace directory! -> ${path.join(
+        helper.t("repositoryMissing", `We didn't find a .git directory in your JavaScript workspace directory! -> {{value1}}{{value2}}`, { value1: path.join(
           TQ_JAVASCRIPT_WORKSPACE_PATH,
           '.git'
-        )}${gitDetail ? `\n\n${gitDetail}` : ''}`
+        ), value2: gitDetail ? `\n\n${gitDetail}` : '' })
       );
       return;
     }
@@ -58,20 +58,20 @@ module.exports = async helper => {
     const status = gitStatus.stdout;
 
     if (status.includes('No commits yet')) {
-      helper.fail(`
+      helper.fail(helper.t("initialCommitMissing", `
         It looks like your git repository doesn't have an initial commit yet. Add all the files in your repository with "git add -A" and then commit them with "git commit".
-      `);
+      `));
       return;
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       You've succesfully created and enabled a git repository for your JavaScript workspace. Be sure to keep commiting your work as you go so you can look back on it!
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("repositoryError", `
       Something went wrong when we tried to validate your git repository exists!
 
-      ${e}
-    `);
+      {{e}}
+    `, { e }));
   }
 };

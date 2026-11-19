@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：リポジトリのクローン",
+  "description": "Git のコマンドラインツールで、フォークした Open Pixel Art を<strong>クローン</strong>しましょう。",
+  "validation_fields": [
+    {
+      "name": "repositoryFilePath",
+      "label": "クローンした Open Pixel Art リポジトリのパスを入力してください。"
+    }
+  ]
+}

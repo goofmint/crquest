@@ -1,0 +1,130 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin hopper
+  response#hopper.
+    ホッパー寮
+
+mixin lovelace
+  response#lovelace.
+    ラブレス寮
+
+mixin turing
+  response#turing.
+    チューリング寮
+
+mixin neumann
+  response#neumann.
+    フォン・ノイマン寮
+
+mixin yes_lo
+  response#yes_lo.
+    はい、決めました。
+
+mixin yes_ho
+  response#yes_ho.
+    はい、決めました。
+
+mixin yes_vn
+  response#yes_vn.
+    はい、決めました。
+
+mixin yes_tu
+  response#yes_tu.
+    はい、決めました。
+
+mixin no
+  response#no.
+    いいえ、もう少し考えたいです。
+
+conversation(display_name="秘術 API 学院の寮の炎")
+  case lastResponse
+
+    when "hopper"
+      statement#hopper
+      responses
+        +yes_ho
+        +no
+
+    when "lovelace"
+      statement#lovelace
+      responses
+        +yes_lo
+        +no
+
+    when "turing"
+      statement#turing
+      responses
+        +yes_tu
+        +no
+
+    when "neumann"
+      statement#neumann
+      responses
+        +yes_vn
+        +no
+
+    when "yes_lo"
+      - worldState.playerHouse = "lovelace"
+      statement#congratulations
+
+    when "yes_ho"
+      - worldState.playerHouse = "hopper"
+      statement#congratulations
+
+    when "yes_vn"
+      - worldState.playerHouse = "neumann"
+      statement#congratulations
+
+    when "yes_tu"
+      - worldState.playerHouse = "turing"
+      statement#congratulations
+
+    when "no"
+      statement#choose
+      responses
+        +hopper
+        +lovelace
+        +turing
+        +neumann
+
+    default
+      statement#default
+      responses
+        +hopper
+        +lovelace
+        +turing
+        +neumann
+
+  statements
+    statement#default
+      text.
+        秘術 API 学院にとって神聖なこの儀式で、あなたを寮に迎え入れます。私の炎に誓約書を捧げ、所属する寮を選んでください。
+
+    statement#hopper
+      text.
+        ホッパー寮に入ると決めましたか？
+
+    statement#lovelace
+      text.
+        ラブレス寮に入ると決めましたか？
+
+    statement#turing
+      text.
+        チューリング寮に入ると決めましたか？
+
+    statement#neumann
+      text.
+        フォン・ノイマン寮に入ると決めましたか？
+
+    statement#congratulations
+      text.
+        #[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]への入寮、おめでとうございます！
+
+    statement#choose
+      text.
+        決心がついたら、私の炎に誓約書を捧げて寮を選んでください。迷っているなら、学院の寮長たちに詳しく聞いてみましょう。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

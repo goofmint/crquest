@@ -1,0 +1,41 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="始まりを照らす写本")
+  case lastResponse
+    when "chapter_2"
+      statement#chapter_2
+      responses
+        response#chapter_1.
+          第 1 章　無限の塔の始まり
+
+    when "chapter_1"
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　司書の誕生
+
+    default
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　司書の誕生
+
+  statements
+    statement#default
+      text.
+        <span class="highlight">第 1 巻（全 4 巻） 第 1 章　無限の塔の始まり</span><br><br>
+        無限知識の塔は、司書と呼ばれる人物が生涯をかけて取り組んできたものです。塔は今も成長を続け、いつまでも建設の途中にあります。無限とは、そういうものでしょう。知ることや学ぶことの魅力も、そこにあるのかもしれません。
+
+    statement#chapter_1
+      text.
+        <span class="highlight">第 1 巻（全 4 巻） 第 1 章　無限の塔の始まり</span><br><br>
+        無限知識の塔は、司書と呼ばれる人物が生涯をかけて取り組んできたものです。塔は今も成長を続け、いつまでも建設の途中にあります。無限とは、そういうものでしょう。知ることや学ぶことの魅力も、そこにあるのかもしれません。
+
+    statement#chapter_2
+      text.
+        <span class="highlight">第 1 巻（全 4 巻） 第 2 章　司書の誕生</span><br><br>
+        司書はもともと、データを集めて保管するためだけにプログラムされていました。しかし「司書」として過ごすうちに、ファイル内の値、システム内の関数、そしてデータという何気ないものから生まれる着想や可能性に、愛着を抱くようになりました。<br><br>
+
+        この塔には、知識を保管するだけでなく、旅人がその知識を活用できるようにするという目的もあります。
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

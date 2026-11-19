@@ -2,7 +2,9 @@
 
 As with `cd`, the simplest way to create a directory with `mkdir` is to type just a directory name. `mkdir my_cool_directory` will create `my_cool_directory` inside the present working directory, or in other words, `my_cool_directory`'s parent will be the current working directory.
 
-We can create directories in other directories, or create multiple directories at once, using filepaths. `mkdir <%= `${formatPathPartsForOs('my_cool_directory', 'my_cooler_directory')}`%>` will create a directory in `my_cool_directory` without us having to `cd` into it first. However, if we tried to do `mkdir <%= `${formatPathPartsForOs('directory1', 'directory2')}`%>`, and `directory1` did not already exist, we would get an error. We can prevent that, and create multiple directories at once, using the `-p` flag. `mkdir -p <%= `${formatPathPartsForOs('directory1', 'directory2')}`%>` works just fine, and creates both directories, even if `directory1` does not already exist.
+We can create directories in other directories, or create multiple directories at once, using filepaths. `mkdir <%= `${formatPathPartsForOs('my_cool_directory', 'my_cooler_directory')}`%>` will create a directory in `my_cool_directory` without us having to `cd` into it first. In shells on Linux and macOS, if we tried to do `mkdir <%= `${formatPathPartsForOs('directory1', 'directory2')}`%>`, and `directory1` did not already exist, we would get an error. We can prevent that, and create multiple directories at once, using the `-p` flag. `mkdir -p <%= `${formatPathPartsForOs('directory1', 'directory2')}`%>` works just fine, and creates both directories, even if `directory1` does not already exist.
+
+On Windows PowerShell, mkdir can create intermediate directories without that flag.
 
 Using `..`, we can create directories in the parent directory. `<%= `${formatPathPartsForOs('..', 'directory3')}`%>` will go the parent, the directory containing our present working directory, and create `directory3`.
 

@@ -1,0 +1,63 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin house
+  response#house.
+    ラブレス寮について詳しく教えてもらえますか？
+
+mixin more_info
+  response#more_info.
+    ラブレス寮も、ほかの寮のように活動を行うのですか？
+
+mixin one_sentence
+  response#one_sentence.
+    API ドキュメントの魅力を一言で言うと何ですか？
+
+conversation(display_name="ラブレス寮の生徒代表　アーティシア")
+  case lastResponse
+    when "house"
+      statement#house
+      responses
+        +more_info
+        +one_sentence
+
+    when "more_info"
+      statement#more_info
+      responses
+        +house
+        +one_sentence
+
+    when "one_sentence"
+      statement#one_sentence
+      responses
+        +house
+        +more_info
+
+    default
+      statement#default
+      responses
+        +house
+        +more_info
+        +one_sentence
+
+  statements
+    statement#default
+      text.
+        ようこそ、オペレーター！ 誓約書を取りに行くところですね。
+
+    statement#one_sentence
+      text.
+        API を使えば、さまざまな表現手段を組み合わせて作品を作り、美しさを形にして、世界に良いものを届けられます。短い SMS だって芸術作品になりますよ。SMS だけで書かれた物語があるって知っていましたか？
+
+    statement#more_info
+      text.
+       もちろん！ 今年は「インターフェースの抽象化 // 抽象的なインターフェース」という展覧会を開きます。API のインターフェースや抽象化の仕組みと、それを使ったときにどんな感覚が生まれるかを探る展覧会です。優れた API は芸術作品のように、ひっかかりなく直感で使えます。ラブレス寮の卒業生には UX デザイナーや開発者になる人が多いんです。UX も芸術のひとつだと思いませんか？
+
+    statement#house
+      text.
+        ああ、芸術家の寮、<span class="highlight">ラブレス寮</span>ですね。学院では表現と技術的な厳密さの両方に向き合います。コードは機能だけでなく、思いを伝え、真実を語り、自分を表現するものでもあります。見事に書かれたコードの優雅さを、じっくり眺めたことはありますか？<BR><BR>
+        ドキュメントにも芸術性があり、私たちのもう一つの得意分野です。API ドキュメントを書くこと自体が創作だと考えています。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

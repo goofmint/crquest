@@ -105,6 +105,7 @@ const createHelper = ({
   const helper = {
     env,
     validationFields,
+    t: (_key, fallback, vars = {}) => fallback.replace(/\{\{(\w+)\}\}/g, (match, name) => String(vars[name] ?? match)),
     success: vi.fn(),
     fail: vi.fn(),
     getAppDataPath: vi.fn(() => APP_DATA),

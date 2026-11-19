@@ -1,0 +1,18 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "最後のレーザーが点灯しました！ 周囲の現実がゆがんでねじれ、視界の隅から闇が広がります。やがて闇が晴れ、あなたは周囲を見渡します……。",
+  "callError": "Ducktypium のコンストラクターまたはメソッドの実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "incorrectCalibrationSequence": "calibrate メソッドは、目標タブに記載されている配列を Ducktypium インスタンスの calibrationSequence に設定してください。",
+  "incorrectCombinedColor": "refract メソッドは color プロパティと別の原色を組み合わせた結果の色を返してください。組み合わせは目標タブを確認しましょう。",
+  "incorrectSameColor": "同じ色が渡された場合、refract メソッドは Ducktypium の color プロパティの値を返してください。",
+  "missingCalibrateMethod": "Ducktypium のインスタンスに calibrate メソッドがありません。",
+  "missingRefractMethod": "Ducktypium のインスタンスに refract メソッドがありません。",
+  "invalidCalibrationSequence": "コンストラクターでは、作成する Ducktypium インスタンスの calibrationSequence を空の配列に設定してください。",
+  "invalidColor": "コンストラクターの最初の引数を、作成する Ducktypium インスタンスの color プロパティに設定してください。",
+  "invalidConstructorInput": "コンストラクターは \"red\"、\"yellow\"、\"blue\" のみを引数として受け付けるようにしてください。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">Ducktypium</span> クラスが見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"ducktypium.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "beamsOffline": "ほかの 3 本のビームを起動するまで、このレーザーを再起動できません。詳しくは目標タブを確認してください。",
+  "invalidDefinition": "<span class=\"highlight\">Ducktypium</span> という変数はありますが、クラスではありません。JavaScript のクラスの定義方法はヘルプタブを確認してください。"
+}

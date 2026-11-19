@@ -1,0 +1,10 @@
+{
+  "lobbyTitle": "地上階　ロビー",
+  "lobbyDescription": "無限知識の塔の入口です。",
+  "fileSystemTitle": "1 階　ファイルシステムの基礎",
+  "fileSystemDescription": "コンピューターのファイルシステムがどう動作するかを学びます。",
+  "terminalTitle": "2 階　ターミナルの基礎",
+  "terminalDescription": "コンピューターのターミナルの使い方を学びます。",
+  "terminalVideo": "ターミナルとは？ なぜ学ぶ必要があるの？",
+  "fileSystemVideo": "ファイルシステムとは？ なぜ学ぶ必要があるの？"
+}

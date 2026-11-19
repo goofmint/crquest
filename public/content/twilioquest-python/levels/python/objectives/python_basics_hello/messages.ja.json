@@ -1,0 +1,6 @@
+{
+  "needPath": "Python スクリプトのパスを入力してください。例 C:\\code\\salutation.py",
+  "fileMissing": "入力されたパスにファイルがありません。貼り付けたパスに誤りがないか確認してください。",
+  "success": "お見事！ あいさつの試練を突破しました。次の課題のコードもこのファイルと同じフォルダーに書いてください。<br/><br/><span class=\"highlight\"><em>For the glory of Python!</em></span>",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

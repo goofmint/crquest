@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：真偽値",
+  "description": "Python の<strong>真偽値</strong>で真と偽を表し、<strong>if 文</strong>で条件が成り立つときだけ処理します。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

@@ -22,7 +22,7 @@ Create a function called `flattenArray` that accepts an array containing any num
 - `[]` -> `Pure Ducktypium!`
 - `[1, "two", 3, "four"]` -> `[1, "two", 3, "four"]`
 - `[1, 3, 3, 7, ["legacy wuz here"]]` -> `[1, 3, 3, 7, "legacy wuz here"]`
-- `["python’, ["javascript’, ["api’, ["messaging’]]]]` -> `["python’, "javascript’, "api’, "messaging’]`
+- `["python", ["javascript", ["api", ["messaging"]]]]` -> `["python", "javascript", "api", "messaging"]`
 
 <br>
 

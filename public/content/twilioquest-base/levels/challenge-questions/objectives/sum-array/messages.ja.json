@@ -1,0 +1,5 @@
+{
+  "success": "やったね！",
+  "mismatch": "入力「{{input}}」に対して「{{expected}}」を期待しましたが、結果は「{{received}}」でした。",
+  "undefinedFunction": "関数 sumArray が定義されていません！"
+}

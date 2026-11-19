@@ -1,0 +1,5 @@
+{
+  "found": "ユーザー「{{TQ_GITHUB_USERNAME}}」のリモートリポジトリにブランチ「{{TQ_OPEN_PIXEL_ART_BRANCH}}」が見つかりました！",
+  "notFound": "ユーザー「{{TQ_GITHUB_USERNAME}}」のリモートリポジトリ「open-pixel-art」に、ブランチ「{{TQ_OPEN_PIXEL_ART_BRANCH}}」が見つかりませんでした！",
+  "error": "Open Pixel Art のブランチを確認する際に問題が発生しました！\n\n{{err}}"
+}

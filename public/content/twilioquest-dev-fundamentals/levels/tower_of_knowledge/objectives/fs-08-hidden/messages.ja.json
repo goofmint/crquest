@@ -1,0 +1,8 @@
+{
+  "addLeadingPeriod": "ファイルは見つかりましたが、隠しファイルではありません。.myFile.txt のように、ファイル名の先頭にピリオドを付けてください。",
+  "missingFile": "「{{directory}}」に「{{newFileName}}」が見つかりませんでした。ディレクトリとファイル名に誤りがないか確認してください。",
+  "incorrectEntryType": "「{{directory}}」に「{{newFileName}}」は見つかりましたが、ファイルではありません。作成に使ったコマンドを確認してください。",
+  "setHiddenAttribute": "ファイルは見つかりましたが、隠しファイルではありません。attrib コマンドに +h オプションを付けて隠し属性を設定してください。",
+  "validationError": "作業ディレクトリ内の「{{newFileName}}」を確認している間にエラーが発生しました。\n\n{{error}}",
+  "success": "隠しファイルが見つかりました。お見事です！"
+}

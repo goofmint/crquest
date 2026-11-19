@@ -1,0 +1,14 @@
+{
+  "title": "Python 入門：REPL を使う",
+  "description": "Python の<span class=\"highlight\">REPL</span>でコードを試してみましょう。",
+  "validation_fields": [
+    {
+      "name": "cityName",
+      "label": "REPL に <span class='highlight'>copyright()</span> と入力したとき、唯一名前が出る都市はどこですか？ 英語のまま入力してください。"
+    },
+    {
+      "name": "resultNumber",
+      "label": "REPL に <span class='highlight'>24 / 3</span> と入力すると何が返りますか？"
+    }
+  ]
+}

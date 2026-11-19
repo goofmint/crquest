@@ -1,6 +1,7 @@
 import * as yup from 'yup';
 import { stripIndents } from 'common-tags';
 import DynamicLevel from '../../components/game/DynamicLevel';
+import { LANGUAGES } from '../../i18n/languages';
 
 export const NUM_AVATARS = 6;
 
@@ -152,6 +153,7 @@ function getContextSchema() {
             .min(0)
             .max(NUM_AVATARS),
           name: yup.string(),
+          language: yup.string().oneOf(Object.keys(LANGUAGES)),
         })
         .noUnknown(),
       teams: yup

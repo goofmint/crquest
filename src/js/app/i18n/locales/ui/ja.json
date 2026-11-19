@@ -1,0 +1,267 @@
+{
+  "ui": {
+    "menu": {
+      "inventory": "持ち物",
+      "journal": "クエスト記録",
+      "settings": "設定",
+      "help": "ヘルプ",
+      "close": "メニューを閉じる"
+    },
+    "journal": {
+      "empty": "クエストはありません。",
+      "title": "クエスト記録",
+      "active": "進行中のクエスト",
+      "completed": "完了したクエスト"
+    },
+    "hud": {
+      "returnConfirm": "フォグ・オウルに戻りますか？",
+      "xp": "XP：",
+      "rank": "ランク：",
+      "defaultObjective": "クラウドの世界を探索し、プログラミングの腕を磨こう！",
+      "return": "フォグ・オウルに戻る",
+      "inventoryShortcut": "持ち物 (1)",
+      "journalShortcut": "クエスト記録 (2)",
+      "settingsShortcut": "設定 (3)",
+      "helpShortcut": "ヘルプ (4)",
+      "returnShortcut": "フォグ・オウルに戻る (5)",
+      "noRank": "なし"
+    },
+    "title": {
+      "pressStart": "スペースキーでスタート",
+      "briefing": "ミッション概要",
+      "back": "タイトルに戻る (Escキー)",
+      "unmute": "音声をオンにする",
+      "mute": "音声をミュート",
+      "start": "ゲームを始める (スペースキー)"
+    },
+    "onboarding": {
+      "name": "名前を入力してください",
+      "avatar": "アバターを選択してください",
+      "login": "オペレーターのログイン",
+      "welcome": "ようこそ、{{name}}さん。",
+      "connected": "{{event}}に接続しました。",
+      "start": "<keyCap>[Enter]</keyCap> キーで開始",
+      "continue": "<keyCap>[Enter]</keyCap> キーで次へ",
+      "back": "、<keyCap>[Esc]</keyCap> キーで戻る",
+      "joinQuestion": "アドベンチャーチームの参加コードを持っていますか？",
+      "no": "いいえ",
+      "yes": "はい",
+      "joinEnter": "チームの参加コードを入力してください。",
+      "characterAvatar": "あなたのキャラクターのアバター"
+    },
+    "conversation": {
+      "end": "〈会話を終える〉"
+    },
+    "objectiveDescription": {
+      "xp": "{{xp}} XP",
+      "reward": "報酬",
+      "begin": "始めよう！",
+      "showHelp": "ヘルプを表示",
+      "helpHeading": "さらにヘルプが必要ですか？",
+      "helpLink": "<community>TQ 開発者コミュニティ</community>に参加しましょう！",
+      "shield": "TQ の盾",
+      "clear": "* 目標達成！ *",
+      "xpEarned": "<em>{{xp}} XP</em> を獲得しました！",
+      "rankReached": "新しいランク <em>{{rank}}</em> に到達しました！",
+      "itemsAwarded": "アイテムを獲得しました！",
+      "viewInventory": "インベントリで表示 »",
+      "variablesUnlocked": "環境変数が利用可能になりました！",
+      "viewSettings": "設定で表示 »",
+      "overview": "概要",
+      "objective": "目標",
+      "help": "ヘルプ"
+    },
+    "mission": {
+      "warpHere": "ここにワープ >",
+      "locked": "ロック中",
+      "warpPoints": "ワープ地点",
+      "progress": "達成率 {{percent}}%",
+      "selectTraining": "トレーニングミッションを選択",
+      "operator": "オペレーター、お待ちください！",
+      "prerequisites": "このミッションを開始するには、以下の目標を達成してください。",
+      "launch": "ミッション開始",
+      "warpPointsLink": "ワープ地点 >",
+      "back": "< 戻る",
+      "select": "< ミッションを選択"
+    },
+    "map": {
+      "empty": "行き先がありません…",
+      "loading": "航行データを読み込み中…",
+      "noReport": "報告書がありません…",
+      "loadingReport": "報告書を読み込み中…",
+      "select": "行き先を選択",
+      "exit": "航行マップを閉じる",
+      "go": "行き先に移動",
+      "previous": "前の行き先",
+      "next": "次の行き先",
+      "exitButton": "閉じる",
+      "goButton": "移動"
+    },
+    "clearData": {
+      "first": "すべてのユーザーデータと進行状況が削除されます。続けますか？",
+      "second": "すべてのアイテムが削除され、ゲームの進行状況がリセットされます。本当によろしいですか？",
+      "error": "ゲームのセーブデータを削除できませんでした",
+      "erase": "ゲームデータを削除"
+    },
+    "ide": {
+      "initializing": "JavaScript 開発環境を初期化中…",
+      "ready": "QuestIDE 1.0.0 の準備ができました。ようこそ、オペレーター。",
+      "executing": "プログラムを実行中…",
+      "confirmReset": "変更を破棄し、サンプルコードに戻しますか？",
+      "run": "エディターのコードを実行",
+      "reset": "サンプルコードに戻す",
+      "hide": "コードエディターを閉じる"
+    },
+    "validator": {
+      "directoryTitle": "フォルダーを選択",
+      "directoryError": "フォルダーの選択画面を開けませんでした。もう一度お試しください。\n\n{{error}}",
+      "back": "< チュートリアルに戻る",
+      "tutorial": "チュートリアルを表示",
+      "editor": "コードエディターを表示",
+      "true": "True",
+      "false": "False",
+      "chooseFolder": "フォルダーを選択",
+      "copied": "クリップボードにコピーしました！",
+      "copy": "デバッグ情報をコピー",
+      "done": "完了",
+      "hack": "ハック",
+      "analyzing": "** 解析中 **",
+      "locked": "** ロック中 **",
+      "hacking": "** ハッキング中 **",
+      "clear": "** クリア **",
+      "success": "** 成功 **",
+      "failed": "** 失敗 **"
+    },
+    "asyncInput": {
+      "success": "完了しました！",
+      "error": "エラーが発生しました。",
+      "submit": "送信",
+      "submitting": "送信中…"
+    },
+    "extensions": {
+      "loaded": "読み込み済み",
+      "failed": "読み込み失敗",
+      "none": "なし",
+      "noDirectory": "フォルダーが選択されていません",
+      "chooseDirectory": "フォルダーを選択",
+      "choose": "選択",
+      "directoryTitle": "拡張機能を読み込むフォルダーを選択",
+      "external": "外部拡張機能",
+      "externalInfo": "上で指定したフォルダーから読み込まれた拡張機能です。",
+      "bundled": "同梱の拡張機能",
+      "bundledInfo": "TerminalQuest に標準で同梱されている拡張機能です。",
+      "disable": "拡張機能を無効にする",
+      "directory": "拡張機能のフォルダー",
+      "all": "読み込み済みの拡張機能",
+      "enableInfo": "下のボタンで拡張機能を有効にできます。拡張機能で TerminalQuest に新しいステージ、アイテム、機能を追加できます。",
+      "enable": "拡張機能を有効にする",
+      "title": "拡張機能",
+      "loadingNotice": "TerminalQuest は下のフォルダーから拡張機能を読み込みます。ミッションコンピューターへの新規ミッションの追加など、一部の拡張機能を使うには<emphasis>ゲームの再起動が必要です</emphasis>。",
+      "warning": "<emphasis>ご注意ください</emphasis>。TerminalQuest にインストールした拡張機能は、このコンピューター上でコードを実行できます。信頼できる作者の拡張機能だけを使ってください。不具合のある拡張機能を使うとゲームが不安定になり、再インストールが必要になる場合があります。"
+    },
+    "executable": {
+      "pathRequired": "ファイルのパスを入力してください。",
+      "pathMissing": "指定したパスが見つかりません。\n\n\"{{path}}\"",
+      "notExecutable": "指定したパスのファイルを実行できません。\n\n実行ファイルへのパスが正しいか、TwilioQuest にファイルの実行権限があるか確認してください。\n\n\"{{path}}\"",
+      "validationFailed": "ファイルの実行可否を確認中にエラーが発生しました。\n\nパス：{{path}}\nエラー：{{error}}"
+    },
+    "help": {
+      "movement": "移動",
+      "assistance": "技術的なサポート",
+      "move": "<strong>矢印キー</strong>または <strong>[W]、[A]、[S]、[D]</strong> キーでキャラクターを移動できます。",
+      "interact": "<strong>スペースキー</strong>で人物に話しかけたり、物を調べたりできます。",
+      "discord": "コーディングの課題や技術的な問題で困ったときは、<discord>Discord サーバー</discord>で仲間のオペレーターに相談できます。"
+    },
+    "audio": {
+      "title": "音声・音楽設定",
+      "speakerMuted": "スピーカーはミュート中",
+      "speakerOn": "スピーカーはオン",
+      "unmute": "ミュートを解除",
+      "mute": "ミュート",
+      "master": "全体の音量",
+      "music": "音楽の音量",
+      "voice": "音声の音量",
+      "sfx": "効果音の音量"
+    },
+    "variables": {
+      "unlock": "ロックを解除",
+      "lock": "ロック",
+      "empty": "ミッションで解放した環境変数がここに表示されます。",
+      "title": "環境変数",
+      "description": "TerminalQuest はミッションで得た重要なデータを「環境変数」として保存し、ほかのミッションでも使えるようにします。値を変更するには、「ロックを解除」をクリックし、下の入力欄を編集してください。"
+    },
+    "unlocks": {
+      "alreadyUsed": "このコードは使用済みです。",
+      "invalid": "無効なコードです。",
+      "redeemed": "「{{item}}」を受け取りました！",
+      "title": "特別アイテムを解放",
+      "description": "TerminalQuest の特別アイテムの解放コードをお持ちですか？ 下に入力すると、持ち物にアイテムが追加されます。",
+      "code": "解放コード",
+      "redeem": "受け取る",
+      "redeeming": "受け取り中…"
+    },
+    "membership": {
+      "code": "参加コード",
+      "join": "参加する",
+      "joining": "参加処理中…",
+      "requestError": "エラーが発生しました。",
+      "codeRequired": "参加コードを入力してください。",
+      "joined": "「{{name}}」に参加しました！"
+    },
+    "teams": {
+      "current": "参加中のチーム",
+      "leave": "チームから退出",
+      "empty": "現在、参加中のチームはありません。",
+      "missing": "このチームは存在しません。",
+      "already": "すでにこのチームに参加しています。"
+    },
+    "operations": {
+      "current": "参加中の作戦",
+      "leave": "作戦から離脱",
+      "empty": "現在、参加中の作戦はありません。",
+      "missing": "この作戦は存在しません。",
+      "already": "すでにこの作戦に参加しています。"
+    },
+    "credits": {
+      "team": "TerminalQuest チーム",
+      "artwork": "アートワーク",
+      "soundtrack": "サウンドトラック",
+      "emeritus": "TerminalQuest チームの歴代メンバー",
+      "contributors": "コード・チュートリアルへの協力",
+      "thanks": "特別協力"
+    },
+    "inventory": {
+      "equip": "<strong>ドラッグ＆ドロップ</strong>または<strong>ダブルクリック</strong>でアイテムを装備できます。",
+      "all": "すべて",
+      "hand": "手",
+      "head": "頭",
+      "body": "胴体",
+      "legs": "脚",
+      "feet": "足",
+      "accessory": "アクセサリー",
+      "accessorySlot": "装飾品"
+    },
+    "avatar": {
+      "customize": "カスタマイズ：",
+      "previous": "{{feature}}を前の種類に切り替える",
+      "next": "{{feature}}を次の種類に切り替える",
+      "skin": "肌の色",
+      "eyes": "目の色",
+      "hairColor": "髪の色",
+      "hairStyle": "髪型",
+      "custom": "カスタム"
+    },
+    "elevator": {
+      "floorStatus": "フロアの状態",
+      "selectFloor": "{{floor}}へ移動",
+      "directory": "フロア案内"
+    },
+    "overlay": {
+      "close": "閉じる",
+      "loading": "読み込み中… URL：{{url}}",
+      "error": "URL「{{url}}」を読み込めませんでした。",
+      "loaded": "読み込みが完了しました！",
+      "frameTitle": "外部コンテンツ"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "title": "配列の合計",
+  "description": "配列内のすべての数値の合計を求めます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "「ハック」をクリックして関数をテストしてください。"
+    }
+  ]
+}

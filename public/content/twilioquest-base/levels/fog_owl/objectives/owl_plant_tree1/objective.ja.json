@@ -1,0 +1,10 @@
+{
+  "title": "フォグ・オウル号で植樹しよう！",
+  "description": "TwilioQuest を遊ぶことで、オーストラリアの森林再生を応援できます。<strong>ハック</strong>をクリックすると、Twilio が植樹のために1ドルを寄付します！",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "植樹するには「ハック」をクリックしてください。"
+    }
+  ]
+}

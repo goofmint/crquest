@@ -27,14 +27,21 @@ module.exports = async function (helper) {
 
         if (await exists(helper, visibleNixFilePath)) {
           helper.fail(
-            `TwilioQuest found your file, but it isn't hidden! Make sure the file has a period at the beginning of it's name! For example, .myFile.txt.`
+            helper.t(
+              "addLeadingPeriod",
+              "TwilioQuest found your file, but it isn't hidden! Make sure the file has a period at the beginning of it's name! For example, .myFile.txt."
+            )
           );
           return;
         }
       }
 
       helper.fail(
-        `TwilioQuest could not find "${newFileName}" in "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR}"! Double check that your file is in the correct directory and that there are no typos in the name!`
+        helper.t(
+          "missingFile",
+          'TwilioQuest could not find "{{newFileName}}" in "{{directory}}"! Double check that your file is in the correct directory and that there are no typos in the name!',
+          { newFileName, directory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR }
+        )
       );
       return;
     }
@@ -43,7 +50,11 @@ module.exports = async function (helper) {
 
     if (!fileStats.isFile()) {
       helper.fail(
-        `TwilioQuest found "${newFileName}" in "${TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR}", but it isn't a file! Double check that you're using the right command when making your file!`
+        helper.t(
+          "incorrectEntryType",
+          'TwilioQuest found "{{newFileName}}" in "{{directory}}", but it isn\'t a file! Double check that you\'re using the right command when making your file!',
+          { newFileName, directory: TQ_DEV_FUNDAMENTALS_FILE_SYSTEM_NEW_DIR }
+        )
       );
       return;
     }
@@ -65,19 +76,29 @@ module.exports = async function (helper) {
 
       if (!stdout.includes(newFileName)) {
         helper.fail(
-          'TwilioQuest found your file, but it isn\'t hidden! Make sure to hide your file using the "attrib" command with the "+h" option!'
+          helper.t(
+            "setHiddenAttribute",
+            'TwilioQuest found your file, but it isn\'t hidden! Make sure to hide your file using the "attrib" command with the "+h" option!'
+          )
         );
         return;
       }
     }
   } catch (err) {
-    helper.fail(`An error occurred while TwilioQuest was trying to check your present working directory for "${newFileName}".
-    
-    ${err}`);
+    helper.fail(
+      helper.t(
+        "validationError",
+        'An error occurred while TwilioQuest was trying to check your present working directory for "{{newFileName}}".\n    \n    {{error}}',
+        { newFileName, error: err }
+      )
+    );
     return;
   }
 
   helper.success(
-    "TwiloQuest was able to find the sneaky hidden file! Great job!"
+    helper.t(
+      "success",
+      "TwiloQuest was able to find the sneaky hidden file! Great job!"
+    )
   );
 };

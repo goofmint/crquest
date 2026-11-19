@@ -1,0 +1,7 @@
+{
+  "missingAnswers": "すべての質問に答えてください。",
+  "incorrectFirst": "最初の答えは Software Development Kit です。英語のまま入力してください。",
+  "incorrectSecond": "二つ目の答えが違います。Twilio は、その言語向けのサーバー側ヘルパーライブラリを提供しています。",
+  "incorrectThird": "三つ目の答えが違います。ライブラリがサーバーとの定型的で低レベルなやり取りを処理するため、API を扱いやすくなります。",
+  "success": "正解です！ チューリング寮の鍵の呪文の断片を手に入れました。"
+}

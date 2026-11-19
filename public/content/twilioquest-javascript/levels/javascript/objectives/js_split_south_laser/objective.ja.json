@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：ビーム 2 を起動",
+  "description": "<strong>植物学者の起動コード</strong>と<strong>ブール論理</strong>の知識を使って、この停止ビームを起動しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左側に示された目標を達成したら、<em>ハック</em>をクリックしてください。"
+    }
+  ]
+}

@@ -1,10 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function Credits() {
+  const { t } = useTranslation();
   return (
     <div className="Credits">
       <div className="fl w-60">
-        <h3>Team TerminalQuest</h3>
+        <h3>{t('ui.credits.team')}</h3>
         <p>
           <a href="https://twitter.com/kevinwhinnery">Kevin Whinnery</a>
         </p>
@@ -14,7 +16,7 @@ export default function Credits() {
 
         <br/>
 
-        <h3>Artwork</h3>
+        <h3>{t('ui.credits.artwork')}</h3>
         <p>
           Kerrie Lake
         </p>
@@ -27,7 +29,7 @@ export default function Credits() {
 
         <br/>
 
-        <h3>Soundtrack</h3>
+        <h3>{t('ui.credits.soundtrack')}</h3>
         <p>
           Dino Lionetti
         </p>
@@ -55,7 +57,7 @@ export default function Credits() {
 
         <br/>
 
-        <h3>Team TerminalQuest Emeritus</h3>
+        <h3>{t('ui.credits.emeritus')}</h3>
         <p>
           <a href="https://twitter.com/ryrykubes">Ryan Kubik</a>
         </p>
@@ -86,7 +88,7 @@ export default function Credits() {
 
         <br/>
 
-        <h3>Code and Tutorial Contributors</h3>
+        <h3>{t('ui.credits.contributors')}</h3>
 
         <div className="fl w-50">
           <p>
@@ -133,7 +135,7 @@ export default function Credits() {
           <p>&nbsp;</p>
         </div>
 
-        <h3>With Special Thanks To</h3>
+        <h3>{t('ui.credits.thanks')}</h3>
 
         <div className="fl w-50">
           <p>Kendra Whinnery</p>

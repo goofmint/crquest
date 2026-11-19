@@ -1,0 +1,5 @@
+{
+  "missingInput": "ハック画面にファイルパスを入力してください。",
+  "incorrectPath": "入力されたパス「{{filePath}}」は、セドリックの YouTube 動画へのパス「{{expectedPath}}」と一致しません。",
+  "success": "セドリックの YouTube 動画が見つかりました！ きっと喜んでくれます。"
+}

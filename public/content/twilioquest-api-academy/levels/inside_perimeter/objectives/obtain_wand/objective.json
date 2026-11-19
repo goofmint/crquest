@@ -7,13 +7,13 @@
       "name": "answer1",
       "type": "text",
       "placeholder": "",
-      "label": "Visit the documentation for the [Twilio Programmable SMS API](https://www.twilio.com/docs/sms). In the left hand menu, look for a heading called *API Reference*. Under this heading there are three subheadings, one for each `Resource` object. List one of the types of `Resource` objects."
+      "label": "In the [Twilio Programmable SMS API](https://www.twilio.com/docs/sms) documentation, find the resources for messages, media attached to messages, or Messaging Services. Enter the name of one of these resources."
     },
     {
       "name": "answer2",
       "type": "text",
       "placeholder": "",
-      "label": "Look at the documentation for the `Message Resource`. Type the first property listed for the `Message Resource`?"
+      "label": "In the [Message Resource](https://www.twilio.com/docs/sms/api/message-resource) documentation, enter the name of the property that contains the text of a message."
     }
   ],
   "rewards": {

@@ -1,0 +1,44 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="果てしない拡張の教科書")
+  case lastResponse
+    when "chapter_2"
+      statement#chapter_2
+      responses
+        response#chapter_1.
+          第 1 章　塔の建設
+
+    when "chapter_1"
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　知識の出どころ
+
+    default
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　知識の出どころ
+
+  statements
+    statement#default
+      text.
+        <span class="highlight">第 2 巻（全 4 巻） 第 1 章　塔の建設</span><br><br>
+        無限知識の塔は、初めから塔だったわけではありません。司書はプログラムどおりに知識を集めるうちに、それを分け合えば、誰かが開発者になる助けになると気づきました。<br><br>
+
+        そこでまず塔の構想を練り、次に塔と、塔がそびえ立つ惑星までも造りました。
+
+
+    statement#chapter_1
+      text.
+        <span class="highlight">第 2 巻（全 4 巻） 第 1 章　塔の建設</span><br><br>
+        無限知識の塔は、初めから塔だったわけではありません。司書はプログラムどおりに知識を集めるうちに、それを分け合う価値に気づきました。その知識があれば、誰かが開発者になれるのです！<br><br>
+
+        そこでまず塔の構想を練り、次に塔と、塔がそびえ立つ惑星までも造りました。
+
+    statement#chapter_2
+      text.
+        <span class="highlight">第 2 巻（全 4 巻） 第 2 章　知識の出どころ</span><br><br>
+        司書が塔を建てたことが知れわたると、旅人たちが知識を持ち込むようになりました。記録を扱う専門家も、保存してほしい貴重な情報を持って訪ねてきました。司書自身も、開発者が何を必要としているかを調べるため、新人開発者お困りごと収集機というプログラムをクラウドに送り出しました。
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

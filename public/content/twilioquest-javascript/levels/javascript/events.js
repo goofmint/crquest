@@ -132,9 +132,9 @@ module.exports = function (event, world) {
           y: viewpoint.startY,
         });
 
-        world.showNotification(`
+        world.showNotification(world.t("infiniteLoopNotReady", `
           The science vessel the "Infinite Loop" should've been docked right here! I must need to <span class=\"highlight\">wait for a new game update</span> to finish saving this scientist.
-        `);
+        `));
 
         await world.wait(3000);
         await world.tweenCameraToPlayer();
@@ -198,9 +198,14 @@ module.exports = function (event, world) {
   renderLaserState(world, worldState, event);
 
   updateQuestLogWhenComplete({
-    notification:
+    notification: world.t(
+      "completedNotification",
       'I\'ve completed everything in the <span class="highlight">JavaScript Test Lab</span> for now!',
-    log: "I've completed everything in the JavaScript Test Lab for now!",
+    ),
+    log: world.t(
+      "completedLog",
+      "I've completed everything in the JavaScript Test Lab for now!",
+    ),
     event,
     world,
     worldStateKey: WORLD_STATE_KEY,

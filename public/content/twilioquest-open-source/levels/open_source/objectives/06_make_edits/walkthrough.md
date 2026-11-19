@@ -60,7 +60,7 @@ Inside of this file you'll find a JSON array of pixel obects that look like this
 - `color`: The color your pixel should have as a hex code (e.g. #ff0000 for red)
 - `username`: The GitHub username you'll use to create the pull request
 
-Create a new row in the `_data/pixels.json` file that looks something like this:
+Create a new row in `_data/pixels.json` using the example below. Replace the example value `cedric` in `username` with your own GitHub username.
 
 ```diff
 {
@@ -88,7 +88,7 @@ After you've added your new pixel, run this in your terminal to re-sort the pixe
 
 We're going to run one final `npm` command before we finish making our change. This command is called `npm test`. Most open source projects have a suite of automatic tests. This helps you ensure that you've not done anything to break the project with your changes!
 
-Open a new Terminal tab or window and run the following command:
+Open a new terminal tab or window, change to the root directory of your local Open Pixel Art repository, and run the following command:
 
 ```
 npm test

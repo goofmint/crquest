@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：Python の知識の杖",
+  "description": "入門の儀式が行われる部屋の謎を解いて、伝説の<span class=\"highlight\">Python の知識の杖</span>を手に入れましょう！",
+  "validation_fields": [
+    {
+      "name": "puzzleAnswer",
+      "label": "左で説明された謎の答えを、英語のまま入力してください。"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "repositoryError": "Git リポジトリの存在を確認できませんでした。{{e}}",
+  "success": "JavaScript の作業用フォルダーに Git リポジトリを作成できました！ 後から変更を振り返れるように、作業を続ける間もこまめにコミットしましょう。",
+  "initialCommitMissing": "Git リポジトリに最初のコミットがないようです。git add -A でファイルをすべて追加し、git commit でコミットしてください。",
+  "repositoryMissing": "JavaScript の作業用フォルダーに .git ディレクトリーが見つかりませんでした。→ {{value1}}{{value2}}",
+  "gitMissing": "このコンピューターにインストールされた git が見つかりませんでした。{{err}}"
+}

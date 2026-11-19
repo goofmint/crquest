@@ -1,0 +1,6 @@
+{
+  "infiniteLoopNotReady": "研究船「Infinite Loop」はここに停泊しているはずだった！ 科学者を救出するには<span class=\"highlight\">ゲームの次回アップデートを待つ必要がありそうだ</span>。",
+  "completedNotification": "<span class=\"highlight\">JavaScript テストラボ</span>で、現時点ですべての目標を達成した！",
+  "completedLog": "JavaScript テストラボで、現時点ですべての目標を達成した！",
+  "accessLevelRequired": "この検問所を通過するにはアクセスレベル「{{accessLevel}}」が必要だ！"
+}

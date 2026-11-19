@@ -59,7 +59,7 @@ async function getMagicalPhrase() {
 }
 ```
 
-And there you have it! With this, you should have the magical phrase you need for the input!
+After defining the function, call `getMagicalPhrase()`. Copy the phrase printed in the console into the input field.
 
 ## Helpful resources
 

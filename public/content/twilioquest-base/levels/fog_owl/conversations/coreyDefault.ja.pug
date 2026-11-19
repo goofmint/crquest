@@ -1,0 +1,51 @@
+mixin dossier
+  response#dossier.
+    ［勤務記録を確認する］「ハリケーン」というあだ名があるんだね？
+
+mixin defensive_systems
+  response#defensive_systems.
+    フォグ・オウル号には防衛装備があるの？
+
+mixin about
+  response#about.
+    名前と船での役割をもう一度教えてくれる？
+
+conversation(display_name="Corey")
+  case lastResponse
+    when "dossier"
+      statement#dossier
+      responses
+        +defensive_systems
+
+    when "defensive_systems"
+      statement#defensive_systems
+      responses
+        +about
+
+    when "about"
+      statement#about
+      responses
+        +dossier
+        +defensive_systems
+
+    default
+      statement#default
+      responses
+        +about
+
+  statements
+    statement#dossier
+      text.
+        そのとおり。Twitch のチャットで出てきた呼び名が、そのまま定着したんだ。今度 <a href="https://www.twitch.tv/coreylweathers">配信に遊びに来て</a>よ。詳しくはチャットのみんなが教えてくれるよ。
+
+    statement#defensive_systems
+      text.
+        理論上はね。実際には期待しないで。航行用シールドは正常だけど、偏向シールドと兵器システムは完全に停止してる。ライアンや基地の技術者と修理を進めているけど、いつ終わるかはわからない。<br/><br/>それまではトラブルを起こさないでね。
+
+    statement#about
+      text.
+        私はコーリー。フォグ・オウル号の保安・戦術士官だよ。トラブルが起きたら私の出番。出番が少ないといいんだけど。
+
+    statement#default
+      text.
+        オペレーター、会えてうれしいよ。何か用？

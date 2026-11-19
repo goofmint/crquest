@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：Node.js 環境をセットアップ",
+  "description": "ラボの奥へ進むには<strong>Node.js JavaScript ランタイム</strong>が必要です。この課題で Node.js をインストールしましょう。",
+  "validation_fields": [
+    {
+      "name": "nodePath",
+      "label": "目標の説明に従い、Node.js の実行ファイルへのパスを貼り付けてください。"
+    }
+  ]
+}

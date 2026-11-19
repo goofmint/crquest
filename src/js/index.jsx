@@ -9,8 +9,9 @@ import config from './app/config/config';
 import { showAlert } from './app/platform/dialog';
 import { openExternal, openPath } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
-import { addHelpMenuItems } from './app/platform/menu';
+import { addHelpMenuItems, getHelpMenuLabel } from './app/platform/menu';
 import { onDocumentReady } from './app/common/documentReady';
+import { t } from './app/i18n';
 
 extendYup();
 
@@ -89,14 +90,16 @@ if (isDev()) {
 // Add Menu Items once game launches
 const helpMenuItems = [
   {
-    label: 'Toggle Developer Tools',
+    id: 'help-toggle-devtools',
+    label: getHelpMenuLabel('help-toggle-devtools'),
     click: () => {
       console.warn(DEVTOOLS_WARNING);
       toggleDevTools();
     },
   },
   {
-    label: 'Sync Bundled Assets',
+    id: 'help-sync-assets',
+    label: getHelpMenuLabel('help-sync-assets'),
     click: async () => {
       console.log('Syncing bundled assets...');
       await syncBundledAssets();
@@ -104,13 +107,15 @@ const helpMenuItems = [
     },
   },
   {
-    label: 'Open User Data',
+    id: 'help-open-user-data',
+    label: getHelpMenuLabel('help-open-user-data'),
     click: () => {
       openPath(config.userDataPath);
     },
   },
   {
-    label: 'Open Save File',
+    id: 'help-open-save-file',
+    label: getHelpMenuLabel('help-open-save-file'),
     click: () => {
       openPath(config.saveFilePath);
     },
@@ -120,13 +125,15 @@ const helpMenuItems = [
 if (isDev()) {
   helpMenuItems.push(
     {
-      label: 'Show Spector.js UI',
+      id: 'help-show-spector',
+      label: t('shell.menu.showSpector'),
       click: () => {
         spector.displayUI();
       },
     },
     {
-      label: 'Capture Frame with Spector.js',
+      id: 'help-capture-with-spector',
+      label: t('shell.menu.captureWithSpector'),
       click: () => {
         console.log('Spector.js capture starting...');
         spector.startCapture(document.querySelector('canvas'));

@@ -9,7 +9,6 @@ import audioManager from '../../common/audio/index';
 import MenuContainer from '../MenuContainer';
 import ObjectiveDescription from './objective_description/ObjectiveDescription';
 import Validator from './validator/Validator';
-import { readFile } from '../../common/assetLoader';
 import levelLoader, { OBJECTIVE_FILE_NAME } from '../../common/levelLoader';
 import path from 'path';
 import QuestIDE from '../QuestIDE';
@@ -71,9 +70,9 @@ export default class HackInterface extends React.Component {
       hackObject.objectiveName
     );
     const objectiveInfoPath = path.join(objectivePath, OBJECTIVE_FILE_NAME);
-    const objectiveConfig = await readFile(objectiveInfoPath);
+    const objective = await levelLoader.readObjectiveConfig(objectiveInfoPath);
 
-    if (!objectiveConfig) {
+    if (!objective) {
       throw new Error(`
         Tried to open an objective that didn\'t exist!
       
@@ -83,7 +82,6 @@ export default class HackInterface extends React.Component {
       `);
     }
 
-    let objective = JSON.parse(objectiveConfig);
     objective.objectivePath = objectivePath;
     objective.objectiveName = hackObject.objectiveName;
     objective.levelName = hackObject.level.levelName;

@@ -1,0 +1,8 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "IT 部門のグレンに丁寧な依頼を送りました。まもなくレーザー障壁が消えます。<br/><br/>オフィスへ向かって先へ進めます。",
+  "missingMagicWord": "スクリプトを実行しましたが、「魔法の言葉」が出力されませんでした。<br/><br/>スクリプトを実行して、英語の \"please\" を含む文が出力されるか確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"sayPlease.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

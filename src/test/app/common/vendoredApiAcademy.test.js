@@ -155,6 +155,7 @@ describe('inside_perimeter / twilio_api_setup (format check only)', () => {
 describe('inside_perimeter / hopper_key', () => {
   const validate = requireValidator('inside_perimeter', 'hopper_key');
   const makeHelper = answers => ({
+    t: (_key, english) => english,
     getNormalizedInput: key => (answers[key] || '').trim().toLowerCase(),
     fail: vi.fn(),
     success: vi.fn(),
@@ -189,6 +190,7 @@ describe('inside_perimeter / lovelace_key (message SID format check only)', () =
   const validate = requireValidator('inside_perimeter', 'lovelace_key');
   const sid = `SM${'0123456789abcdef'.repeat(2)}`;
   const makeHelper = answers => ({
+    t: (_key, english) => english,
     getNormalizedInput: key => (answers[key] || '').trim().toLowerCase(),
     validationFields: { answer3: answers.answer3 },
     fail: vi.fn(),

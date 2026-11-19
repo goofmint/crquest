@@ -18,7 +18,10 @@ async function updateBrushState(event, world, worldState) {
     // TODO: Temp disable for testing
     if (!worldState.flameUnlocked) {
       world.showNotification(
-        `Hopefully the <em>The Flame of Open Source</em> can help me burn through this brush.`
+        world.t(
+          "brush.needsFlame",
+          "Hopefully the <em>The Flame of Open Source</em> can help me burn through this brush."
+        )
       );
       return;
     }
@@ -29,7 +32,10 @@ async function updateBrushState(event, world, worldState) {
     ) {
       // If some brush key has a prereq, don't unlock the brush
       world.showNotification(
-        `Hmm. I can't get through this brush even with <em>The Flame of Open Source</em>. I must need to go further into the forest and come back later.`
+        world.t(
+          "brush.returnLater",
+          "Hmm. I can't get through this brush even with <em>The Flame of Open Source</em>. I must need to go further into the forest and come back later."
+        )
       );
       return;
     }

@@ -13,7 +13,7 @@
       "name": "answer2",
       "type": "text",
       "placeholder": "A, B, C, D, or E",
-      "label": "Which of the following programming languages does Twilio not provide a server-side helper library for? A: Node.js, B: C++, C: PHP, D: Ruby, E: Python"
+      "label": "Which of the following programming languages does Twilio not provide a server-side helper library for? A: Node.js, B: C++, C: PHP, D: Ruby, E: Python Enter the single letter A–E that corresponds to your answer."
     },
     {
       "name": "answer3",

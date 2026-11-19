@@ -1,0 +1,51 @@
+mixin dossier
+  response#dossier.
+    ［勤務記録を確認する］子役だったこともあるの？
+
+mixin about
+  response#about.
+    名前と船での役割をもう一度教えてくれる？
+
+mixin whats_this
+  response#whats_this.
+    後ろにある台は何？
+
+conversation(display_name="Mica")
+  case lastResponse
+    when "dossier"
+      statement#dossier
+      responses
+        +whats_this
+
+    when "about"
+      statement#about
+      responses
+        +dossier
+
+    when "whats_this"
+      statement#whats_this
+      responses
+        +about
+
+    default
+      statement#default
+      responses
+        +whats_this
+        +about
+
+  statements
+    statement#dossier
+      text.
+        なんでそんなことまで載ってるの!? 本当だけど、ほんの短い間で、それほど活躍しなかったよ。一番有名だったのは、人間みたいに振る舞う果物の役。歌って踊って、果物と野菜を毎日5皿食べる大切さを子どもたちに教えたの。<br/><br/>任務でリンゴ役が必要になったら、任せてね。
+
+    statement#whats_this
+      text.
+        あれは<span class="highlight">航法マップ</span>だよ。クラウドの目的地に移動するときに使う。気になる場所をいくつかマークしておいたから、時間があるときに行ってみて。
+
+    statement#about
+      text.
+        うん、私はミカ。フォグ・オウル号の通信士だよ。いくつかの言語が話せるし、クラウドの探索中に出会う相手との難しい交渉やトラブル解決も手伝えるよ。
+
+    statement#default
+      text.
+        やあ、オペレーター！ 今日はどこに向かうの？

@@ -1,0 +1,87 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin unique
+  response#unique.
+    フォン・ノイマン寮の特徴をもう一度教えていただけますか？
+
+mixin join
+  response#join.
+    フォン・ノイマン寮に入りたいです！
+
+mixin deciding
+  response#deciding.
+    どの寮に入るか、まだ考えています。
+
+mixin getting_started
+  response#getting_started.
+    フォン・ノイマン寮の順番になったら、研究室を探索するのが楽しみです。
+
+conversation(display_name="フォン・ノイマン寮長　ファン・フーク先生")
+  case lastResponse
+
+    when "unique"
+      statement#unique
+      responses
+        +join
+        +deciding
+
+    when "join"
+      statement#join
+
+    when "deciding"
+      statement#deciding
+
+    when "getting_started"
+      statement#getting_started
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique
+          +join
+          +deciding
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        学院へようこそ、オペレーター！ フォン・ノイマン寮に入るおつもりですか？
+
+    statement#unique
+        text.
+          フォン・ノイマン寮は効率と生産性を重視します。つまり、魔法薬です！ 化学実験室で、どうすれば手際よく成果を出せるかを研究し、効果的な解決策を見つけるのが寮生の得意分野です。
+
+    statement#join
+        text.
+          すばらしい！ では、誓約書を#[span.highlight 寮の炎]に持って行き、寮を正式に決めてください。
+
+    statement#deciding
+        text.
+          大丈夫です。決まったら誓約書を#[span.highlight 寮の炎]に持って行くだけです。
+
+    statement#history
+      text.
+        面白いことに、寮の試練はラブレス寮から始まり、フォン・ノイマン寮で終わることが多いんですよ。もちろん偶然ですが。くじ引きの順番を見るのはいつも楽しみです。今年はフォン・ノイマン研究室が最初になるかもしれませんね。どうなることやら……。<br><br>
+        #[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]を選んだのですね。あなたを迎えられて幸運です！
+
+    statement#gauntlet_default
+      text.
+        寮の試練の朝に生徒が行方不明になるとは！ しかも、出場予定の生徒です。捜索の間、代わりに出場してくれるあなたがいて、学院は助かりました……。<br><br>
+        さて、ラブレス塔は寮の試練を始めるにはよい場所です。
+
+    statement#getting_started
+      text.
+        ええ、試練の途中できっと研究室にも行けますよ。健闘を祈ります、オペレーター！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

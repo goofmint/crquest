@@ -1,0 +1,116 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY);
+  const hasStaff = inventory.includes('python_staff');
+
+mixin flavor
+  response#flavor.
+    さっきから「フルスタック Python」と言っていますが、それは何ですか？
+
+mixin who_are_you
+  response#who_are_you.
+    どなたでしたっけ？
+
+mixin what_happened
+  response#what_happened.
+    なぜ、この部屋にとどまっているのですか？
+
+mixin get_started
+  response#get_started.
+    ここは何の部屋ですか？ あなたたちの暮らしについて何か学べますか？
+
+conversation(display_name="Python の大賢者")
+  case lastResponse
+    when "flavor"
+      statement#flavor
+      responses
+        +get_started
+        +what_happened
+
+    when "who_are_you"
+      statement#great_sage
+      responses
+        +flavor
+        +get_started
+        +what_happened
+
+    when "what_happened"
+      statement#what_happened
+      responses
+        +get_started
+        +who_are_you
+
+    when "ack"
+      statement#ack
+      responses
+        +what_happened
+        +who_are_you
+
+    when "get_started"
+      statement#get_started
+      responses
+        response#ack.
+          試練を乗り越えれば、その秘宝を手に入れられるんですか？
+
+    default
+      if !worldState.greatSageInitialGreeting
+        - worldState.greatSageInitialGreeting = true;
+        statement#default
+        responses
+          response#who_are_you.
+            あの、あなたは……何者ですか？
+          +what_happened
+          +get_started
+
+      else if hasStaff
+        statement#thanks
+        responses
+          +what_happened
+          +who_are_you
+
+      else
+        statement#follow_up_greeting
+        responses
+          +get_started
+          +what_happened
+          +who_are_you
+
+  statements
+    statement#default
+      text.
+        フルスタック Python の祝福を。生前、わしは Python の大賢者として、Python の知恵を求める者を導いていた。なぜ、ここに来たのだ？
+
+    statement#thanks
+      text.
+        Python の知識の杖を手にしたのだな。おぬしの助けになりますように。
+
+    statement#follow_up_greeting
+      text.
+        フルスタック Python の祝福を、旅人よ。どんな知恵を求めておるのだ？
+
+    statement#get_started
+      text.
+        ひたむきに求める者が見いだせる知恵は多い。この入門の儀式の間では、新たな仲間に Python の伝統の根幹を授けておった。<br/><br/>試練を終えた入門者は、達成の証としてフルスタック Python 自らが贈る<span class="highlight">Python の知識の杖</span>を受け取ったのだ。
+
+    statement#ack
+      if hasStaff
+        text.
+          何を言っておるのか……我らが最も大切にしてきた秘宝は、もう手にしたではないか。
+      else
+        text.
+          できるとも。道のりは長いが、わしも仲間の賢者たちも、久しぶりの訪問者を歓迎する。もう一度、我らの伝統を守る姿が見たいのだ。<br/><br/><span class="highlight">仲間の賢者たちに話しかけ</span>、物語に耳を傾けよ。彼らの知恵が暗闇の道を照らすだろう。
+
+    statement#what_happened
+      text.
+        分からぬ。大きな異変があった記憶があり、気がつけばここにいた。どんな力がわしを戻したのかは知らぬが、知恵を求める者を導く務めを、最後に果たさなければという気がするのだ。
+
+    statement#great_sage
+      text.
+        生前は<span class="highlight">Python の大賢者</span>として、Python の知恵を求める者を導いておった。我らの教団は知識の源、フルスタック Python に仕え、学んだことを伝える聖なる務めを負っている。
+
+    statement#flavor
+      text.
+        永遠の大蛇、賢母、ほかにも数え切れぬ名がある。だが、<a href="https://www.fullstackpython.com/">フルスタック Python</a>は、我らの Python の知識と、ものを作り出す力の源だ。我らは今も彼女に仕え、新たな入門者が Python でクラウドに新しい世界を築けるよう導いておる。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

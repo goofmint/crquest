@@ -1,7 +1,7 @@
 import { existsAsync } from '../../../../js/app/platform/fs';
 import {
   readDirectory,
-  readFile,
+  readLocalizedJson,
   resolveAbsolutePath,
 } from '../../../../js/app/common/assetLoader';
 import loadItemsFromDisk from '../../../../js/app/components/context_provider/loadItemsFromDisk';
@@ -11,7 +11,7 @@ vi.mock('../../../../js/app/platform/fs', () => ({
 }));
 vi.mock('../../../../js/app/common/assetLoader', () => ({
   readDirectory: vi.fn(),
-  readFile: vi.fn(),
+  readLocalizedJson: vi.fn(),
   resolveAbsolutePath: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ describe('loadItemsFromDisk', () => {
     existsAsync.mockImplementation(async p =>
       p === '/abs/items/sword' ? 'dir' : 'file'
     );
-    readFile.mockResolvedValue(JSON.stringify({ name: 'sword', power: 1 }));
+    readLocalizedJson.mockResolvedValue({ name: 'sword', power: 1 });
 
     const items = await loadItemsFromDisk();
 
@@ -38,15 +38,13 @@ describe('loadItemsFromDisk', () => {
       name: 'sword',
       power: 1,
     });
-    expect(readFile).toHaveBeenCalledTimes(1);
+    expect(readLocalizedJson).toHaveBeenCalledTimes(1);
   });
 
   it('lets index.json values override the default paths', async () => {
     readDirectory.mockResolvedValue(['hat']);
     existsAsync.mockResolvedValue('dir');
-    readFile.mockResolvedValue(
-      JSON.stringify({ name: 'hat', iconPath: '/custom.png' })
-    );
+    readLocalizedJson.mockResolvedValue({ name: 'hat', iconPath: '/custom.png' });
 
     const items = await loadItemsFromDisk();
 

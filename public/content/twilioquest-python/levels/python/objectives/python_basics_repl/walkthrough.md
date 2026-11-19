@@ -47,7 +47,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 You can use this interactive, text-based interface to type in lines of Python code that will be evaluated once you press your "Enter" key. There are a number of built-in functions you can use - type in `help()`, for instance, to launch an interactive Python help program.
 
-When you're finished using the REPL, type:
+If you opened interactive help, type `q` at the `help>` prompt and press Enter to return to `>>>`. To leave the REPL, type:
 
 ```python
 quit()

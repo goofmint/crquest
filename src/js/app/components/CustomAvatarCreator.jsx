@@ -1,17 +1,18 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { keypress } from 'keypress.js';
 import { context, setContext } from '../common/context';
 import { NUM_FEATURES, generateDataURI } from '../common/avatarRenderer';
 
 const FEATURES = [
-  ['sc', 'Skin'],
-  ['ec', 'Eyes'],
-  ['hc', 'Hair Color'],
-  ['hs', 'Hair Style'],
+  ['sc', 'ui.avatar.skin'],
+  ['ec', 'ui.avatar.eyes'],
+  ['hc', 'ui.avatar.hairColor'],
+  ['hs', 'ui.avatar.hairStyle'],
 ];
 
-export default class CustomAvatarCreator extends React.Component {
+class CustomAvatarCreator extends React.Component {
   static propTypes = {
     close: PropTypes.func.isRequired,
     hotkeysEnabled: PropTypes.bool,
@@ -103,7 +104,7 @@ export default class CustomAvatarCreator extends React.Component {
       <div className="w4 h4 b--mid-gray ba bw2 character-avatar">
       {this.context.customAvatar.uri && (
         <img className="character-avatar-img"
-          alt="Your character avatar"
+          alt={this.props.t('ui.onboarding.characterAvatar')}
           src={this.context.customAvatar.uri}
           draggable="false"
         />
@@ -112,7 +113,9 @@ export default class CustomAvatarCreator extends React.Component {
     );
   }
 
-  renderControl([key, name], idx) {
+  renderControl([key, label], idx) {
+    const { t } = this.props;
+    const name = t(label);
     const classes = `w2 h2 f4 arrow pointer ba ${
       idx === this.state.selected ? 'bg-green b--white' : 'bg-dark-green b--dark-green'
     }`;
@@ -127,12 +130,14 @@ export default class CustomAvatarCreator extends React.Component {
         <div className="flex justify-center">
           <div
             className={classes}
+            title={t('ui.avatar.previous', { feature: name })}
             onClick={() => this.decrementFeature(key)}
           >
             &#x25BC;
           </div>
           <div
             className={`${classes} bl-0`}
+            title={t('ui.avatar.next', { feature: name })}
             onClick={() => this.incrementFeature(key)}
           >
             &#x25B2;
@@ -143,9 +148,10 @@ export default class CustomAvatarCreator extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div>
-        <h4 className="mb2">Customize:</h4>
+        <h4 className="mb2">{t('ui.avatar.customize')}</h4>
         <div className="flex flex-wrap">
           {this.renderPreview()}
           {FEATURES.map(this.renderControl, this)}
@@ -154,3 +160,5 @@ export default class CustomAvatarCreator extends React.Component {
     );
   }
 }
+
+export default withTranslation()(CustomAvatarCreator);

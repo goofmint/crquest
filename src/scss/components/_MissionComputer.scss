@@ -156,3 +156,13 @@
     }
   }
 }
+
+.MissionComputer:lang(ja) .missions .missionSelection {
+  height: auto;
+  min-height: 220px;
+
+  h2 {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

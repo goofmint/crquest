@@ -5,7 +5,7 @@ As you prepare to prove yourself to the House Lovelace mascot, you find an inscr
 <blockquote>
 <hr/>
 <p>
-THE MOST CHALLENGING SET OF QUESTIONS YET! AS THIS IS HOUSE LOVELACE I KNOW I MUST UTILIZE THE DOCUMENTATION ON <a href="HTTPS://WWW.TWILIO.COM/DOCS/SMS/API/MESSAGE-RESOURCE#CREATE-A-MESSAGE-RESOURCE" target="blank" rel="noreferrer noopener">CREATING A MESSAGE RESOURCE</a>.
+THE MOST CHALLENGING SET OF QUESTIONS YET! AS THIS IS HOUSE LOVELACE I KNOW I MUST UTILIZE THE DOCUMENTATION ON <a href="https://www.twilio.com/docs/sms/api/message-resource#create-a-message-resource" target="blank" rel="noreferrer noopener">CREATING A MESSAGE RESOURCE</a>.
 </p>
 <p>
 IT APPEARS I CAN CHOOSE THE PROGRAMMING LANGUAGE... THERE’S EVEN PRE-WRITTEN CODE IN EACH LANGUAGE I CAN COPY TO MY TERMINAL...

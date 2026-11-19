@@ -1,0 +1,18 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+
+conversation(display_name="エイダ・ラブレスの像")
+  case lastResponse
+
+    default
+        statement#default
+
+  statements
+    statement#default
+      text.
+        廊下で噂が広がっています……。寮の試練の秘密の部屋……。行方不明の生徒……。秘術 API 学院に危険が迫っています……。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：変数の宣言",
+  "description": "<span class=\"highlight\">変数</span>を作り、コードで扱うデータを表しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

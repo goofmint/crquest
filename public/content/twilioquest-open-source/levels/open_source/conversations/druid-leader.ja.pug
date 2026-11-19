@@ -1,0 +1,20 @@
+-
+  const STATE_KEY = 'TQ_OPEN_SOURCE_WORLD_STATE';
+  const worldState = getState(STATE_KEY) || {};
+
+conversation(display_name="ドルイドの長")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        呼びかけに応えてくださり、感謝します。まずお願いしたいのは、<span class="highlight">オープンソースの炎</span>に続く道のことです。森を抜けて炎に至る道を開いていただければ、大変助かります。衛兵には、あなたを通すよう伝えておきます。
+
+
+-
+  // After conversation happens once, Operator gets leader's permission
+  const newWorldState = {
+    ...worldState,
+    leaderPermission: true
+  }
+  setState(STATE_KEY, newWorldState);

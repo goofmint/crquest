@@ -47,10 +47,10 @@ module.exports = async function (event, world) {
           y: viewpoint.startY,
         });
 
-        world.showNotification(`
+        world.showNotification(world.t("forest.askLeader", `
           <i>I think I need to speak to the village leader before I can move
           further into the forest.</i>
-        `);
+        `));
 
         await world.wait(3000);
         await world.tweenCameraToPlayer();
@@ -92,10 +92,10 @@ module.exports = async function (event, world) {
           y: viewpoint.startY,
         });
 
-        world.showNotification(`
+        world.showNotification(world.t("forest.wayClear", `
           <i>It would appear the way down into the forest is clear.
           Now, to find the <em>Flame of Open Source...</em></i>
-        `);
+        `));
 
         await world.wait(3000);
         await world.tweenCameraToPlayer();
@@ -116,9 +116,14 @@ module.exports = async function (event, world) {
   await updateBrushState(event, world, worldState);
 
   updateQuestLogWhenComplete({
-    notification:
-      'I\'ve completed everything in the <span class="highlight">Forest of Open Source</span> for now!',
-    log: "I've completed everything in the Forest of Open Source for now!",
+    notification: world.t(
+      "forest.completeNotification",
+      'I\'ve completed everything in the <span class="highlight">Forest of Open Source</span> for now!'
+    ),
+    log: world.t(
+      "forest.completeLog",
+      "I've completed everything in the Forest of Open Source for now!"
+    ),
     event,
     world,
     worldStateKey: WORLD_STATE_KEY,

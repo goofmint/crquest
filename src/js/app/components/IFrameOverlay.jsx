@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import TqWindowChome from './TqWindowChome';
 
 const IFrameContainer = ({
@@ -62,6 +63,7 @@ const IFrameOverlay = ({
   fadeIn = false,
   fadeOut = false,
 }) => {
+  const { t } = useTranslation();
   // loading, errored, loaded
   const [validatingUrl, setValidatingUrl] = useState('loading');
   const [isLoadingIframe, setIsLoadingIframe] = useState(true);
@@ -119,12 +121,12 @@ const IFrameOverlay = ({
   const getMessageText = () => {
     switch (validatingUrl) {
       case 'loading':
-        return `Loading... URL: ${url}`;
+        return t('ui.overlay.loading', { url });
       case 'errored':
-        return `Error loading URL: "${url}"`;
+        return t('ui.overlay.error', { url });
       default:
       case 'loaded':
-        return 'Loaded!';
+        return t('ui.overlay.loaded');
     }
   };
 
@@ -159,7 +161,7 @@ const IFrameOverlay = ({
               onClick={hide}
               style={{ margin: '2rem', cursor: 'pointer' }}
             >
-              Close
+              {t('ui.overlay.close')}
             </button>
           </div>
         ) : null}
@@ -181,6 +183,7 @@ const IFrameOverlay = ({
             pointerEvents: shouldShowIframe ? 'all' : 'none',
           }}
           src={url}
+          title={title || t('ui.overlay.frameTitle')}
         />
       </div>
     </IFrameContainer>

@@ -1,0 +1,39 @@
+- const worldState = getState('com.twilioquest.developer-fundamentals.tower_of_knowledge');
+
+conversation(display_name="粘り強き旅人たちの書")
+  case lastResponse
+    when "chapter_2"
+      statement#chapter_2
+      responses
+        response#chapter_1.
+          第 1 章　新人開発者お困りごと収集機
+
+    when "chapter_1"
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　疑惑
+
+    default
+      statement#default
+      responses
+        response#chapter_2.
+          第 2 章　疑惑
+
+  statements
+    statement#default
+      text.
+        <span class="highlight">第 1 章　新人開発者お困りごと収集機</span><br><br>
+        司書が建設を始めたあと、塔にはしばらく動きがありませんでした。開発者としての基礎を学びに来る旅人はわずかでしたが、司書は調査を通して、図書館にこそ旅人に必要な知識があると確信していました。そんなある日、新人開発者お困りごと収集機が突然止まってしまいました。
+
+    statement#chapter_1
+      text.
+        <span class="highlight">第 1 章　新人開発者お困りごと収集機</span><br><br>
+        司書が建設を始めたあと、塔にはしばらく動きがありませんでした。開発者としての基礎を学びに来る旅人はわずかでしたが、司書は調査を通して、図書館にこそ旅人に必要な知識があると確信していました。そんなある日、新人開発者お困りごと収集機が突然止まってしまいました。
+
+    statement#chapter_2
+      text.
+        <span class="highlight">第 2 章　疑惑</span><br><br>
+        新人開発者お困りごと収集機を修理できなかった司書は、近くの宙域に救難信号を送りました。異常終了そのものに加え、司書が心配していたのは、レガシーシステムズがプログラムに手を加えたのではないかということです。<span class="highlight">TwilioQuest のオペレーター</span>が信号を受信し、プログラムを修理して塔を守ってくれることを願っていました。
+
+- setState('com.twilioquest.developer-fundamentals.tower_of_knowledge', worldState);

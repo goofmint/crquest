@@ -1,0 +1,12 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "やりました！ セキュリティノードをハックすると、Infinite Loop のマスターパスワードの<span class=\"highlight\">1 番目の文字</span>を示すインデックスが現れました。<br/><br/><span class=\"highlight\">[1][3]</span><br/><br/>パスワードを調べるには、合計 6 つのインデックスが必要です。",
+  "callError": "scan 関数の実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "incorrectCount": "関数は数値を返しましたが、期待した結果とは異なります。入力配列の全要素を調べ、文字列 \"contraband\" が現れる回数を返してください。",
+  "notNumber": "関数の戻り値が数値ではありません。入力配列に文字列 \"contraband\" が現れる回数を数値で返してください。",
+  "missingReturnValue": "関数がまだ値を返していないようです。関数を閉じる「}」の前で <span class=\"highlight\">return</span> を使い、処理の結果を返してください。ヘルプタブのひな型が参考になります。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">scan</span> 関数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"freightScanner.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "invalidDefinition": "<span class=\"highlight\">scan</span> という変数はありますが、呼び出せる関数ではありません。JavaScript の呼び出せる関数の定義方法はヘルプタブを確認してください。"
+}

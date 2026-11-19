@@ -86,7 +86,7 @@ git pull upstream master
 
 **3.** After you run the pull command, you should see a message detailing all the code differences between your local `master` and the `open-pixel-art` `master`. This might be a ton of files or you might get a message that you're already up to date!
 
-If you did get changes, you need to push them back up to your fork. You can do that by running the git push command.
+Run the git push command to update your fork even if the pull reported that the local branch was already up to date. That can happen if a previous pull succeeded but its push failed.
 
 ```bash
 git push

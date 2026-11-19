@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example
+  response#example.
+    API の例を教えてくれませんか？
+
+conversation(display_name="気取った姫君の宮殿を描いた絵")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        抜け目のない生徒たちが、リクエスト間で認証情報を使い回すために Postman の変数を使っているそうです。信じられますか？
+
+    statement#example
+      text.
+        <a href="https://www.mapbox.com/">MapBox APIs</a> を使うと、地図を見たり、ルートを調べたり、場所を検索したりできます……。もっとも、私が徒歩の道順を必要とするはずはありませんけどね！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

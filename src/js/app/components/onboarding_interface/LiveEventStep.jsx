@@ -1,10 +1,11 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { keypress } from 'keypress.js';
 import { JoinTeam } from '../menu/settings/AdventureTeams';
 import { context, setContext } from '../../common/context';
 
-export default class LiveEventStep extends React.Component {
+class LiveEventStep extends React.Component {
   static propTypes = {
     isActive: PropTypes.bool.isRequired,
     onClick: PropTypes.func.isRequired,
@@ -52,12 +53,13 @@ export default class LiveEventStep extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div
         className={this.props.isActive ? '' : 'o-50'}
         onClick={this.props.onClick}
       >
-        <h3 className="mt2 mb2">Do you have an adventure team join code?</h3>
+        <h3 className="mt2 mb2">{t('ui.onboarding.joinQuestion')}</h3>
         <div className="flex justify-around tc mv3">
           <div
             className={`${
@@ -65,7 +67,7 @@ export default class LiveEventStep extends React.Component {
             } ba bw2 w-50 pa2 mr2`}
             onClick={() => this.selectLiveEventAnswer(false)}
           >
-            NO
+            {t('ui.onboarding.no')}
           </div>
           <div
             className={`${
@@ -73,12 +75,12 @@ export default class LiveEventStep extends React.Component {
             } ba bw2 w-50 pa2 ml2`}
             onClick={() => this.selectLiveEventAnswer(true)}
           >
-            YES
+            {t('ui.onboarding.yes')}
           </div>
         </div>
         {this.state.liveEventAnswer && (
           <>
-            <h3>Enter your team join code:</h3>
+            <h3>{t('ui.onboarding.joinEnter')}</h3>
             <JoinTeam
               onSuccess={() => this.props.setValid(true)}
               enableSubmitHotkey={!this.context.liveEvent}
@@ -89,3 +91,5 @@ export default class LiveEventStep extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(LiveEventStep);

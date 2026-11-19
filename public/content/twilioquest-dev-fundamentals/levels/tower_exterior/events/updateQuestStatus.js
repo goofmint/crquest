@@ -8,21 +8,21 @@ function updateQuestStatus({
   worldState,
   TOOLBOX_COUNT_TO_FIND,
 }) {
-  let description = `
+  let description = world.t("questFindEntrance", `
     Find the entrance to the Tower of Infinite Knowledge!
-  `;
+  `);
   let complete = false;
 
   if (worldState.towerExterior.hasStartedInitialTowerTween) {
-    description = `
+    description = world.t("questFindWayInside", `
       Figure out how to get inside the tower.
-    `;
+    `);
   }
 
   if (worldState.towerExterior.toolboxesFound.length > 0) {
-    description = `
+    description = world.t("questFindToolboxes", `
       Find the rest of the toolboxes!
-    `;
+    `);
   }
 
   console.log({
@@ -30,19 +30,19 @@ function updateQuestStatus({
     len: worldState.towerExterior.toolboxesFound.length,
   });
   if (worldState.towerExterior.toolboxesFound.length >= TOOLBOX_COUNT_TO_FIND) {
-    description = `
+    description = world.t("questTalkToExplorer", `
       Talk to the Cloud Explorer again.
-    `;
+    `);
   }
 
   if (worldState.towerExterior.openedPainPointCollector) {
-    description = `
+    description = world.t("questEnterTower", `
       It's time to enter the tower!
-    `;
+    `);
     complete = true;
   }
 
-  world.updateQuestStatus(LEVEL, TITLE, description, complete);
+  world.updateQuestStatus(LEVEL, world.t("questTitle", TITLE), description, complete);
 }
 
 module.exports = updateQuestStatus;

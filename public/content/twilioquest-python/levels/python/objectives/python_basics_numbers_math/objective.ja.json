@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：数値と計算",
+  "description": "Python で<strong>数値を扱い</strong>、基本的な計算を行う方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

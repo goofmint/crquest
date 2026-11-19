@@ -1,0 +1,35 @@
+// Partial conversation template for post-explosion conversation
+case lastResponse
+  when "other_scientists"
+    statement.
+      事故の数分後までは無事でした。今はラボ内の通信がすべて途絶えているので確かめられません。同僚は#[span.highlight 施設のほかの区画に取り残されている]と考えた方がよさそうです。
+    responses
+      response#get_to_safety.
+        全員を探して、安全な場所に連れていかないと。
+
+  when "get_to_safety"
+    statement.
+      その「安全な場所」についてですが……どうやら、爆発で次元に裂け目ができて、刻一刻と広がっています。#[span.highlight 実験を逆転させて裂け目をふさがない]限り、クラウドの世界のどこにも安全な場所はありません。
+    responses
+      response#fix_it.
+        実験を逆転させなければ、あらゆるものが滅びるということですね。では、どうすれば？
+
+  when "fix_it"
+    statement.
+      反応を逆転させるには安定化ビームをどう調整すべきか、見当はついています。ただ、そのためには#[span.highlight 4 本すべてのビームを再起動]しなければなりません。ほかのレーザーの起動コードは同僚が持っているので、私一人では無理です。
+    responses
+      response#on_it.
+        任せてください！ 同僚の皆さんを探して、起動コードを集めてきます。
+
+  when "on_it"
+    statement.
+      逆転に向けて装置を調整するには、もう少し時間が必要です。#[span.highlight 同僚を見つけて起動コードを集めたら]知らせてください。急げばまだ元に戻せます。
+    // Flag that the scientist post-disaster conversation has been finished
+    - worldState.scientistDisasterConvo = true;
+
+  default
+    statement.
+      4 本目のビームを入れた直後、#[span.highlight ダックタイピウムの結晶が不安定になった]んです。ありえないはずでした！ 私たちの……私の計算は完璧でしたから！<br/><br/>厳密に言えば、ラボの一部が消えたのではなく、私たちの時空連続体の外にある、未知の物質の第五の相へ移ったのです。<br/><br/>火事については……ええ、かなりまずいです。
+    responses
+      response#other_scientists.
+        実験室にいたほかの研究員はどうなりました？ 無事ですか？

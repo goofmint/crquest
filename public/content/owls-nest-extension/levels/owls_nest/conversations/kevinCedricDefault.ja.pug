@@ -1,0 +1,195 @@
+- const STATE_KEY = 'com.twilioquest.owls_nest';
+- const worldState = getState(STATE_KEY);
+
+mixin about_team
+  response#cedric_index.
+    セドリック、いくつか質問してもいい？
+  response#kevin_index.
+    ケビン、ちょっと聞いてもいいですか？
+
+mixin cedric_questions
+  response#cedric_job.
+    TwilioQuest 計画ではどんな役割なの？
+  response#cedric_related_kevin.
+    ケビンとよく一緒に仕事をするの？
+  response#cedric_conversation_index.
+    実は、ほかにも質問があって……
+
+mixin kevin_questions
+  response#kevin_job.
+    TwilioQuest 計画ではどんな役割なんですか？
+  response#kevin_related_cedric.
+    セドリックとよく一緒に仕事をするんですか？
+  response#kevin_conversation_index.
+    実は、ほかにも質問があって……
+
+mixin get_started
+  if worldState.fredricThreatReceived
+    response#get_started.
+      FREDRIC PLACEHOLDER
+  else
+    response#kevin_get_started.
+      よければフォグ・オウルを見たいです。どんな船なのか楽しみで！
+
+-
+  let speaker = 'Cedric';
+  if (
+    (
+      worldState.kevinCedricInitialGreeting &&
+      !worldState.fredricThreatReceived &&
+      !lastResponse
+    ) ||
+    (lastResponse && lastResponse.indexOf('kevin_') === 0)
+  ) {
+    speaker = 'Kevin';
+  }
+conversation(display_name=speaker)
+  case lastResponse
+    when "cedric_index"
+      statement#cedric_index
+      responses
+        +cedric_questions
+    when "cedric_job"
+      statement#cedric_job
+      responses
+        +cedric_questions
+    when "cedric_related_kevin"
+      statement#cedric_related_kevin
+      responses
+        +cedric_questions
+    when "kevin_index"
+      statement(expression="kevinNeutral.png")#kevin_index
+      responses
+        +kevin_questions
+    when "kevin_job"
+      statement(expression="kevinNeutral.png")#kevin_job
+      responses
+        +kevin_questions
+    when "kevin_related_cedric"
+      statement(expression="kevinNeutral.png")#kevin_related_cedric
+      responses
+        response#kevin_kid_low_pressure.
+          ロボットの子ども、いいですね！ 子育てに失敗する心配も少ないでしょう？
+        +kevin_questions
+    when "kevin_kid_low_pressure"
+      statement(expression="kevinNeutral.png")#kevin_kid_low_pressure
+      responses
+        +kevin_questions
+    when "kevin_get_started"
+      statement(expression="kevinNeutral.png")#kevin_get_started
+      responses
+        response#kevin_next_step.
+          すごい船ですね。もう発進できますか？
+        response#kevin_espresso_machine.
+          エスプレッソマシンまであるのは見事ですね。
+    when "kevin_espresso_machine"
+      statement(expression="kevinNeutral.png")#kevin_espresso_machine
+      responses
+        response#kevin_next_step.
+          すごい船ですね。もう発進できますか？
+    when "kevin_next_step"
+      statement(expression="kevinNeutral.png")#kevin_next_step
+      responses
+        +about_team
+    when "cedric_conversation_index"
+      statement#cedric_conversation_index
+      responses
+        +get_started
+        +about_team
+    when "kevin_conversation_index"
+      statement(expression="kevinNeutral.png")#kevin_conversation_index
+      responses
+        +get_started
+        +about_team
+
+    when "kevin_who_are_you"
+      statement(expression="kevinNeutral.png")#kevin_who_are_you
+      responses
+        +get_started
+        +about_team
+
+    default
+      if worldState.fredricThreatReceived
+        statement#no_time
+        responses
+      else if !worldState.kevinCedricInitialGreeting
+        - worldState.kevinCedricInitialGreeting = true;
+        statement#default
+        responses
+          response#kevin_who_are_you.
+            そのとおりです。セドリックとケビンですよね？
+          +get_started
+
+      else
+        statement(expression="kevinNeutral.png")#follow_up_greeting
+        responses
+          +get_started
+          +about_team
+
+  statements
+    statement#no_time
+      text.
+        オペレーター。新しいファイアウォールを急いで構築しています。フォグ・オウルの自爆を中止するには、<span class="highlight">クビック技師から解除コードを受け取る</span>必要があります。<br/><br/>コードを手に入れたら、フォグ・オウルのそばの操作盤で船とステーションを救ってください。
+
+    statement#cedric_index
+      text.
+        質問の入力を待機中です。
+
+    statement#cedric_job
+      text.
+        私はクラウドで任務に就くオペレーターを支援するために設計された、高度な人工知能です。TwilioQuest 計画が私のプログラムを承認したら、あなたの船のような場所で働きたいと思っています。<br/><br/>人間についてはまだ学ぶべきことが多く、分析には直接の観察が必要だと考えています。
+
+    statement#kevin_who_are_you
+      text.
+        そのとおり。ようやく直接会えてうれしいよ！ セドリックと僕は、<span class="highlight">フォグ・オウル</span>の初飛行を任せる指揮官をずっと探していた。君ならできると思う。<br/><br/>乗り込んで中を見てみないかい？
+
+    statement#cedric_related_kevin
+      text.
+        オペレーター #00000000000 は私のコードベースへのコミットの大部分を担当し、学習データの取り込みモデルや中枢機能の多くを設計しました。私が人間なら、彼を親と見なすかもしれません。
+
+    statement#kevin_index
+      text.
+        ああ、もちろん。何でも聞いて。
+
+    statement#kevin_job
+      text.
+        僕は TwilioQuest 計画の責任者だ。君のようなオペレーターを採用し、できる限り支援するのが仕事だよ。<br/><br/>最近は、セドリックの高次処理機能の開発にほとんどの時間を使っているけどね。
+
+    statement#kevin_related_cedric
+      text.
+        セドリックのコードベースに取り組んで、もう何年にもなる。いろんな意味で息子のような存在だ。本人に頼まれて、優しさや好奇心、勇気といった人間のいい面を教えてきた。<br/><br/>今では僕より立派かもしれない！ 成長を誇りに思うし、もうオペレーターと一緒に働けると思っている。
+
+    statement#kevin_kid_low_pressure
+      text.
+        ……<br/><br/>そうだったらよかったんだけどね。
+
+    statement#default
+      text.
+        新規オペレーターを検出……機密人事データベースと照合中……あなたが<span class="highlight">フォグ・オウルの新しい指揮官</span>ですね？
+
+    statement#follow_up_greeting
+      text.
+        やあ！ どうしたんだい？
+
+    statement#cedric_conversation_index
+      text.
+        どうぞ。できる限りお答えします。
+
+    statement#kevin_conversation_index
+      text.
+        もちろん。何について話そうか？
+
+    statement#kevin_espresso_machine
+      text.
+        だろう？ 本当に使うか分からなかったけど、今では毎日使ってるよ。
+
+    statement#kevin_get_started
+      text.
+        僕たちもオウルの実力を見るのが楽しみだ！ 最新のパケット送信ドライブに高度な位置暗号化、そしてエスプレッソマシン！<br/><br/>フォグ・オウルは頑丈で、速くて、見つかりにくい。君が試験航行で技術を実証すれば、クラウド中のオペレーターに配備できる。
+
+    statement#kevin_next_step
+      text.
+        もう少しだ。右舷の TCP ポートの調整が残っているけど、1 時間もあれば発進できる。<br/><br/>その間に<span class="highlight">船内を見て回って乗組員に会ってくれ</span>。みんな優秀な仲間だ。困ったときは頼るといい。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -26,7 +26,7 @@ function transform(freightItems) {
 // used by you to test your solution.
 const transformed = transform(["dog", "ray gun", "cat"]);
 console.log("Transformed Items");
-console.log(transformed); // should be ['DOG', 'CAT', 'ZIPPERS']
+console.log(transformed); // should be ['DOG', 'RAY GUN', 'CAT']
 ```
 
 You should use the [the array's built-in "map" function](https://javascript.info/array-methods#map) to perform this task. To convert a string to all caps, you can use the [built-in toUpperCase() function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/toUpperCase).

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import jetpack from 'fs-jetpack';
 import '@testing-library/jest-dom/vitest';
+import '../js/app/i18n';
 
 // jsdom has no canvas implementation and reports every getContext() call as
 // "not implemented"; Phaser only feature-detects it while being evaluated below.

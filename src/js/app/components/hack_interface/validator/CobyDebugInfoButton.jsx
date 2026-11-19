@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 
 const CopyDebugInfoButton = ({
   children,
+  copiedMessage,
   shouldNotify,
   doesFeedbackExist,
   disableNotification,
@@ -12,6 +13,7 @@ const CopyDebugInfoButton = ({
   return (
     <button
       ref={buttonRef}
+      data-copied-message={copiedMessage}
       className={`get-objective-debug-info ${
         doesFeedbackExist ? 'emphasis' : ''
       } ${shouldNotify ? 'objective-debug-info-copied' : ''}`}

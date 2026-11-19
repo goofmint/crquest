@@ -1,0 +1,56 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+
+mixin secret
+  response#secret.
+    秘密の何ですか？
+
+mixin library
+  response#library.
+    ラブレスの秘密図書館には何があるのですか？
+
+conversation(display_name="秘術 API 学院の管理人")
+  case lastResponse
+
+    when "secret"
+      statement#secret
+
+    when "library"
+      statement#library
+
+    default
+      if !worldState.obj4Complete
+        statement#default
+        responses
+          +secret
+
+      else if worldState.obj4Complete
+        statement#secret_default
+        responses
+          +library
+
+
+  statements
+    statement#default
+      text.
+        ラブレス塔もあと少し！ 課題は残り一つです……。<br><br>
+        私の後ろの扉は秘密の……。いや、その前に最後の課題を終えましょう。
+
+    statement#secret
+      text.
+        ここを通るには#[span.highlight 占術の呪文]が必要です。今はそれだけお伝えしておきます。
+
+    statement#secret_default
+      text.
+        占術の呪文を手に入れましたね！ お見事です、オペレーター。私の後ろの扉は、ラブレスの秘密図書館につながっています。占術の呪文で中に入れます。大広間に戻ったら、この呪文で寮の試練の次の場所にも進めます。この扉のように、青く光る目印がある場所で使ってください。
+
+    statement#library
+      text.
+        秘術 API 学院には秘密の扉や部屋がたくさんあります。寮ごとに特別な場所があり、その寮の呪文を習得して初めて入れるのです。これ以上は内緒です……。<br><br>
+        残りの寮の試練も頑張ってください、オペレーター！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,6 @@
+{
+  "missingColor": "壺の色を英語で入力してください！",
+  "invalidColor": "入力した色「{{color}}」は無効です。\"gray\"、\"white and green\"、\"terracotta\" のいずれかを入力してください。",
+  "trapped": "その壺には罠がありました！ セドリックは間一髪でけがを免れました！",
+  "success": "やったね！"
+}

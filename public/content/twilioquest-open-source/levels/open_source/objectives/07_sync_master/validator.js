@@ -5,14 +5,20 @@ module.exports = async (helper) => {
 
   if (!TQ_GITHUB_USERNAME) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_GITHUB_USERNAME</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingGitHubUser",
+        "You do not have the environment variable <span class=\"highlight\">TQ_GITHUB_USERNAME</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
 
   if (!TQ_OPEN_PIXEL_ART_DIR) {
     helper.fail(
-      `You do not have the environment variable <span class="highlight">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!`
+      helper.t(
+        "missingDirectory",
+        "You do not have the environment variable <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> set. Return to a previous objective to make sure its set correctly!"
+      )
     );
     return;
   }
@@ -31,7 +37,7 @@ module.exports = async (helper) => {
 
     if (upstreamRemotes.length === 0) {
       helper.fail(
-        `We didn't find a local remote named "upstream"! Did you create one yet?`
+        helper.t("missingRemote", "We didn't find a local remote named \"upstream\"! Did you create one yet?")
       );
       return;
     }
@@ -44,12 +50,12 @@ module.exports = async (helper) => {
 
     if (!isUpstreamUrlCorrect) {
       helper.fail(
-        `We found your "upstream" remote, but it doesn't seem to have the correct URL.
+        helper.t("wrongRemote", `We found your "upstream" remote, but it doesn't seem to have the correct URL.
         
         It should look like this:
         https://github.com/twilio-labs/open-pixel-art.git
         
-        Run git remote -v in your terminal to verify it!`
+        Run git remote -v in your terminal to verify it!`)
       );
       return;
     }
@@ -59,9 +65,9 @@ module.exports = async (helper) => {
     );
 
     if (openPixelArtResponse.status !== 200) {
-      helper.fail(`We couldn't connect to the Open Pixel Art repository!
+      helper.fail(helper.t("upstreamUnavailable", `We couldn't connect to the Open Pixel Art repository!
       
-      ${openPixelArtResponse.status} ${openPixelArtResponse.statusText}`);
+      {{status}} {{statusText}}`, { status: openPixelArtResponse.status, statusText: openPixelArtResponse.statusText }));
       return;
     }
 
@@ -70,9 +76,9 @@ module.exports = async (helper) => {
     );
 
     if (playerResponse.status !== 200) {
-      helper.fail(`We couldn't find the "open-pixel-art" repository for your user "${TQ_GITHUB_USERNAME}"!
+      helper.fail(helper.t("forkUnavailable", `We couldn't find the "open-pixel-art" repository for your user "{{TQ_GITHUB_USERNAME}}"!
       
-      ${playerResponse.status} ${playerResponse.statusText}`);
+      {{status}} {{statusText}}`, { TQ_GITHUB_USERNAME, status: playerResponse.status, statusText: playerResponse.statusText }));
       return;
     }
 
@@ -81,19 +87,27 @@ module.exports = async (helper) => {
       (await openPixelArtResponse.json()).commit.sha
     ) {
       helper.fail(
-        `The Open Pixel Art repository and the "open-pixel-art" repository for your user "${TQ_GITHUB_USERNAME} are out of sync"! New changes may've been added since your last sync. Try syncing again!`
+        helper.t(
+          "outOfSync",
+          "The Open Pixel Art repository and the \"open-pixel-art\" repository for your user \"{{TQ_GITHUB_USERNAME}} are out of sync\"! New changes may've been added since your last sync. Try syncing again!",
+          { TQ_GITHUB_USERNAME }
+        )
       );
       return;
     }
 
     return helper.success(
-      `The Open Pixel Art repository and the "open-pixel-art" repository for your user "${TQ_GITHUB_USERNAME} are in sync! These may get out of sync in the future as other users make changes to the repository!`
+      helper.t(
+        "synced",
+        "The Open Pixel Art repository and the \"open-pixel-art\" repository for your user \"{{TQ_GITHUB_USERNAME}} are in sync! These may get out of sync in the future as other users make changes to the repository!",
+        { TQ_GITHUB_USERNAME }
+      )
     );
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate if your Open Pixel Art fork was synchronized!
+      helper.t("error", `Something went wrong when we tried to validate if your Open Pixel Art fork was synchronized!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

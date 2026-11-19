@@ -1,0 +1,31 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin anything_else
+  response#anything_else.
+    分かりました！ ほかに知っておくことはありますか？
+
+conversation(display_name="ラブレス寮長　クレイ先生")
+  case lastResponse
+
+    when "anything_else"
+      statement#anything_else
+
+    default
+      statement#default
+      responses
+        +anything_else
+
+  statements
+    statement#default
+      text.
+        ラブレス塔へようこそ、オペレーター！ 寮の試練に早速挑んでくださって、ありがとうございます。<br><br>
+        これから、API の知識を実践で活かせるかを試す課題に挑みます。クリアすると#[span.highlight 占術の呪文]が手に入り、試練の次の寮に進めるようになります。
+
+    statement#anything_else
+      text.
+        ラブレス塔には、ラブレス寮らしく、ドキュメントが詰まった本や資料がたくさんあります。応援してくれる熱心な寮生もいますよ。宿題を手伝ってほしいだけかもしれませんけどね。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

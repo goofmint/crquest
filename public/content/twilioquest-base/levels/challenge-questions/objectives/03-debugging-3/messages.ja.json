@@ -1,0 +1,6 @@
+{
+  "success": "やったね！",
+  "expected": "期待値",
+  "received": "実際の結果",
+  "undefinedFunction": "関数 findLongestDiagnosticUrl が定義されていません！"
+}

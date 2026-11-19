@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trans, withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import { keypress } from 'keypress.js';
 import sharedListener from '../../common/listener';
@@ -8,8 +9,9 @@ import AvatarStep from './AvatarStep';
 import LiveEventStep from './LiveEventStep';
 import { context } from '../../common/context';
 import ga from '../../common/analytics';
+import { isComposingKeypress } from '../../common/isComposingKeypress';
 
-export default class OnboardingInterface extends React.Component {
+class OnboardingInterface extends React.Component {
   static propTypes = {
     close: PropTypes.func,
   };
@@ -27,7 +29,11 @@ export default class OnboardingInterface extends React.Component {
 
     this.listener = new keypress.Listener();
     this.listener.simple_combo('esc', evt => this.prevStep());
-    this.listener.simple_combo('enter', evt => this.nextStep());
+    this.listener.simple_combo('enter', event => {
+      if (!isComposingKeypress(event)) {
+        this.nextStep();
+      }
+    });
 
     this.resizeObserver = new ResizeObserver(() => {
       this.scrollableRef.scrollTop = this.scrollableRef.scrollHeight;
@@ -58,9 +64,10 @@ export default class OnboardingInterface extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
     return (
       <div className="OnboardingInterface bg-black">
-        <MenuContainer title="Operator Login" showCloseButton={false}>
+        <MenuContainer title={t('ui.onboarding.login')} showCloseButton={false}>
           <div
             className="pa2 h-100 overflow-y-scroll"
             ref={node => {
@@ -96,34 +103,28 @@ export default class OnboardingInterface extends React.Component {
 
               {this.state.step >= this.finalStep && (
                 <div className="mt4">
-                  <h3>Welcome, {this.context.settings.name}.</h3>
+                  <h3>{t('ui.onboarding.welcome', { name: this.context.settings.name })}</h3>
                   {this.context.liveEvent && (
-                    <h3>You are connected to {this.context.liveEvent.name}.</h3>
+                    <h3>{t('ui.onboarding.connected', { event: this.context.liveEvent.name })}</h3>
                   )}
                 </div>
               )}
 
               {this.state.stepIsValid && (
                 <div className="mt4">
-                  Press{' '}
-                  <span
-                    className="yellow pointer"
-                    onClick={() => this.nextStep()}
-                  >
-                    [ENTER]
-                  </span>{' '}
-                  to {this.state.step === 4 ? 'start' : 'continue'}
+                  <Trans
+                    i18nKey={this.state.step === this.finalStep ? 'ui.onboarding.start' : 'ui.onboarding.continue'}
+                    components={{
+                      keyCap: <span className="yellow pointer" onClick={() => this.nextStep()} />,
+                    }}
+                  />
                   {this.state.step > 1 && (
-                    <span>
-                      &nbsp;or{' '}
-                      <span
-                        className="yellow pointer"
-                        onClick={() => this.prevStep()}
-                      >
-                        [ESC]
-                      </span>{' '}
-                      to go back
-                    </span>
+                    <Trans
+                      i18nKey="ui.onboarding.back"
+                      components={{
+                        keyCap: <span className="yellow pointer" onClick={() => this.prevStep()} />,
+                      }}
+                    />
                   )}
                 </div>
               )}
@@ -134,3 +135,5 @@ export default class OnboardingInterface extends React.Component {
     );
   }
 }
+
+export default withTranslation(undefined)(OnboardingInterface);

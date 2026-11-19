@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import useAssetLoader from '../hooks/useAssetLoader';
 import { getByIndexWithWrapping } from '../utils';
 import DestinationSelectLabel from './DestinationSelectLabel';
@@ -14,7 +15,12 @@ const ControlPanel = ({
   selectPlanet,
   currentLevelTitle,
 }) => {
+  const { t, i18n } = useTranslation();
   const { assets } = useAssetLoader();
+  const localized = i18n.resolvedLanguage !== 'en';
+  const actionFrames = localized
+    ? { raisedFrame: { row: 0, col: 0 }, pressedFrame: { row: 0, col: 1 } }
+    : {};
 
   return (
     <NineSlice
@@ -24,11 +30,14 @@ const ControlPanel = ({
     >
       <NavMapButton
         onClick={hide}
+        label={t('ui.map.exit')}
+        visibleLabel={localized ? t('ui.map.exitButton') : undefined}
         config={{
           sheet: assets.buttonExit,
           tileWidth: 90,
           tileHeight: 44,
           scale: 2,
+          ...actionFrames,
         }}
       />
       <DestinationSelectLabel assets={assets} />
@@ -59,11 +68,14 @@ const ControlPanel = ({
       />
       <NavMapButton
         onClick={go}
+        label={t('ui.map.go')}
+        visibleLabel={localized ? t('ui.map.goButton') : undefined}
         config={{
           sheet: assets.buttonGo,
           tileWidth: 75,
           tileHeight: 44,
           scale: 2,
+          ...actionFrames,
         }}
       />
     </NineSlice>
