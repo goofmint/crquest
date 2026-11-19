@@ -35,3 +35,7 @@ src-tauri/target/
 src-tauri/gen/
 # Tauri frontendDist (tasks/stage_tauri_frontend.js)
 tauri-dist/
+
+# User-supplied Koromame fonts may be embedded in local Tauri builds.
+/Koromame-Regular.ttf
+/Koromame-Regular.woff2

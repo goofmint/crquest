@@ -33,6 +33,10 @@ const RUNTIME_NODE_MODULES_FILES = [
   { from: 'node_modules/animate.css/animate.min.css', to: 'lib/animate.min.css' },
 ];
 const GENERATED_FILES = ['index.html', 'index.js', 'tauri-game.js', 'index.css'];
+const KOROMAME_FILES = [
+  { name: 'Koromame-Regular.woff2', format: 'woff2' },
+  { name: 'Koromame-Regular.ttf', format: 'truetype' },
+];
 const EXCLUDED_TOP_LEVEL_ENTRIES = [
   ...resourceOnlyDirectories,
   'node_modules',
@@ -47,7 +51,7 @@ function isStaged(relativePath) {
   return !EXCLUDED_TOP_LEVEL_ENTRIES.includes(segments[0]);
 }
 
-function stageTauriFrontend(source = publicDir, target = stagingDir) {
+function stageTauriFrontend(source = publicDir, target = stagingDir, fontDirectory) {
   fs.rmSync(target, { recursive: true, force: true });
   fs.cpSync(source, target, {
     recursive: true,
@@ -65,6 +69,25 @@ function stageTauriFrontend(source = publicDir, target = stagingDir) {
     fs.mkdirSync(path.dirname(to), { recursive: true });
     fs.copyFileSync(from, to);
   });
+
+  if (fontDirectory) {
+    const fonts = KOROMAME_FILES.filter(file =>
+      fs.existsSync(path.join(fontDirectory, file.name))
+    );
+    if (fonts.length) {
+      const fontsTarget = path.join(target, 'fonts');
+      fs.mkdirSync(fontsTarget, { recursive: true });
+      for (const { name } of fonts) {
+        fs.copyFileSync(path.join(fontDirectory, name), path.join(fontsTarget, name));
+      }
+      const sources = fonts.map(({ name, format }) =>
+        `url('fonts/${name}') format('${format}')`
+      );
+      fs.appendFileSync(path.join(target, 'index.css'),
+        `\n@font-face { font-family: 'Koromame'; src: ${sources.join(', ')}; font-display: swap; }\n`
+      );
+    }
+  }
 }
 
 module.exports = { stageTauriFrontend, isStaged, RUNTIME_NODE_MODULES_FILES, stagingDir };
@@ -76,5 +99,5 @@ if (require.main === module) {
       throw new Error(`public/${file} does not exist: run the Tauri build (npm run build:tauri) first`);
     }
   });
-  stageTauriFrontend();
+  stageTauriFrontend(publicDir, stagingDir, rootDir);
 }

@@ -1,4 +1,10 @@
 @font-face {
+  font-family: 'Koromame';
+  src: local('Koromame');
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Press Start 2P';
   src: url('fonts/PressStart2P-Regular.ttf') format('truetype');
 }
@@ -14,7 +20,7 @@
   font-display: swap;
 }
 
-$japanese-font-stack: 'DotGothic16', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', Meiryo;
+$japanese-font-stack: 'Koromame', 'DotGothic16', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', Meiryo;
 $base-font-stack: 'Roboto Mono', Consolas, $japanese-font-stack, monospace;
 $game-font-stack: 'Press Start 2P', $japanese-font-stack, monospace;
 $reading-font-stack: 'Helvetica Neue', Helvetica, $japanese-font-stack, sans-serif;
