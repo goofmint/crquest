@@ -180,18 +180,23 @@ export default class Settings extends React.Component {
         <div className="flex mt1">
           <div className="w-25 contents">
             {SUBNAV_SECTIONS.map(section => (
-              <h5
-                key={section}
-                className={`pa2 mr3 mv2 ${
-                  this.props.subnav !== section ? 'pointer' : 'selected'
-                }`}
-                onClick={() => {
-                  setContext({
-                    currentMenu: { name: 'settings', subnav: section },
-                  });
-                }}
-              >
-                {t(`settings.tabs.${section}`)}
+              <h5 key={section} className="mr3 mv2">
+                <button
+                  type="button"
+                  className={`subnav-button pa2 ${
+                    this.props.subnav !== section ? 'pointer' : 'selected'
+                  }`}
+                  disabled={this.state.changingLanguage}
+                  aria-current={this.props.subnav === section ? 'true' : undefined}
+                  onClick={() => {
+                    if (this.languageChangePending) return;
+                    setContext({
+                      currentMenu: { name: 'settings', subnav: section },
+                    });
+                  }}
+                >
+                  {t(`settings.tabs.${section}`)}
+                </button>
               </h5>
             ))}
           </div>

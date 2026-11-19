@@ -50,11 +50,28 @@
 .settings-menu h5 {
   font-family: $base-font-stack;
   font-size: 18px;
+}
+
+.settings-menu .subnav-button {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 
   &.selected {
     background-color: #0d122b;
     color: #ffe000;
     user-select: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
   }
 }
 

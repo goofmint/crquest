@@ -209,7 +209,11 @@ export default class ObjectiveDescription extends React.Component {
         {objective.rewards.xp && (
           <div className="mt4">
             <strong>
-              <Trans i18nKey="ui.objectiveDescription.xpEarned" values={{ xp: objective.rewards.xp }} />
+              <Trans
+                i18nKey="ui.objectiveDescription.xpEarned"
+                values={{ xp: objective.rewards.xp }}
+                components={{ em: <em /> }}
+              />
             </strong>
           </div>
         )}
@@ -217,7 +221,11 @@ export default class ObjectiveDescription extends React.Component {
         {newRank && (
           <div className="mt4">
             <strong>
-              <Trans i18nKey="ui.objectiveDescription.rankReached" values={{ rank: newRank }} />
+              <Trans
+                i18nKey="ui.objectiveDescription.rankReached"
+                values={{ rank: newRank }}
+                components={{ em: <em /> }}
+              />
             </strong>
           </div>
         )}

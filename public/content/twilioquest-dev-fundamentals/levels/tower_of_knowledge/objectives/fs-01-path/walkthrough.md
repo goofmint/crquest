@@ -20,7 +20,7 @@ The first directory in a filepath is called the **root directory**. This is beca
 You will use a file's path whenever you need to communicate where a file can be found. You may need to tell other people you are working with on a project where a file is located, and give them a file path. You will also have to use file paths when writing your own code, to use other files. For example, you might want to add an image to your website with HTML:
 
 ```
-<img src="/images/cedric_headshot.png">
+<img src="images/cedric_headshot.png">
 ```
 
 This is an example of a **relative** path. You do not always have to give the whole path to a file, which is called the **absolute** path. When you are working in a project, you can often use paths that are "relative" to the directory the project is contained in, which means the path starts from the containing directory, and not from the root directory.
