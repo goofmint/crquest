@@ -1,6 +1,6 @@
 // Custom avatar creation in the Tauri build (W9, #140). The real Tauri build
 // configuration (vite.config.mjs --mode tauri) bundles avatarRenderer.js with
-// the platform/tauri assets module and jimp's browser bundle; the output is
+// the platform/tauri assets module and the PNG codec; the output is
 // evaluated in a jsdom window without Node globals (no require, process,
 // Buffer). Part images are requested as URLs, which a stand-in XMLHttpRequest
 // serves from the real files of public/avatars/parts (the webview serves them
@@ -11,15 +11,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'vite';
 import { JSDOM } from 'jsdom';
-import Jimp from 'jimp';
+import { decode } from 'fast-png';
 
 const root = path.resolve(__dirname, '../../../../..');
 const recordedDir = path.join(root, 'src', 'test', 'fixtures', 'avatar');
 const partsDir = path.join(root, 'public', 'avatars', 'parts');
-const RESOURCE = '/opt/TerminalQuest';
 const PAGE = 'tauri://localhost/index.html';
 
-describe('avatar creation in the Tauri build (browser jimp)', () => {
+describe('avatar creation in the Tauri build', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   let code;
 
@@ -91,7 +90,7 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
           if (ok) {
             const bytes = fs.readFileSync(file);
             this.status = 200;
-            this.response = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+            this.response = window.Uint8Array.from(bytes).buffer;
             this.responseText = '';
           } else {
             this.status = 404;
@@ -102,20 +101,28 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
       }
     }
     window.XMLHttpRequest = FakeXHR;
+    window.eval(code);
+    window.avatarEntry.setPlatformState({
+      appDataPath: '/home/u/.config',
+      resourceDirPath: '/opt/TerminalQuest',
+      appVersion: '1.0.0',
+      isDev: false,
+      platform: 'linux',
+    });
     return { window, requested };
   }
 
-  test('the context has none of the Node globals the Node entry of jimp needs', () => {
+  test('the context has no Node globals', () => {
     const { window } = createWindow();
     for (const name of ['require', 'process', 'Buffer', 'module', 'global']) {
       expect(window[name]).toBeUndefined();
     }
   });
 
-  const bitmapOf = async uri => {
+  const bitmapOf = uri => {
     const png = Buffer.from(uri.slice('data:image/png;base64,'.length), 'base64');
     expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-    return Jimp.read(png);
+    return decode(png);
   };
 
   const cases = [
@@ -126,28 +133,20 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
     { ec: 5, hs: 5, sc: 3, hc: 5 },
   ];
 
-  test('jimp of this build rejects an image that is not served (HTTP 404); it does not hang', async () => {
+  test('rejects a missing part without generating a partial avatar (HTTP 404)', async () => {
     const { window } = createWindow();
-    window.eval(code);
-    await expect(
-      window.avatarEntry.Jimp.read('tauri://localhost/avatars/parts/missing.png')
-    ).rejects.toThrow(/HTTP Status 404/);
+    const callback = vi.fn();
+
+    await expect(window.avatarEntry.generateDataURI({ ec: 0, hs: 99, sc: 1, hc: 2 }, callback))
+      .rejects.toThrow(/hair99.*HTTP status 404/);
+    expect(callback).not.toHaveBeenCalled();
   }, 20000);
 
   test.each(cases)('composites %o to the same PNG as the recorded Electron build', async options => {
     const { window, requested } = createWindow();
-    window.eval(code);
-    window.avatarEntry.setPlatformState({
-      appDataPath: '/home/u/.config',
-      resourceDirPath: RESOURCE,
-      appVersion: '1.0.0',
-      isDev: false,
-      platform: 'linux',
-    });
-    const uri = await new Promise((resolve, reject) => {
-      window.avatarEntry.generateDataURI(options, resolve);
-      setTimeout(() => reject(new Error(`no data URI; requested ${JSON.stringify(requested)}`)), 20000);
-    });
+    const callback = vi.fn();
+    const uri = await window.avatarEntry.generateDataURI(options, callback);
+    expect(callback).toHaveBeenCalledExactlyOnceWith(uri);
     expect(uri).toMatch(/^data:image\/png;base64,/);
     // URLs relative to the page, in the order of the Electron paths
     const names = ['body', 'face', 'onesie', options.ec === 6 ? 'glasses' : 'eyes'];
@@ -157,15 +156,15 @@ describe('avatar creation in the Tauri build (browser jimp)', () => {
     }
     expect(requested).toEqual(names.map(n => `tauri://localhost/avatars/parts/${n}.png`));
 
-    const tauri = await bitmapOf(uri);
+    const tauri = bitmapOf(uri);
     const recorded = fs.readFileSync(
       path.join(recordedDir, `ec${options.ec}-hs${options.hs}-sc${options.sc}-hc${options.hc}.png`)
     );
-    const electron = await Jimp.read(recorded);
-    expect(tauri.bitmap.width).toBe(electron.bitmap.width);
-    expect(tauri.bitmap.height).toBe(electron.bitmap.height);
-    expect(Buffer.compare(tauri.bitmap.data, electron.bitmap.data)).toBe(0);
+    const electron = decode(recorded);
+    expect(tauri.width).toBe(electron.width);
+    expect(tauri.height).toBe(electron.height);
+    expect(tauri.data).toEqual(electron.data);
     // not an empty image
-    expect(tauri.bitmap.data.some(byte => byte !== 0)).toBe(true);
+    expect(tauri.data.some(byte => byte !== 0)).toBe(true);
   }, 60000);
 });

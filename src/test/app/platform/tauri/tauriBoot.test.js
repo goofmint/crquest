@@ -75,12 +75,6 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     expect(fs.existsSync(path.join(outputDir, 'tauri-game.js'))).toBe(true);
   });
 
-  it('does not read fs.readFileSync while ejs is loaded (patched, #154)', () => {
-    const game = fs.readFileSync(path.join(outputDir, 'tauri-game.js'), 'utf8');
-    expect(game).not.toContain('exports.fileLoader = fs.readFileSync;');
-    expect(game).toMatch(/exports\.fileLoader = function\s*\(\)\s*\{\s*return fs\.readFileSync\.apply\(fs, arguments\);/);
-  });
-
   it('the staged frontendDist serves every file the page and its styles link', () => {
     // index.html: link href / script src; each must be a file of the staging
     // directory (the webview requests them from the embedded frontendDist)

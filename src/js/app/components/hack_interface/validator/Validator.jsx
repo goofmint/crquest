@@ -2,7 +2,6 @@ import path from 'path';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { withTranslation } from 'react-i18next';
-import { Converter } from 'showdown';
 import { keypress } from 'keypress.js';
 import ga from '../../../common/analytics';
 import gameEvents from '../../../common/gameEvents';
@@ -17,14 +16,10 @@ import ValidationHelper from './ValidationHelper';
 import levelLoader from '../../../common/levelLoader';
 import { readContentMessages, requireFromExtension } from '../../../common/assetLoader';
 import { isComposingKeypress } from '../../../common/isComposingKeypress';
+import { renderValidationMarkdown } from '../../../common/renderMarkdown';
 import World from '../../../common/world';
 import CopyDebugInfoButton from './CobyDebugInfoButton';
 import { showAlert, showDirectoryDialog } from '../../../platform/dialog';
-
-const MD = new Converter({
-  openLinksInNewWindow: true,
-});
-MD.setFlavor('vanilla');
 
 const STATUS = {
   INITIALIZING: 'ui.validator.analyzing',
@@ -508,7 +503,7 @@ class Validator extends React.Component {
       // Display validation fields
       content.push(
         this.props.objective.validation_fields.map(field => {
-          const labelHtml = MD.makeHtml(field.label);
+          const labelHtml = renderValidationMarkdown(field.label);
 
           if (field.type === 'prompt') {
             return (

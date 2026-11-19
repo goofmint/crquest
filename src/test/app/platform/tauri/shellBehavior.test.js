@@ -13,6 +13,7 @@ import {
   installExternalLinkHandler,
   isDevToolsShortcut,
 } from '../../../../js/tauriShell';
+import { renderValidationMarkdown } from '../../../../js/app/common/renderMarkdown';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
@@ -66,12 +67,10 @@ describe('external links', () => {
   test('a click on an element inside the link opens the link', () => {
     mocks.openExternal.mockResolvedValue(undefined);
     const doc = makeDoc();
-    const link = addLink(doc, 'https://example.com/x');
-    const span = doc.createElement('span');
-    link.appendChild(span);
-    const event = click(span);
+    doc.body.innerHTML = renderValidationMarkdown('[**Docs**](https://example.com/x)');
+    const event = click(doc.querySelector('a > strong'));
     expect(event.defaultPrevented).toBe(true);
-    expect(mocks.openExternal).toHaveBeenCalledWith('https://example.com/x?');
+    expect(mocks.openExternal).toHaveBeenCalledExactlyOnceWith('https://example.com/x?');
   });
 
   test('a click on an element outside any link is left alone', () => {
