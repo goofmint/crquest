@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：Python クラスを作る",
+  "description": "追加課題として、初めての<span class=\"highlight\">Python クラス</span>を作りましょう！",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってクラスを作成し、<em>ハック</em>を押してください。"
+    }
+  ]
+}

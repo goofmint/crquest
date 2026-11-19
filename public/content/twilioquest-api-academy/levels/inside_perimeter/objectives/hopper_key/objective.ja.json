@@ -1,0 +1,22 @@
+{
+  "title": "API 学院：Postman でリクエストを送る",
+  "description": "Postman の機能について答えて、ホッパー寮の鍵の呪文の一部を手に入れましょう。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "Postman アカウントを作り、ウェブ画面にログインしてから `confirm` と入力してください。"
+    },
+    {
+      "name": "answer2",
+      "label": "Postman の collection は関連する workspace をまとめたもの。正しければ true、誤りなら false と入力してください。"
+    },
+    {
+      "name": "answer3",
+      "label": "Postman で認証が必要な API リクエストの認証情報を設定するタブはどれですか？ 英語のタブ名で答えてください。"
+    },
+    {
+      "name": "answer4",
+      "label": "Postman で Twilio Programmable SMS API に POST リクエストを送りメッセージを作成する際、Body タブで選ぶ形式はどれですか？ A: form-data、B: x-www-form-urlencoded、C: raw、D: binary、E: GraphQL。"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin apis
+  response#apis.
+    ほかには、どんなことが API を強力にしているのですか？
+
+conversation(display_name="ほこりをかぶったアラン・チューリングの像")
+  case lastResponse
+    when "apis"
+      statement#apis
+
+    default
+      statement#default
+      responses
+        +apis
+
+  statements
+    statement#default
+      text.
+        チューリング寮では、あらゆるコードの中心に人がいると考えます。寮生は、どのプログラミング言語の生徒でも API を扱いやすくなるよう、ソフトウェア開発キットやライブラリを作っています。
+
+    statement#apis
+      text.
+        API の術は古くから学ばれてきましたが、その力を引き出せるようになったのはごく最近です。私はかつての人間の姿を模した像にすぎませんが、学院でも世界中でも、API が発展し、新しい力が見つかる様子を見守ってきました。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

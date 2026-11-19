@@ -1,0 +1,14 @@
+{
+  "title": "API 学院：RESTful API",
+  "description": "<strong>フォン・ノイマン寮</strong>の知識の宝箱を開けるには、RESTful API について学ぶ必要があります。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "URI で指定でき、RESTful API で転送できるデータのまとまりを英語では何と呼びますか？"
+    },
+    {
+      "name": "answer2",
+      "label": "RESTful API でサーバーに新しいデータを作成するとき、最もよく使われる HTTP メソッドは何ですか？"
+    }
+  ]
+}

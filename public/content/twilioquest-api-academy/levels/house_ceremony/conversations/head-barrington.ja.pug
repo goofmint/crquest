@@ -1,0 +1,87 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin unique
+  response#unique.
+    ホッパー寮の特徴をもう一度教えていただけますか？
+
+mixin join
+  response#join.
+    ホッパー寮に入りたいです！
+
+mixin deciding
+  response#deciding.
+    どの寮に入るか、まだ考えています。
+
+mixin getting_started
+  response#getting_started.
+    始まるのが楽しみです！
+
+conversation(display_name="ホッパー寮長　バリントン先生")
+  case lastResponse
+
+    when "unique"
+      statement#unique
+      responses
+        +join
+        +deciding
+
+    when "join"
+      statement#join
+
+    when "deciding"
+      statement#deciding
+
+    when "getting_started"
+      statement#getting_started
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique
+          +join
+          +deciding
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        学院に入ってくれてうれしいです、オペレーター！ ホッパー寮はあなたを歓迎します。
+
+    statement#unique
+      text.
+        ホッパー寮の強みは、大胆さと新しい API に挑戦する姿勢です。
+
+    statement#join
+      text.
+        すばらしい！ ホッパー寮へようこそ。寮を正式に決めるには、大広間の中央にある#[span.highlight 寮の炎]に誓約書を持って行ってください。
+
+    statement#deciding
+      text.
+        よく考えて決めてください。寮を決めたら、寮の試練が始まります。学院でも特に盛り上がる行事ですよ！
+
+    statement#history
+      text.
+        #[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]を選んだのですね。おめでとうございます！<br><br>
+        ホッパー温室から寮の試練が始まったことは、実は一度もありません。順番は毎回くじ引きで決まります。今年はどの寮になるでしょうね！
+
+    statement#gauntlet_default
+      text.
+        なんという展開でしょう！ 競技者が行方不明になったなんて予想もしていませんでした。ラブレス寮から試練が始まるのは、これまでにも何度もありましたけどね！ さあ、ラブレス塔へ向かってください。ラブレス寮の試練、頑張ってくださいね！
+
+    statement#getting_started
+      text.
+        健闘を祈ります、オペレーター！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

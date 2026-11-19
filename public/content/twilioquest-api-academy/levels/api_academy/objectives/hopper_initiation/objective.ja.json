@@ -1,0 +1,14 @@
+{
+  "title": "API 学院：リモート API",
+  "description": "<strong>ホッパー寮</strong>の知識の宝箱を開けるには、別のコンピューターで動作する<strong>リモート</strong> API について理解する必要があります。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "API 呼び出しに必要なコードと計算資源は、API の呼び出し元と同じコンピューターになければならない。"
+    },
+    {
+      "name": "answer2",
+      "label": "リモート API を開発者に公開する標準的な方式の一つを表す、英字 4 文字の略語は何ですか？"
+    }
+  ]
+}

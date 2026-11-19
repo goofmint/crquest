@@ -1,0 +1,87 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin unique
+  response#unique.
+    チューリング寮の特徴をもう一度教えていただけますか？
+
+mixin join
+  response#join.
+    チューリング寮に入りたいです！
+
+mixin deciding
+  response#deciding.
+    どの寮に入るか、まだ考えています。
+
+mixin getting_started
+  response#getting_started.
+    チューリングの野原を探索できる日も楽しみにしています！
+
+conversation(display_name="チューリング寮長　タイファ先生")
+  case lastResponse
+
+    when "unique"
+      statement#unique_resp
+      responses
+        +join
+        +deciding
+
+    when "join"
+      statement#join_resp
+
+    when "deciding"
+      statement#deciding_resp
+
+    when "getting_started"
+      statement#getting_started_resp
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique
+          +join
+          +deciding
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        寮の儀式と寮の試練が同じ週にあるなんて！ 秘術 API 学院は今がいちばんにぎやかですね。
+
+    statement#unique_resp
+        text.
+          チューリング寮は、問題解決と革新に取り組む姿勢を誇りにしています。寮生はコードボール、課外活動、進路行事など、学院のさまざまな活動を楽しんでいます。
+
+    statement#join_resp
+        text.
+          チューリング寮に来てくれてうれしいです！ 寮の儀式の最後に、誓約書を大広間の中央にある#[span.highlight 寮の炎]に持って行き、選択を確定してください。
+
+    statement#deciding_resp
+        text.
+          もちろんです！ 寮を決めると、学院の恒例行事の中でも特に盛り上がる、寮の試練に参加できますよ。
+
+    statement#history
+      text.
+        一昨年も昨年も、チューリング寮から試練が始まりました。最初に選ばれる回数は、実はラブレス寮とほとんど同じなんです。今年はどこになるのか、皆そわそわして待っています。<br><br>
+        そうそう、#[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]を選んだのですね。いい選択です！
+
+    statement#gauntlet_default
+      text.
+        オペレーター、寮の試練を観戦するだけでなく、ご自身で挑むのですか！ 今はどんな気持ちですか？ くじ引きの結果、今回もラブレス寮が最初です。ラブレス塔には面白い課題がたくさんありますよ！<br><br>
+        最初の試練、健闘を祈ります！
+
+    statement#getting_started_resp
+      text.
+        まずはラブレス塔で頑張ってください。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

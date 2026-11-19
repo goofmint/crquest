@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['nine'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="Pandas の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        ほほう！ クラウド中のデータサイエンティストにとって、Python が定番なのを知っておるか？ すべては、わしのかわいい<a href="https://pandas.pydata.org/">pandas</a>のおかげだ。<br/><br/>さあ、知識を携えて勇敢に進め、入門者よ。永遠の大蛇がおぬしを抱き締め、はち切れんばかりにしてくれますように！ プログラミングの腕前の話だぞ！

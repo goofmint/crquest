@@ -38,17 +38,17 @@ const passwordArray = [
 // Password is "F!N!TE"
 const nodes = worldState.eastWingSecNodes || [];
 const ii = [
-nodes[0] ? '`[1][3]`' : 'Not Found',
-nodes[1] ? '`[3][4]`' : 'Not Found',
-nodes[2] ? '`[2][5]`' : 'Not Found',
-nodes[3] ? '`[3][4]`' : 'Not Found',
-nodes[4] ? '`[0][4]`' : 'Not Found',
-nodes[5] ? '`[0][2]`' : 'Not Found'
+  '`[1][3]`',
+  '`[3][4]`',
+  '`[2][5]`',
+  '`[3][4]`',
+  '`[0][4]`',
+  '`[0][2]`'
 ];
 %>
 
 | 1 文字目 | 2 文字目 | 3 文字目 | 4 文字目 | 5 文字目 | 6 文字目 |
 | --- | --- | --- | --- | --- | --- |
-| <%= ii[0] %> | <%= ii[1] %> | <%= ii[2] %> | <%= ii[3] %> | <%= ii[4] %> | <%= ii[5] %> |
+| <% for (const [index, value] of ii.entries()) { %><% if (nodes[index]) { %><%= value %><% } else { %>未発見<% } %> | <% } %>
 
 6 つそろったらここに戻り、配列の文字をそのまま使ってパスワードを解読しましょう！

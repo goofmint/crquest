@@ -1,0 +1,154 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  let allComplete = false;
+  if (
+    worldState.initiation &&
+    worldState.initiation.lastShownHouseNotification &&
+    worldState.initiation.lastShownHouseNotification === 4
+  ) {
+    allComplete = true;
+  }
+
+mixin personal_intro
+  response#personal_intro.
+    先生のお名前と、学院でのお仕事を教えていただけますか？
+
+mixin exposition
+  response#exposition.
+    学院では何を学べるのですか？
+
+mixin get_started
+  response#get_started.
+    入学するにはどうすればいいですか？
+
+mixin houses
+  response#houses.
+    秘術 API 学院にはどんな寮があるのですか？
+
+conversation(display_name="入学担当　ヒープソート先生")
+  case lastResponse
+    when "houses"
+      statement#house
+      responses
+        +exposition
+        +personal_intro
+        +get_started
+
+    when "personal_intro"
+      statement#personal_intro
+      responses
+          +get_started
+          +exposition
+          +houses
+
+    when "exposition"
+      statement#exposition
+      responses
+        +get_started
+        +personal_intro
+        +houses
+
+    when "ack"
+      statement#ack
+      responses
+        +exposition
+        +personal_intro
+        +houses
+
+    when "get_started"
+      statement#get_started
+      responses
+        if allComplete
+          +exposition
+          +personal_intro
+          +houses
+        else
+          response#ack.
+            分かりました。宝箱を全部見つけたら報告します。
+
+    when "pledge_scroll"
+      statement#pledge_scroll
+      responses
+        +houses
+
+    when "houses"
+      statement#houses
+      responses
+        +exposition
+        +personal_intro
+        +get_started
+
+    default
+      if !worldState.heapsortInitialGreeting
+        - worldState.heapsortInitialGreeting = true;
+        statement#default
+        responses
+          response#personal_intro.
+            ぜひ入学したいです。その前に、まずは自己紹介をお願いできますか？
+          +exposition
+          +get_started
+          +houses
+
+      else if allComplete
+        statement#thanks
+        responses
+          +exposition
+          +personal_intro
+          +houses
+
+      else
+        statement#follow_up_greeting
+        responses
+          +get_started
+          +exposition
+          +personal_intro
+          +houses
+
+  statements
+    statement#default
+      text.
+        おや、オペレーターではありませんか！ 学院への入学を希望されているのですか？<br/><br/>
+        そうでしたらうれしいです。秘術 API 学院に来たオペレーターは多くありませんが、皆さんすばらしい生徒でした。
+
+    statement#follow_up_greeting
+      text.
+        オペレーター、またお会いしましたね！ 学院での学びを始める準備はできましたか？
+
+    statement#thanks
+      text.
+        お見事です！ 学院の入学課題をすべて終えましたね。門を通って秘術 API 学院へお入りください。学業の成功を祈っています！
+
+    statement#get_started
+      if allComplete
+        text.
+          門を通って秘術 API 学院へお入りください。これからの学びを楽しんでくださいね！
+      else
+        text.
+          入学希望者には、まず API の基本を身につけてもらいます。南の森には<span class="highlight">4 つの宝箱</span>があります。宝箱を 1 つ開けるごとに、私の後ろのかがり火が灯ります。<br/><br/>
+          4 つすべてが灯れば、秘術 API 学院への入学資格が認められます！
+
+    statement#ack
+      text.
+        宝箱探しの健闘を祈ります！ 宝箱は学院の 4 つの寮、ラブレス、チューリング、フォン・ノイマン、ホッパーをたたえる小さな記念碑にあります。それぞれの<span class="highlight">寮の色が入った石造りの建物</span>を探してください。
+
+    statement#exposition
+      text.
+        API はプログラミングの土台です。皆さんが書くコードの多くは、ほかの誰かが書いたコードを呼び出します。ですから API の仕組みを身につけることは大切です。<BR><BR>
+        HTTP を通じてインターネット上の API を使えるようになると、コードでできることが大きく広がります。その力を使いこなせるよう教えるのが学院の目的です。
+
+    statement#personal_intro
+      text.
+        <span class="highlight">キンバリー・ヒープソート</span>です。秘術 API 学院で入学を担当しています。開発者を目指す生徒たちが、学院の授業に臨む準備を整えられるよう支えるのが私の役目です。<BR><BR>
+        学院は長年にわたって TwilioQuest プログラムと関わってきましたから、オペレーターの入学はとりわけうれしいです。私たちも、コードで希望と力と自由を切り開き、レガシーシステムズに立ち向かうという使命を共有しています。
+
+
+    statement#house
+      text.
+        学院の 4 つの寮では、年間を通じてクラブ活動や行事が開かれます。それぞれ得意分野があります。
+        #[span.highlight ラブレス寮]は創造性と芸術、#[span.highlight チューリング寮]は革新と問題解決、#[span.highlight ホッパー寮]は大胆さと挑戦、#[span.highlight フォン・ノイマン寮]は効率と生産性を重んじます。<BR><BR>
+        学院で自分の居場所を探すうちに、生徒たちがもっと詳しく教えてくれるでしょう。
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

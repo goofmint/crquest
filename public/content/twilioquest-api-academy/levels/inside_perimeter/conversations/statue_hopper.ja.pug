@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin tools
+  response#tools.
+    API の道具を使いこなすには、どんな知識が必要ですか？
+
+conversation(display_name="ほこりをかぶったグレース・ホッパーの像")
+  case lastResponse
+    when "tools"
+      statement#tools
+
+    default
+      statement#default
+      responses
+        +tools
+
+  statements
+    statement#default
+      text.
+        ホッパー寮では、道具の使い方を知ることが成功への近道です。例えば、Postman で API リクエストに認証情報を付けるには Authorization タブを使います。こうした知識がホッパー寮の魔法を強くします。
+
+    statement#tools
+      text.
+        Postman のような道具は、API の基礎知識が少しあれば使える場合もあります。デバッグだからといって、蛾を恐れる必要はありませんよ！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

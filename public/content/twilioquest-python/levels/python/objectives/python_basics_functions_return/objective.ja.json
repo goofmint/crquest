@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：関数の戻り値",
+  "description": "関数が入力を処理した後に、<span class=\"highlight\">データを返す</span>方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

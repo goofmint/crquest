@@ -15,7 +15,10 @@ const { DIVINATION_API_ENDPOINT } = require("../../../../scripts/config");
 function createFetchOverride(realFetch) {
   let fakeFetch;
 
-  return async function fetchOverride(input, init = { method: "GET", body: {} }) {
+  return async function fetchOverride(
+    input,
+    init = { method: "GET", body: {} }
+  ) {
     if (
       input &&
       input.includes(
@@ -42,7 +45,7 @@ function createFetchOverride(realFetch) {
         },
       };
 
-      const inscriptionIsCorrect = (inscription) => {
+      const inscriptionIsCorrect = inscription => {
         const inscriptionLowercased = inscription
           .replace(/[^A-z ]/g, "")
           .toLowerCase();
@@ -143,23 +146,21 @@ From my querent and OOIJBUe11239sdSBs.`;
 function generateRandomID() {
   // https://dev.to/rahmanfadhil/how-to-generate-unique-id-in-javascript-1b13#:~:text=const%20uid%20%3D%20()%20%3D%3E%0A%20%20String(%0A%20%20%20%20Date.now().toString(32)%20%2B%0A%20%20%20%20%20%20Math.random().toString(16)%0A%20%20).replace(/%5C./g%2C%20%27%27)
   let randomID =
-    Date.now().toString(32) + Math.random().toString(16).replace(/\./g, "");
+    Date.now().toString(32) +
+    Math.random()
+      .toString(16)
+      .replace(/\./g, "");
 
   return randomID;
 }
 
-module.exports = async function (helper) {
+module.exports = async function(helper) {
   try {
     // The learner's code and the test case run in a Web Worker (functions
-    // cannot leave it), so the checks run there and a failed check is thrown as
-    // an error. See docs/migration/validation-helper-worker.md.
-    await helper.evaluateInQuestIdeUserCodeLocalScope(
+    // cannot leave it). Return validation failures to the host for translation.
+    const result = await helper.evaluateInQuestIdeUserCodeLocalScope(
       async ({ endpoint, guid }) => {
-        const fail = (message) => {
-          throw new Error(message);
-        };
-
-        const assertTestCase = (testFunction) => async (input) => {
+        const assertTestCase = testFunction => async input => {
           await testFunction(input);
 
           // Marvel Johnson [12/14/2022] The fetch override is temporary and used as a workaround to a bug in the endpoint
@@ -170,14 +171,13 @@ module.exports = async function (helper) {
           let patchedInscription = await response.json();
 
           if (patchedInscription.errorMessage) {
-            fail(patchedInscription.errorMessage);
+            return { apiError: String(patchedInscription.errorMessage) };
           }
 
           if (!patchedInscription.data.operational) {
-            fail(
-              "Your patched inscription is still corrupted! Double check what you're sending and try again."
-            );
+            return { notOperational: true };
           }
+          return {};
         };
 
         let learnerFunction;
@@ -188,24 +188,47 @@ module.exports = async function (helper) {
         }
 
         if (!learnerFunction) {
-          fail("The function getAndPatchCorruptedInscription is not defined!");
+          return { missing: true };
         }
 
         const test = assertTestCase(learnerFunction);
 
-        await test(guid);
-
-        return { outcome: "ok" };
+        return test(guid);
       },
       { endpoint: DIVINATION_API_ENDPOINT, guid: generateRandomID() },
       "api-05-get-patch",
       undefined,
       { fetch: createFetchOverride }
     );
+    if (result.missing) {
+      return helper.fail(
+        helper.t(
+          "missingFunction",
+          "The function getAndPatchCorruptedInscription is not defined!"
+        )
+      );
+    }
+    if (result.notOperational) {
+      return helper.fail(
+        helper.t(
+          "notOperational",
+          "Your patched inscription is still corrupted! Double check what you're sending and try again."
+        )
+      );
+    }
+    if (result.apiError) {
+      const corrupted =
+        "The inscription is still corrupted! Double check your work and try again.";
+      return helper.fail(
+        result.apiError === corrupted
+          ? helper.t("corrupted", corrupted)
+          : result.apiError
+      );
+    }
   } catch (err) {
     helper.fail(err);
     return;
   }
 
-  helper.success("Nice going!");
+  helper.success(helper.t("success", "Nice going!"));
 };

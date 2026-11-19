@@ -1,0 +1,7 @@
+{
+  "assertionFailed": "提出したコードに問題があります。{{assertionText}}",
+  "validationFailed": "Python コードを検証できませんでした。もう一度お試しください。",
+  "missingOutput": "引数として渡した文字列がコンソールに表示されませんでした。関数には引数の値を使った <span class=\"highlight\">print</span> 文がありますか？",
+  "success": "お見事。説得力のある引数を使いこなし、<em>説得力のある引数の試練</em>を突破しました。",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

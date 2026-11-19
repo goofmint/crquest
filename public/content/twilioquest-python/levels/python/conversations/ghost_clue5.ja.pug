@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['five'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="Vim の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        生前は新しいプログラムを書くと夢中になりすぎてね。<em>:wq!</em> と打ってファイルを保存して終了するのが、ちょうどいい一息になったものさ。<br/><br/><a href="https://www.vim.org/">vim のある暮らし</a>を選ばなくても、私は気にしないよ。さあ、杖を取りに行こう！

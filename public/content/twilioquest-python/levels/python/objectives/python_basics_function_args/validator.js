@@ -52,37 +52,37 @@ module.exports = async (helper) => {
     if (testResult.exitCode !== 0) {
       if (testResult.stderr.indexOf("AssertionError:") > 0) {
         const assertionText = testResult.stderr.split("AssertionError:")[1];
-        throw new NiceError(`
-          Looks like there's a small problem. ${assertionText}
-        `);
+        throw new NiceError(helper.t("assertionFailed", `
+          Looks like there's a small problem. {{assertionText}}
+        `, {assertionText}));
       } else {
-        throw new NiceError(`
+        throw new NiceError(helper.t("validationFailed", `
           We couldn't validate your Python code - please try again.
-        `);
+        `));
       }
     } else if (testResult.stdout.indexOf("Dio Brando") < 0) {
       // It should contain the argument we passed to the function
-      throw new NiceError(`
+      throw new NiceError(helper.t("missingOutput", `
         We didn't see the string we passed as an argument printed to the
         console. Does your function include a 
         <span class="highlight">print</span> statement that uses
         the argument's value?
-      `);
+      `));
     }
 
     // If we make it this far, we've passed validation
-    helper.success(`
+    helper.success(helper.t("success", `
       Well played - your arguments, as always, are on point. You have passed
       the <em>Trial of Persuasive Arguments</em>.
-    `);
+    `));
   } catch (e) {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("executionFailed", `
         Sorry! We couldn't successfully run your Python script.
-      `);
+      `));
     }
   }
 };

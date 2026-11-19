@@ -1,0 +1,6 @@
+{
+  "missingCredentials": "Account SID と Auth Token が必要です。両方を入力欄に入力してください。",
+  "invalidSid": "有効な Account SID を入力してください。「AC」に続く 32 桁の 16 進数で、合計 34 文字です。",
+  "invalidToken": "有効な Auth Token を入力してください。32 桁の 16 進数です。",
+  "success": "認証情報を確認しました。真実の像が後で使えるよう保存します。"
+}

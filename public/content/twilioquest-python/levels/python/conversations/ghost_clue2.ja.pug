@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['two'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="非互換バージョンの賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        Python 2.7 から Python 3 への大分裂は、誰にとっても試練だった。互換性が崩れて生じたバグや不満を乗り越えるには、入門者にも勇気と忍耐が必要だった。<br/><br/>おぬしにも同じ決意を感じる。わしの知識を持って行け。困ったとき、賢母がおぬしに寄り添ってくれますように。

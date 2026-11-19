@@ -137,7 +137,10 @@ module.exports = async function (event, world) {
     !world.isObjectiveCompleted("api-05-get-patch")
   ) {
     world.showNotification(
-      "I should complete the last objective to clean up this mess!"
+      world.t(
+        "completeFinalObjective",
+        "I should complete the last objective to clean up this mess!"
+      )
     );
   }
 
@@ -147,7 +150,10 @@ module.exports = async function (event, world) {
     !world.isObjectiveCompleted("api-01-local-function")
   ) {
     world.showNotification(
-      "I need to complete the current objective before I can pass through to the next room."
+      world.t(
+        "completeCurrentObjective",
+        "I need to complete the current objective before I can pass through to the next room."
+      )
     );
   }
 
@@ -157,7 +163,10 @@ module.exports = async function (event, world) {
     !world.isObjectiveCompleted("api-02-async-await")
   ) {
     world.showNotification(
-      "I need to complete the current objective before I can pass through to the next room."
+      world.t(
+        "completeCurrentObjective",
+        "I need to complete the current objective before I can pass through to the next room."
+      )
     );
   }
 
@@ -167,7 +176,10 @@ module.exports = async function (event, world) {
     !world.isObjectiveCompleted("api-03-fetch")
   ) {
     world.showNotification(
-      "I need to complete the current objective before I can pass through to the next room."
+      world.t(
+        "completeCurrentObjective",
+        "I need to complete the current objective before I can pass through to the next room."
+      )
     );
   }
 
@@ -236,9 +248,14 @@ module.exports = async function (event, world) {
   }
 
   updateQuestLogWhenComplete({
-    notification:
-      'I\'ve completed everything in the <span class="highlight">API Academy House Gauntlet</span> for now!',
-    log: "I've completed everything in the API Academy House Gauntlet for now!",
+    notification: world.t(
+      "gauntletCompleteNotification",
+      'I\'ve completed everything in the <span class="highlight">API Academy House Gauntlet</span> for now!'
+    ),
+    log: world.t(
+      "gauntletCompleteLog",
+      "I've completed everything in the API Academy House Gauntlet for now!"
+    ),
     event,
     world,
     worldStateKey: LOVELACE_TOWER_STATE_KEY,

@@ -1,0 +1,5 @@
+{
+  "success": "お見事です！",
+  "missingFunction": "関数 getFilteredAuthors が定義されていません。",
+  "unexpectedResult": "pageCount に「{{input}}」を指定した場合、著者名「{{expected}}」が期待されますが、「{{actual}}」が返りました。"
+}

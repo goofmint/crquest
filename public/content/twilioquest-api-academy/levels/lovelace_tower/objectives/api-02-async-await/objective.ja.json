@@ -1,0 +1,10 @@
+{
+  "title": "API 学院：async と await",
+  "description": "await を使ってディレクトリ内の最後のファイルを取得する非同期関数を書きましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "指定のディレクトリの最後のファイルを取得して返す findLastFileInDir 関数を実装してください。"
+    }
+  ]
+}

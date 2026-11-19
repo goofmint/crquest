@@ -1,0 +1,6 @@
+{
+  "assertionFailed": "提出したコードに問題があります。{{assertionText}}",
+  "validationFailed": "Python コードを検証できませんでした。もう一度お試しください。",
+  "success": "見事な戻り値！ <em>戻り値の試練</em>を突破しました。",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

@@ -1,0 +1,16 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+conversation(display_name="チューリング寮のポスター")
+  statement#default
+  responses
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center">学院の皆さん、チューリング寮が開催する<span class="highlight">API 就職説明会</span>に向けて、ご意見を募集します！<BR><BR>
+        愛用している API は何ですか？ 身につけるのに特に苦労した呪文は？ API の術を活かして、どんな仕事に就きたいですか？</p>
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

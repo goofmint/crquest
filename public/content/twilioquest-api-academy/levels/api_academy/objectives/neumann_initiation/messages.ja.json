@@ -1,0 +1,6 @@
+{
+  "missingAnswers": "両方の質問に答えてください。",
+  "incorrectFirst": "最初の答えが違います。RESTful API で HTTP 経由でアクセスできる対象の名前は、「URL」の「R」です。",
+  "incorrectSecond": "二つ目の答えが違います。クレイグの動画で説明されている「CRUD」（Create、Read、Update、Delete）をもう一度見て、作成に対応する HTTP メソッドを確認してください。",
+  "success": "正解です！ フォン・ノイマン寮の知識の宝箱を開きました。"
+}

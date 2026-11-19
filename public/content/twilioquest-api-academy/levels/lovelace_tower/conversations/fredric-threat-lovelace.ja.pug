@@ -1,0 +1,49 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin page_2
+  response#page_2.
+    2 ページ
+
+mixin page_3
+  response#page_3.
+    3 ページ
+
+conversation(display_name="フレドリックの脅迫状")
+  case lastResponse
+
+    when "page_2"
+      statement#page_2
+      responses
+        +page_3
+
+    when "page_3"
+      statement#page_3
+
+    default
+      statement#default
+      responses
+        +page_2
+
+  statements
+    statement#default
+      text.
+        おやおや、オペレーター。ここまで来られるとは思わなかったよ。私が壊したラブレスの碑文まで修復したらしいね。<br><br>
+        君の腕を少し見くびっていたかもしれない……。ほんの少しだけどね！ この手紙が見つかる頃には、私は二つ目の寮を開け、君のずっと先にいるだろう。実は私も寮の試練に出たんだ。私を止められる者はいない！
+
+    statement#page_2
+      text.
+        「勉強」だの「知識」だの大嫌いな星間大悪党が、どうして秘術 API 学院なんかに来たのか、不思議だろう。ああ、嫌だ嫌だ。<br><br>
+        だが、寮の試練から、途方もない力を持つ……
+
+    statement#page_3
+      text.
+        ……呪文を手に入れられるとは、誰が思っただろう。すべてを解き放ち、すべてを使いこなしてみせる。オペレーター、君にも、自慢の学院にも、私を止めることはできない！<br><br>
+        <p style="text-align:right">
+        悪名高き<br><br>
+        フレドリック（レガシーシステムズ）</p>
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

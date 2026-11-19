@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['four'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="初心者の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        Python が新米開発者によく選ばれるのは、昔から誇りだった。最初の一行を Python で書いた者を一人ずつ記録したら、神殿の奥まで届く大巻物になった。<br/><br/>どれだけ上達しても、初めての頃の気持ちを忘れず、初心者を助けてやってくれ。フルスタックの祝福があらんことを。

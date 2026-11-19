@@ -31,9 +31,11 @@ module.exports = async function (event, world) {
   }
 
   updateQuestLogWhenComplete({
-    notification:
-      'I\'ve ready to enter <span class="highlight">API Academy</span>! I should make my way to the gates!',
-    log: "I've proved I'm worthy to enter the API Academy!",
+    notification: world.t(
+      "admittedNotification",
+      'I\'ve ready to enter <span class="highlight">API Academy</span>! I should make my way to the gates!'
+    ),
+    log: world.t("admittedLog", "I've proved I'm worthy to enter the API Academy!"),
     event,
     world,
     worldStateKey: PRE_ACADEMY_STATE_KEY,

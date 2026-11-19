@@ -1,0 +1,76 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin busy
+  response#busy.
+    手伝いたいけど、次の課題に集中しないと。
+
+mixin wrong_1
+  response#wrong_1.
+    リソースと表現には違いがない。
+
+mixin wrong_2
+  response#wrong_2.
+    リソースは Web 上の名前のないもので、表現はリソースをまとめたものだ。
+
+mixin right
+  response#right.
+    リソースは URL を持つあらゆるもので、表現はリソースの状態を示すものだ。
+
+conversation(display_name="ラブレス寮の生徒")
+  case lastResponse
+
+    when "busy"
+      statement#busy
+
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +wrong_2
+        +right
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +wrong_1
+        +right
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_1
+        +wrong_2
+        +right
+
+  statements
+    statement#default
+      text.
+        忙しいのは分かっているんですが、宿題を手伝ってもらえませんか？<br><br>
+        API の#[span.highlight リソース]と#[span.highlight 表現]には、どんな違いがありますか？
+
+    statement#busy
+      text.
+        分かりました。頑張ってください、オペレーター！
+
+    statement#wrong_1
+      text.
+        うーん、違うと思います。リソースと表現は関係していますが、同じものではありません。記憶が確かなら……。
+
+    statement#wrong_2
+      text.
+        うーん……。その答えはもう試しましたが、先生には少し違うと言われました。リソースには名前が必要なのは分かります！ 表現にもリソースとの関係があるのですが、それは別の意味で……。<br><br>
+        どんな違いがあるんでしょう？
+
+    statement#right
+      text.
+        そうだ、きっとそれです！ URL（Uniform Resource Locator）があれば何でもリソースです。表現は、リソースの情報が入った JSON など、機械が読める文書です。やっぱり答えが分かると思ってました！ ありがとうございます！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

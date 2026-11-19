@@ -1,0 +1,58 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+  const allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4;
+  const hasPledgeScroll = Object.hasOwn(worldState.insideCatacombs, "hasPledgeScroll") && worldState.insideCatacombs.hasPledgeScroll === true;
+
+mixin join_house
+  response#join_house.
+    寮に入るにはどうすればいいですか？
+
+mixin pledge_scroll
+  response#pledge_scroll.
+    地下墓地で誓約書を手に入れました。次は何をすればいいですか？
+
+conversation(display_name="チューリング寮長")
+  case lastResponse
+    when "join_house"
+      statement#join_house
+      responses
+        if hasPledgeScroll
+          +pledge_scroll
+
+    when "pledge_scroll"
+      if hasPledgeScroll
+        statement#pledge_scroll
+      else
+        statement#join_house
+      responses
+        +join_house
+
+    default
+      statement#default
+      responses
+        if hasPledgeScroll
+          +join_house
+          +pledge_scroll
+        else
+          +join_house
+
+  statements
+    statement#default
+      text.
+        秘術 API 学院へようこそ、オペレーター！ まもなく始まる寮の試練が楽しみです。
+
+    statement#join_house
+      if allComplete && !hasPledgeScroll
+        text.
+          解錠の呪文はそろっています。地下墓地の中央にある聖なる巻物の間で誓約書を手に入れてから、大広間に向かってください。
+      else
+        text.
+          学院の敷地を歩いていると、いろいろな寮の生徒に出会うでしょう。寮に入るには、まず誓約書を手に入れてください。困ったときは管理人に聞いてみましょう。
+
+    statement#pledge_scroll
+      text.
+        地下墓地でのご活躍、お見事です。誓約書を手に入れたので、学院の 4 つの寮のどれにでも入れます。中庭をまっすぐ抜け、大広間へ進んでください。ほかの寮長たちと寮の儀式を執り行いますから、そこでお会いしましょう！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

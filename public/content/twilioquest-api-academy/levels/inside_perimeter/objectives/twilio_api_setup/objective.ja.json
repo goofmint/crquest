@@ -1,0 +1,14 @@
+{
+  "title": "API 学院：アカウント認証情報",
+  "description": "Twilio のアカウント認証情報を設定し、真実の像が地下墓地での進行を確認できるようにしましょう。",
+  "validation_fields": [
+    {
+      "name": "accountSid",
+      "label": "Twilio Account SID:"
+    },
+    {
+      "name": "authToken",
+      "label": "Twilio Auth Token:"
+    }
+  ]
+}

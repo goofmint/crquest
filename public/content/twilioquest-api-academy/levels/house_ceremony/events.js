@@ -77,7 +77,10 @@ module.exports = async function (event, world) {
       worldState.houseLovelaceComplete === false
     ) {
       world.showNotification(
-        "Lovelace Tower is the first house in the House Gauntlet. I should find the House Lovelace corridor!"
+        world.t(
+          "findLovelaceCorridor",
+          "Lovelace Tower is the first house in the House Gauntlet. I should find the House Lovelace corridor!"
+        )
       );
     }
 
@@ -109,7 +112,10 @@ module.exports = async function (event, world) {
         world.updateQuestStatus(
           world.__internals.level.levelName,
           world.__internals.level.levelProperties.questTitle,
-          "I should head to Lovelace Tower to start the House Gauntlet.",
+          world.t(
+            "startGauntlet",
+            "I should head to Lovelace Tower to start the House Gauntlet."
+          ),
           true
         );
       });

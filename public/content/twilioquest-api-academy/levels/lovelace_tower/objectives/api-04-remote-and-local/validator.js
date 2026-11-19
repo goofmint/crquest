@@ -1,21 +1,17 @@
 const { DIVINATION_API_ENDPOINT } = require("../../../../scripts/config");
 
-module.exports = async function (helper) {
+module.exports = async function(helper) {
   try {
     // The books are fetched here (as before); the learner's code and the test
     // cases run in a Web Worker (functions cannot leave it), where the learner's
-    // own `fetch` is the worker's. A failed check is thrown as an error. See
+    // own `fetch` is the worker's. Failed checks return their details. See
     // docs/migration/validation-helper-worker.md.
     const response = await fetch(DIVINATION_API_ENDPOINT);
     const books = await response.json();
     console.log(books);
 
-    await helper.evaluateInQuestIdeUserCodeLocalScope(
+    const result = await helper.evaluateInQuestIdeUserCodeLocalScope(
       async ({ books }) => {
-        const fail = (message) => {
-          throw new Error(message);
-        };
-
         const areArrayContentsEqual = (
           arrayA,
           arrayB,
@@ -30,26 +26,29 @@ module.exports = async function (helper) {
           });
         };
 
-        const assertTestCase = (testFunction) => async (input, expected) => {
+        const assertTestCase = testFunction => async (input, expected) => {
           const testResult = await testFunction(input);
-          let failureMessage = `Expected "${expected}" authors from pageCount input of "${input}", but received "${testResult}" instead.`;
           const equality = areArrayContentsEqual(testResult, expected);
 
           if (!equality) {
-            fail(failureMessage);
+            return {
+              expected: String(expected),
+              input,
+              actual: String(testResult),
+            };
           }
         };
 
         function getBooksByPageCount(pageCountThreshold, books) {
           const filteredBooks = books.filter(
-            (book) => book.metadata.pageCount > pageCountThreshold
+            book => book.metadata.pageCount > pageCountThreshold
           );
           return filteredBooks;
         }
 
         function getAuthorNames(pageCountThreshold, books) {
           const filteredBooks = getBooksByPageCount(pageCountThreshold, books);
-          const authorNames = filteredBooks.map((book) => book.author.name);
+          const authorNames = filteredBooks.map(book => book.author.name);
           return authorNames;
         }
 
@@ -61,25 +60,46 @@ module.exports = async function (helper) {
         }
 
         if (!learnerFunction) {
-          fail("The function getFilteredAuthors is not defined!");
+          return { missing: true };
         }
 
         const test = assertTestCase(learnerFunction);
 
-        await test(5, getAuthorNames(5, books));
-        await test(100, getAuthorNames(100, books));
-        await test(30, getAuthorNames(30, books));
-        await test(15, getAuthorNames(15, books));
-
-        return { outcome: "ok" };
+        for (const pageCount of [5, 100, 30, 15]) {
+          const mismatch = await test(
+            pageCount,
+            getAuthorNames(pageCount, books)
+          );
+          if (mismatch) {
+            return { mismatch };
+          }
+        }
+        return {};
       },
       { books },
       "api-04-remote-and-local"
     );
+    if (result.missing) {
+      return helper.fail(
+        helper.t(
+          "missingFunction",
+          "The function getFilteredAuthors is not defined!"
+        )
+      );
+    }
+    if (result.mismatch) {
+      return helper.fail(
+        helper.t(
+          "unexpectedResult",
+          'Expected "{{expected}}" authors from pageCount input of "{{input}}", but received "{{actual}}" instead.',
+          result.mismatch
+        )
+      );
+    }
   } catch (err) {
     helper.fail(err);
     return;
   }
 
-  helper.success("Good work!");
+  helper.success(helper.t("success", "Good work!"));
 };

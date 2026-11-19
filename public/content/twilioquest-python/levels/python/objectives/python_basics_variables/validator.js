@@ -42,29 +42,29 @@ module.exports = async (helper) => {
     if (testResult.exitCode !== 0) {
       if (testResult.stderr.indexOf("AssertionError:") > 0) {
         const assertionText = testResult.stderr.split("AssertionError:")[1];
-        throw new NiceError(`
-          Hmm, there was an issue with the code you submitted. ${assertionText}
-        `);
+        throw new NiceError(helper.t("assertionFailed", `
+          Hmm, there was an issue with the code you submitted. {{assertionText}}
+        `, {assertionText}));
       } else {
-        throw new NiceError(`
+        throw new NiceError(helper.t("validationFailed", `
           We couldn't validate your Python code - please try again.
-        `);
+        `));
       }
     }
 
     // If we make it this far, we've passed validation
-    helper.success(`
+    helper.success(helper.t("success", `
       Excellent! You have learned the importance of naming your data, and have
       completed the <em>Trial of Naming</em>.
-    `);
+    `));
   } catch (e) {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("executionFailed", `
         Sorry! We couldn't successfully run your Python script.
-      `);
+      `));
     }
   }
 };

@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['six'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="仮想環境の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        入門者に Python の環境を守る大切さを教えるのが、わしの神聖な務めだ。今すぐ習得する必要はないが、<a href="https://docs.python.org/3/tutorial/venv.html">仮想環境</a>を使えば、混乱した環境を整理できると覚えておいてくれ。<br/><br/>さあ行きなさい。まだ疑いは残るが、立派な Python 開発者になれるかもしれん。フルスタックの祝福があらんことを。

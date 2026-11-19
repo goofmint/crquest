@@ -1,0 +1,7 @@
+{
+  "missingAnswers": "すべての質問に答えてください。",
+  "incorrectFirst": "最初の質問の答えは true です。Twilio Programmable SMS API へのリクエストには認証が必要です。Account SID と Auth Token を含めてください。",
+  "incorrectSecond": "二つ目の答えはあと一歩です！ Twilio Programmable SMS でメッセージを作成するときに必要な三つ目のパラメーターは `To` です。メッセージの送信先を指定します。",
+  "invalidMessageSid": "メッセージ SID の形式が違います。「SM」または「MM」の後ろに 32 桁の 16 進数が続きます。",
+  "success": "お見事です！ API の力を使い、Twilio Programmable SMS と cURL でメッセージを作成しました。ラブレス寮の鍵の呪文の断片を手に入れました。"
+}

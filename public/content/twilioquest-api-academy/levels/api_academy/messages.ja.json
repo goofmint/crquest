@@ -1,0 +1,12 @@
+{
+  "hopper": "ホッパー",
+  "neumann": "フォン・ノイマン",
+  "lovelace": "ラブレス",
+  "turing": "チューリング",
+  "findChests": "API 学院に入るため、森にある 4 つの宝箱を探そう！",
+  "allCeremoniesCompleted": "すべての寮の入学課題を終えた！ 学院の門へ戻ろう！",
+  "oneCeremonyCompleted": "<i>{{houses}}</i> 寮の入学課題を終えた。残りは {{remaining}} つ！",
+  "multipleCeremoniesCompleted": "<i>{{houses}}</i> 寮の入学課題を終えた。残りは {{remaining}} つ！",
+  "admittedNotification": "<span class=\"highlight\">API 学院</span>に入学できる！ 門へ向かおう！",
+  "admittedLog": "API 学院に入学する資格を得た！"
+}

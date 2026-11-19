@@ -1,0 +1,80 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin busy
+  response#busy.
+    手伝いたいけど、こちらの課題もまだ半分しか終わっていません！
+
+mixin wrong_1
+  response#wrong_1.
+    PUT は HTTP メソッドではない。
+
+mixin wrong_2
+  response#wrong_2.
+    PUT はリソースを削除する。
+
+mixin right
+  response#right.
+    PUT はリソースの状態を変更するリクエストだ。
+
+conversation(display_name="ラブレス寮の生徒")
+  case lastResponse
+
+    when "busy"
+      statement#busy
+
+    when "wrong_1"
+      statement#wrong_1
+      responses
+        +busy
+        +right
+        +wrong_2
+
+    when "wrong_2"
+      statement#wrong_2
+      responses
+        +busy
+        +right
+        +wrong_1
+
+    when "right"
+      statement#right
+
+    default
+      statement#default
+      responses
+        +busy
+        +wrong_2
+        +right
+        +wrong_1
+
+  statements
+    statement#default
+      text.
+        二つ目の扉を抜けてきてくれてよかった。API の課題の締め切りまであと 1 時間なのに、最初の問題もほとんど解けていないんです。<br><br>
+        「HTTP の意味論では#[span.highlight PUT]をどう定義しますか？」って。何を聞かれているかすら分かりません！
+
+    statement#busy
+      text.
+        残念です。本物のオペレーターに宿題を手伝ってもらったと言いたかったんですが。また今度！
+
+    statement#wrong_1
+      text.
+        うーん、先生は PUT も HTTP の……と言っていたはずです。GET や POST と同じ HTTP メソッドですよね？<br><br>
+        では、PUT は何に使うんでしょう？
+
+
+    statement#wrong_2
+      text.
+        リソースを削除するには、DELETE という HTTP メソッドがありますよね。名前のままでしたね。<br><br>
+        では PUT で何を……。うーん。
+
+
+    statement#right
+      text.
+        そうです、思い出しました！ PUT リクエストでは、クライアントが表現を使ってリソースを変更します。PUT はリソース全体を置き換えて更新します。PATCH はほかのフィールドを変えず、一部だけを更新します。<br><br>
+        手伝ってくれてありがとう！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

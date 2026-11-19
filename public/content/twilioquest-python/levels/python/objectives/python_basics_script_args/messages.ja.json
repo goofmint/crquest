@@ -1,0 +1,5 @@
+{
+  "missingArguments": "テストではスクリプトに引数を三つ渡しましたが、出力に見つかりませんでした。<span class=\"highlight\">sys.argv[1]</span>、<span class=\"highlight\">sys.argv[2]</span>、<span class=\"highlight\">sys.argv[3]</span> を出力しているか確認してください。",
+  "success": "お見事！ コマンドライン引数を Python コードで受け取る手法は、この先も何度も使います。<em>入力を受け取る試練</em>を突破しました。",
+  "validationFailed": "Python コードを検証できませんでした。もう一度お試しください。"
+}

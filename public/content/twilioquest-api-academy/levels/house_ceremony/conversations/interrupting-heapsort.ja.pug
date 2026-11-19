@@ -1,0 +1,64 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin help
+  response#help.
+    何かお手伝いできることはありますか？
+
+mixin start
+  response#start.
+    代わりに出場します。寮の試練では何をすればいいですか？ どこから始めますか？
+
+mixin student
+  response#student.
+    行方不明の生徒を捜すのですか？
+
+conversation(display_name="キンバリー・ヒープソート先生")
+  case lastResponse
+
+    when "help"
+      statement#help
+      responses
+        +start
+        +student
+
+    when "start"
+      statement#start
+      responses
+        +student
+
+    when "student"
+      statement#student
+      responses
+        +start
+
+    default
+      statement#default
+      responses
+        +help
+        +student
+
+  statements
+    statement#default
+      text.
+        先生方、生徒の皆さん、大変なことが起こりました。寮の試練で#[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]を代表するはずだった競技者が、行方不明です！
+
+    statement#help
+        text.
+          あなたは入学したばかりですね。それに #{worldState.displayNames[worldState.playerHouse]} 寮に入ったところでしたね。そういえば、お願いできることがあるかもしれません。#{worldState.displayNames[worldState.playerHouse]} 寮の競技者の代わりに出場していただけますか？
+
+    statement#start
+        text.
+          寮の試練は 4 つすべての寮で行われます。まず#[span.highlight ラブレス寮]で呪文を手に入れ、その呪文で次の寮を開きます。以降も同じように進みます。各寮へは大広間から延びる 4 本の廊下を通って行けます。<br><br>
+          まずは大広間の 2 階に上がり、ラブレス寮の青で飾られた廊下へ進んでください。
+
+    statement#student
+        text.
+          もちろんです！ すぐに捜索を始めます。きっと何事もありません……。<br><br>
+          （不安そうに息をのむ）<br><br>
+          もうすぐ戻ってくるはずです。あなたが寮の試練に出てくれれば、心配は要りません。きっと悪事なんて……とんでもない。そう、そんなはずはありません。
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['three'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="リスト内包表記の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        見苦しい <em>for</em> ループはどうにも我慢がならん。おぞましいものだ。だから入門者にリスト内包表記を授けた。これで、よそよそしい親の返事のように短いコードが書ける。<br/><br/>おっと、話が長くなった。わしの知識とフルスタックの祝福を持って行くがよい。

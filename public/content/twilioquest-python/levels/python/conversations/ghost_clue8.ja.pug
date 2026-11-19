@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['eight'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="PyCon の賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        平和な頃は、Python の開発者が<a href="https://pycon.org/">集い</a>、知識を分かち合い、仲間と過ごしたものだ。わしの祝福を授けよう。志を同じくする者を探し、コミュニティの力を借りることを忘れるな。

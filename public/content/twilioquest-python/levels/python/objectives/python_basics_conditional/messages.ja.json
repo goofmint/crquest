@@ -1,0 +1,7 @@
+{
+  "destitution": "入力された数の合計が 0 以下なら、<em>You have chosen the path of destitution.</em> と英語のまま出力してください。",
+  "plenty": "入力された数の合計が 1 以上 100 以下なら、<em>You have chosen the path of plenty.</em> と英語のまま出力してください。",
+  "excess": "入力された数の合計が 100 より大きければ、<em>You have chosen the path of excess.</em> と英語のまま出力してください。",
+  "success": "<em>分かれ道の試練</em>を突破しました！",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

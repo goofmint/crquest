@@ -1,0 +1,10 @@
+{
+  "title": "API 学院：ローカル関数",
+  "description": "文字列中で指定した単語をすべて別の単語に置換する関数を書きましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "sourceString 内の targetWord をすべて replacementWord に置き換える swapStrings 関数を実装してください。"
+    }
+  ]
+}

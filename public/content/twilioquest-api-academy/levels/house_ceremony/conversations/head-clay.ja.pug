@@ -1,0 +1,87 @@
+-
+  const STATE_KEY = 'TQ_HOUSE_CEREMONY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin unique
+  response#unique.
+    ラブレス寮の特徴をもう一度教えていただけますか？
+
+mixin join
+  response#join.
+    ラブレス寮に入りたいです！
+
+mixin deciding
+  response#deciding.
+    どの寮に入るか、まだ考えています。
+
+mixin getting_started
+  response#getting_started.
+    では、塔でお会いしましょう！
+
+conversation(display_name="ラブレス寮長　クレイ先生")
+  case lastResponse
+
+    when "unique"
+      statement#unique
+      responses
+        +join
+        +deciding
+
+    when "join"
+      statement#join
+
+    when "deciding"
+      statement#deciding
+
+    when "getting_started"
+      statement#getting_started
+
+    default
+      if !worldState.playerHouse
+        statement#default
+        responses
+          +unique
+          +join
+          +deciding
+
+      else if worldState.playerHouse && !worldState.heapsortConversationHasEnded
+        statement#history
+
+      else if worldState.playerHouse && worldState.heapsortConversationHasEnded
+        statement#gauntlet_default
+        responses
+          +getting_started
+
+  statements
+    statement#default
+      text.
+        寮の儀式へようこそ、オペレーター。ラブレス寮に入るとお決めになりましたか？
+
+    statement#unique
+        text.
+          ラブレス寮は芸術家の寮と呼ばれています。コードを書く美しさと技を追求し、ドキュメントを書く技も磨きます。
+
+    statement#join
+        text.
+          それはうれしいですね。寮を正式に決めるには、誓約書を#[span.highlight 寮の炎]に持って行ってください。
+
+    statement#deciding
+        text.
+          もちろんです、オペレーター。大切な選択ですからね！
+
+    statement#history
+        text.
+          #[span.highlight #{worldState.displayNames[worldState.playerHouse]}寮]をお選びになったのですね、オペレーター。<br><br>
+          どの寮から試練が始まるか、まもなく分かります。順番はくじ引きで決まりますが、ラブレス寮はどうも運がいいようですね。今年もラブレス塔から始まるかもしれません！
+
+    statement#gauntlet_default
+      text.
+        オペレーター、行方不明の競技者を捜す間、寮の試練に挑んでくださることに感謝します。面白い課題が待っていますし、ラブレス寮は試練を始めるのにぴったりの場所だと思いますよ。<br><br>
+        ラブレス塔の探索を楽しんでください！ 先に進む準備ができたら、塔で手順をお伝えします。
+
+    statement#getting_started
+      text.
+        私も全力で応援します！
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -38,17 +38,17 @@ Each **security node** inside the freighter contains an index within this array 
 // Password is "F!N!TE"
 const nodes = worldState.eastWingSecNodes || [];
 const ii = [
-nodes[0] ? '`[1][3]`' : 'Not Found',
-nodes[1] ? '`[3][4]`' : 'Not Found',
-nodes[2] ? '`[2][5]`' : 'Not Found',
-nodes[3] ? '`[3][4]`' : 'Not Found',
-nodes[4] ? '`[0][4]`' : 'Not Found',
-nodes[5] ? '`[0][2]`' : 'Not Found'
+  '`[1][3]`',
+  '`[3][4]`',
+  '`[2][5]`',
+  '`[3][4]`',
+  '`[0][4]`',
+  '`[0][2]`'
 ];
 %>
 
 | 1st Char     | 2nd Char     | 3rd Char     | 4th Char     | 5th Char     | 6th Char     |
 | ------------ | ------------ | ------------ | ------------ | ------------ | ------------ |
-| <%= ii[0] %> | <%= ii[1] %> | <%= ii[2] %> | <%= ii[3] %> | <%= ii[4] %> | <%= ii[5] %> |
+| <% for (const [index, value] of ii.entries()) { %><% if (nodes[index]) { %><%= value %><% } else { %>Not Found<% } %> | <% } %>
 
 Once you have found all six indexes, return here and use them to decipher the password!

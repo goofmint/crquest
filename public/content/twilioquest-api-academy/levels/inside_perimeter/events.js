@@ -60,12 +60,18 @@ const LEVEL_STATE = {
             failureActions: {
               hasWand({ world }) {
                 world.showNotification(
-                  "I should go find the toolshed and see if there is an extra wand inside!"
+                  world.t(
+                    "findWand",
+                    "I should go find the toolshed and see if there is an extra wand inside!"
+                  )
                 );
               },
               hasDisappearSpell({ world }) {
                 world.showNotification(
-                  "I think I need to learn a spell later to do anything here!"
+                  world.t(
+                    "learnSpellFirst",
+                    "I think I need to learn a spell later to do anything here!"
+                  )
                 );
               },
             },
@@ -168,7 +174,10 @@ module.exports = async function (event, world) {
       world.enablePlayerMovement();
     } else {
       world.showNotification(
-        "I need the magic key to unlock the Scroll Room. I should activate all the house statues inside these Catacombs before returning."
+        world.t(
+          "activateStatues",
+          "I need the magic key to unlock the Scroll Room. I should activate all the house statues inside these Catacombs before returning."
+        )
       );
     }
   };
@@ -250,7 +259,10 @@ module.exports = async function (event, world) {
       worldState.spellsEarned.push("unlock");
     destroyObject("magic_key");
     world.showNotification(
-      "I've obtained the magic key. I should go and claim my pledge scroll!"
+      world.t(
+        "claimScroll",
+        "I've obtained the magic key. I should go and claim my pledge scroll!"
+      )
     );
 
     // TODO: actually add item to inventory
@@ -261,7 +273,10 @@ module.exports = async function (event, world) {
     worldState.insideCatacombs.hasPledgeScroll = true;
     destroyObject("pledge_scroll");
     world.showNotification(
-      "I've obtained my pledge scroll. Time to head to the Main Hall and choose my house."
+      world.t(
+        "goToMainHall",
+        "I've obtained my pledge scroll. Time to head to the Main Hall and choose my house."
+      )
     );
 
     world.grantItems(["pledge_scroll"]);
@@ -283,13 +298,15 @@ module.exports = async function (event, world) {
     // After assigning house, tell player they've completed the
     // current content. They'll learn their house later.
     // TODO: Update this notification on future release version.
-    world.showNotification(
+    const scrollObtained = world.t(
+      "scrollObtained",
       "I got my pledge scroll! I should head to the Main Hall to choose my house now!"
     );
+    world.showNotification(scrollObtained);
     world.updateQuestStatus(
       world.__internals.level.levelName,
       world.__internals.level.levelProperties.questTitle,
-      "I got my pledge scroll! I should head to the Main Hall to choose my house now!",
+      scrollObtained,
       true
     );
   };
@@ -445,7 +462,10 @@ module.exports = async function (event, world) {
     world.updateQuestStatus(
       world.__internals.level.levelName,
       world.__internals.level.levelProperties.questTitle,
-      "I got my pledge scroll! I should head to the Main Hall to choose my house now!",
+      world.t(
+        "scrollObtained",
+        "I got my pledge scroll! I should head to the Main Hall to choose my house now!"
+      ),
       true
     );
   }

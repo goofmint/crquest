@@ -1,0 +1,7 @@
+{
+  "assertionFailed": "提出したコードに問題があります。{{assertionText}}",
+  "validationFailed": "Python コードを検証できませんでした。もう一度お試しください。",
+  "missingOutput": "<span class=\"highlight\">hail_friend</span> 関数が指定の文字列を出力しませんでした。英語のまま「Hail, friend!」と出力してください。",
+  "success": "よくできました！ 関数の楽しさを知り、<em>再利用の試練</em>を突破しました。",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

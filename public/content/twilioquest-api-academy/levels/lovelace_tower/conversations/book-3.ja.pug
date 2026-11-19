@@ -1,0 +1,32 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin excerpt
+  response#excerpt.
+    本文の抜粋
+
+conversation(display_name="ラブレスの書　第 3 巻")
+  case lastResponse
+
+    when "excerpt"
+      statement#excerpt
+
+    default
+      statement#default
+      responses
+        +excerpt
+
+  statements
+    statement#default
+      text.
+        <p style="text-align:center"><span class="highlight"><a href="https://sci-hub.ru/https://ieeexplore.ieee.org/abstract/document/7739689/">ユーザーインターフェース用 API とツールの導入時に初心者が感じる障壁</a></span><br><br>
+        Irum Rauf ほか著</p>
+
+    statement#excerpt
+      text.
+        「開発者は、使いやすい API を作るためにさまざまな設計指針や経験則を使えるが、<span class="highlight">開発環境を考慮せずに API の使いやすさだけを改善することはできない。</span>API は特定の環境で利用される。正しく使うには、その環境をあらかじめ適切に設定する必要がある」（226 ページ）
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

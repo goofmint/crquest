@@ -1,0 +1,18 @@
+{
+  "title": "API 学院：API リクエストを送る",
+  "description": "API リクエストを成功させてラブレス寮の鍵の呪文の一部を手に入れましょう。",
+  "validation_fields": [
+    {
+      "name": "answer1",
+      "label": "Twilio Programmable SMS へのリクエストには Account SID と Auth Token が必要。正しければ true、誤りなら false と答えてください。"
+    },
+    {
+      "name": "answer2",
+      "label": "Twilio Programmable SMS API でメッセージを作るには、`From` または `MessagingServiceSid`、`Body` または `MediaUrl`、そしてもう一つのパラメーターが必要です。残り一つは何ですか？"
+    },
+    {
+      "name": "answer3",
+      "label": "コマンドラインで cURL を使い、Twilio Programmable SMS API でメッセージを作成してください。応答にある `SID` を入力すると、ラブレス寮の鍵の呪文の一部が手に入ります。SID は形式のみ確認されます（`SM` または `MM` に続く 32 桁の 16 進数）。"
+    }
+  ]
+}

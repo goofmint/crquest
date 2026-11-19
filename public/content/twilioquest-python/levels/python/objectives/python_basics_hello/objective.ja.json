@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：Python 流のあいさつ",
+  "description": "端末に<span class=\"highlight\">Python 流の伝統的なあいさつ</span>を出力するプログラムを書きましょう。",
+  "validation_fields": [
+    {
+      "name": "programPath",
+      "label": "Python プログラムのフルパスを貼り付けてください。"
+    }
+  ]
+}

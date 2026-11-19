@@ -1,0 +1,6 @@
+{
+  "pythonVersion": "指定されたバージョンは <span class=\"highlight\">{{versionString}}</span> です。このミッションには <span class=\"highlight\">Python 3</span> が必要です。",
+  "success": "すばらしい！ インストールされているバージョンを確認しました。<br/><span class=\"highlight\">{{versionString}}</span>。インストールの試練を突破しました！",
+  "verifyPath": "Python のパスを検証できませんでした。パスを確認して再試行してください。エラーコード {{code}}、シグナル {{signal}}",
+  "verifyInstallation": "Python 3 のインストールを確認できませんでした。もう一度お試しください。{{e}}"
+}

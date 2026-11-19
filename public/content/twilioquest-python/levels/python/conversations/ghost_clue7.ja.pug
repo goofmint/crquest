@@ -1,0 +1,14 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY) || {};
+  worldState.clues['seven'] = true;
+  worldState.cluesFound = Object.keys(worldState.clues).length;
+  setState(STATE_KEY, worldState);
+
+conversation(display_name="パッケージインデックスの賢者")
+  statement#default
+  responses
+  statements
+    statement#default
+      text.
+        Python 使いは一人ではない、友よ。この道を歩いた最初の者はおぬしではない。フルスタックのお導きがあれば、最後の者にもならないだろう。<br/><br/>かつて弟子たちには、時代を超えた知恵が集まる<a href="https://pypi.org/">パッケージインデックス</a>が、助けにも励みにもなると教えた。先人たちと同じように、おぬしの力にもなりますように。

@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example
+  response#example.
+    API の例を教えてくれませんか？
+
+conversation(display_name="ささやく風の壁の絵")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        風のうわさでは、Twilio Programmable SMS API に GET リクエストを送ってメッセージを送信しようとした生徒は、思うような結果が得られていないそうですよ。
+
+    statement#example
+      text.
+        <a href="https://openweathermap.org/api">Open Weather API</a> では、20 万を超える都市の天気をアプリに取り込んだり、過去の気象データを調べたりできます。ひょっとしたら、私にも風が吹いていない頃があったのかもしれませんね。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

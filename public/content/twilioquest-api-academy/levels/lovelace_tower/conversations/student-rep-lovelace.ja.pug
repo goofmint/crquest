@@ -1,0 +1,72 @@
+-
+  const STATE_KEY = 'TQ_LOVELACE_TOWER_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin nice_to_see
+  response#nice_to_see.
+    またお会いできてうれしいです！ 行方不明の生徒に何があったと思いますか？
+
+mixin rumors
+  response#rumors.
+    どんなうわさですか？
+
+mixin you_think
+  response#you_think.
+    それって、ひょっとして……
+
+mixin on_it
+  response#on_it.
+    秘密図書館？ 任せてください！
+
+conversation(display_name="ラブレス寮の生徒代表　アーティシア")
+  case lastResponse
+
+    when "nice_to_see"
+      statement#nice_to_see
+      responses
+        +rumors
+
+    when "rumors"
+      statement#rumors
+      responses
+        +you_think
+
+    when "you_think"
+      statement#you_think
+      responses
+        +on_it
+
+    when "on_it"
+      statement#on_it
+
+    default
+      statement#default
+      responses
+        +nice_to_see
+
+  statements
+    statement#default
+      text.
+        またお会いできてうれしいです、オペレーター！ 学院の敷地でお会いしてから、ずいぶん先に進みましたね。寮の試練は楽しめていますか？ 私だけかもしれませんが、出場予定だった生徒が行方不明になって、少し怖いんです。彼女に何かあったのでしょうか？ ひょっとして……。
+
+    statement#nice_to_see
+      text.
+        （声をひそめる）<br><br>
+        私から聞いたとは言わないでください。あるうわさが流れていて……。いえ、言うべきじゃないかも。すごく怖い話なんです！
+
+    statement#rumors
+      text.
+        行方不明の生徒について、ある見方があります……。<br><br>
+        ただでさえ寮の試練の日なのに、オペレーターが入学する日と重なっている。偶然ではない、と思っている人がいるんです。
+
+    statement#you_think
+      text.
+        そう、レガシーシステムズです！ もし学院に潜り込んでいたら？ もし秘密図書館を見つけていたら……？ オペレーター、どうか試練を最後まで進めてください。思っているより大変なことになっているかもしれません！
+
+    statement#on_it
+      text.
+        ありがとう、オペレーター。健闘を祈ります！
+
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

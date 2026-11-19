@@ -1,0 +1,6 @@
+{
+  "success": "お見事です！",
+  "missingFunction": "関数 getAndPatchCorruptedInscription が定義されていません。",
+  "notOperational": "修復した碑文にまだ誤りがあります。送信内容を確認して、もう一度試してください。",
+  "corrupted": "碑文がまだ修復されていません。内容を確認して、もう一度試してください。"
+}

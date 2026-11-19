@@ -1,7 +1,8 @@
 -
   const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
   const worldState = getState(STATE_KEY);
-  let allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4 ? true : false;
+  const allComplete = worldState.insideCatacombs.keySpellsObtained.length === 4;
+  const hasPledgeScroll = Object.hasOwn(worldState.insideCatacombs, "hasPledgeScroll") && worldState.insideCatacombs.hasPledgeScroll === true;
 
 mixin join_house
   response#join_house.
@@ -16,18 +17,21 @@ conversation(display_name="Head of House Turing")
     when "join_house"
       statement#join_house
       responses 
-        if allComplete 
+        if hasPledgeScroll
           +pledge_scroll
 
     when "pledge_scroll"
-      statement#pledge_scroll
+      if hasPledgeScroll
+        statement#pledge_scroll
+      else
+        statement#join_house
       responses 
         +join_house
 
     default
       statement#default
       responses
-        if allComplete
+        if hasPledgeScroll
           +join_house
           +pledge_scroll 
         else  
@@ -39,9 +43,13 @@ conversation(display_name="Head of House Turing")
         Welcome to Arcane Academy, Operator! We are very excited for the House Gauntlet, which is starting shortly.
 
     statement#join_house
-      text.
-        As you explore the grounds of the Academy, you’ll meet Arcane students from the different houses. 
-        You must retrieve your pledge scroll to join a house. See the Groundskeeper if you need help with this.
+      if allComplete && !hasPledgeScroll
+        text.
+          You have all four pieces of the Unlocking Spell. Retrieve your pledge scroll from the Sacred Scroll Room at the center of the Catacombs, then head to the Main Hall.
+      else
+        text.
+          As you explore the grounds of the Academy, you’ll meet Arcane students from the different houses.
+          You must retrieve your pledge scroll to join a house. See the Groundskeeper if you need help with this.
 
     statement#pledge_scroll
       text.

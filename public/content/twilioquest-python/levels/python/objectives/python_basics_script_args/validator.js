@@ -30,30 +30,30 @@ module.exports = async (helper) => {
       stdout.indexOf("christmas") < 0 ||
       stdout.indexOf("cherry soda") < 0
     ) {
-      throw new NiceError(`
+      throw new NiceError(helper.t("missingArguments", `
         When we executed your script, we passed in three arguments. However,
         we did not see those arguments printed in the output from your script.
         Double check that you are printing the values of 
         <span class="highlight">sys.argv[1]</span>, 
         <span class="highlight">sys.argv[2]</span>, and 
         <span class="highlight">sys.argv[3]</span> in your code.
-      `);
+      `));
     }
 
     // If we made it here we're good!
-    helper.success(`
+    helper.success(helper.t("success", `
       Well done! Passing arguments in to your Python code is a trick you'll use
       again and again. Congratulations on completing the <em>Trial of Solicited
       Input</em>.
-    `);
+    `));
   } catch (e) {
     console.log(e);
     if (e.name === "NiceError") {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("validationFailed", `
         Sorry! We couldn't validate your Python code. Please try again.
-      `);
+      `));
     }
   }
 };

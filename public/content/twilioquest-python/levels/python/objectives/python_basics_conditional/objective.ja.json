@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：条件分岐",
+  "description": "真偽値を使った比較に応じて<strong>処理を分岐</strong>する方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

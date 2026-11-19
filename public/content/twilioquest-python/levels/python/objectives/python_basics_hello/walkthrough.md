@@ -168,10 +168,16 @@ In your terminal application, make sure your code directory is your __curent wor
 cd ~/quest
 ```
 
-If you've reached this point, you should have the `python3` command available in your terminal window. To use this command to execute your Python code, use this command in your terminal:
+If your installation provides the `python3` command, run the script like this:
 
 ```bash
 python3 salutation.py
+```
+
+If you found `python.exe` on Windows in the installation trial, run this from PowerShell instead. If the command is unavailable, use the full path you found in the installation trial as the executable.
+
+```powershell
+python salutation.py
 ```
 
 If your code works as intended, you should see the text __For the glory of Python!__ printed out to your terminal! Many of the trials in this area will instruct you to print out text in this way.

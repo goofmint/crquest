@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：文字列",
+  "description": "Python で<span class=\"highlight\">文字列を扱う方法</span>を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

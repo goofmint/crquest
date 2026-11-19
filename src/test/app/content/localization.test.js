@@ -185,3 +185,24 @@ test.each([
   const after = await outcome(renderConversationTemplate, file, state);
   expect(after.html).toContain('<response id="pledge_scroll">');
 });
+
+test.each([
+  ['groundskeeper-blocked.pug', 'Sacred Scroll Room', 'Head straight on to the Main Hall'],
+  ['groundskeeper-blocked.ja.pug', '聖なる巻物の間', '大広間へまっすぐ進んでください'],
+])('%s directs the player to the Main Hall after collecting the pledge scroll', async (name, guidance, unlocked) => {
+  const file = path.join(
+    publicDir, 'content', 'twilioquest-api-academy', 'levels', 'inside_perimeter', 'conversations', name
+  );
+  const state = {
+    TQ_API_ACADEMY_WORLD_STATE: {
+      insideCatacombs: { keySpellsObtained: ['a', 'b', 'c', 'd'], hasPledgeScroll: false },
+    },
+  };
+  const before = await outcome(renderConversationTemplate, file, state);
+  expect(before.html).toContain(guidance);
+  expect(before.html).not.toContain(unlocked);
+
+  state.TQ_API_ACADEMY_WORLD_STATE.insideCatacombs.hasPledgeScroll = true;
+  const after = await outcome(renderConversationTemplate, file, state);
+  expect(after.html).toContain(unlocked);
+});

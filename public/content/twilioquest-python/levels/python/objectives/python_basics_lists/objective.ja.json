@@ -1,0 +1,10 @@
+{
+  "title": "Python 入門：リスト",
+  "description": "Python で<span class=\"highlight\">リストを作成して扱う方法</span>を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左のチュートリアルに従ってプログラムを作成し、<span class='highlight'>ハック</span>を押してください。"
+    }
+  ]
+}

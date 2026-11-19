@@ -1,0 +1,5 @@
+{
+  "wrongTransform": "もうひと工夫です。次の点を確認してください。<br/>・文字列を<span class=\"highlight\">すべて大文字</span>にする<br/>・末尾に<span class=\"highlight\">感嘆符を三つ</span>付ける<br/>・変換した文字列を <span class=\"highlight\">print()</span> で出力する",
+  "success": "お見事！！！ <em>言葉の試練</em>を突破しました。",
+  "executionFailed": "Python スクリプトを実行できませんでした。"
+}

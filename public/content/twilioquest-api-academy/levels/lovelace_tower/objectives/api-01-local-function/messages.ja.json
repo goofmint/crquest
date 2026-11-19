@@ -1,0 +1,5 @@
+{
+  "success": "お見事です！",
+  "missingFunction": "関数 swapStrings が定義されていません。",
+  "unexpectedResult": "入力「{{input1}}」「{{input2}}」「{{input3}}」に対して「{{expected}}」が期待されましたが、「{{actual}}」が返りました。"
+}

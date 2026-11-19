@@ -1,0 +1,29 @@
+-
+  const STATE_KEY = 'TQ_API_ACADEMY_WORLD_STATE';
+  const worldState = getState(STATE_KEY);
+
+mixin example
+  response#example.
+    API の例を教えてくれませんか？
+
+conversation(display_name="孤独な貴婦人の肖像")
+  case lastResponse
+    when "example"
+      statement#example
+
+    default
+      statement#default
+      responses
+        +example
+
+  statements
+    statement#default
+      text.
+        SMS は誰かに届くもの……。ひょっとして、私に送っているのですか？ 私宛てに便りを送ってくれた人なんて、本当に久しくいません……。
+
+    statement#example
+      text.
+        <a href="https://www.boredapi.com/">The Bored API</a> にリクエストを送ると、楽しめそうな活動を提案してくれます。「友達と美術館に行く」「友達とカラオケに行く」「友達にメッセージを送る」……。あとは友達さえいれば。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);

@@ -95,7 +95,7 @@ To actually get the arguments passed into the program, you're using the `sys.arg
 To complete the trial, copy Toledo's code from above into a file named `collect_input.py` in the `<%= env.TQ_PYTHON_CODE_PATH.value %>` folder on your computer. In the terminal, start by entering the following command:
 
 ```bash
-cd <%= env.TQ_PYTHON_CODE_PATH.value %>
+cd "<%= env.TQ_PYTHON_CODE_PATH.value %>"
 ```
 
 This will change your [current working directory](https://en.wikipedia.org/wiki/Working_directory) to your Python code folder. Next, create a Python code file named `collect_input.py` in this folder if you haven't already. 

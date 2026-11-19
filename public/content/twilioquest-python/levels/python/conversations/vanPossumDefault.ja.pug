@@ -1,0 +1,120 @@
+-
+  const STATE_KEY = 'pythonWorldState';
+  const worldState = getState(STATE_KEY);
+  const hasStaff = inventory.includes('python_staff');
+
+mixin flavor
+  response#flavor.
+    どうすればクラウド考古学者になれるんですか？
+
+mixin who_are_you
+  response#who_are_you.
+    お名前と、ここでのお仕事をもう一度教えてもらえますか？
+
+mixin what_happened
+  response#what_happened.
+    お一人のようですが、チームの皆さんはどうしたんですか？
+
+mixin get_started
+  response#get_started.
+    神殿の調査をどう手伝えばいいですか？
+
+conversation(display_name="トレド・ヴァン・ポッサム")
+  case lastResponse
+    when "flavor"
+      statement#flavor
+      responses
+        +get_started
+        +what_happened
+
+    when "who_are_you"
+      statement#toledo
+      responses
+        +flavor
+        +get_started
+        +what_happened
+
+    when "what_happened"
+      statement#what_happened
+      responses
+        +get_started
+        +who_are_you
+
+    when "ack"
+      statement#ack
+      responses
+        +what_happened
+        +who_are_you
+
+    when "get_started"
+      statement#get_started
+      responses
+        if hasStaff
+          +what_happened
+          +who_are_you
+        else
+          response#ack.
+            分かりました。入門の儀式の間を調べて、何があるか見てきます。
+
+    default
+      if !worldState.toledoInitialGreeting
+        - worldState.toledoInitialGreeting = true;
+        statement#default
+        responses
+          response#who_are_you.
+            廃墟がますます……廃墟らしくなったようですね。すみません、まだ自己紹介が済んでいませんよね？
+          +what_happened
+          +get_started
+
+      else if hasStaff
+        statement#thanks
+        responses
+          +what_happened
+          +who_are_you
+
+      else
+        statement#follow_up_greeting
+        responses
+          +get_started
+          +what_happened
+          +who_are_you
+
+  statements
+    statement#default
+      text.
+        オペレーター！ いらっしゃると聞いていました。もう少し準備してお迎えしたかったのですが、ご覧のとおり、調査が少し行き詰まっていまして。
+
+    statement#follow_up_greeting
+      text.
+        オペレーター、また会いましたね。神殿を探索して何か見つかりましたか？
+
+    statement#thanks
+      text.
+        それは……<span class="highlight">Python の知識の杖</span>ですか？ あはは、やっぱり実在したんだ！ 大発見です。お見事！
+
+    statement#get_started
+      if hasStaff
+        text.
+          もう想像以上に助けていただきました。Python の知識の杖は伝説の秘宝です。それを手に入れるなんて、相当な腕前ですね！
+      else
+        text.
+          崩落で神殿の大半に入れなくなりましたが、<span class="highlight">入門の儀式の間</span>の入り口は何とか開けられました。古代都市 Python では、新しい住民がここで大切な通過儀礼を行ったのです。<br/><br/>少し調べたところで警備装置を作動させてしまったらしく、先に進めません。この辺りの調査を引き継いでもらえますか？
+
+    statement#ack
+      text.
+        すばらしい。崩落してから、あの部屋から妙な音が聞こえることだけお伝えしておきます。きっと風の音です……空気が動かない地下神殿ですけどね。
+
+    statement#what_happened
+      text.
+        崩落で神殿の大部分がふさがれたので、チームのほかのメンバーは帰しました。構造には問題がなく、安全に探索できると分析していたのに、突然のことでした。裏に<span style="color:red">レガシーシステム</span>がいると分かっても驚きません。<br/><br/>残りの区画を開けるために復旧チームを手配していますが、それまではできることがほとんどなくて。
+
+    statement#toledo
+      text.
+        <span class="highlight">トレド・ヴァン・ポッサム</span>です。クラウド考古学者で、神殿の TwilioQuest 調査チームを率いています。今ではチームと呼べるか怪しいですけどね。<br/><br/>それでも、この神殿を調査できるのは心が躍ります。ここに眠る秘密が、Python への理解を根本から変えるかもしれないんです。
+
+    statement#flavor
+      text.
+        ずっと昔は、オランダの銀行でソフトウェア開発者をしていました。銀行のソフトウェア自体にはそれほどわくわくしなかったのですが、その歴史を掘り下げるのは面白かった。<br/><br/>この関数はなぜここにある？ この設計はどうして採用された？ 当時はどんな制約があり、どんな取捨選択をした？ こうした疑問から、クラウドが今の姿になった理由を探るようになったんです。
+
+// Flush world state changes, if any
+- setState(STATE_KEY, worldState);
