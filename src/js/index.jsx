@@ -7,7 +7,7 @@ import { syncBundledAssets } from './app/common/assetLoader';
 import extendYup from './app/common/extendYup';
 import config from './app/config/config';
 import { showAlert } from './app/platform/dialog';
-import { openExternal, openPath } from './app/platform/shell';
+import { openPath } from './app/platform/shell';
 import { toggleDevTools } from './app/platform/devtools';
 import { addHelpMenuItems, getHelpMenuLabel } from './app/platform/menu';
 import { onDocumentReady } from './app/common/documentReady';
@@ -49,27 +49,6 @@ function downloadJSON(blob, fileName = 'download') {
   anchor.setAttribute('download', `${fileName}.json`);
   anchor.click();
 }
-
-// Capture link clicks to web resources and open in system default browser
-document.addEventListener(
-  'click',
-  e => {
-    if (e.target.matches('a[href^="http"]')) {
-      e.preventDefault();
-      const targetUrl = new URL(e.target.href);
-      const newQuery = new URLSearchParams(targetUrl.searchParams.toString());
-      const newUrl = [
-        targetUrl.origin,
-        targetUrl.pathname,
-        `?${newQuery.toString()}`,
-        targetUrl.hash,
-      ].join('');
-      console.log('Opening external link:', newUrl);
-      openExternal(newUrl);
-    }
-  },
-  false
-);
 
 // Load Spector.js debugger
 let spector;

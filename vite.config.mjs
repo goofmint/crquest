@@ -98,15 +98,13 @@ function tauriUnavailableModules() {
 }
 
 // Bare imports from the app's sources resolve from public/node_modules first,
-// where the renderer's dependencies are installed (e.g. pug 3 there, pug 2 in
-// the root node_modules). Packages that exist only in the root (@tauri-apps/*)
+// where the renderer's dependencies are installed (both the renderer and
+// build tooling use pug). Packages that exist only in the root (@tauri-apps/*)
 // fall back to the default resolution.
-//
-// `jimp` (avatarRenderer) is the exception: its Node entry touches `process`
-// and `stream` while it is loaded (#154), and uses `Buffer`; a webview has none. The package ships a prebuilt browser bundle that is self-contained, and
-// that is what the Tauri build uses. (It reads images from URLs or buffers, not
-// from file system paths: see docs/migration/tauri-runtime.md.)
-const jimpBrowserBundle = path.join(publicDir, 'node_modules', 'jimp', 'browser', 'lib', 'jimp.js');
+// The ESM build lets Vite resolve EJS's Node imports through the same platform
+// stubs as the rest of the renderer.
+const ejsModule = path.join(publicDir, 'node_modules', 'ejs', 'lib', 'esm', 'ejs.js');
+
 function resolvePackagesFromPublic() {
   return {
     name: 'terminalquest:resolve-packages-from-public',
@@ -118,12 +116,7 @@ function resolvePackagesFromPublic() {
       }
       if (!importer.startsWith(srcDir + path.sep)) return null;
       if (unavailableModuleName(source)) return null;
-      if (source === 'jimp') {
-        if (!fs.existsSync(jimpBrowserBundle)) {
-          throw new Error(`The Tauri build needs ${jimpBrowserBundle} (jimp's browser bundle): run npm install`);
-        }
-        return jimpBrowserBundle;
-      }
+      if (source === 'ejs') return ejsModule;
       const resolved = await this.resolve(
         source,
         path.join(publicDir, 'package.json'),
@@ -135,7 +128,7 @@ function resolvePackagesFromPublic() {
 }
 
 // Packages touch something that a webview does not have
-// (pug 3 and jstransformer in the conversation renderer, ejs at load time), and
+// (pug, jstransformer and EJS), and
 // are patched while bundling.
 // Each patch fails the build when the text is not found (the package changed),
 // instead of silently shipping the unpatched code.
@@ -163,16 +156,12 @@ const tauriPackagePatches = [
     from: "var fs = require('fs');",
     to: 'var fs = {};',
   },
-  // ejs/lib/ejs.js (used by ObjectiveDescription) runs
-  // `exports.fileLoader = fs.readFileSync;` when it is loaded. With the stub of
-  // the unavailable `fs` that property access throws and stops the whole game
-  // bundle from loading (#154). The default file loader becomes a function that
-  // reads `fs.readFileSync` only when it is called, so loading passes and an
-  // include/file template fails explicitly with the stub's error.
+  // The ESM entry resolves fs through the platform stub. Defer accessing the
+  // loader until a file-based template is requested; string renders need no fs.
   {
-    file: normalizePath(path.join(publicDir, 'node_modules', 'ejs', 'lib', 'ejs.js')),
-    from: 'exports.fileLoader = fs.readFileSync;',
-    to: 'exports.fileLoader = function () { return fs.readFileSync.apply(fs, arguments); };',
+    file: normalizePath(ejsModule),
+    from: 'ejs.fileLoader = fs.readFileSync;',
+    to: 'ejs.fileLoader = (...args) => fs.readFileSync(...args);',
   },
 ];
 

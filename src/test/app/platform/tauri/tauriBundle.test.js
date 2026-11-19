@@ -28,14 +28,6 @@ describe('--mode tauri output', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  // The prebuilt browser bundle of jimp (what `import 'jimp'` is in this build,
-  // #154) is a browserify bundle with its own internal `require` of its own
-  // modules (`require("assert")` there is a key of its module table, not a
-  // runtime lookup). It is wrapped by the bundler as `var import_jimp = ...`
-  // up to the closing `})))());`, and is left out of the require scan.
-  const withoutJimpBrowserBundle = code =>
-    code.replace(/^var import_jimp = [^\n]*\n[\s\S]*?^\}\)\)\)\(\)\);$/m, '');
-
   const jsFiles = () => Object.entries(files).filter(([name]) => name.endsWith('.js'));
 
   test('every import/export specifier is a relative file (nothing to resolve at runtime)', () => {
@@ -54,7 +46,7 @@ describe('--mode tauri output', () => {
     const names = [...builtinModules, 'electron', 'react', 'pug', 'lodash.get', 'styled-components'];
     for (const [, code] of jsFiles()) {
       // Comments (JSDoc examples in the sources and packages) mention require()
-      const executable = withoutJimpBrowserBundle(code)
+      const executable = code
         .split('\n')
         .filter(line => !/^\s*(\*|\/\/|\/\*)/.test(line))
         .join('\n');
@@ -67,10 +59,11 @@ describe('--mode tauri output', () => {
 
   test('packages are bundled, and resolved from public/node_modules before the root', () => {
     const game = files['tauri-game.js'];
-    // pug 3 (public/package.json); the root has pug 2
+    // The renderer uses its own copies of Pug and EJS.
     expect(game).toContain('// public/node_modules/pug/lib/index.js');
     expect(game).not.toContain('// node_modules/pug/lib/index.js');
-    for (const name of ['react', 'react-dom', 'styled-components', 'lodash.merge', 'lodash.isequal', 'dexie']) {
+    expect(game).toContain('// public/node_modules/ejs/lib/esm/ejs.js');
+    for (const name of ['react', 'react-dom', 'styled-components', 'lodash.merge', 'lodash.isequal', 'dexie', 'fast-png']) {
       expect(game).toMatch(new RegExp(`^// public/node_modules/${name}/`, 'm'));
     }
     // Only in the root node_modules
@@ -107,8 +100,6 @@ describe('--mode tauri output', () => {
 
   test('other Node modules fail explicitly instead of being empty objects', () => {
     const game = files['tauri-game.js'];
-    // (`stream`, `events` and the `url` shim were only used by jimp's Node entry: the Tauri build
-    // uses its browser bundle, #154)
     for (const name of ['fs', 'resolve']) {
       expect(game).toContain(`The Node module \\"${name}\\" is not available in the Tauri build`);
     }

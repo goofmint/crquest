@@ -29,7 +29,9 @@ npm install
 
 (`npm ci` also works.) Fair warning - during this transitional period, this process may not happen without error.
 
-Installing in the repository root also runs `postinstall`, which runs `npm install` in `public/` (the renderer's runtime dependencies live in `public/node_modules`). `public/package-lock.json` is intentionally still `lockfileVersion` 1, so do not regenerate it as a side effect of unrelated work. The root `devDependencies` also pin `npm` 6, so `node_modules/.bin/npm` is npm 6 while the `npm` you run is the one that ships with your Node.
+Installing in the repository root also runs `postinstall`, which runs `npm ci --prefix public` using the npm that ships with Node. The renderer's runtime dependencies are installed in `public/node_modules` from the committed `public/package-lock.json`.
+
+When deliberately updating a renderer dependency, use `npm install --prefix public --lockfile-version=1 <package>` to retain the renderer's v1 lockfile. The root lockfile uses v3.
 
 ### Run the app
 

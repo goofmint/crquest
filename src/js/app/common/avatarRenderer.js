@@ -1,11 +1,27 @@
-import Jimp from 'jimp';
-import { staticFilePath } from './fs_utils';
-import { toAssetSrc } from '../platform/assets';
+import { decode, encode } from 'fast-png';
+import { staticFileUrl } from './fs_utils';
 
-// The part image as jimp's input: Electron reads the file path as it is, the
-// Tauri build (browser jimp) reads a URL.
-function partInput(relativePath) {
-  return toAssetSrc(staticFilePath(relativePath));
+async function loadPart(name) {
+  const url = staticFileUrl(`avatars/parts/${name}.png`);
+  const bytes = await new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('GET', url);
+    request.responseType = 'arraybuffer';
+    request.addEventListener('load', () => {
+      if (request.status >= 200 && request.status < 300 && request.response) {
+        resolve(request.response);
+      } else {
+        reject(new Error(`Could not load avatar part ${name} (HTTP status ${request.status})`));
+      }
+    });
+    request.addEventListener('error', () => reject(new Error(`Could not load avatar part ${name}`)));
+    request.send();
+  });
+  const part = decode(bytes);
+  if (part.depth !== 8 || part.channels !== 4) {
+    throw new Error(`Avatar part ${name} must be an 8-bit RGBA PNG`);
+  }
+  return part;
 }
 
 const avatarColors = {
@@ -35,8 +51,35 @@ const avatarColors = {
   ],
 };
 
-function overlayColor(image, rgb) {
-  image.color([{ apply: 'mix', params: [rgb, 100] }]);
+function overlayColor({ data }, { r, g, b }) {
+  for (let offset = 0; offset < data.length; offset += 4) {
+    data[offset] = r;
+    data[offset + 1] = g;
+    data[offset + 2] = b;
+  }
+}
+
+function composite(destination, layer) {
+  if (layer.width !== destination.width || layer.height !== destination.height) {
+    throw new Error('Avatar layers must have identical dimensions');
+  }
+  const source = layer.data;
+  const target = destination.data;
+  for (let offset = 0; offset < target.length; offset += 4) {
+    const sourceAlpha = source[offset + 3] / 255;
+    const targetAlpha = target[offset + 3] / 255;
+    const alpha = targetAlpha + sourceAlpha - targetAlpha * sourceAlpha;
+    for (let channel = offset; channel < offset + 3; channel += 1) {
+      // Keep the original normalized source-over calculation and byte
+      // truncation so existing avatars retain the same pixel values.
+      const sourceColor = source[channel] / 255;
+      const targetColor = target[channel] / 255;
+      const color = alpha === 0 ? 0
+        : (sourceColor * sourceAlpha + targetColor * targetAlpha * (1 - sourceAlpha)) / alpha;
+      target[channel] = Math.min(255, color * 255);
+    }
+    target[offset + 3] = Math.min(255, alpha * 255);
+  }
 }
 
 export const NUM_FEATURES = {
@@ -46,64 +89,25 @@ export const NUM_FEATURES = {
   hs: 6 + 1, // extra for no hair option
 };
 
-export function generateDataURI({ ec, hs, sc, hc }, callback) {
-  const imagePromises = [
-    Jimp.read(partInput('avatars/parts/body.png')),
-    Jimp.read(partInput('avatars/parts/face.png')),
-    Jimp.read(partInput('avatars/parts/onesie.png')),
-  ];
-
-  // Grab the appropriate eye image
-  if (ec !== NUM_FEATURES.ec - 1) {
-    imagePromises.push(Jimp.read(partInput('avatars/parts/eyes.png')));
-  } else {
-    imagePromises.push(Jimp.read(partInput('avatars/parts/glasses.png')));
+export async function generateDataURI({ ec, hs, sc, hc }, callback) {
+  const glasses = ec === NUM_FEATURES.ec - 1;
+  const hasHair = hs !== NUM_FEATURES.hs - 1;
+  const names = ['body', 'face', 'onesie', glasses ? 'glasses' : 'eyes'];
+  if (hasHair) {
+    names.push(`hair${hs}`);
+    if ([2, 3, 4, 5].includes(hs)) names.push(`hair${hs}_overlay`);
   }
 
-  // Only grab hair stuff if "no hair" option isn't selected (it's the last one)
-  if (hs !== NUM_FEATURES.hs - 1) {
-    imagePromises.push(
-      Jimp.read(partInput(`avatars/parts/hair${hs}.png`))
-    );
+  const [body, ...layers] = await Promise.all(names.map(loadPart));
+  overlayColor(body, avatarColors.body[sc]);
+  if (!glasses) overlayColor(layers[2], avatarColors.eyes[ec]);
+  if (hasHair) overlayColor(layers[3], avatarColors.hair[hc]);
 
-    // Only grab hair overlays for styles have one
-    if ([2, 3, 4, 5].includes(hs)) {
-      imagePromises.push(
-        Jimp.read(partInput(`avatars/parts/hair${hs}_overlay.png`))
-      );
-    }
-  }
+  for (const layer of layers) composite(body, layer);
 
-  // Wait until all files are loaded before compositing
-  Promise.all(imagePromises).then(values => {
-    const [body, face, onesie, eyes, hair, hairOverlay] = values;
-
-    overlayColor(body, avatarColors.body[sc]);
-
-    // Only color hair if "no hair" is not selected (the last hair option)
-    if (hs !== NUM_FEATURES.hs - 1) {
-      overlayColor(hair, avatarColors.hair[hc]);
-    }
-
-    // Only color eyes if glasses are not selected (the last eye option)
-    if (ec !== NUM_FEATURES.ec - 1) {
-      overlayColor(eyes, avatarColors.eyes[ec]);
-    }
-
-    body
-      .composite(face, 0, 0)
-      .composite(onesie, 0, 0)
-      .composite(eyes, 0, 0);
-
-    // Only add hair and overlay if "no hair" is not selected (the last hair option)
-    if (hs !== NUM_FEATURES.hs - 1) {
-      body.composite(hair, 0, 0);
-      if (hairOverlay) {
-        body.composite(hairOverlay, 0, 0);
-      }
-    }
-
-    // TODO(nirav) somehow return a Promise?
-    body.getBase64Async(Jimp.MIME_PNG).then(uri => callback(uri));
-  });
+  const bytes = encode({ width: body.width, height: body.height, data: body.data, channels: 4 });
+  const base64 = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
+  const uri = `data:image/png;base64,${base64}`;
+  callback(uri);
+  return uri;
 }

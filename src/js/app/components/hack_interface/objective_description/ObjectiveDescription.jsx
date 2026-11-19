@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import ejs from 'ejs';
-import { Converter } from 'showdown';
-import showdownHighlight from 'showdown-highlight';
 import { Trans } from 'react-i18next';
 import ItemPopover from '../../ItemPopover';
 import { context, setContext } from '../../../common/context';
@@ -11,13 +9,7 @@ import ButtonBar from '../../ButtonBar';
 import { achievedNewRank } from '../../../common/rank';
 import { readLocalizedFile, resolveAbsolutePath } from '../../../common/assetLoader';
 import { t } from '../../../i18n';
-
-// Configure our markdown parser
-const MD = new Converter({
-  openLinksInNewWindow: true,
-  extensions: [showdownHighlight],
-});
-MD.setFlavor('github');
+import { renderObjectiveMarkdown } from '../../../common/renderMarkdown';
 
 const ItemIcon = ({ item }) => {
   return (
@@ -79,8 +71,7 @@ export default class ObjectiveDescription extends React.Component {
         console.warn(`Error rendering EJS template logic, skipping...`);
         console.warn(e);
       }
-      const html = MD.makeHtml(mdEvaluated);
-      return html;
+      return renderObjectiveMarkdown(mdEvaluated);
     };
 
     // Load markdown description from the filesystem for display
