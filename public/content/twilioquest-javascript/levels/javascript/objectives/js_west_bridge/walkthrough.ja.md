@@ -24,7 +24,7 @@ if (luckyNumber === 7) {
 
 `<%= env.TQ_JAVASCRIPT_WORKSPACE_PATH.value %>`
 
-[コマンドライン引数](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)には、木が生きているか、ほかの状態かを示す 数値が渡されます。
+[コマンドライン引数](https://nodejs.org/api/process.html#processargv)には、木が生きているか、ほかの状態かを示す数値が渡されます。
 
 次のひな型では、スクリプトに渡された最初の引数の値を取得します。
 

@@ -77,10 +77,10 @@ Git が既定で使う vim は、コマンドラインのテキストエディ�
 
 最後に `git status` を実行し、問題がないか確かめます。`nothing to commit, working tree clean` のように表示されれば、コミットすべき変更は残っていません。
 
-さらに `git log` を実行してマージコミットを探します。最新のコミットには vim で入力したメッセージが表示されるはずです。自動生成されたメッセージを残した場合は、次のように表示されます。
+マージコミットが作成された場合は、`git log` で確認します。最新のコミットには、エディターで入力したメッセージか、次のような自動生成メッセージが表示されます。
 
 ```bash
 Merge branch 'master' into <%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>
 ```
 
-master を自分のブランチ `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>` にマージしたら、右の `HACK` を押してください！
+すでに最新だと表示された場合や、fast-forward でマージが完了した場合は、新しいマージコミットは作成されません。自分のブランチ `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>` に master の最新コミットが含まれていれば、右の `HACK` を押してください。

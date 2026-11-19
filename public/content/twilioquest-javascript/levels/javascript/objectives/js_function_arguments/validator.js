@@ -111,9 +111,9 @@ module.exports = async helper => {
 
     if (tq.outcome === 'not-string') {
       return helper.fail(helper.t("notString", `
-          It looks like your function is not returning a string value. Your
-          function must return a string with the value
-          <span class="highlight">"OFF"</span>.
+          It looks like your function is not returning a string value. Return
+          <span class="highlight">"OFF"</span> for "please" and
+          <span class="highlight">"ON"</span> for any other argument.
         `));
     }
 

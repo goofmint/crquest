@@ -77,10 +77,10 @@ If everything worked correctly you should be back on the terminal and outside of
 
 Let's double check everything is fine by running `git status` one last time. We should now see a message like `nothing to commit, working tree clean` indicating we're all up to date.
 
-Additionally, lets run `git log` to find our merge commit. Your most recent commit should have the message you entered in vim for your commit. If you left the auto generated message it will look something like this:
+If Git created a merge commit, use `git log` to find it. The most recent commit will show the message you entered in the editor or a generated message like this:
 
 ```bash
 Merge branch 'master' into <%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>
 ```
 
-Once you've merged master into your branch, `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>`, go ahead and hit `HACK` on the right!
+When the merge reports that your branch is already up to date or completes as a fast-forward, there is no new merge commit to look for. Once your branch `<%= env.TQ_OPEN_PIXEL_ART_BRANCH.value %>` contains the latest master commit, click `HACK` on the right.

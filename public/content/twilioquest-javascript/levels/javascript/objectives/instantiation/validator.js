@@ -50,14 +50,13 @@ module.exports = async helper => {
         return false;
       }
 
-      function getObjectKeysWithMismatchedValues(expected, actual) {
+      function getMismatchedEntries(expected, actual) {
         return Object.entries(expected)
           .filter(expectedEntry => {
             return !Object.entries(actual).some(actualEntry =>
               doesEntryMatch(actualEntry, expectedEntry)
             );
-          })
-          .map(([key]) => key);
+          });
       }
 
       let target;
@@ -97,16 +96,14 @@ module.exports = async helper => {
           return { outcome: 'missing-keys', keys: `${result1MissingKeys}` };
         }
 
-        const result1MismatchedKeys = getObjectKeysWithMismatchedValues(
+        const result1Mismatches = getMismatchedEntries(
           expected1,
           result1
         );
-        if (result1MismatchedKeys.length > 0) {
+        if (result1Mismatches.length > 0) {
           return {
             outcome: 'mismatched-keys',
-            details: result1MismatchedKeys
-              .map(key => `"${key}" should have been ${expected1[key]}.`)
-              .join('<br/>'),
+            mismatches: result1Mismatches,
           };
         }
 
@@ -117,16 +114,14 @@ module.exports = async helper => {
           duration: 1000,
         };
 
-        const result2MismatchedKeys = getObjectKeysWithMismatchedValues(
+        const result2Mismatches = getMismatchedEntries(
           expected2,
           result2
         );
-        if (result2MismatchedKeys.length > 0) {
+        if (result2Mismatches.length > 0) {
           return {
             outcome: 'mismatched-keys',
-            details: result2MismatchedKeys
-              .map(key => `"${key}" should have been ${expected2[key]}.`)
-              .join('<br/>'),
+            mismatches: result2Mismatches,
           };
         }
       } catch (ee) {
@@ -193,11 +188,19 @@ module.exports = async helper => {
     }
 
     if (tq.outcome === 'mismatched-keys') {
+      const details = tq.mismatches
+        .map(([key, expected]) =>
+          helper.t('incorrectValue', '"{{key}}" should have been {{expected}}.', {
+            key,
+            expected,
+          })
+        )
+        .join('<br/>');
       return helper.fail(helper.t("incorrectKeys", `
           Not all of the keys for your returned object match correctly.
           <br/><br/>
-          {{value1}}
-        `, { value1: tq.details }));
+          {{details}}
+        `, { details }));
     }
 
     if (tq.outcome === 'call-error') {

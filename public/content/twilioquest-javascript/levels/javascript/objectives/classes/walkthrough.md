@@ -2,7 +2,7 @@
 
 The goal of this exercise is to familiarize yourself with JavaScript [classes](https://javascript.info/class). "Classes" are new kinds of objects that you can create in your own code. 
 
-Most of your work in the JavaScript lab has used built-in objects and "primitive" data types like Numbers, Strings, and Booleans. Classes represent more complex data concepts specific to your code, like Users, Blog Posts, Likes, or Subscriptions for example. Unlike [object literals](https://javascript.info/object#literals-and-properties), classes can also have behaviors that operate on their data.
+Most of your work in the JavaScript lab has used built-in objects and "primitive" data types like Numbers, Strings, and Booleans. Classes represent more complex data concepts specific to your code, like Users, Blog Posts, Likes, or Subscriptions for example. Both [object literals](https://javascript.info/object#literals-and-properties) and classes can define methods. A class lets you create multiple instances that share a structure and behavior.
 
 In this exercise, you need to [create a class](https://javascript.info/class) based on the specification in the objective.
 

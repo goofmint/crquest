@@ -30,7 +30,7 @@ To extend the bridge, you need to create a file called `enhancedLifeDetector.js`
 
 `<%= env.TQ_JAVASCRIPT_WORKSPACE_PATH.value %>`
 
-You will need to work with a [command line argument](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs) - a number that specifies whether a tree is alive, or in some other status.
+You will need to work with a [command line argument](https://nodejs.org/api/process.html#processargv) - a number that specifies whether a tree is alive, or in some other status.
 
 Here is some code you can use as a starting point, which gets the value of the first argument passed in to your script.
 

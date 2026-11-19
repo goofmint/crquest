@@ -28,7 +28,7 @@ Now the cloning process will begin!
 
 Once the repository finishes cloning, you can now open these new files. They'll be an exact copy of the files in their current state on GitHub.
 
-To validate the clone worked correctly, we're going to need the full file path of our newly cloned project. Type the following change directory command, `cd`, to enter your new directory.
+To validate the clone, we need the full path to the cloned project. Use `cd` to enter the directory Git created. If your local clone directory has a different name, use that name in the command below. Keep the GitHub fork named `open-pixel-art` for later objectives.
 
 ```
 cd open-pixel-art

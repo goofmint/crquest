@@ -1,6 +1,6 @@
 # Winning The Arguments
 
-The goal of this objective is to familiarize you with the concept of [command line arguments](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs). This is data that is passed in to your JavaScript code when it is executed, to give it some context when it runs.
+The goal of this objective is to familiarize you with the concept of [command line arguments](https://nodejs.org/api/process.html#processargv). This is data that is passed in to your JavaScript code when it is executed, to give it some context when it runs.
 
 So far, you have been running your test scripts with a command that looks like this.
 
@@ -53,5 +53,5 @@ Once your script is working correctly, click the *HACK* button.
 
 ## Helpful Resources
 
-* [Node.js Command Line Arguments](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)
+* [Node.js Command Line Arguments](https://nodejs.org/api/process.html#processargv)
 * [Reference docs for process.argv](https://nodejs.org/docs/latest/api/process.html#process_process_argv)

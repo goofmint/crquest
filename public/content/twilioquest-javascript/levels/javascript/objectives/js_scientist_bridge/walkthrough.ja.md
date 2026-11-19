@@ -30,7 +30,7 @@ if (ninjaTurtle === 'Leonardo') {
 
 `<%= env.TQ_JAVASCRIPT_WORKSPACE_PATH.value %>`
 
-[コマンドライン引数](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)として、木が生きているか、ほかの状態かを示す 数値が渡されます。
+[コマンドライン引数](https://nodejs.org/api/process.html#processargv)として、木が生きているか、ほかの状態かを示す数値が渡されます。
 
 以下のひな型は、スクリプトに渡される最初の引数を取得します。
 

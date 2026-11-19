@@ -22,7 +22,7 @@ if (animal === 'Dog') {
 
 `<%= env.TQ_JAVASCRIPT_WORKSPACE_PATH.value %>`
 
-主任研究員のオフィスでパスワードを取ったときと同じく、[コマンドライン引数](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)を使います。決まった引数が渡された場合に限り、メッセージを出力してください。
+主任研究員のオフィスでパスワードを取ったときと同じく、[コマンドライン引数](https://nodejs.org/api/process.html#processargv)を使います。決まった引数が渡された場合に限り、メッセージを出力してください。
 
 以下のひな型は最初の引数を取得します。ただし、このままでは if 文が**正しく動きません**。目標に合わせて修正してください。
 

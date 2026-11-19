@@ -1,6 +1,6 @@
 # コマンドライン引数を使う
 
-この目標では[コマンドライン引数](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)を学びます。実行時に JavaScript コードに情報を渡すための仕組みです。
+この目標では[コマンドライン引数](https://nodejs.org/api/process.html#processargv)を学びます。実行時に JavaScript コードに情報を渡すための仕組みです。
 
 これまで、テストスクリプトは次のように実行してきました。
 
@@ -53,5 +53,5 @@ node divideByTwo.js 400
 
 ## 参考資料
 
-* [Node.js のコマンドライン引数](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs)
+* [Node.js のコマンドライン引数](https://nodejs.org/api/process.html#processargv)
 * [process.argv のリファレンス](https://nodejs.org/docs/latest/api/process.html#process_process_argv)
