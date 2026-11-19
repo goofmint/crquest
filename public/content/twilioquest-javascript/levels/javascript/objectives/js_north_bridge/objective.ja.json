@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：はじめての条件分岐",
+  "description": "プログラミングの基本である<strong>if 文</strong>を学びましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標タブの指示に従ってプログラムを書き、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

@@ -16,10 +16,10 @@ module.exports = async (helper) => {
 
   // The player needs to enable the other beams first
   if (!isObjectiveReady) {
-    return helper.fail(`
+    return helper.fail(helper.t("accessCodeMissing", `
       You can't restart this laser until you receive the physicist's 
       access code. See the objective tab for more information.
-    `);
+    `));
   }
 
   try {
@@ -31,11 +31,11 @@ module.exports = async (helper) => {
 
     const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
-      helper.fail(`
+      helper.fail(helper.t("fileMissing", `
         We couldn't find your "targetingSolution.js" script in your 
         JavaScript code folder. Does the file below exist? <br/><br/>
-        <span style="word-wrap:break-word">${programPath}</span>
-      `);
+        <span style="word-wrap:break-word">{{programPath}}</span>
+      `, { programPath }));
       return;
     }
 
@@ -82,7 +82,7 @@ module.exports = async (helper) => {
     if (tq.readError) {
       console.log(tq.readError.text);
       if (tq.readError.name === "ReferenceError") {
-        return helper.fail(`
+        return helper.fail(helper.t("definitionMissing", `
           It looks like a <span class="highlight">TargetingSolution</span> 
           class was not defined in your
           code. At least, we didn't see it in the global scope of your script.
@@ -90,64 +90,64 @@ module.exports = async (helper) => {
           Did you name the class 
           "<span class="highlight">TargetingSolution</span>"? Maybe 
           double-check your spelling?
-        `);
+        `));
       } else {
-        return helper.fail(`
+        return helper.fail(helper.t("validationError", `
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq.readError.text}
-        `);
+          {{value1}}
+        `, { value1: tq.readError.text }));
       }
     }
 
     // Check type of the function
     if (tq.outcome === 'not-function') {
-      let message = `
+      const message = helper.t("invalidDefinition", `
         We found a variable called 
         <span class="highlight">TargetingSolution</span>, but it's not a
         class. Check the Help section for more guidance on creating
         a JavaScript class.
-      `;
+      `);
 
       return helper.fail(message);
     }
 
     if (tq.outcome === 'no-target-function') {
-      return helper.fail(`
+      return helper.fail(helper.t("missingTargetMethod", `
           Your TargetingSolution should have an "target" function.
-        `);
+        `));
     }
 
     if (tq.outcome === 'wrong-format') {
-      return helper.fail(`
+      return helper.fail(helper.t("invalidTargetFormat", `
           The <span class="highlight">target</span> function of your
           <span class="highlight">TargetingSolution</span> class did not return
           a string in the specified format. It should be in the format
           <span class="highlight">(x, y, z)</span>, including the parens and
           commas.
-        `);
+        `));
     }
 
     if (tq.outcome === 'call-error') {
-      return helper.fail(`
+      return helper.fail(helper.t("callError", `
         There was an error executing your TargetingSolution constructor or functions. Please ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${tq.error}</span>
-      `);
+        <span class="highlight">{{value1}}</span>
+      `, { value1: tq.error }));
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       The laser uses your targeting solution class and emits a beam aimed at
       the center of the ducktypium crystal. Looks like this laser is back online!
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("executionError", `
       There was an error executing your JavaScript code. Please ensure that you
       can run it from the command line successfully and try again. Here's the 
       error we got: <br/><br/>
-      <span class="highlight">${e}</span>
-    `);
+      <span class="highlight">{{e}}</span>
+    `, { e }));
   }
 };

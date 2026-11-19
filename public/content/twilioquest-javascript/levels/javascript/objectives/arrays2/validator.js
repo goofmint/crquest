@@ -26,16 +26,16 @@ module.exports = async (helper) => {
     );
 
     if (passed) {
-      helper.success(`
+      helper.success(helper.t("success", `
         That did it! You can now pass through the airlock and board the
         <strong>Infinite Loop</strong>.
-      `);
+      `));
     }
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("concatenationError", `
       Something went wrong when we tried to run your string concatenation 
       function: <br/><br/>
-      ${e}
-    `);
+      {{e}}
+    `, { e }));
   }
 };

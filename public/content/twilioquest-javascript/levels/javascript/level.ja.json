@@ -1,0 +1,17 @@
+{
+  "title": "JavaScript テストラボ",
+  "description": "TwilioQuest プログラムが運営する最先端の研究施設。最新の JavaScript 技術を研究しているチームから、ステーションの安全対策を確認してほしいとの依頼が届きました。",
+  "questTitle": "JavaScript テストラボ",
+  "questDescription": "ステーションを調査し、研究チームを助けよう！",
+  "flavorTextOverrides": {
+    "bookshelf": "ふむ……名著がたくさん並んでいる。「You Don’t Know JS」や「JavaScript: The Good Parts」もある。",
+    "ducktypium": "うわ、純粋なダックタイピウムだ。強力だけど、とても不安定だ。ラボの JavaScript がこれで動いているなら、保険金の請求が絶えないのも納得だ。",
+    "passwordDeskNote": "机の付箋に「停止ビームのパスワード：<span class=\"highlight\">PEW PEW PEW!</span>」と書かれている。",
+    "officeTerminal": "この画面はダックタイピウム室の温度を監視している。快適な 21°C だ。",
+    "officeBookshelf": "過去の実験ノートがたくさん並んでいる。変異、変換、プロトタイプなど、研究テーマはさまざまだ。",
+    "opensMar2020": "この先の冒険は<span class=\"highlight\">2020 年 5 月上旬</span>に公開予定。今月後半にまた訪れるか、<a href=\"https://twitter.com/TwilioQuest\">Twitter でセドリックをフォロー</a>、<a href=\"https://www.twilio.com/quest#email\">ニュースレターに登録</a>して公開のお知らせを受け取ろう！",
+    "playerPlantedTree": "あなた自身の木だ！ オーストラリアで最近起きた山火事からの復興を支援するため、実際に木が植えられる。",
+    "loopLockInfo": "この不思議な部屋には、船の貨物室の外と同じように数字が表示されている。何か関係があるのだろうか？ <span class=\"highlight\">部屋を歩き回って</span>様子を見てみよう……",
+    "infiniteLoopNotReady": "研究船「Infinite Loop」はここに停泊しているはずだった！ 科学者を救出するには<span class=\"highlight\">ゲームの次回アップデートを待つ必要がありそうだ</span>。"
+  }
+}

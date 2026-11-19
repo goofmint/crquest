@@ -28,11 +28,11 @@ module.exports = async (helper) => {
 
     const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
-      helper.fail(`
+      helper.fail(helper.t("fileMissing", `
         We couldn't find your "fizzBuzz.js" script in your 
         JavaScript code folder. Does the file below exist? <br/><br/>
-        <span style="word-wrap:break-word">${programPath}</span>
-      `);
+        <span style="word-wrap:break-word">{{programPath}}</span>
+      `, { programPath }));
       return;
     }
 
@@ -61,22 +61,22 @@ module.exports = async (helper) => {
       let result = results[i];
       let correct = correctDecrypt(testNumbers[i]);
       if (result !== correct) {
-        return helper.fail(`
-          While testing your script, we passed in "${testNumbers[i]}" but got "${result}" instead
-          of "${correct}". Please test your script again.
-        `);
+        return helper.fail(helper.t("incorrectResult", `
+          While testing your script, we passed in "{{value1}}" but got "{{result}}" instead
+          of "{{correct}}". Please test your script again.
+        `, { value1: testNumbers[i], result, correct }));
       }
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       You did it! No job interview nonsense can fool you.
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("executionError", `
       There was an error executing your JavaScript code. Please ensure that you
       can run it successfully and try again. Here's the error we got - sorry
       if the formatting is ugly: <br/><br/>
-      ${e}
-    `);
+      {{e}}
+    `, { e }));
   }
 };

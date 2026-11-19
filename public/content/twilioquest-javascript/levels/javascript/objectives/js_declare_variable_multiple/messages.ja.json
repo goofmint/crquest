@@ -1,0 +1,15 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "お見事！ 設定の上書きに成功し、宝箱の物資を取り出せるようになりました。",
+  "incorrectVerifiedUser": "<span class=\"highlight\">verifiedUser</span> は設定されていますが、期待した真偽値の <span class=\"highlight\">true</span> ではありません。設定されていた値は <span class=\"highlight\">{{value1}}</span> です。",
+  "incorrectFavoriteRobot": "<span class=\"highlight\">favoriteRobot</span> は設定されていますが、期待した文字列の <span class=\"highlight\">\"Cedric\"</span> ではありません。設定されていた値は <span class=\"highlight\">\"{{value1}}\"</span> です。",
+  "incorrectAccessLevel": "<span class=\"highlight\">accessLevel</span> は設定されていますが、期待した数値の <span class=\"highlight\">7</span> ではありません。設定されていた値は <span class=\"highlight\">{{value1}}</span> です。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">{{missingVariable}}</span> 変数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"chestConfiguration.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "accessLevelType": "<span class=\"highlight\">accessLevel</span> は設定されていますが、数値ではありません。実際の型は <span class=\"highlight\">{{type}}</span> です。",
+  "accessLevelTypeHint": "<br/><br/>文字列として宣言したようです。数値や真偽値は引用符で囲みません。数値の変数を宣言する例は、ヘルプタブを確認してください。",
+  "verifiedUserType": "<span class=\"highlight\">verifiedUser</span> は設定されていますが、真偽値ではありません。実際の型は <span class=\"highlight\">{{type}}</span> です。",
+  "verifiedUserTypeHint": "<br/><br/>文字列として宣言したようです。数値や真偽値は引用符で囲みません。真偽値の変数を宣言する例は、ヘルプタブを確認してください。",
+  "favoriteRobotType": "<span class=\"highlight\">favoriteRobot</span> は設定されていますが、文字列ではありません。実際の型は <span class=\"highlight\">{{type}}</span> です。"
+}

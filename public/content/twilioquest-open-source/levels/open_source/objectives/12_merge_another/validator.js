@@ -4,27 +4,30 @@ module.exports = async (helper) => {
 
   if (!repository) {
     helper.fail(
-      `Don't forget to enter the name of the repository owner who's project you contributed to!`
+      helper.t(
+        "missingOwner",
+        "Don't forget to enter the name of the repository owner who's project you contributed to!"
+      )
     );
     return;
   }
 
   if (!repository) {
     helper.fail(
-      `Don't forget to enter the name of the repository you contributed to!`
+      helper.t("missingRepo", "Don't forget to enter the name of the repository you contributed to!")
     );
     return;
   }
 
   if (!prNumber) {
     helper.fail(
-      `Don't forget to enter the number of the Pull Request you contributed with!`
+      helper.t("missingNumber", "Don't forget to enter the number of the Pull Request you contributed with!")
     );
     return;
   }
 
   if (repositoryOwner === "twilio-labs" && repository === "open-pixel-art") {
-    helper.fail(`You can't count your Open Pixel Art contribution again!`);
+    helper.fail(helper.t("previousRepo", "You can't count your Open Pixel Art contribution again!"));
     return;
   }
 
@@ -35,7 +38,11 @@ module.exports = async (helper) => {
 
     if (response.status !== 200) {
       helper.fail(
-        `We could not find the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}"!`
+        helper.t(
+          "notFound",
+          "We could not find the Pull Request #{{prNumber}} on {{repositoryOwner}}'s repository \"{{repository}}\"!",
+          { prNumber, repositoryOwner, repository }
+        )
       );
       return;
     }
@@ -47,33 +54,49 @@ module.exports = async (helper) => {
 
     if (prOwner.toLowerCase() !== TQ_GITHUB_USERNAME.toLowerCase()) {
       helper.fail(
-        `We found the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}", but it doesn't belong to your GitHub user "${TQ_GITHUB_USERNAME}"!`
+        helper.t(
+          "wrongOwner",
+          "We found the Pull Request #{{prNumber}} on {{repositoryOwner}}'s repository \"{{repository}}\", but it doesn't belong to your GitHub user \"{{TQ_GITHUB_USERNAME}}\"!",
+          { prNumber, repositoryOwner, repository, TQ_GITHUB_USERNAME }
+        )
       );
       return;
     }
 
     if (isPrClosed && !isPrMerged) {
       helper.fail(
-        `We found the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}", but it was closed without being merged!`
+        helper.t(
+          "closed",
+          "We found the Pull Request #{{prNumber}} on {{repositoryOwner}}'s repository \"{{repository}}\", but it was closed without being merged!",
+          { prNumber, repositoryOwner, repository }
+        )
       );
       return;
     }
 
     if (!isPrMerged) {
       helper.fail(
-        `We found the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}", but it has not been merged yet!`
+        helper.t(
+          "unmerged",
+          "We found the Pull Request #{{prNumber}} on {{repositoryOwner}}'s repository \"{{repository}}\", but it has not been merged yet!",
+          { prNumber, repositoryOwner, repository }
+        )
       );
       return;
     }
 
     return helper.success(
-      `We found the Pull Request #${prNumber} on ${repositoryOwner}'s repository "${repository}" and it has been merged! Congratulations on your open source contribution!`
+      helper.t(
+        "merged",
+        "We found the Pull Request #{{prNumber}} on {{repositoryOwner}}'s repository \"{{repository}}\" and it has been merged! Congratulations on your open source contribution!",
+        { prNumber, repositoryOwner, repository }
+      )
     );
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate if your pull request was merged!
+      helper.t("error", `Something went wrong when we tried to validate if your pull request was merged!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

@@ -22,7 +22,7 @@ To extend the bridge, you need to create a file called `northBridgeControl.js` i
 
 `<%= env.TQ_JAVASCRIPT_WORKSPACE_PATH.value %>`
 
-Just as you did when you retrieved the password from the lead scientist's office, you will need to work with [command line arguments](https://nodejs.org/en/knowledge/command-line/how-to-parse-command-line-arguments/). Your code will print a specific message if and only if a certain argument is passed in.
+Just as you did when you retrieved the password from the lead scientist's office, you will need to work with [command line arguments](https://nodejs.org/learn/command-line/accept-input-from-the-command-line-in-nodejs). Your code will print a specific message if and only if a certain argument is passed in.
 
 Here is some code you can use as a starting point, which gets the value of the first argument passed in to your script. However, the if statement **will not work** as currently written. You'll need to change it to satisfy the objective.
 

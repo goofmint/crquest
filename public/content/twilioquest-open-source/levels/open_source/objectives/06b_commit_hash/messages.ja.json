@@ -1,0 +1,7 @@
+{
+  "missingDirectory": "環境変数 <span class=\"highlight\">TQ_OPEN_PIXEL_ART_DIR</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "missingLocalName": "環境変数 <span class=\"highlight\">TQ_LOCAL_GIT_USER_NAME</span> が設定されていません。前の目標に戻って、設定を確認してください！",
+  "wrongAuthor": "コミットハッシュ「{{commitHash}}」の作者にローカルの Git ユーザー「{{TQ_LOCAL_GIT_USER_NAME}}」が表示されていません。「git show {{commitHash}}」で入力したコミットを確認してください。",
+  "found": "作者「{{TQ_LOCAL_GIT_USER_NAME}}」のピクセルのコミットが見つかりました！",
+  "error": "ピクセルのコミットを確認する際に問題が発生しました！\n\n{{err}}"
+}

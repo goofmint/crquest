@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：見落としに注意",
+  "description": "配列の各要素に同じ処理を実行したいときは、<strong>ループ</strong>を使います。この目標でループを練習しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

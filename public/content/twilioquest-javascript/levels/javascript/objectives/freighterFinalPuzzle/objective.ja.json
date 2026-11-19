@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：マスターパスワード",
+  "description": "<strong>電気技師</strong>がセキュリティ障壁の向こうに閉じ込められています。貨物船<strong>Infinite Loop</strong>の謎を解いて救出しましょう！",
+  "validation_fields": [
+    {
+      "name": "puzzlePassword",
+      "label": "この障壁を解除するパスワードを入力してください。詳しくは目標タブを確認してください。"
+    }
+  ]
+}

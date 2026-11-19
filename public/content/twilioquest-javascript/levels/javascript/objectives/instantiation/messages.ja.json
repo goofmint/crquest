@@ -1,0 +1,13 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "やりました！ このコンソールの物質実体化装置用の処理が修復されました。",
+  "callError": "construct 関数の実行中にエラーが発生しました。コマンドラインで実行できるか確認し、必要に応じてヘルプタブのひな型を参考にしてください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{value1}}</span>",
+  "incorrectKeys": "戻り値のオブジェクトに、期待した内容と一致しないキーがあります。<br/><br/>{{value1}}",
+  "missingKeys": "戻り値のオブジェクトにいくつかのキーが見つかりません。足りないキー：{{value1}}",
+  "notObject": "関数の戻り値がオブジェクトではありません。オブジェクトリテラルを返してください。",
+  "missingReturnValue": "関数がまだ値を返していないようです。関数を閉じる「}」の前で <span class=\"highlight\">return</span> を使い、処理の結果を返してください。ヘルプタブのひな型が参考になります。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">construct</span> 関数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"construction.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "invalidDefinition": "<span class=\"highlight\">construct</span> という変数はありますが、呼び出せる関数ではありません。JavaScript の呼び出せる関数の定義方法はヘルプタブを確認してください。"
+}

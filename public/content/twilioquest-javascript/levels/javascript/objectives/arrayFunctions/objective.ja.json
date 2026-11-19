@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：配列の組み込み関数",
+  "description": "<strong>配列を分割</strong>し、その中の<strong>要素を並べ替える</strong>方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

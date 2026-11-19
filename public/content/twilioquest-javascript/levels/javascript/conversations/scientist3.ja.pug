@@ -1,0 +1,27 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+// Responses
+mixin thanks
+  response#thanks.
+    ありがとう。少し遠回りでしたが、お役に立ててよかったです。
+
+conversation(display_name="TwilioQuest の電気技師")
+  if lastResponse === "thanks"
+    statement.
+      一周したって、ループにかけたダジャレまで出るとは！ ここで用事を済ませたら、実験室に向かうよ。
+
+  else if worldState.eastWing.hadSavedConversation
+    statement.
+      主実験室の#[span.highlight ビーム 3 のアクセスコード]はもう渡したね。そのうち合流するけど、爆発で物資が損傷していないか確認したいんだ。ほんとに見事だった。大きな借りができたね。
+    responses
+      +thanks
+
+  else
+    - worldState.eastWing.hadSavedConversation = true;
+    statement.
+      どうやって中に入ったんだ？ 来てくれたのはうれしいけど、Infinite Loop のセキュリティを突破するには、救助隊でも何日もかかると思ってた！<br/><br/>……実験室のレーザーを再起動するコードが必要？ もちろん。ほら、#[span.highlight ビーム 3 を起動するハードウェアトークン]だ。オペレーターの中でも、君は相当の腕前だね。
+    responses
+      +thanks
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：GitHub に登録",
+  "description": "<strong>GitHub アカウント</strong>を作り、GitHub にソースコードを置いているオープンソースプロジェクトに貢献できるようにしましょう。",
+  "validation_fields": [
+    {
+      "name": "username",
+      "label": "GitHub のユーザー名を入力してください。"
+    }
+  ]
+}

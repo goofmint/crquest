@@ -1,0 +1,35 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+mixin welcome
+  response#welcome.
+    お役に立ててよかったです。
+
+mixin follow_up
+  response#follow_up.
+    Infinite Loop の貨物は回収できましたか？
+
+conversation(display_name="TwilioQuest の電気技師")
+  if lastResponse === "welcome"
+    statement.
+      クラウドには君のような人がもっと必要だね。私たちに手伝えることがあったら、遠慮なく知らせてくれ。
+
+    responses
+      +follow_up
+
+  else if lastResponse === "follow_up"
+    statement.
+      幸い、ラボ向けの貨物はほぼ無傷だった。計画が本格的に動き出したから、研究チームが必要とする道具を用意するのに忙しくなりそうだ。でも、あの貨物船に閉じ込められるよりはずっといい。恩に着るよ。
+
+    responses
+      +welcome
+
+  else
+    statement.
+      #[span.highlight ダックタイピウム]の分子を安定させて、みんなを救ってくれたんだね。評判どおりのオペレーターだ！
+
+    responses
+      +welcome
+      +follow_up
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

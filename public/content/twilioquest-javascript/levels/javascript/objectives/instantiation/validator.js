@@ -10,11 +10,11 @@ module.exports = async helper => {
 
     const exists = await helper.fs.existsAsync(programPath);
     if (!exists) {
-      helper.fail(`
+      helper.fail(helper.t("fileMissing", `
         We couldn't find your "construction.js" script in your 
         JavaScript code folder. Does the file below exist? <br/><br/>
-        <span style="word-wrap:break-word">${programPath}</span>
-      `);
+        <span style="word-wrap:break-word">{{programPath}}</span>
+      `, { programPath }));
       return;
     }
 
@@ -138,7 +138,7 @@ module.exports = async helper => {
     if (tq.readError) {
       console.log(tq.readError.text);
       if (tq.readError.name === 'ReferenceError') {
-        return helper.fail(`
+        return helper.fail(helper.t("definitionMissing", `
           It looks like a <span class="highlight">construct</span> 
           function was not defined in your
           code. At least, we didn't see it in the global scope of your script.
@@ -146,81 +146,81 @@ module.exports = async helper => {
           Did you name the function 
           "<span class="highlight">construct</span>"? Maybe 
           double-check your spelling?
-        `);
+        `));
       } else {
-        return helper.fail(`
+        return helper.fail(helper.t("validationError", `
           There was a problem validating your code. The error we got was:
           <br/><br/>
-          ${tq.readError.text}
-        `);
+          {{value1}}
+        `, { value1: tq.readError.text }));
       }
     }
 
     if (tq.outcome === 'not-function') {
-      let message = `
+      const message = helper.t("invalidDefinition", `
         We found a variable called 
         <span class="highlight">construct</span>, but it's not a
         callable function. Check the Help section for more guidance on creating
         a JavaScript function.
-      `;
+      `);
 
       return helper.fail(message);
     }
 
     if (tq.outcome === 'no-value') {
-      return helper.fail(`
+      return helper.fail(helper.t("missingReturnValue", `
           It looks like your function is not yet returning a value. The final
           line of code in your function before the "}" should use the
           <span class="highlight">return</span> keyword to pass back a value of
           some kind as a result of executing the function. See the example code
           in the Help section.
-        `);
+        `));
     }
 
     if (tq.outcome === 'not-object') {
-      return helper.fail(`
+      return helper.fail(helper.t("notObject", `
           It looks like your function is not returning an object. Your
           function must return an object literal.
-        `);
+        `));
     }
 
     if (tq.outcome === 'missing-keys') {
-      return helper.fail(`
+      return helper.fail(helper.t("missingKeys", `
           It looks like your returned object is missing some keys.
           
-          The keys ${tq.keys} were missing!
-        `);
+          The keys {{value1}} were missing!
+        `, { value1: tq.keys }));
     }
 
     if (tq.outcome === 'mismatched-keys') {
-      return helper.fail(`
+      return helper.fail(helper.t("incorrectKeys", `
           Not all of the keys for your returned object match correctly.
           <br/><br/>
-          ${tq.details}
-        `);
+          {{value1}}
+        `, { value1: tq.details }));
     }
 
     if (tq.outcome === 'call-error') {
-      return helper.fail(`
+      return helper.fail(helper.t("callError", `
         There was an error executing your construct function. Please 
         ensure that you can exercise your function from the command line 
         successfully and try again. Use the starter code in the Help section if
         you are stuck. Here's the error we got from trying to call your 
         function: <br/><br/>
-        <span class="highlight">${tq.error}</span>
-      `);
+        <span class="highlight">{{value1}}</span>
+      `, { value1: tq.error }));
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       That did the trick! The matter instantiator function for this console is
       repaired.
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("executionError", `
       There was an error executing your JavaScript code. Please ensure that you
       can run it from the command line successfully and try again. Here's the 
       error we got: <br/><br/>
-      <span class="highlight">${e}</span>
-    `);
+      <span class="highlight">{{e}}</span>
+    `, { e }));
   }
 };

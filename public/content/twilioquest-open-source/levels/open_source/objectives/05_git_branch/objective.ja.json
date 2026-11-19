@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：ブランチを作る",
+  "description": "プロジェクトへの変更をまとめる<strong>ブランチ</strong>を、ローカルの Git リポジトリに作成します。",
+  "validation_fields": [
+    {
+      "name": "branchName",
+      "label": "作成したブランチの名前を入力してください。"
+    }
+  ]
+}

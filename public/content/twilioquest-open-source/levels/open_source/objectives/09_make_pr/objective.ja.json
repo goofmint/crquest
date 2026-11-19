@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：プルリクエストを作る",
+  "description": "<strong>プルリクエスト</strong>を作り、プロジェクトに変更を提出しましょう。",
+  "validation_fields": [
+    {
+      "name": "prNumber",
+      "label": "作成したプルリクエストの番号を入力してください。"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+mixin how_get_job
+  response#how_get_job.
+    大切なプロジェクトだと聞きました。どうしてこの研究を始めたのですか？
+
+conversation(display_name="TwilioQuest の研究員")
+  if lastResponse === "how_get_job"
+    statement.
+      分子生物学の博士号を取った頃は、こんなことをするとは思っていませんでした。製薬会社から誘われた仕事ほど稼げるわけでもありませんし。<br/><br/>でも、謎を解く機会には目がなくて。TwilioQuest プログラムから未知の物質を研究してほしいと言われて、どうして断れたでしょう？
+    responses
+      response#lucky_to_have.
+        チームはあなたがいて幸運ですね。
+
+  else if lastResponse === "lucky_to_have"
+    statement.
+      そうでしょう？ ;) <br/><br/>それに、私たちも助けてもらえて幸運です。では、作業に戻りましょうか。
+
+  else if lastResponse === "what_happened"
+    include scientist1_disaster.ja.pug
+
+  else if worldState.room1.explosionTriggered
+    if lastResponse
+      include scientist1_disaster.ja.pug
+    else if worldState.scientistDisasterConvo
+      statement.
+        #[span.red 爆発で生じた次元の裂け目]が広がっています。実験を逆転できると思いますが、まず#[span.highlight この部屋のビームを復旧させる]必要があります。<br/><br/>ラボのあちこちに取り残された#[span.highlight 同僚を探してください]。ビームを動かすには、彼らの起動コードが必要です。急げばまだ間に合います。
+      responses
+        response#what_happened.
+          何が起きたのか、もう一度説明してもらえますか？ 特に、ラボの半分が消えて、あちこちが燃えているところを。
+    else
+      statement.
+        まずいことになりました。本当にまずいです。
+      responses
+        response#what_happened.
+          ええ、ラボの半分が消えて、あちこちが火事です！ 何が起きたんです？
+
+  else
+    if worldState.room1.passwordFound
+      statement.
+        #[span.highlight 停止ビームのパスワード]を見つけたんですね！ さすがです！<br/><br/>せっかくですから、大実験の再開はあなたにお願いします。#[span.highlight 部屋の中央のビーム操作盤]に行き、そこでパスワードを使ってください。楽しみです。JavaScript の「ビッグバン」の瞬間がきっと見られますよ！
+      responses
+        +how_get_job
+
+    else if worldState.room1.scientistInitalConvo
+      statement.
+        部屋の中央の停止ビームの#[span.highlight パスワード探し]を手伝ってくれてありがとうございます。見つかれば#[span.highlight ダックタイピウムの研究を再開できます]！<br/><br/>私の後ろのセキュリティ障壁を抜けた先に私の机があります。停止ビームのパスワードは#[span.highlight 机の上の紙に書いてあります]。
+      responses
+        +how_get_job
+
+    else
+      include scientist1_initial.ja.pug
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

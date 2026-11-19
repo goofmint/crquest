@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：master をマージ",
+  "description": "master ブランチを同期したので、その変更を新しいブランチにマージしましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "マージして新しいブランチを更新したら、ハックを押してください。"
+    }
+  ]
+}

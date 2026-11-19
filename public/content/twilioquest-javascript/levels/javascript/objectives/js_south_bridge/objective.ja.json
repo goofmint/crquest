@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：必要なら水をやる",
+  "description": "if 文に<strong>より複雑な条件</strong>を指定する方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標タブの指示に従ってプログラムを書き、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

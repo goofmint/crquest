@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：ビーム 4 を起動",
+  "description": "<strong>理論物理学者の起動コード</strong>と<strong>オブジェクトとデータ型</strong>の知識を使って、この停止ビームを起動しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "左側に示された目標を達成したら、<em>ハック</em>をクリックしてください。"
+    }
+  ]
+}

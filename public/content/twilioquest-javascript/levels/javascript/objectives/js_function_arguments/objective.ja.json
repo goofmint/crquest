@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：関数の引数",
+  "description": "<strong>引数</strong>を受け取る関数を作り、入力に応じて異なる結果を返せるようにしましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

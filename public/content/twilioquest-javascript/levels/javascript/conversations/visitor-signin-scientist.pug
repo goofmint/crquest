@@ -67,11 +67,10 @@ conversation(display_name="TwilioQuest Scientist")
         research module.
 
 -
-  // After conversation happens once, Operator gets green card
-  const newWorldState = {
-    ...worldState,
-    accessLevels: { ...worldState.accessLevels, green: { opened: [] } }
+  // Only grant the green card once, preserving saved door state.
+  if (!(worldState.accessLevels && worldState.accessLevels.green)) {
+    setState(STATE_KEY, {
+      ...worldState,
+      accessLevels: { ...worldState.accessLevels, green: { opened: [] } },
+    });
   }
-  setState(STATE_KEY, newWorldState);
-        
-

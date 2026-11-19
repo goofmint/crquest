@@ -2,7 +2,7 @@ module.exports = async (helper) => {
   const username = helper.getNormalizedInput("username", { lowerCase: false });
 
   if (!username) {
-    return helper.fail(`Please enter the username of your GitHub account!`);
+    return helper.fail(helper.t("missingUsername", "Please enter the username of your GitHub account!"));
   }
 
   try {
@@ -10,19 +10,23 @@ module.exports = async (helper) => {
 
     if (response.status === 200) {
       return helper.success(
-        `We found your GitHub user, ${username}. Good job!`,
+        helper.t("found", "We found your GitHub user, {{username}}. Good job!", { username }),
         [{ name: "GITHUB_USERNAME", value: username }]
       );
     } else {
       helper.fail(
-        `We couldn't find the GitHub user, ${username}. Is there a typo in the username?`
+        helper.t(
+          "notFound",
+          "We couldn't find the GitHub user, {{username}}. Is there a typo in the username?",
+          { username }
+        )
       );
     }
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate your GitHub username!
+      helper.t("error", `Something went wrong when we tried to validate your GitHub username!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

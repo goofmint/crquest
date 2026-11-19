@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：要素ごとに処理",
+  "description": "配列の各要素に同じ処理を実行することはよくあります。そのために<strong>ループ</strong>を使います。配列の組み込み関数<strong>forEach</strong>を使ってみましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

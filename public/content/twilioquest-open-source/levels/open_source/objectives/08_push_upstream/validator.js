@@ -8,18 +8,26 @@ module.exports = async helper => {
 
     if (response.status === 200) {
       return helper.success(
-        `We found your branch "${TQ_OPEN_PIXEL_ART_BRANCH}" on your remote repository for the user "${TQ_GITHUB_USERNAME}"!`
+        helper.t(
+          "found",
+          "We found your branch \"{{TQ_OPEN_PIXEL_ART_BRANCH}}\" on your remote repository for the user \"{{TQ_GITHUB_USERNAME}}\"!",
+          { TQ_OPEN_PIXEL_ART_BRANCH, TQ_GITHUB_USERNAME }
+        )
       );
     } else {
       helper.fail(
-        `We could not find your branch "${TQ_OPEN_PIXEL_ART_BRANCH}" on your remote repository "open-pixel-art" for the user "${TQ_GITHUB_USERNAME}"!`
+        helper.t(
+          "notFound",
+          "We could not find your branch \"{{TQ_OPEN_PIXEL_ART_BRANCH}}\" on your remote repository \"open-pixel-art\" for the user \"{{TQ_GITHUB_USERNAME}}\"!",
+          { TQ_OPEN_PIXEL_ART_BRANCH, TQ_GITHUB_USERNAME }
+        )
       );
     }
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate your Open Pixel Art branch!
+      helper.t("error", `Something went wrong when we tried to validate your Open Pixel Art branch!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

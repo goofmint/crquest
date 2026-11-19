@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：ほこりをかぶった古い宝箱",
+  "description": "奇妙な仕掛けで宝箱に鍵がかかっています。どうすれば開くのでしょうか？",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標タブの指示に従ってプログラムを書き、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

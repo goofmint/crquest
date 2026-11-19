@@ -1,0 +1,35 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+mixin welcome
+  response#welcome.
+    これも仕事のうちですよ。
+
+mixin sabotage
+  response#sabotage.
+    最後のレーザーを直したとき、何者かの妨害の痕跡がありました。
+
+conversation(display_name="TwilioQuest の主任研究員")
+  if lastResponse === "welcome"
+    statement.
+      そう頻繁には困りますよ！ 現実を脅かす危機に、普段から週に何度も対応しているんですか？
+
+    responses
+      +sabotage
+
+  else if lastResponse === "sabotage"
+    statement.
+      そのとおりです。ラボの監視映像を調べたら、レーザーに細工したのはあの気難しい植物学者でした！ しかも都合よくステーションから姿を消しています。まだ調査中ですが、#[span.red レガシー・システムズ]が彼を送り込み、私たちの研究を妨害させた疑いがあります。<br/><br/>ちょうどあの時に来てくれてよかった。#[span.red レガシー・システムズ]の計画は成功寸前でした。あなたほどの腕を持つオペレーターが来るとは、予想していなかったでしょう。
+
+    responses
+      +welcome
+
+  else
+    statement.
+      すごい……#[span.highlight ダックタイピウム]の分子が安定しました。成功です！<br/><br/>何度も言われているかもしれませんが、あなたは本当の英雄です。研究チームも、クラウドのすべての住民も、あなたには返しきれない恩があります。
+
+    responses
+      +welcome
+      +sabotage
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

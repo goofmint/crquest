@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：作業の履歴を残そう",
+  "description": "<strong>ローカルの Git リポジトリ</strong>に作業を記録しましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "JavaScript の作業用フォルダーで Git リポジトリを初期化し、最初のコミットを作成したらハックをクリックしてください！"
+    }
+  ]
+}

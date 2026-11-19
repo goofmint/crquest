@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：いろいろな変数",
+  "description": "JavaScript のさまざまなデータ型で<strong>変数を宣言</strong>する練習をして、宝箱を開けましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

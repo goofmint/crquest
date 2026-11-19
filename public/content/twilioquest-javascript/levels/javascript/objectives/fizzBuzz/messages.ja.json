@@ -1,0 +1,8 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "やりました！ これで面接のひっかけ問題も怖くありません。",
+  "incorrectResult": "\"{{value1}}\" でスクリプトを試したところ、\"{{correct}}\" ではなく \"{{result}}\" が出力されました。スクリプトをテストし直してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"fizzBuzz.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

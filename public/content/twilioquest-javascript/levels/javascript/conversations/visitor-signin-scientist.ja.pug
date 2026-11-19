@@ -1,0 +1,61 @@
+-
+  // After conversation happens once, Operator gets green card
+  const STATE_KEY = 'TQ_JAVASCRIPT_WORLD_STATE';
+  const worldState = getState(STATE_KEY) || {};
+
+// Responses
+mixin security_tight
+  response#security_tight.
+    ステーションの警備は厳重ですね。どうしてですか？
+
+mixin about
+  response#about.
+    ステーションではどんな研究をしているのですか？
+
+conversation(display_name="TwilioQuest の研究員")
+  case lastResponse
+    when "about"
+      statement#about
+      responses
+        +security_tight
+
+    when "security_tight"
+      statement#security_tight
+      responses
+        +about
+
+    default
+      if worldState.accessLevels && worldState.accessLevels.green
+        statement#default_alt
+      else
+        statement#default
+      responses
+        +security_tight
+        +about
+
+  statements
+
+    statement#security_tight
+      text.
+        JavaScript は世界で最も広く使われているプログラミング言語ですが、ここの研究は DOM 要素の表示切り替えよりずっと奥深いんです。クラウドという仮想宇宙を JavaScript がどう支えているのか、その言語を形作る基礎要素について最先端の研究をしています。<br/><br/>重要で刺激的な研究ですが、危険も伴います。訓練を受けた職員だけが関われるようにしないといけません。
+
+    statement#about
+      text.
+        いくつもの計画が進行中ですが、最も進んでいるのは JavaScript の重要な構成元素、ダックタイピウムの研究です。チームは衝撃的な成果を出す寸前ですよ。<br/><br/>ぜひ見学してみてください！ 緑色の検問所を通ったら北の研究区画へ進んでください。今のキーカードで入れる研究区画はそこだけです。
+
+    statement#default_alt
+      text.
+        こんにちは、オペレーター！ セキュリティシステムの点検にご協力いただき、ありがとうございます！
+
+    statement#default
+      text.
+        こんにちは、オペレーター！ JavaScript テストラボへようこそ。お待ちしていました。セキュリティシステムの点検に来たと伺っています。<br/><br/>まず、#[span.highlight 緑のキーカード]をお渡しします。これで中央広場とダックタイピウム研究区画に入れます。
+
+-
+  // Only grant the green card once, preserving saved door state.
+  if (!(worldState.accessLevels && worldState.accessLevels.green)) {
+    setState(STATE_KEY, {
+      ...worldState,
+      accessLevels: { ...worldState.accessLevels, green: { opened: [] } },
+    });
+  }

@@ -18,28 +18,28 @@ module.exports = async helper => {
 
     if (code === 0) {
       helper.success(
-        `
+        helper.t("success", `
           Awesome! Looks like you have this version installed: <br/>
-          <span class="highlight">${versionString}</span> <br/><br/>
+          <span class="highlight">{{versionString}}</span> <br/><br/>
           Please proceed to the next security checkpoint.
-        `,
+        `, { versionString }),
         [{ name: 'NODE_EXE', value: nodePath }]
       );
     } else {
-      helper.fail(`
+      helper.fail(helper.t("invalidPath", `
           Welp... something went wrong when we tried to validate this Node.js
           path. Double check the path and try again.
-        `);
+        `));
     }
   } catch (e) {
     console.log(e);
     if (e.name === 'NiceError') {
       helper.fail(e.message);
     } else {
-      helper.fail(`
+      helper.fail(helper.t("installationError", `
         Sorry! We couldn't validate your Node.js installation. Please try
         again.
-      `);
+      `));
     }
   }
 };

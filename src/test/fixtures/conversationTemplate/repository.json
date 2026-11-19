@@ -3657,50 +3657,17 @@
   "all": {
    "html": "<!-- Responses--><conversation display_name=\"TwilioQuest Scientist\"><statement id=\"default_alt\"></statement><responses><response id=\"security_tight\">Security seems pretty tight aboard the station - why's that?\n</response><response id=\"about\">What kind of research are you doing aboard the station?\n</response></responses><statements><statement id=\"security_tight\"><text>While JavaScript is the single most used programming language in the\nworld, our work here on the station goes much deeper than toggling the \nvisibility of DOM elements. We are doing cutting edge research on \nthe foundational elements of the language, to understand how it is able \nto hold the virtual universe of The Cloud together.<br/><br/>\nWhile vital and exciting, this research can also be dangerous. We need \nto ensure only trained staff are permitted to engage in this research.\n</text></statement><statement id=\"about\"><text>There are numerous programs underway, but our most mature program is our \nresearch on Ducktypium, one of the critical constituent elements of\nJavaScript. The team is on the verge of some truly explosive results.<br/><br/>\nYou should check out the project! Once you clear the green checkpoint,\nproceed to the north research module. It will be the only lab module you \ncan access with your current keycard.\n</text></statement><statement id=\"default_alt\"><text>Hi Operator! Thanks for your help inspecting our security systems!\n</text></statement><statement id=\"default\"><text>Hello, Operator! Welcome to the JavaScript Test Lab! We've been expecting \nyou. I understand you'll be inspecting our security system?<br/><br/>\nTo get you started, I can provide you a <span class=\"highlight\">green keycard</span>. \nThis should enable you to access the main concourse, and the Ducktypium \nresearch module.\n</text></statement></statements></conversation>",
    "filename": "<repo>/public/content/twilioquest-javascript/levels/javascript/conversations/visitor-signin-scientist.pug",
-   "setStateCalls": [
-    [
-     "TQ_JAVASCRIPT_WORLD_STATE",
-     {
-      "accessLevels": {
-       "green": {
-        "opened": []
-       }
-      }
-     }
-    ]
-   ]
+   "setStateCalls": []
   },
   "all / security_tight": {
    "html": "<!-- Responses--><conversation display_name=\"TwilioQuest Scientist\"><statement id=\"security_tight\"></statement><responses><response id=\"about\">What kind of research are you doing aboard the station?\n</response></responses><statements><statement id=\"security_tight\"><text>While JavaScript is the single most used programming language in the\nworld, our work here on the station goes much deeper than toggling the \nvisibility of DOM elements. We are doing cutting edge research on \nthe foundational elements of the language, to understand how it is able \nto hold the virtual universe of The Cloud together.<br/><br/>\nWhile vital and exciting, this research can also be dangerous. We need \nto ensure only trained staff are permitted to engage in this research.\n</text></statement><statement id=\"about\"><text>There are numerous programs underway, but our most mature program is our \nresearch on Ducktypium, one of the critical constituent elements of\nJavaScript. The team is on the verge of some truly explosive results.<br/><br/>\nYou should check out the project! Once you clear the green checkpoint,\nproceed to the north research module. It will be the only lab module you \ncan access with your current keycard.\n</text></statement><statement id=\"default_alt\"><text>Hi Operator! Thanks for your help inspecting our security systems!\n</text></statement><statement id=\"default\"><text>Hello, Operator! Welcome to the JavaScript Test Lab! We've been expecting \nyou. I understand you'll be inspecting our security system?<br/><br/>\nTo get you started, I can provide you a <span class=\"highlight\">green keycard</span>. \nThis should enable you to access the main concourse, and the Ducktypium \nresearch module.\n</text></statement></statements></conversation>",
    "filename": "<repo>/public/content/twilioquest-javascript/levels/javascript/conversations/visitor-signin-scientist.pug",
-   "setStateCalls": [
-    [
-     "TQ_JAVASCRIPT_WORLD_STATE",
-     {
-      "accessLevels": {
-       "green": {
-        "opened": []
-       }
-      }
-     }
-    ]
-   ]
+   "setStateCalls": []
   },
   "all / about": {
    "html": "<!-- Responses--><conversation display_name=\"TwilioQuest Scientist\"><statement id=\"about\"></statement><responses><response id=\"security_tight\">Security seems pretty tight aboard the station - why's that?\n</response></responses><statements><statement id=\"security_tight\"><text>While JavaScript is the single most used programming language in the\nworld, our work here on the station goes much deeper than toggling the \nvisibility of DOM elements. We are doing cutting edge research on \nthe foundational elements of the language, to understand how it is able \nto hold the virtual universe of The Cloud together.<br/><br/>\nWhile vital and exciting, this research can also be dangerous. We need \nto ensure only trained staff are permitted to engage in this research.\n</text></statement><statement id=\"about\"><text>There are numerous programs underway, but our most mature program is our \nresearch on Ducktypium, one of the critical constituent elements of\nJavaScript. The team is on the verge of some truly explosive results.<br/><br/>\nYou should check out the project! Once you clear the green checkpoint,\nproceed to the north research module. It will be the only lab module you \ncan access with your current keycard.\n</text></statement><statement id=\"default_alt\"><text>Hi Operator! Thanks for your help inspecting our security systems!\n</text></statement><statement id=\"default\"><text>Hello, Operator! Welcome to the JavaScript Test Lab! We've been expecting \nyou. I understand you'll be inspecting our security system?<br/><br/>\nTo get you started, I can provide you a <span class=\"highlight\">green keycard</span>. \nThis should enable you to access the main concourse, and the Ducktypium \nresearch module.\n</text></statement></statements></conversation>",
    "filename": "<repo>/public/content/twilioquest-javascript/levels/javascript/conversations/visitor-signin-scientist.pug",
-   "setStateCalls": [
-    [
-     "TQ_JAVASCRIPT_WORLD_STATE",
-     {
-      "accessLevels": {
-       "green": {
-        "opened": []
-       }
-      }
-     }
-    ]
-   ]
+   "setStateCalls": []
   }
  },
  "public/content/twilioquest-open-source/levels/open_source/conversations/daizen.pug": {

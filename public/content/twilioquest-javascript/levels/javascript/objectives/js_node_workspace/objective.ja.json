@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：作業用フォルダーを作成",
+  "description": "研究員は JavaScript のコードをまとめておく<strong>フォルダーをコンピューター上に作成</strong>します。この課題でそのフォルダーを作りましょう。",
+  "validation_fields": [
+    {
+      "name": "workspacePath",
+      "label": "TwilioQuest の JavaScript コードを保存するフォルダーを選択してください。"
+    }
+  ]
+}

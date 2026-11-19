@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：必要な要素だけを選ぶ",
+  "description": "JavaScript の<strong>配列を絞り込み</strong>、必要な要素だけを取り出します。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

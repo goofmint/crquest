@@ -1,0 +1,5 @@
+{
+  "installationError": "Node.js のインストールを確認できませんでした。もう一度お試しください。",
+  "invalidPath": "Node.js のパスを検証できませんでした。パスを確かめて、もう一度お試しください。",
+  "success": "お見事！ 次のバージョンがインストールされています。<br/><span class=\"highlight\">{{versionString}}</span><br/><br/>次の検問所に進んでください。"
+}

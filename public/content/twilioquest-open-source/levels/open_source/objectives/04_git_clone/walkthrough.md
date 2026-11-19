@@ -10,16 +10,16 @@ The git command line tool provides a command called `clone` to enable you to do 
 
 GitHub maintains [documentation about how to obtain the URL](https://help.github.com/en/articles/cloning-a-repository) for a GitHub hosted repository. This article walks you through the entire process of cloning, but we'll walk through it here too.
 
-From GitHub you should find a URL that starts with `https://` and ends in `.git`. It should look something like this:
+On GitHub, copy the HTTPS clone URL from your own Open Pixel Art fork. It starts with `https://` and ends in `.git`. If you kept the default fork name, your URL looks like this:
 
 ```
-https://github.com/twilio-labs/open-pixel-project
+https://github.com/<%= env.TQ_GITHUB_USERNAME.value %>/open-pixel-art.git
 ```
 
 Once you have this URL you're going to run the `git clone` command in your terminal with the URL after it like this:
 
 ```
-git clone https://github.com/twilio-labs/open-pixel-project
+git clone https://github.com/<%= env.TQ_GITHUB_USERNAME.value %>/open-pixel-art.git
 ```
 
 Now the cloning process will begin!

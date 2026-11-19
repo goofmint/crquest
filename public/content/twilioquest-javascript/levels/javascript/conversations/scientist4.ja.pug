@@ -1,0 +1,61 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+mixin yes_cant_see
+  response#yes_cant_see.
+    聞こえます。でも姿が見えません……どうしたんですか？
+
+mixin how_do_that
+  response#how_do_that.
+    肉体がなくなるなんて大変ですね……どう手伝えばいいですか？
+
+mixin need_key
+  response#need_key.
+    主任研究員の指示で、ダックタイピウム実験室のレーザーを起動するコードを受け取りに来ました。持っていますか？
+
+conversation(display_name="TwilioQuest の理論物理学者")
+  if lastResponse === "yes_cant_see"
+    statement.
+      よかった、やっと誰かがここにいると気づいてくれました！ ダックタイピウムの爆発で、この物質実体化装置が暴走したんです。安定させようとしたら誤って作動し、#[span.highlight 私の体が多元宇宙のこの次元と位相がずれてしまいました]！<br/><br/>実に興味深い科学現象ですが、よければその話は私の体を元に戻してからにしましょう。
+    responses
+      +how_do_that
+      +need_key
+
+  else if lastResponse === "how_do_that"
+    statement.
+      この部屋の東西の通路に操作端末があります。爆発で故障したのでしょう。#[span.highlight 両方の端末を復旧させれば]、物質実体化装置で私の体を再構成できるはずです。
+    responses
+      +need_key
+
+  else if lastResponse === "need_key"
+    statement.
+      持っていますが、ハードウェアキーも体といっしょに変化してしまいました。#[span.highlight 私の体を実体化させてくれたら]、起動コードをお渡しします。
+    responses
+      +how_do_that
+
+  else if worldState.northWing.summonAnimFinished
+    if worldState.northWing.hadSavedConversation
+      statement.
+        改めて、#[span.highlight 私の体を元に戻してくれて]ありがとうございます。実験室の北側レーザーに必要な#[span.highlight 起動コード]はもうお持ちですよね。じきにそちらに合流します。
+      responses
+    else
+      - worldState.northWing.hadSavedConversation = true;
+      statement.
+        待って……私が見えますか？ 見えるんですね！ やりました、#[span.highlight 私の体が元に戻りました]！<br/><br/>どうぞ、実験室の北側レーザーの#[span.highlight 起動コードをお持ちください]。すぐに合流しますが、まずは内臓が全部ちゃんと実体化したか確かめないと。それに、前はもう数センチ背が高かった気がするんですが……。
+      responses
+
+  else if worldState.northWing.hadIntroConversation
+    statement.
+      もしもし？ まだ聞こえますか？ #[span.highlight 私の体を実体化させてくれたら]、必要な起動コードは喜んでお渡しします。
+    responses
+      +how_do_that
+      +need_key
+
+  else
+    - worldState.northWing.hadIntroConversation = true;
+    statement.
+      助けて！ 誰か！ 聞こえますか！？
+    responses
+      +yes_cant_see
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

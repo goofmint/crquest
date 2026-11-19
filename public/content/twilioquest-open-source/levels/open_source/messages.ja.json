@@ -1,0 +1,10 @@
+{
+  "forest.askLeader": "<i>森の奥に進む前に、村の長と話す必要がありそうだ。</i>",
+  "forest.wayClear": "<i>森へ下りる道が開いたようだ。さあ、<em>オープンソースの炎</em>を探そう…。</i>",
+  "forest.completeNotification": "今できる<span class=\"highlight\">オープンソースの森</span>の目標は、全部終わった！",
+  "forest.completeLog": "今できるオープンソースの森の目標は、全部終わった！",
+  "brush.needsFlame": "<em>オープンソースの炎</em>があれば、このやぶを焼いて通れるかもしれない。",
+  "brush.returnLater": "うーん。<em>オープンソースの炎</em>でもこのやぶは通れない。森の奥まで進んでから、また戻ってこよう。",
+  "observation.guard": "<i>寡黙な森の衛兵は落ち着いた様子でこちらに気づいたが、世間話には興味がなさそうだ…。</i>",
+  "observation.vendor": "<i>広場の商人たちは、クラウド各地から集めた品々を並べている。立ち止まって見て回る時間があればよかったのに。</i>"
+}

@@ -1,0 +1,8 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "欠けていた割り算のスクリプトを置き換えると、レーザーが消えていきます。<br/><br/>研究員の机から<strong>レーザーのパスワードを取りましょう</strong>！",
+  "divideResult": "スクリプトを実行しましたが、入力した数値を 2 で割った結果が出力されませんでした。<br/><br/>ヘルプタブのひな型で<em>最後の行を変更した</em>か確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"divideByTwo.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

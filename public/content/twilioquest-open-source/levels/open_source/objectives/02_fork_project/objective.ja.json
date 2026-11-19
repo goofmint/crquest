@@ -1,0 +1,10 @@
+{
+  "title": "オープンソースに貢献：リポジトリのフォーク",
+  "description": "オープンソースプロジェクトを<strong>フォーク</strong>し、自分の変更を加えられるようにしましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "open-pixel-art をフォークしたら、ハックを押してください。"
+    }
+  ]
+}

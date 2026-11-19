@@ -15,7 +15,7 @@ While searching for the means to extend the west bridge in the lab, you discover
 
 ## Fixing the Tree Life Detector
 
-Create a file called `treeLifeDetector.js` in your code folder. This program will take a single **command line argument** - a single-digit `Number` indicating the current life status of a tree. You see a current mapping of tree life status IDs to human-readable strings posted next to the control panel:
+Create a file called `treeLifeDetector.js` in your code folder. This program will take a single **command line argument** - a `Number` indicating the current life status of a tree. You see a current mapping of tree life status IDs to human-readable strings posted next to the control panel:
 
 | Tree Life Status ID | Tree Status |
 | ------------------- | ----------- |

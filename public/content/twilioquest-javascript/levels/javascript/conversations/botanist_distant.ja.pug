@@ -1,0 +1,71 @@
+- const worldState = getState('TQ_JAVASCRIPT_WORLD_STATE');
+
+// Responses
+mixin need_code
+  response#need_code.
+    主任研究員が実験を逆転させようとしています。あなたのアクセスコードが必要です。
+
+mixin how_do_i_do_it
+  response#how_do_i_do_it.
+    できることなら手伝います。どうやってそちらに行けばいいですか？
+
+mixin second_thought
+  response#second_thought.
+    やっぱり、そこに置いていって時空が崩壊するに任せてもいいかも。少なくともあなたの態度に付き合わずに済みますから。
+
+mixin can_you_just_tell
+  response#can_you_just_tell.
+    宇宙が崩れかけていて、時間がないんです。アクセスコードを教えてもらえませんか？
+
+conversation(display_name="TwilioQuest の植物学者")
+  if lastResponse === "how_do_i_do_it"
+    statement.
+      どうやってですか？ 明らかでしょう！ ラボの区画をつなぐ#[span.highlight エネルギー橋を延ばす]のです。各区画の橋のそばに操作パネルがあるはずです。<br/><br/>おそらく#[span.highlight 条件分岐を使う JavaScript コード]を書く頭が必要でしょうから、あまり期待していませんよ。
+    responses
+      +can_you_just_tell
+      +second_thought
+
+  else if lastResponse === "can_you_just_tell"
+    statement.
+      あなたが気にすべき現実は、科学の発展を担うかけがえのない私が、同僚たちの能力不足で閉じ込められたということです！<br/><br/>アクセスコードはハードウェアトークンに暗号化されていて、そこまでしてこの愚かな用事を続けたいなら、#[span.highlight 私のところに取りに来る]しかありません。まあ、あなたにできる用事はそれくらいでしょうけれど。
+    responses
+      +how_do_i_do_it
+      +second_thought
+
+  else if lastResponse === "second_thought"
+    statement.
+      そんなことは……しないでしょう！ 私は……その……どうかやめてください。
+    responses
+      +how_do_i_do_it
+
+  else if lastResponse === "what_was_that"
+    statement.
+      その冗談が愛嬌だとでも？ 断じて違います。そんな幼稚な話を続ければ、上司から#[span.red 厳重注意]を受けますよ！
+    responses
+      +need_code
+      +how_do_i_do_it
+
+  else if lastResponse === "need_code"
+    statement.
+      ふん、解決策を考えているのですか。私がこの計画の責任者だったなら、そもそもこんな事態には陥りませんでしたよ。<br/><br/>彼女の手伝いに時間を費やすというならご自由に。#[span.highlight 逃げ道を確保してくれたら、アクセスコードを差し上げます]。
+    responses
+      +can_you_just_tell
+      +how_do_i_do_it
+
+  else if worldState.southWing.hadIntroConversation
+    statement.
+      まったくひどい！ 植物学の終身教授を 20 年も務め、論文を何十本も出した私が、燃え尽きかけたラボに置き去りとは……。<br/><br/>そこのあなた！ 私を忘れたわけではないでしょうね？ 今すぐ助けなさい。さもなくば……その……。
+    responses
+      response#what_was_that.
+        何か聞こえましたか？ 困ったな、偉そうな愚痴だけ聞こえなくなることがあるんですよ。
+
+  else
+    - worldState.southWing.hadIntroConversation = true;
+    statement.
+      おい、そこのあなた！<br/><br/>この施設で最も経験豊かで実績のある科学者として命じます。今すぐ私を助けなさい！
+    responses
+      +need_code
+      +how_do_i_do_it
+
+// Flush world state changes, if any
+- setState('TQ_JAVASCRIPT_WORLD_STATE', worldState);

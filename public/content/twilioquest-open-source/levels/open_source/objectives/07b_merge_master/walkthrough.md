@@ -34,7 +34,7 @@ git merge master
 
 When you ran the merge command you'll likely have seen a lot of output telling you about how the merge went. Git will tell you if it tried to auto-merge any files and whether there were conflicts while trying to merge.
 
-If you did not see any `CONFLICT` messages then you're in luck! Git doesn't need any help resolving your merge!
+If the merge completed successfully without any `CONFLICT` messages, skip the manual resolution and commit steps and go to **Verify**.
 
 We can get some more information about the current state of our merge by running the `git status` command. This will tell us a lot of information.
 
@@ -51,7 +51,7 @@ Unmerged paths:
 
 [Its time to resolve the conflicts!](https://help.github.com/en/articles/resolving-a-merge-conflict-using-the-command-line)
 
-Once you've resolved your merge conflicts, you need to commit that resolution so git knows your final decision! We're leaving the `-m` off this time so we can use git's auto generated merge message.
+If there were conflicts, resolve them and stage the resolved files with `git add` before committing. Leave off `-m` to use Git's generated merge message.
 
 ## Commit it
 

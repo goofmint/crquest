@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：すべての要素を変換",
+  "description": "JavaScript の配列の各要素に処理を実行し、<strong>結果を新しい配列として返す</strong>方法を学びます。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標に従ってプログラムを作成し、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}

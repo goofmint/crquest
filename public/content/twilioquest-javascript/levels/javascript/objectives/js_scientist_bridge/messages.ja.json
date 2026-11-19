@@ -1,0 +1,11 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "樹木生命検知器の改良がうまくいったようです！ 橋が動き始め、ようやく植物学者への道が開けました。<br/><br/><strong>先へ進みましょう！</strong>",
+  "incorrectOutput4": "引数が 2 の場合は \"shedding\" を出力してください。実際の出力：<br/><br/><strong>{{value1}}</strong><br/>",
+  "incorrectOutput3": "引数が 1 の場合は \"flowering\" を出力してください。実際の出力：<br/><br/><strong>{{value1}}</strong><br/>",
+  "incorrectOutput2": "引数が 0 の場合は \"alive\" を出力してください。実際の出力：<br/><br/><strong>{{value1}}</strong><br/>",
+  "incorrectOutput1": "引数が 0、1、2 以外 の場合は \"other\" を出力してください。実際の出力：<br/><br/><strong>{{value1}}</strong><br/>",
+  "fileMissing": "JavaScript のコード用フォルダーに \"enhancedLifeDetector.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

@@ -30,13 +30,13 @@ async function executeCodeString(helper, node, code, args = []) {
   } catch (e) {
     if (e && e.killed) {
       console.warn("Node.js validation code timed out.");
-      throw new NiceError(`
+      throw new NiceError(helper.t("nodeValidationTimeout", `
           There was a problem validating your Node.js code - please try again.
-        `);
+        `));
     }
-    throw new NiceError(`
+    throw new NiceError(helper.t("nodeValidationError", `
         There was a problem validating your JavaScript code. Please try again.
-      `);
+      `));
   }
 }
 
@@ -102,7 +102,11 @@ async function evaluteAssertions(helper, fileName, assertionsString) {
   const exists = await helper.fs.existsAsync(programPath);
   if (!exists) {
     helper.fail(
-      `We couldn't find your "${fileName}" script in your JavaScript workspace. Does the file "${programPath}" exist?`
+      helper.t(
+        "assertionFileMissing",
+        'We couldn\'t find your "{{fileName}}" script in your JavaScript workspace. Does the file "{{programPath}}" exist?',
+        { fileName, programPath }
+      )
     );
     return false;
   }
@@ -128,26 +132,26 @@ async function evaluteAssertions(helper, fileName, assertionsString) {
     // "AssertionError: ...".
     const [, errorMessage] = stderr.match(/AssertionError\]?: (.*)/);
 
-    helper.fail(`
-      ${errorMessage}
-    `);
+    helper.fail(helper.t("assertionFailed", `
+      {{errorMessage}}
+    `, { errorMessage }));
     return false;
   }
 
   if (stderr) {
     const [, errorMessage] = stderr.match(/Error: (.*)/);
-    helper.fail(`
+    helper.fail(helper.t("assertionUnexpectedError", `
       An unexpected error occured!
       
-      "${errorMessage}"
-    `);
+      "{{errorMessage}}"
+    `, { errorMessage }));
     return false;
   }
 
   if (!stdout.includes(VALIDATION_UUID)) {
-    helper.fail(`
-      Validation script could not succesfully terminate and emit Validation UUID: "${VALIDATION_UUID}".
-    `);
+    helper.fail(helper.t("assertionIncomplete", `
+      Validation script could not succesfully terminate and emit Validation UUID: "{{validationId}}".
+    `, { validationId: VALIDATION_UUID }));
     return false;
   }
 

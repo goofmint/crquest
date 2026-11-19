@@ -1,0 +1,5 @@
+{
+  "found": "Open Pixel Art リポジトリのフォークを確認できました。お見事です！",
+  "notFound": "GitHub ユーザー {{TQ_GITHUB_USERNAME}} が所有する「open-pixel-art」というリポジトリが見つかりませんでした。フォークの名前を確認してください。",
+  "error": "Open Pixel Art のフォークを確認する際に問題が発生しました！\n\n{{err}}"
+}

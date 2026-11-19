@@ -1,0 +1,14 @@
+conversation(display_name="Daizen")
+  case lastResponse
+    when "how_does_it_work"
+      statement#how_does_it_work
+        text.
+          いい質問です！ クラウドのどんな言語でも、訳された音声をその場で聞けます。自分の声も相手の言語に切り替えられるので、正確に、途切れることなく会話できます。
+      responses
+    default
+      statement#default
+        text.
+          オペレーター、オープンソースの森へようこそ！ ここには、土地の恵みをうまく活用して暮らす<span class="highlight">ドルイドたち</span>が住んでいます。前に見える橋を渡ると、木の上に彼らの村があります！<br/><br/>ヘルメットに<span class="highlight">万能翻訳装置</span>を取り付けておいたので、ドルイドたちと話すのも問題ないはずです。
+      responses
+        response#how_does_it_work.
+          「万能翻訳装置」はどういう仕組みなの？

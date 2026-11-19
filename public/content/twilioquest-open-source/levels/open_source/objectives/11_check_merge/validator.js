@@ -8,7 +8,11 @@ module.exports = async helper => {
 
     if (response.status !== 200) {
       helper.fail(
-        `We could not find the Pull Request #${TQ_OPEN_PIXEL_ART_PR_NUMBER} on the Open Pixel Art remote repository"!`
+        helper.t(
+          "notFound",
+          "We could not find the Pull Request #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} on the Open Pixel Art remote repository\"!",
+          { TQ_OPEN_PIXEL_ART_PR_NUMBER }
+        )
       );
       return;
     }
@@ -19,26 +23,38 @@ module.exports = async helper => {
 
     if (isPrClosed && !isPrMerged) {
       helper.fail(
-        `We found the Pull Request #${TQ_OPEN_PIXEL_ART_PR_NUMBER} on the Open Pixel Art remote repository, but it was closed without being merged!`
+        helper.t(
+          "closed",
+          "We found the Pull Request #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} on the Open Pixel Art remote repository, but it was closed without being merged!",
+          { TQ_OPEN_PIXEL_ART_PR_NUMBER }
+        )
       );
       return;
     }
 
     if (!isPrMerged) {
       helper.fail(
-        `We found the Pull Request #${TQ_OPEN_PIXEL_ART_PR_NUMBER} on the Open Pixel Art remote repository, but it has not been merged yet!`
+        helper.t(
+          "unmerged",
+          "We found the Pull Request #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} on the Open Pixel Art remote repository, but it has not been merged yet!",
+          { TQ_OPEN_PIXEL_ART_PR_NUMBER }
+        )
       );
       return;
     }
 
     return helper.success(
-      `We found the Pull Request #${TQ_OPEN_PIXEL_ART_PR_NUMBER} on the Open Pixel Art remote repository and it has been merged! Congratulations on your open source contribution!`
+      helper.t(
+        "merged",
+        "We found the Pull Request #{{TQ_OPEN_PIXEL_ART_PR_NUMBER}} on the Open Pixel Art remote repository and it has been merged! Congratulations on your open source contribution!",
+        { TQ_OPEN_PIXEL_ART_PR_NUMBER }
+      )
     );
   } catch (err) {
     helper.fail(
-      `Something went wrong when we tried to validate if your Open Pixel Art pull request was merged!
+      helper.t("error", `Something went wrong when we tried to validate if your Open Pixel Art pull request was merged!
       
-      ${err}`
+      {{err}}`, { err })
     );
   }
 };

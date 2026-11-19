@@ -1,0 +1,15 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/><span class=\"highlight\">{{e}}</span>",
+  "success": "お見事！ <strong>Infinite Loop</strong> の積荷目録を修正しました。貨物船へ進めます。",
+  "incorrectItem5": "<span class=\"highlight\">inventory</span> 配列の 5 番目の要素は \"Refraction Panel\" です。実際の値は \"{{v}}\" でした。",
+  "incorrectItem4": "<span class=\"highlight\">inventory</span> 配列の 4 番目の要素は \"Concave Lens\" です。実際の値は \"{{v}}\" でした。",
+  "incorrectItem3": "<span class=\"highlight\">inventory</span> 配列の 3 番目の要素は \"Ruthenium Isotopes\" です。実際の値は \"{{v}}\" でした。",
+  "incorrectItem2": "<span class=\"highlight\">inventory</span> 配列の 2 番目の要素は \"Uranium Rod\" です。実際の値は \"{{v}}\" でした。",
+  "incorrectItem1": "<span class=\"highlight\">inventory</span> 配列の 1 番目の要素は \"Ducktypium Ore\" です。実際の値は \"{{v}}\" でした。",
+  "invalidItemType": "配列に文字列ではない要素があります。配列の中身を確認してください。",
+  "incorrectSize": "<span class=\"highlight\">inventory</span> の要素数が 5 個ではありません。目標タブのとおり、文字列を 5 つ入れてください。",
+  "notArray": "<span class=\"highlight\">inventory</span> が配列ではないようです。変数の定義を確認してください。",
+  "validationError": "コードの検証で問題が発生しました。エラーは次のとおりです。<br/><br/>{{value1}}",
+  "definitionMissing": "グローバルスコープに <span class=\"highlight\">inventory</span> 変数が見つかりません。<br/><br/>名前のつづりを確認してください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"freighterInventory.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>"
+}

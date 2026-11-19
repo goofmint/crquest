@@ -1,0 +1,10 @@
+{
+  "executionError": "JavaScript コードの実行中にエラーが発生しました。コマンドラインで正常に実行できるか確かめて、もう一度お試しください。エラーは次のとおりです。<br/><br/>{{e}}",
+  "success": "成功です！ スプリンクラーと南の橋が復旧しました。",
+  "incorrectWaterMessage": "最初の引数が 0、2 番目が 10 より大きい数値の場合は、\"WATER\" を出力してください。",
+  "notAlive": "最初の引数が 0 以外の場合は、何も出力しないでください。",
+  "insufficientDryness": "2 番目の引数が 10 以下の場合は、何も出力しないでください。",
+  "fileMissing": "JavaScript のコード用フォルダーに \"shouldWater.js\" が見つかりません。次のファイルが存在するか確認してください。<br/><br/><span style=\"word-wrap:break-word\">{{programPath}}</span>",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。"
+}

@@ -1,0 +1,10 @@
+{
+  "concatenationError": "文字列を連結する関数を実行できませんでした。<br/><br/>{{e}}",
+  "success": "やりました！ エアロックを通り、<strong>Infinite Loop</strong> に乗り込めます。",
+  "nodeValidationTimeout": "Node.js コードの検証がタイムアウトしました。もう一度お試しください。",
+  "nodeValidationError": "JavaScript コードの検証中に問題が発生しました。もう一度お試しください。",
+  "assertionFileMissing": "JavaScript の作業用フォルダーに \"{{fileName}}\" が見つかりませんでした。\"{{programPath}}\" が存在するか確認してください。",
+  "assertionFailed": "検証した結果が期待値と一致しませんでした。詳細：<br/><br/>{{errorMessage}}",
+  "assertionUnexpectedError": "検証中に予期しないエラーが発生しました。<br/><br/>\"{{errorMessage}}\"",
+  "assertionIncomplete": "検証スクリプトが正常に終了しなかったため、検証 ID \"{{validationId}}\" が出力されませんでした。"
+}

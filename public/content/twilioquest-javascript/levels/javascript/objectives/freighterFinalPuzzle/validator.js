@@ -13,29 +13,29 @@ module.exports = async (helper) => {
       !TQ_JAVASCRIPT_WORLD_STATE.eastWingSecNodes[4] ||
       !TQ_JAVASCRIPT_WORLD_STATE.eastWingSecNodes[5]
     ) {
-      return helper.fail(`
+      return helper.fail(helper.t("nodesLocked", `
         You must unlock all six security nodes before you can guess the
         password. Explore the rest of the Infinite Loop to find the rest.
         <br/><br/>
         You can check which indexes you have found in the "Objective" tab.
-      `);
+      `));
     }
 
     if (!puzzlePassword || puzzlePassword.trim() !== "F!N!TE") {
-      return helper.fail(`
+      return helper.fail(helper.t("incorrectPassword", `
         Password incorrect - check the case of the characters you entered, and
         ensure you are using the right characters based on the 2D array in the
         "Objective" tab.
-      `);
+      `));
     }
 
-    helper.success(`
+    helper.success(helper.t("success", `
       Success! The laser barrier fades away, and you are able to proceed
       onward to speak with the electrical engineer.
-    `);
+    `));
   } catch (e) {
-    helper.fail(`
+    helper.fail(helper.t("passwordError", `
       There was an error processing the password.
-    `);
+    `));
   }
 };

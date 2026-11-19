@@ -1,0 +1,10 @@
+{
+  "title": "JavaScript ラボ：生きていれば橋を架ける",
+  "description": "条件分岐で<strong>else 文</strong>を使い、西の橋を延ばしましょう。",
+  "validation_fields": [
+    {
+      "name": "prompt",
+      "label": "目標タブの指示に従ってプログラムを書き、<span class=\"highlight\">ハック</span>をクリックしてください。"
+    }
+  ]
+}
