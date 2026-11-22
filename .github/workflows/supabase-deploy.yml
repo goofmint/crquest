@@ -1,0 +1,108 @@
+# Supabase Cloud へのデプロイ (#194)。手動実行 (workflow_dispatch) のみ。
+# 手順と必要な設定: docs/supabase/cloud-deployment.md
+name: Supabase Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'デプロイ先の環境'
+        type: choice
+        required: true
+        options:
+          - staging
+          - production
+      project_ref:
+        description: '対象の Supabase project ref (環境の SUPABASE_PROJECT_REF と一致すること)'
+        type: string
+        required: true
+      confirm_project_ref:
+        description: '本番のみ必須: 対象の project ref をもう一度入力'
+        type: string
+        required: false
+      dry_run:
+        description: 'dry-run (マイグレーションの差分を表示するだけで適用しない)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  # ローカルスタック (Docker) での検証。成功しない限りデプロイに進まない。
+  verify-local:
+    name: Local verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            public/package-lock.json
+      - name: Install Tauri build dependencies (Rust integration tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev pkg-config
+      - run: npm ci
+      - run: npm test
+      - run: npm run check:platform
+      - run: npm run check:firebase
+      - name: Start local Supabase
+        run: npm run supabase:start
+      - name: Integration tests against the local stack
+        run: npm run supabase:integration
+      - name: Stop local Supabase
+        if: always()
+        run: npm run supabase:stop
+
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    needs: verify-local
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # GitHub Environment (staging / production) の Secrets と保護ルール (必須レビュアー等) が適用される
+    environment: ${{ inputs.environment }}
+    env:
+      TERMINALQUEST_DEPLOY_ENVIRONMENT: ${{ vars.TERMINALQUEST_DEPLOY_ENVIRONMENT }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # 入力はシェルへ直接展開せず環境変数経由で渡す
+      INPUT_ENVIRONMENT: ${{ inputs.environment }}
+      INPUT_PROJECT_REF: ${{ inputs.project_ref }}
+      INPUT_CONFIRM_PROJECT_REF: ${{ inputs.confirm_project_ref }}
+      INPUT_DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            public/package-lock.json
+      - run: npm ci
+      - name: Deploy migrations and Edge Functions
+        run: |
+          args=(--env "$INPUT_ENVIRONMENT" --project-ref "$INPUT_PROJECT_REF")
+          if [ "$INPUT_ENVIRONMENT" = "production" ]; then
+            args+=(--confirm-project-ref "$INPUT_CONFIRM_PROJECT_REF")
+          fi
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          npm run deploy:supabase -- "${args[@]}"
+      - name: Post-deploy verification (read-only)
+        if: ${{ !inputs.dry_run }}
+        env:
+          TERMINALQUEST_SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF }}.supabase.co
+          TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run deploy:supabase:verify
