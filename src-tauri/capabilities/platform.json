@@ -353,6 +353,8 @@
     "allow-auth-status",
     "allow-auth-start-login",
     "allow-auth-cancel-login",
-    "allow-auth-logout"
+    "allow-auth-logout",
+    "allow-cloud-save-fetch",
+    "allow-cloud-save-upload"
   ]
 }

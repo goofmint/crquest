@@ -13,7 +13,7 @@
 //   app makes at startup, backed by an empty store, an empty save, and an audio
 //   directory that lists as empty (so the audio gate passes without decoding);
 // - IndexedDB: fake-indexeddb (jsdom has none, a webview does);
-// - fetch: only the startup user-sync POST is answered, with no network I/O;
+// - fetch: any call is rejected (the game makes none at startup);
 // - canvas (`getContext` returns null) and jsdom's layout-less rendering.
 // The classic scripts of index.html (firebase, ace, Phaser) are the real files.
 // Everything else (all app code, React, styled-components, ejs, pug, ...) is the
@@ -162,6 +162,16 @@ const ipcHandlers = {
     return null;
   },
   'plugin:event|listen': () => 1,
+  // The cloud sync follows the sign-in status: this build is not configured.
+  auth_status: () => ({
+    state: 'unconfigured',
+    provider: null,
+    displayName: null,
+    offline: false,
+    persistence: 'keyring',
+    errorCode: null,
+    account: null,
+  }),
   enable_help_menu: () => null,
   'plugin:store|load': () => 1,
   // A first run: the store file does not exist yet, so the store is empty
@@ -237,11 +247,7 @@ function createWindow() {
   window.TextEncoder = TextEncoder;
   window.TextDecoder = TextDecoder;
   window.fetch = async (url, options) => {
-    if (url !== 'https://twilioquest-prod.firebaseapp.com/quest/api/v1/user-sync' ||
-        options?.method !== 'POST') {
-      throw new Error(`boot test: unexpected fetch ${options?.method ?? 'GET'} ${url}`);
-    }
-    return new Response(null, { status: 204 });
+    throw new Error(`boot test: unexpected fetch ${options?.method ?? 'GET'} ${url}`);
   };
   // The classic scripts of index.html that run before index.js (real ones)
   CLASSIC_SCRIPTS.forEach(script => {

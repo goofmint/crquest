@@ -4,6 +4,7 @@ import NavMap from './nav_map/components/NavMap';
 import FogOwlFlying from './FogOwlFlying';
 import IFrameOverlay from './IFrameOverlay';
 import DevFundamentalsElevator from './DevFundamentalsElevator';
+import CloudSaveChoice from './CloudSaveChoice';
 import FSM from './game/entities/FSM';
 
 const Center = ({ children }) => {
@@ -40,8 +41,26 @@ export default class Overlay extends Component {
       fogOwlFlying: FogOwlFlying,
       devFundamentalsElevator: DevFundamentalsElevator,
       iframe: IFrameOverlay,
+      cloudSaveChoice: CloudSaveChoice,
     },
   };
+
+  // The newest show request that arrived while the previous overlay was still
+  // hiding (the FSM ignores `show` then). It runs once, when the overlay is
+  // hidden. It is discarded when a later request replaces it: a hide request
+  // (empty `overlayComponent`), or a show while not hiding (that one is
+  // handled at once). So a stale request never overrides a later display.
+  pendingShow = null;
+
+  showOverlay(componentKey, componentProps) {
+    emitter.emit('levelLifecycle', {
+      name: 'overlayComponentDidShow',
+      componentKey,
+    });
+
+    this.state.displayFsm.action('show');
+    this.setState({ componentKey, componentProps });
+  }
 
   componentDidMount() {
     emitter.on('contextUpdate:overlayComponent', component => {
@@ -62,17 +81,31 @@ export default class Overlay extends Component {
           );
         }
 
-        emitter.emit('levelLifecycle', {
-          name: 'overlayComponentDidShow',
-          componentKey,
-        });
+        if (this.state.displayFsm.currentState === 'hiding') {
+          // Keep only the latest; the current overlay finishes hiding first.
+          this.pendingShow = { componentKey, componentProps };
+          return;
+        }
 
-        this.state.displayFsm.action('show');
-        this.setState({ componentKey, componentProps });
+        this.pendingShow = null;
+        this.showOverlay(componentKey, componentProps);
       } else {
+        this.pendingShow = null;
         this.state.displayFsm.action('hide');
       }
     });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.displayFsmState !== 'hidden' &&
+      this.state.displayFsmState === 'hidden' &&
+      this.pendingShow
+    ) {
+      const { componentKey, componentProps } = this.pendingShow;
+      this.pendingShow = null;
+      this.showOverlay(componentKey, componentProps);
+    }
   }
 
   hide() {

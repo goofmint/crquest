@@ -8,10 +8,7 @@ import {
   reduceEntries,
   describeSchema
 } from './schema';
-import {
-  syncContext
-} from './sync';
-import { setValueAsync } from '../../platform/store';
+import { setValueAsync, deleteValueAsync } from '../../platform/store';
 import { reportFailure } from '../reportFailure';
 import { t } from '../../i18n';
 
@@ -59,6 +56,51 @@ export function suppressPersistence() {
 
 export function resumePersistence() {
   persistenceSuppressed = false;
+}
+
+// Called with the keys of each committed update that is saved to disk (the
+// cloud sync registers here; context must not import it, to avoid a cycle).
+// Not called while persistence is suppressed.
+let localChangeListener = null;
+
+export function setLocalChangeListener(listener) {
+  localChangeListener = listener;
+}
+
+/**
+ * Replaces saved fields in the store, for restoring a cloud save: every key of
+ * `values` is written, every key of `removedKeys` is deleted (so that the game
+ * falls back to its default). They are applied one after another; a failure
+ * stops at the first one. Persistence is suppressed first, after the saves
+ * already queued finished, so that the running game cannot write its old state
+ * over the result. It stays suppressed on success (the caller reloads the
+ * window, which re-reads the store); on failure it is resumed and the error is
+ * thrown. Reaching the end is the proof of success, not flushPendingSaves
+ * (which resolves even when saves failed).
+ * @param {Object<string, *>} values
+ * @param {string[]} [removedKeys]
+ */
+export async function applySavedFields(values, removedKeys = []) {
+  const savedFields = getSavedFields();
+  const unknown = [...Object.keys(values), ...removedKeys].filter(
+    key => !savedFields.includes(key)
+  );
+  if (unknown.length) {
+    throw new Error(`Not saved fields: ${unknown.join(', ')}`);
+  }
+  suppressPersistence();
+  try {
+    await flushPendingSaves();
+    for (const [key, value] of Object.entries(values)) {
+      await setValueAsync(key, value);
+    }
+    for (const key of removedKeys) {
+      await deleteValueAsync(key);
+    }
+  } catch (error) {
+    resumePersistence();
+    throw error;
+  }
 }
 
 export const context = React.createContext({});
@@ -139,7 +181,9 @@ export function setContext(newContext) {
       }
     });
 
-    syncContext(validatedNewContext);
+    if (localChangeListener && !persistenceSuppressed) {
+      localChangeListener(Object.keys(validatedNewContext).filter(key => getSavedFields().includes(key)));
+    }
   });
 
 }

@@ -6,13 +6,14 @@ import {
   resumePersistence,
   flushPendingSaves,
   saveLanguagePreference,
+  applySavedFields,
+  setLocalChangeListener,
 } from '../../../js/app/common/context/index';
-import { setValueAsync } from '../../../js/app/platform/store';
+import { setValueAsync, deleteValueAsync } from '../../../js/app/platform/store';
 import { showAlert } from '../../../js/app/platform/dialog';
 
-vi.mock('../../../js/app/platform/store', () => ({ setValueAsync: vi.fn() }));
+vi.mock('../../../js/app/platform/store', () => ({ setValueAsync: vi.fn(), deleteValueAsync: vi.fn() }));
 vi.mock('../../../js/app/platform/dialog', () => ({ showAlert: vi.fn() }));
-vi.mock('../../../js/app/common/context/sync', () => ({ syncContext: vi.fn() }));
 vi.mock('../../../js/app/common/context/schema', () => ({
   validateContextUpdate: vi.fn(update =>
     Object.entries(update).map(([key, value]) => ({ key, valid: true, update: value }))
@@ -27,7 +28,7 @@ vi.mock('../../../js/app/common/context/schema', () => ({
   }),
 }));
 
-import { syncContext } from '../../../js/app/common/context/sync';
+const syncContext = vi.fn();
 
 function useContextRef() {
   const ref = {
@@ -38,6 +39,7 @@ function useContextRef() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  setLocalChangeListener(keys => keys.length && syncContext(keys));
   setValueAsync.mockResolvedValue(undefined);
   showAlert.mockResolvedValue(undefined);
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -51,11 +53,11 @@ describe('setContext persistence', () => {
     const onSaved = () => order.push('event:saved');
     emitter.on('contextUpdate:saved', onSaved);
     setValueAsync.mockImplementation(async key => void order.push(`write:${key}`));
-    syncContext.mockImplementation(() => order.push('sync'));
+    syncContext.mockImplementation(keys => order.push(`sync:${keys}`));
     setContext({ saved: 1, other: 2 });
     emitter.off('contextUpdate:saved', onSaved);
     await flushPendingSaves();
-    expect(order).toEqual(['event:saved', 'sync', 'write:saved']);
+    expect(order).toEqual(['event:saved', 'sync:saved', 'write:saved']);
     expect(setValueAsync).toHaveBeenCalledTimes(1);
     expect(setValueAsync).toHaveBeenCalledWith('saved', 1);
   });
@@ -110,7 +112,7 @@ describe('setContext save serialization', () => {
 describe('persistence suppression', () => {
   afterEach(() => resumePersistence());
 
-  it('skips only the persistence while suppressed; state, events and sync still happen', async () => {
+  it('skips the persistence and the local change notice while suppressed; state and events still happen', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const ref = { current: { setState: vi.fn((u, cb) => cb()) } };
     setContextRef(ref);
@@ -122,7 +124,7 @@ describe('persistence suppression', () => {
     expect(setValueAsync).not.toHaveBeenCalled();
     expect(ref.current.setState).toHaveBeenCalledWith({ saved: 1 }, expect.any(Function));
     expect(onSaved).toHaveBeenCalledWith(1);
-    expect(syncContext).toHaveBeenCalledTimes(1);
+    expect(syncContext).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('saved'));
     resumePersistence();
     setContext({ saved: 2 });
@@ -150,4 +152,56 @@ test('persists a language change after queued saves without changing the active 
   ]);
   expect(ref.current.state.settings.language).toBe('en');
   expect(ref.current.setState).toHaveBeenCalledTimes(2);
+});
+
+describe('applySavedFields (restoring a cloud save)', () => {
+  afterEach(() => resumePersistence());
+
+  it('suppresses persistence, writes the values in order, deletes the removed keys and stays suppressed', async () => {
+    const order = [];
+    setValueAsync.mockImplementation(async key => void order.push(`set:${key}`));
+    deleteValueAsync.mockImplementation(async key => void order.push(`delete:${key}`));
+    await applySavedFields({ saved: 1 }, ['settings']);
+    expect(order).toEqual(['set:saved', 'delete:settings']);
+    // Still suppressed: the running game cannot overwrite the restore.
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    setContext({ saved: 99 });
+    await flushPendingSaves();
+    expect(setValueAsync).toHaveBeenCalledTimes(1);
+    console.warn.mockRestore();
+  });
+
+  it('waits for queued saves before writing', async () => {
+    const order = [];
+    let finish;
+    setValueAsync.mockImplementationOnce(
+      () => new Promise(resolve => { finish = () => { order.push('queued done'); resolve(); }; })
+    );
+    setValueAsync.mockImplementation(async key => void order.push(`set:${key}`));
+    setContext({ saved: 1 });
+    const applied = applySavedFields({ settings: { name: 'x' } });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(order).toEqual([]);
+    finish();
+    await applied;
+    expect(order).toEqual(['queued done', 'set:settings']);
+  });
+
+  it('on a failed write resumes persistence, stops at that field and throws', async () => {
+    const failure = new Error('disk full');
+    setValueAsync.mockRejectedValueOnce(failure);
+    await expect(applySavedFields({ saved: 1 }, ['settings'])).rejects.toBe(failure);
+    expect(setValueAsync).toHaveBeenCalledTimes(1);
+    expect(deleteValueAsync).not.toHaveBeenCalled();
+    setValueAsync.mockResolvedValue(undefined);
+    setContext({ saved: 2 });
+    await flushPendingSaves();
+    expect(setValueAsync).toHaveBeenLastCalledWith('saved', 2);
+  });
+
+  it('refuses keys that are not saved fields without touching the store', async () => {
+    await expect(applySavedFields({ env: {} })).rejects.toThrow('env');
+    expect(setValueAsync).not.toHaveBeenCalled();
+  });
 });

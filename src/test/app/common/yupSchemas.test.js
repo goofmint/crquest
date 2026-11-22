@@ -166,9 +166,10 @@ describe('context schema', () => {
 
   test('describeSchema exposes fields with meta flags', () => {
     const { fields } = describeSchema();
-    expect(fields.hasSeenCinematic.meta).toEqual({ saveToDisk: true });
+    expect(fields.hasSeenCinematic.meta).toEqual({ saveToDisk: true, cloudSave: true });
     expect(fields.user.meta.persistOnClearProgess).toBe(true);
-    expect(fields.completedObjectives.meta.syncToBackend).toBe(true);
+    expect(fields.completedObjectives.meta.cloudSave).toBe(true);
+    expect(fields.env.meta.cloudSave).toBeUndefined();
     expect(fields.showTitle.meta).toBeUndefined();
     expect(Object.keys(fields)).toContain('xp');
   });

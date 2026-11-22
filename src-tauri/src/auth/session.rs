@@ -23,6 +23,29 @@ const REFRESH_MARGIN_SECS: u64 = 60;
 const MIN_REFRESH_DELAY_SECS: u64 = 30;
 /// Retry delay after a refresh failed because of the network.
 const RETRY_SECS: u64 = 60;
+/// `access()` refreshes first when the token has less than this left.
+const ACCESS_MIN_VALIDITY_SECS: u64 = 20;
+
+/// What a native caller needs to make an authenticated request.
+pub struct Access {
+    pub token: String,
+    pub account: String,
+}
+
+impl std::fmt::Debug for Access {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Access")
+            .field("account", &self.account)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AccessError {
+    SignedOut,
+    /// Signed in, but no valid access token could be obtained (no network).
+    Offline,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -75,6 +98,20 @@ pub struct AuthStatus {
     pub offline: bool,
     pub persistence: Persistence,
     pub error_code: Option<ErrorCode>,
+    /// Opaque fingerprint of the signed-in account (see `account_fingerprint`),
+    /// so that the renderer can tell accounts apart without knowing the user id.
+    pub account: Option<String>,
+}
+
+/// A one-way fingerprint of the Supabase user id: SHA-256 over a fixed domain
+/// string and the id, hex, first 32 characters. The renderer uses it to notice
+/// an account switch and to bind the local save to an account; the user id
+/// itself never leaves Rust. (The id is a random UUID, so the fingerprint does
+/// not give it away.)
+pub fn account_fingerprint(user_id: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("terminalquest/account/v1:{user_id}").as_bytes());
+    digest.iter().take(16).map(|b| format!("{b:02x}")).collect()
 }
 
 struct Inner {
@@ -144,6 +181,7 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
                 offline: false,
                 persistence: Persistence::Keyring,
                 error_code: None,
+                account: None,
             }),
             emit: Box::new(emit),
             open: Box::new(open),
@@ -184,6 +222,10 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
                 Persistence::Keyring
             },
             error_code,
+            account: match (&inner.session, state) {
+                (Some(s), State::SignedIn) => Some(account_fingerprint(&s.user_id)),
+                _ => None,
+            },
         };
         {
             let mut view = self.view.lock().unwrap();
@@ -361,6 +403,44 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
         if inner.pending.as_ref().map(|p| p.nonce == nonce) == Some(true) {
             self.forget_pending(&mut inner);
             self.publish(&inner, State::Error, false, Some(ErrorCode::LoginTimedOut));
+        }
+    }
+
+    // ----- access for other native modules (cloud save) -----
+
+    /// A usable access token and the account fingerprint, refreshing first when
+    /// the token is (nearly) expired. Native callers only: no command returns it.
+    pub async fn access(self: &Arc<Self>) -> Result<Access, AccessError> {
+        if self.config.is_none() {
+            return Err(AccessError::SignedOut);
+        }
+        let mut inner = self.inner.lock().await;
+        let Some(session) = inner.session.clone() else {
+            return Err(AccessError::SignedOut);
+        };
+        let fresh = |inner: &Inner, now: u64| {
+            inner
+                .access
+                .as_ref()
+                .filter(|(_, expires_at)| *expires_at > now + ACCESS_MIN_VALIDITY_SECS)
+                .map(|(token, _)| token.clone())
+        };
+        if fresh(&inner, self.now()).is_none() {
+            self.refresh_locked(&mut inner).await;
+        }
+        // The refresh may have ended the session (rejected) or kept it offline.
+        let Some(current) = inner.session.as_ref() else {
+            return Err(AccessError::SignedOut);
+        };
+        if current.user_id != session.user_id {
+            return Err(AccessError::SignedOut);
+        }
+        match fresh(&inner, self.now()) {
+            Some(token) => Ok(Access {
+                token,
+                account: account_fingerprint(&session.user_id),
+            }),
+            None => Err(AccessError::Offline),
         }
     }
 
@@ -1088,6 +1168,7 @@ mod tests {
             assert_eq!(
                 keys,
                 [
+                    "account",
                     "displayName",
                     "errorCode",
                     "offline",
@@ -1112,5 +1193,58 @@ mod tests {
             );
             assert!(!text.contains("http") && !text.contains("token"));
         }
+    }
+
+    #[tokio::test]
+    async fn access_gives_the_token_and_an_opaque_account_fingerprint() {
+        let f = fixture();
+        assert_eq!(
+            f.manager.access().await.unwrap_err(),
+            AccessError::SignedOut
+        );
+        signed_in(&f).await;
+        let access = f.manager.access().await.unwrap();
+        assert_eq!(access.token, "ACCESS-1");
+        assert_eq!(access.account, account_fingerprint("user-1"));
+        assert_eq!(
+            f.manager.status().account.as_deref(),
+            Some(access.account.as_str())
+        );
+        assert!(!access.account.contains("user-1"));
+        assert_ne!(account_fingerprint("user-1"), account_fingerprint("user-2"));
+        assert_eq!(account_fingerprint("user-1").len(), 32);
+        // The same token again: no refresh happened.
+        assert_eq!(f.api.refreshes.lock().unwrap().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn access_refreshes_an_expired_token_and_reports_offline_when_it_cannot() {
+        let f = fixture();
+        signed_in(&f).await;
+        f.clock.fetch_add(3_590, Ordering::SeqCst); // the token expires in 10 s
+        f.api
+            .refreshes
+            .lock()
+            .unwrap()
+            .push_back(Ok(tokens("ACCESS-2", "REFRESH-2")));
+        assert_eq!(f.manager.access().await.unwrap().token, "ACCESS-2");
+
+        f.clock.fetch_add(3_590, Ordering::SeqCst);
+        // No queued refresh result: the fake answers with a network error.
+        assert_eq!(f.manager.access().await.unwrap_err(), AccessError::Offline);
+        assert_eq!(f.manager.status().state, State::SignedIn);
+        assert!(f.manager.status().offline);
+    }
+
+    #[tokio::test]
+    async fn access_after_logout_is_signed_out_and_the_status_has_no_account() {
+        let f = fixture();
+        signed_in(&f).await;
+        f.manager.logout().await;
+        assert_eq!(
+            f.manager.access().await.unwrap_err(),
+            AccessError::SignedOut
+        );
+        assert_eq!(f.manager.status().account, None);
     }
 }

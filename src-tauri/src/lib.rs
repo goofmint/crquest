@@ -3,6 +3,7 @@ mod bundled_scope;
 #[cfg(test)]
 mod capability_scope;
 mod close;
+pub mod cloud_save;
 mod exec;
 mod help_menu;
 
@@ -157,6 +158,7 @@ pub fn run() {
                 quit,
             )?);
             auth::setup(app)?;
+            cloud_save::setup(app)?;
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -197,7 +199,9 @@ pub fn run() {
             auth::auth_status,
             auth::auth_start_login,
             auth::auth_cancel_login,
-            auth::auth_logout
+            auth::auth_logout,
+            cloud_save::cloud_save_fetch,
+            cloud_save::cloud_save_upload
         ])
         .run(context())
         .expect("error while running TerminalQuest");

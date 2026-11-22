@@ -75,6 +75,8 @@ The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions`
 
 Optional GitHub / Google sign-in (Settings > Account; the game works without it and offline) is described in `docs/supabase/auth.md` (Japanese): the build-time settings (`TERMINALQUEST_SUPABASE_URL`, `TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY`), the manual OAuth round trip, and the per-OS check of the `terminalquest://` callback on installed packages. The integration test against the local Auth (`cargo test --test auth_local_supabase -- --ignored`, from `src-tauri/`, with the local keys in the environment; it is not an OAuth round trip) is run as documented there.
 
+Cloud save (sync and transfer of the local save for signed-in players; the cloud save is self-reported and never a source for rankings or team scores) is described in `docs/supabase/cloud-save.md` (Japanese). Its checks against the local stack: `npm run supabase:test` (pgTAP) and `cargo test --test cloud_save_local_supabase -- --ignored` (same environment variables as the auth test).
+
 ### Tests
 
 ```

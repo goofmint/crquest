@@ -8,6 +8,7 @@ import Button from './Button';
 import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
 import { reportFailure } from '../common/reportFailure';
+import { stopCloudSync, resumeCloudSync, resetCloudSync } from '../common/cloudSave';
 import {
   suppressPersistence,
   resumePersistence,
@@ -77,6 +78,15 @@ class ClearDataButton extends React.Component {
     // Upon confirmation, delete all user data and reload the window
     console.log('clearing data...');
 
+    // The cloud sync stops first: a cloud restore that is writing the store must
+    // be finished (and must write nothing more) before anything is deleted.
+    // Not allowed to block the erase if it fails.
+    try {
+      await stopCloudSync();
+    } catch (error) {
+      console.error('Could not stop the cloud sync', error);
+    }
+
     // Clear data stored on disk
     // From here until the reload, setContext must not write saved fields back
     // (see suppressPersistence). Saves already queued are finished first, so
@@ -91,7 +101,22 @@ class ClearDataButton extends React.Component {
       await removeAsync(config.codeStoragePath);
     } catch (error) {
       resumePersistence();
+      resumeCloudSync().catch(resumeError =>
+        console.error('Could not resume the cloud sync', resumeError)
+      );
       await reportFailure(this.props.t('ui.clearData.error'), error);
+      throw error;
+    }
+
+    // The local data is gone: forget the account binding and sign out, so that
+    // an empty save is never uploaded over the cloud save (the cloud save stays;
+    // signing in again offers it). If that cannot be confirmed, the stale
+    // binding or session could survive a restart: report it and do not reload.
+    try {
+      await resetCloudSync();
+    } catch (error) {
+      resumePersistence();
+      await reportFailure(this.props.t('ui.clearData.cloudError'), error);
       throw error;
     }
 

@@ -15,6 +15,7 @@ vi.mock('../../../js/app/common/context', () => ({
   resumePersistence: vi.fn(),
   flushPendingSaves: vi.fn(),
 }));
+vi.mock('../../../js/app/common/cloudSave', () => ({ stopCloudSync: vi.fn(), resumeCloudSync: vi.fn(), resetCloudSync: vi.fn() }));
 vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn(), showAlert: vi.fn() }));
 vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
@@ -24,6 +25,7 @@ vi.mock('../../../js/app/common/context/schema', () => ({
   describeSchema: vi.fn(() => ({ fields: { a: {}, b: { meta: { persistOnClearProgess: true } } } })),
 }));
 
+import { stopCloudSync, resumeCloudSync, resetCloudSync } from '../../../js/app/common/cloudSave';
 import { removeAsync as remove } from '../../../js/app/platform/fs';
 import db from '../../../js/app/common/database';
 import { hasValueAsync as hasValue, deleteValueAsync as deleteValue } from '../../../js/app/platform/store';
@@ -37,6 +39,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   flushPendingSaves.mockResolvedValue(undefined);
   remove.mockResolvedValue(undefined);
+  resetCloudSync.mockResolvedValue(undefined);
+  stopCloudSync.mockResolvedValue(undefined);
+  resumeCloudSync.mockResolvedValue(undefined);
   hasValue.mockResolvedValue(true);
   deleteValue.mockResolvedValue(undefined);
   showAlert.mockResolvedValue(undefined);
@@ -91,6 +96,55 @@ describe('ClearDataButton.clearUserData', () => {
     expect(deleteValue).toHaveBeenCalledWith('a');
     expect(remove).toHaveBeenCalledWith('/code');
     expect(db.delete).toHaveBeenCalledTimes(1);
+  });
+
+  test('resets the cloud sync after the local data is gone, and never when it was not', async () => {
+    showConfirm.mockResolvedValueOnce(false);
+    await makeInstance().clearUserData();
+    expect(resetCloudSync).not.toHaveBeenCalled();
+
+    showConfirm.mockResolvedValue(true);
+    const order = [];
+    deleteValue.mockImplementation(async () => void order.push('deleted'));
+    remove.mockImplementation(async () => void order.push('remove'));
+    resetCloudSync.mockImplementation(async () => void order.push('reset'));
+    await makeInstance().clearUserData();
+    expect(order).toEqual(['deleted', 'remove', 'reset']);
+  });
+
+  test('stops the cloud sync before anything is deleted', async () => {
+    showConfirm.mockResolvedValue(true);
+    const order = [];
+    stopCloudSync.mockImplementation(async () => void order.push('stop'));
+    suppressPersistence.mockImplementation(() => void order.push('suppress'));
+    deleteValue.mockImplementation(async () => void order.push('deleted'));
+    await makeInstance().clearUserData();
+    expect(order.slice(0, 3)).toEqual(['stop', 'suppress', 'deleted']);
+  });
+
+  test('a cloud sync that fails to stop does not block the erase', async () => {
+    showConfirm.mockResolvedValue(true);
+    stopCloudSync.mockRejectedValue(new Error('stuck'));
+    await makeInstance().clearUserData();
+    expect(db.delete).toHaveBeenCalledTimes(1);
+  });
+
+  test('when the sync state or sign-in cannot be cleared: reports, resumes persistence and does not restart', async () => {
+    showConfirm.mockResolvedValue(true);
+    const failure = new Error('logout incomplete');
+    resetCloudSync.mockRejectedValue(failure);
+    await expect(makeInstance().clearUserData()).rejects.toBe(failure);
+    expect(showAlert).toHaveBeenCalledTimes(1);
+    expect(resumePersistence).toHaveBeenCalledTimes(1);
+    expect(db.delete).not.toHaveBeenCalled();
+  });
+
+  test('when erasing the local data failed: the sync is resumed and not reset', async () => {
+    showConfirm.mockResolvedValue(true);
+    deleteValue.mockRejectedValue(new Error('disk full'));
+    await expect(makeInstance().clearUserData()).rejects.toThrow('disk full');
+    expect(resetCloudSync).not.toHaveBeenCalled();
+    expect(resumeCloudSync).toHaveBeenCalledTimes(1);
   });
 
   test('ignores a second click while the dialogs are open', async () => {

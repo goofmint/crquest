@@ -98,10 +98,11 @@
       "goButton": "Go!"
     },
     "clearData": {
-      "first": "All user data and progress will be deleted. Continue?",
+      "first": "All user data and progress on this computer will be deleted, and you will be signed out. Your cloud save is not deleted; you can restore it by signing in again. Continue?",
       "second": "Seriously, we are about to delete all your items and re-set all your progress in the game. Are you very sure you want to do this?",
       "error": "Could not clear the saved game data",
-      "erase": "Erase Game Data"
+      "erase": "Erase Game Data",
+      "cloudError": "The game data was erased, but the cloud sync state or the sign-in could not be cleared. Sign out in Settings > Account, then erase the data again"
     },
     "ide": {
       "initializing": "Initializing JavaScript development environment...",

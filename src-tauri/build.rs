@@ -19,6 +19,8 @@ fn main() {
             "auth_start_login",
             "auth_cancel_login",
             "auth_logout",
+            "cloud_save_fetch",
+            "cloud_save_upload",
         ]),
     ))
     .expect("failed to run tauri-build");
