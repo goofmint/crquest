@@ -69,6 +69,10 @@ Code signing, notarization and publishing are not automated: nothing is uploaded
 
 The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions` needs the Firebase variables in `.env.template`; `npm run generateVoiceOvers` needs AWS credentials that the default AWS provider chain can find (Amazon Polly, region `us-east-1`).
 
+### Local Supabase (optional)
+
+`docs/supabase/local-development.md` (Japanese) describes the local open-source Supabase stack (Postgres, Auth, Edge Functions) managed by a pinned Supabase CLI and Docker: `npm run supabase:start`, `supabase:reset`, `supabase:test`, `supabase:smoke`, `supabase:stop`. It also says where client keys and server-only credentials may live. Supabase is not needed to build, test or run the app.
+
 ### Tests
 
 ```

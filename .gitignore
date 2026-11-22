@@ -39,3 +39,12 @@ tauri-dist/
 # User-supplied Koromame fonts may be embedded in local Tauri builds.
 /Koromame-Regular.ttf
 /Koromame-Regular.woff2
+
+# Supabase ローカルスタック (docs/supabase/local-development.md)
+# config.toml / seed.sql / migrations/ / tests/ / functions/ は追跡対象。
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+.env.supabase.local
+.env.local
+.env.*.local
