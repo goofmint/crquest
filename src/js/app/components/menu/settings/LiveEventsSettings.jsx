@@ -68,6 +68,8 @@ export default function LiveEventsSettings({ name, onFocus, onBlur }) {
   const [rankingReload, setRankingReload] = useState(0);
   const [statusReload, setStatusReload] = useState(0);
   const mounted = useRef(true);
+  // The current target, read when an async call finishes.
+  const target = useRef({ account: null, selectedId: null });
 
   useEffect(() => {
     mounted.current = true;
@@ -116,6 +118,8 @@ export default function LiveEventsSettings({ name, onFocus, onBlur }) {
   }, []);
 
   const account = authStatus && authStatus.state === 'signed_in' && authStatus.account ? authStatus.account : null;
+
+  target.current = { account, selectedId };
 
   // The event list.
   useEffect(() => {
@@ -196,6 +200,10 @@ export default function LiveEventsSettings({ name, onFocus, onBlur }) {
     event.preventDefault();
     if (busy || !account || !selectedId || mine.state !== 'ready') return;
     const joined = mine.value.joined;
+    const submittedAccount = account;
+    const submittedEvent = selectedId;
+    const stillCurrent = () =>
+      mounted.current && target.current.account === submittedAccount && target.current.selectedId === submittedEvent;
     setBusy(true);
     setFormError(null);
     setNotice(null);
@@ -208,13 +216,13 @@ export default function LiveEventsSettings({ name, onFocus, onBlur }) {
       } else {
         await joinLiveEvent(account, selectedId, form.displayName, form.show);
       }
-      if (mounted.current) {
+      if (stillCurrent()) {
         setNotice(joined ? 'updated' : 'joined');
         setStatusReload(n => n + 1);
         setRankingReload(n => n + 1);
       }
     } catch (error) {
-      if (mounted.current) setFormError(error);
+      if (stillCurrent()) setFormError(error);
     } finally {
       if (mounted.current) setBusy(false);
     }

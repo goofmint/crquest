@@ -304,7 +304,9 @@ BEGIN
   );
 
   -- 受付は終了時刻まで (半開区間。猶予なし)。開始前の参加は可能で、計上は開始時刻から。
-  IF clock_timestamp() >= v_event.ends_at THEN
+  -- 時刻は 1 回だけ読み、終了判定と joined_at の両方に使う。
+  v_joined_at := clock_timestamp();
+  IF v_joined_at >= v_event.ends_at THEN
     RAISE EXCEPTION 'event_closed' USING ERRCODE = 'P0001';
   END IF;
 
@@ -322,9 +324,8 @@ BEGIN
   END IF;
 
   BEGIN
-    INSERT INTO public.live_event_participants (event_id, user_id, display_name, show_in_ranking)
-    VALUES (p_event_id, v_uid, v_name, p_show_in_ranking)
-    RETURNING live_event_participants.joined_at INTO v_joined_at;
+    INSERT INTO public.live_event_participants (event_id, user_id, display_name, show_in_ranking, joined_at)
+    VALUES (p_event_id, v_uid, v_name, p_show_in_ranking, v_joined_at);
   EXCEPTION WHEN unique_violation THEN
     RAISE EXCEPTION 'already_participant' USING ERRCODE = 'P0001';
   END;

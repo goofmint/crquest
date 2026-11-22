@@ -262,4 +262,27 @@ describe('LiveEventsSettings', () => {
     expect(screen.getByLabelText('Public display name').value).toBe('Player One');
     expect(screen.getByLabelText('Show me in the individual ranking')).toBeChecked();
   });
+
+  test('a join that finishes after the account changed shows nothing and refetches nothing, and busy is cleared', async () => {
+    await mount(signedIn('acct-a'));
+    const pending = deferred();
+    joinLiveEvent.mockReturnValue(pending.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    await emit(signedIn('acct-b'));
+    await act(flush);
+    const statusCalls = getMyLiveEventStatus.mock.calls.length;
+    const rankingCalls = getLiveEventRanking.mock.calls.length;
+    await act(async () => pending.reject(Object.assign(new Error('x'), { liveEventCode: 'event_closed' })));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(getMyLiveEventStatus.mock.calls.length).toBe(statusCalls);
+    expect(getLiveEventRanking.mock.calls.length).toBe(rankingCalls);
+    expect(screen.getByRole('button', { name: 'Join' })).toBeEnabled();
+
+    // A success for the old target does not announce anything either.
+    joinLiveEvent.mockResolvedValue({});
+    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    await emit(signedIn('acct-c'));
+    await act(flush);
+    expect(screen.queryByText('You joined the event.')).toBeNull();
+  });
 });
