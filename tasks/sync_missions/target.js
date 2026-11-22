@@ -3,15 +3,16 @@
 
 const { readLocalStatus, isLoopbackUrl } = require('../shared/supabaseLocal');
 
-const USAGE = [
-  '使い方: npm run sync:missions -- --target <local|remote>',
+const usage = (command = 'sync:missions') => [
+  `使い方: npm run ${command} -- --target <local|remote>`,
   '  local : `supabase status` のローカルスタック (ループバックのみ)',
   '  remote: TERMINALQUEST_CATALOG_SUPABASE_URL / TERMINALQUEST_CATALOG_SUPABASE_SECRET_KEY (https のみ)',
 ].join('\n');
+const USAGE = usage();
 
 class TargetError extends Error {}
 
-function parseTargetArg(argv) {
+function parseTargetArg(argv, command) {
   let value;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -24,7 +25,7 @@ function parseTargetArg(argv) {
   }
   if (value !== 'local' && value !== 'remote') {
     throw new TargetError(
-      `--target に local または remote を指定すること (指定: ${value ?? 'なし'})\n${USAGE}`
+      `--target に local または remote を指定すること (指定: ${value ?? 'なし'})\n${usage(command)}`
     );
   }
   return value;
@@ -76,8 +77,11 @@ function resolveRemote(env) {
 /**
  * @returns {{name: string, url: string, key: string}}
  */
-function resolveTarget(argv, { env = process.env, readStatus = readLocalStatus } = {}) {
-  const target = parseTargetArg(argv);
+function resolveTarget(
+  argv,
+  { env = process.env, readStatus = readLocalStatus, command } = {}
+) {
+  const target = parseTargetArg(argv, command);
   return target === 'local' ? resolveLocal(readStatus) : resolveRemote(env);
 }
 

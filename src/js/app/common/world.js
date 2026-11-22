@@ -6,6 +6,7 @@ import TiledService from './tiled';
 import analytics from './analytics';
 import { contentMessage, readContentMessages } from './assetLoader';
 import { getLanguage as getActiveLanguage } from '../i18n';
+import { recordTreePlanting } from './treePlanting';
 
 function resolveFilterFn(keyOrFilter) {
   if (typeof keyOrFilter === 'string') {
@@ -85,6 +86,7 @@ class World {
       warp: this.warp,
       grantItems: this.grantItems,
       removeItems: this.removeItems,
+      recordTreePlanting: this.recordTreePlanting,
     };
 
     /**
@@ -259,6 +261,20 @@ class World {
     return levelInfo.objectiveManifest.every(objectiveKey =>
       this.isObjectiveCompleted(objectiveKey, level)
     );
+  };
+
+  /**
+   * Records the planting of the tree `targetId` (a map object key) in the
+   * current level for the signed-in player. Never rejects, so do not wait for it
+   * before updating local state. Resolves 'recorded' | 'already_recorded' |
+   * 'pending' | 'signed_out' | 'unsupported'. The server checks the target
+   * against its allow-list; this is not a security boundary.
+   */
+  recordTreePlanting = targetId => {
+    return recordTreePlanting({
+      missionId: this.level.levelName,
+      targetId,
+    });
   };
 
   getCurrentMapName = () => {

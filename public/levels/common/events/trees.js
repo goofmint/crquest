@@ -23,8 +23,8 @@ exports.toggleTrees = (world) => {
  */
 exports.handleTreeInteraction = async (event, world) => {
   if (
-    !event.name === 'playerDidInteract' || 
-    !event.target || 
+    event.name !== 'playerDidInteract' ||
+    !event.target ||
     !event.target.earthdayTree
   ) {
     return;
@@ -32,6 +32,7 @@ exports.handleTreeInteraction = async (event, world) => {
 
   const earthdayTrees = world.getState('earthdayTrees') || {};
   const treeKey = event.target.key;
+  let newTree = false;
 
   if (!earthdayTrees[treeKey]) {
     earthdayTrees[treeKey] = true;
@@ -49,28 +50,7 @@ exports.handleTreeInteraction = async (event, world) => {
       springs to life. Oh, the wonders of science!
       ${updateText}
     `);
-
-    // Send tree count progress to 
-    try {
-      const baseUrl = 'https://twilioquest-prod.firebaseapp.com';
-      const response = await fetch(`${baseUrl}/quest/tracking/trees`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          analyticsId: world.getContext('user').guid,
-          createdAt: new Date(),
-          missionName: 'earthday2021',
-          objectiveName: treeKey,
-          playerName: world.getContext('settings').name,
-        })
-      });
-      console.log(response);
-    } catch(e) {
-      console.log('Tree progress not saved to server.');
-      console.error(e);
-    }
+    newTree = true;
   } else {
     const treesFound = Object.keys(earthdayTrees).length;
     const updateText = `
@@ -88,4 +68,11 @@ exports.handleTreeInteraction = async (event, world) => {
   }
 
   world.setState('earthdayTrees', earthdayTrees);
+
+  // The local state above does not depend on the server. The planting is then
+  // recorded online for a signed-in player (or queued while offline); it is not
+  // awaited and never rejects.
+  if (newTree) {
+    world.recordTreePlanting(treeKey);
+  }
 };

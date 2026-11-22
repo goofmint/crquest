@@ -16,6 +16,7 @@ import localizeQuestStatus from './localizeQuestStatus';
 import analytics from '../../common/analytics';
 import { syncBundledAssets } from '../../common/assetLoader';
 import { startCloudSync } from '../../common/cloudSave';
+import { startTreePlanting } from '../../common/treePlanting';
 import { reduceEntries } from '../../common/context/schema';
 import { getLanguage, isSupportedLanguage, t } from '../../i18n';
 
@@ -271,6 +272,10 @@ export default class ContextProvider extends React.Component {
       // Optional and in the background: the game never waits for the cloud.
       startCloudSync().catch(error =>
         console.error('Could not start the cloud sync', error)
+      );
+      // Resends tree plantings that were made while the server was unreachable.
+      startTreePlanting().catch(error =>
+        console.error('Could not start the tree planting sync', error)
       );
     }
   }

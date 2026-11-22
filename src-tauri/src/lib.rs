@@ -6,6 +6,7 @@ mod close;
 pub mod cloud_save;
 mod exec;
 mod help_menu;
+pub mod rewards;
 
 use std::collections::HashMap;
 use tauri::ipc::CommandScope;
@@ -159,6 +160,7 @@ pub fn run() {
             )?);
             auth::setup(app)?;
             cloud_save::setup(app)?;
+            rewards::setup(app)?;
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -201,7 +203,9 @@ pub fn run() {
             auth::auth_cancel_login,
             auth::auth_logout,
             cloud_save::cloud_save_fetch,
-            cloud_save::cloud_save_upload
+            cloud_save::cloud_save_upload,
+            rewards::unlock_code_redeem,
+            rewards::tree_planting_record
         ])
         .run(context())
         .expect("error while running TerminalQuest");

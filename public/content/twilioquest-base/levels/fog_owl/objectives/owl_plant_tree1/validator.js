@@ -1,43 +1,32 @@
+// The planting is recorded online when the player is signed in (and queued
+// when the server cannot be reached), but completing the objective never
+// depends on it: the progress is local first. See docs/supabase/unlocks-and-trees.md.
 module.exports = async helper => {
-  try {
-    const baseUrl = 'https://twilioquest-prod.firebaseapp.com';
-    const response = await fetch(`${baseUrl}/quest/tracking/trees`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        analyticsId: helper.analyticsId,
-        createdAt: new Date(),
-        missionName: 'owl',
-        objectiveName: 'owl_plant_tree1',
-        playerName: helper.context.settings.name,
-      })
-    });
+  const result = await helper.recordTreePlanting();
 
-    if (response.ok) {
-      // 204 indicates success
-      helper.success(helper.t('planted', `
+  switch (result) {
+    case 'recorded':
+      return helper.success(helper.t('planted', `
         Thanks for helping plant a tree in Australia!
       `));
-    } else {
-      if (response.status === 403) {
-        return helper.success(helper.t('alreadyPlanted', `
-          You've already planted this tree - good for you!
-        `));
-      } else {
-        return helper.fail(helper.t('requestFailed', `
-          Sorry, something went wrong submitting your request. Try again later!
-        `));
-      }
-    }
-  } catch (err) {
-    console.log(err);
-    helper.fail(helper.t('failed',
-      `Something went wrong when we tried to plant a tree on your behalf:
-      <br/></br/>
-      {{error}}`,
-      { error: err }
-    ));
+    case 'already_recorded':
+      return helper.success(helper.t('alreadyPlanted', `
+        You've already planted this tree - good for you!
+      `));
+    case 'pending':
+      return helper.success(helper.t('plantedPending', `
+        Your tree is planted and saved on this computer. It will be recorded
+        online the next time you are signed in and connected.
+      `));
+    case 'signed_out':
+      return helper.success(helper.t('plantedSignedOut', `
+        Your tree is planted and saved on this computer. Sign in (Settings >
+        Account) to have your trees recorded online.
+      `));
+    default:
+      return helper.success(helper.t('plantedLocal', `
+        Your tree is planted and saved on this computer, but it could not be
+        recorded online.
+      `));
   }
 };

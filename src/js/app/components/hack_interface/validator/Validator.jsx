@@ -181,7 +181,8 @@ class Validator extends React.Component {
         validationContext,
         validationCallback,
         this.props.hackObject.level,
-        messages
+        messages,
+        this.props.hackObject.objectiveName
       );
 
       // Attempt configured validation

@@ -22,3 +22,15 @@ VALUES
   ('00000000-0000-4000-8000-0000000000a1', 'team', 'Synthetic Team', 'SMOKETEAM1'),
   ('00000000-0000-4000-8000-0000000000b1', 'operation', 'Synthetic Operation', 'SMOKEOPS01')
 ON CONFLICT (id) DO NOTHING;
+
+-- 解除コード・植樹 (Issue #191): ローカル検証用の合成コード。実在のコードではない。
+-- 実際のコード対応表はリポジトリに含めず、運用者が npm run sync:unlock-codes で公開する。
+INSERT INTO catalog_private.unlock_codes (code, item_key, retired_at)
+VALUES
+  ('TQ-TEST-WAND', 'wand', NULL),
+  ('TQ-TEST-TSHIRT', 'tshirt', NULL),
+  -- 退役済み (無効コードとして扱われる)
+  ('TQ-TEST-RETIRED', 'wand', now()),
+  -- 同梱カタログに無いアイテム (クライアントの欠落時の処理を検証する)
+  ('TQ-TEST-MISSING-ITEM', 'synthetic_item_not_installed', NULL)
+ON CONFLICT (code) DO NOTHING;

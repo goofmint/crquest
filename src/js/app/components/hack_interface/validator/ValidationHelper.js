@@ -10,6 +10,7 @@ import { getPlatform } from '../../../platform/env';
 import { staticFileUrl } from '../../../common/fs_utils';
 import { contentMessage } from '../../../common/assetLoader';
 import { getLanguage, t } from '../../../i18n';
+import { recordTreePlanting } from '../../../common/treePlanting';
 import {
   evaluateInWorker,
   pullVarsInWorker,
@@ -48,7 +49,7 @@ const validatorFs = Object.freeze({
 });
 
 export default class ValidationHelper {
-  constructor(validationContext, callback, level, messages = {}) {
+  constructor(validationContext, callback, level, messages = {}, objectiveName) {
     // Instance variables
     this.validationCallback = callback;
     this.validationFields = {};
@@ -58,6 +59,8 @@ export default class ValidationHelper {
     this.messages = messages;
     this.analyticsId = ga.analyticsId;
     this.world = new World(level);
+    this.levelName = level ? level.levelName : undefined;
+    this.objectiveName = objectiveName;
     this.fs = validatorFs;
     // Operating system the game runs on (Node's platform names, e.g.
     // 'win32', 'darwin', 'linux'), for validators that branch per OS.
@@ -88,6 +91,20 @@ export default class ValidationHelper {
     }
 
     return val;
+  }
+
+  /**
+   * Records the planting of this objective's tree for the signed-in player.
+   * Never rejects and never decides whether the objective is complete: call
+   * `success` whatever the result. The mission and objective are the ones that
+   * this validator runs for (the content does not name them); the server
+   * checks them against its allow-list. This is a convenience, not a security
+   * boundary: validators run in the webview (docs/supabase/unlocks-and-trees.md).
+   *
+   * @returns {Promise<'recorded'|'already_recorded'|'pending'|'signed_out'|'unsupported'>}
+   */
+  recordTreePlanting() {
+    return recordTreePlanting({ missionId: this.levelName, targetId: this.objectiveName });
   }
 
   // Helper to invoke the validation callback with a success message

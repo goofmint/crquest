@@ -39,6 +39,11 @@ class AsyncInputBox extends React.Component {
 
   buttonRef = React.createRef();
 
+  // Set synchronously on submit: `currentState` only changes after React
+  // re-renders, so a second click in between would otherwise submit twice.
+  submitting = false;
+  unmounted = false;
+
   attachSubmitHotkey() {
     this.keyPressListener = new keypress.Listener();
 
@@ -56,6 +61,7 @@ class AsyncInputBox extends React.Component {
   }
 
   componentDidMount() {
+    this.unmounted = false;
     const { enableSubmitHotkey } = this.props;
 
     if (enableSubmitHotkey) {
@@ -64,6 +70,7 @@ class AsyncInputBox extends React.Component {
   }
 
   componentWillUnmount() {
+    this.unmounted = true;
     this.deattachSubmitHotKey();
   }
 
@@ -87,9 +94,47 @@ class AsyncInputBox extends React.Component {
     }
   }
 
+  // One submission at a time. A rejected `onSubmit` is an error result (the
+  // input never stays stuck in RESOLVING), and nothing is set after unmount.
+  async submit(value) {
+    const { t, onSubmit } = this.props;
+
+    if (this.submitting) {
+      return;
+    }
+    this.submitting = true;
+    this.setState({ currentState: this.states.RESOLVING });
+
+    let outcome;
+    try {
+      outcome = await onSubmit(value);
+    } catch (error) {
+      console.error('AsyncInputBox: the submission failed', error);
+      outcome = { success: false };
+    }
+    this.submitting = false;
+
+    if (this.unmounted) {
+      return;
+    }
+    const { success, message } = outcome || { success: false };
+    if (success) {
+      this.setState({
+        currentState: this.states.VALID,
+        value: '',
+        message: message || t('ui.asyncInput.success'),
+      });
+    } else {
+      this.setState({
+        currentState: this.states.INVALID,
+        message: message || t('ui.asyncInput.error'),
+      });
+    }
+  }
+
   render() {
     const { t } = this.props;
-    const { onFocus, onBlur, onSubmit, autoFocus } = this.props;
+    const { onFocus, onBlur, autoFocus } = this.props;
     const { currentState, value } = this.state;
 
     return (
@@ -113,32 +158,7 @@ class AsyncInputBox extends React.Component {
         <InlineButton
           label={this.getButtonLabel()}
           buttonRef={this.buttonRef}
-          onClick={() => {
-            // Only allow one code submission at once
-            if (currentState === this.states.RESOLVING) {
-              return;
-            }
-
-            // mark submission in progress
-            this.setState({
-              currentState: this.states.RESOLVING,
-            });
-
-            onSubmit(value).then(({ success, message }) => {
-              if (success) {
-                this.setState({
-                  currentState: this.states.VALID,
-                  value: '',
-                  message: message || t('ui.asyncInput.success'),
-                });
-              } else {
-                this.setState({
-                  currentState: this.states.INVALID,
-                  message: message || t('ui.asyncInput.error'),
-                });
-              }
-            });
-          }}
+          onClick={() => this.submit(value)}
           disabled={currentState === this.states.RESOLVING}
         />
         <span
