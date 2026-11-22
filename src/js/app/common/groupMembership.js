@@ -69,14 +69,28 @@ export function isJoined(kind, joinCode) {
   return slice.joined.some(group => String(group.joinCode).toUpperCase() === wanted);
 }
 
+const normalizeCode = code => String(code ?? '').trim().toUpperCase();
+
+// Adds the server's record. Older entries with the same id or the same
+// normalized join code (e.g. a record of the former backend) are replaced by it,
+// at the position of the first of them.
 function addLocal(kind, entry) {
   const key = SLICE[kind];
   updateContext(state => {
     const slice = state[key] || { joined: [] };
-    if (slice.joined.some(group => group.id === entry.id)) {
+    const code = normalizeCode(entry.joinCode);
+    const matches = group => group.id === entry.id || normalizeCode(group.joinCode) === code;
+    const first = slice.joined.findIndex(matches);
+    const unchanged =
+      slice.joined.filter(matches).length === 1 &&
+      first >= 0 &&
+      ['id', 'joinCode', 'displayName'].every(field => slice.joined[first][field] === entry[field]);
+    if (unchanged) {
       return {};
     }
-    return { [key]: { ...slice, joined: [...slice.joined, entry] } };
+    const joined = slice.joined.filter(group => !matches(group));
+    joined.splice(first < 0 ? joined.length : first, 0, entry);
+    return { [key]: { ...slice, joined } };
   });
 }
 

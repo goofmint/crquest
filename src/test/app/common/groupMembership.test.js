@@ -59,6 +59,27 @@ describe('joinByCode', () => {
     expect(joinGroup).toHaveBeenCalled();
   });
 
+  test('a legacy entry with the same normalized code is replaced by the server record', async () => {
+    store.teams.joined = [
+      { id: 'other', joinCode: 'ZZZ', displayName: 'Other' },
+      { id: 'legacy-id', joinCode: 'owl123', displayName: 'Old' },
+    ];
+    joinGroup.mockResolvedValue(joined);
+    await joinByCode('team', 'OWL123');
+    expect(store.teams.joined).toEqual([
+      { id: 'other', joinCode: 'ZZZ', displayName: 'Other' },
+      { id: GID, joinCode: 'OWL123', displayName: 'Owls' },
+    ]);
+  });
+
+  test('the already_member restore also replaces a legacy entry with the same code', async () => {
+    store.teams.joined = [{ id: 'legacy-id', joinCode: 'OWL123', displayName: 'Old' }];
+    joinGroup.mockRejectedValue(rejection('already_member'));
+    listGroups.mockResolvedValue({ account: 'acct', groups: [{ groupId: GID, displayName: 'Owls', joinCode: 'OWL123' }] });
+    await joinByCode('team', 'OWL123');
+    expect(store.teams.joined).toEqual([{ id: GID, joinCode: 'OWL123', displayName: 'Owls' }]);
+  });
+
   test('an entry left by another account does not stop the current account from joining', async () => {
     store.teams.joined = [{ id: GID, joinCode: 'OWL123', displayName: 'Owls' }];
     joinGroup.mockResolvedValue(joined);
