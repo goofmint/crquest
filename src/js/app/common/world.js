@@ -1,11 +1,12 @@
 import levelLoader from './levelLoader';
 import audioManager from './audio';
-import { setContext, getContext, emitter } from './context';
+import { setContext, getContext, updateContext, emitter } from './context';
 import { staticFilePath } from './fs_utils';
 import TiledService from './tiled';
 import analytics from './analytics';
 import { contentMessage, readContentMessages } from './assetLoader';
 import { getLanguage as getActiveLanguage } from '../i18n';
+import { recordTreePlanting } from './treePlanting';
 
 function resolveFilterFn(keyOrFilter) {
   if (typeof keyOrFilter === 'string') {
@@ -85,6 +86,7 @@ class World {
       warp: this.warp,
       grantItems: this.grantItems,
       removeItems: this.removeItems,
+      recordTreePlanting: this.recordTreePlanting,
     };
 
     /**
@@ -261,6 +263,20 @@ class World {
     );
   };
 
+  /**
+   * Records the planting of the tree `targetId` (a map object key) in the
+   * current level for the signed-in player. Never rejects, so do not wait for it
+   * before updating local state. Resolves 'recorded' | 'already_recorded' |
+   * 'pending' | 'signed_out' | 'unsupported'. The server checks the target
+   * against its allow-list; this is not a security boundary.
+   */
+  recordTreePlanting = targetId => {
+    return recordTreePlanting({
+      missionId: this.level.levelName,
+      targetId,
+    });
+  };
+
   getCurrentMapName = () => {
     return getContext('currentLevel').levelMapName;
   };
@@ -353,19 +369,20 @@ class World {
   };
 
   grantItems = (grantedItems = []) => {
-    const inventory = getContext('inventory');
-    const newItems = grantedItems.filter(
-      grantedItem => !inventory.includes(grantedItem)
-    );
+    updateContext(state => {
+      const inventory = state.inventory;
+      const newItems = grantedItems.filter(
+        grantedItem => !inventory.includes(grantedItem)
+      );
 
-    setContext({ inventory: [...inventory, ...newItems] });
+      return newItems.length > 0 ? { inventory: [...inventory, ...newItems] } : null;
+    });
   };
 
   removeItems = (removedItems = []) => {
-    const inventory = getContext('inventory');
-    const newInventory = inventory.filter(item => !removedItems.includes(item));
-
-    setContext({ inventory: newInventory });
+    updateContext(state => ({
+      inventory: state.inventory.filter(item => !removedItems.includes(item)),
+    }));
   };
 }
 

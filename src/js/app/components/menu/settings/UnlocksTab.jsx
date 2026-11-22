@@ -1,86 +1,37 @@
 import React, { Fragment } from 'react';
 import { withTranslation } from 'react-i18next';
-import { Firestore } from '../../../common/firebase.js';
-import { addItems } from '../../context_provider/itemsHelper';
-import { getContext, setContext } from '../../../common/context';
-import ga from '../../../common/analytics';
+import { getContext } from '../../../common/context';
+import { redeemCode, OUTCOME } from '../../../common/unlocks';
 import AsyncInputBox from './AsyncInputBox';
 
-function isCodeUsed(code) {
-  const unlockCodes = getContext('unlockCodes');
-
-  if (unlockCodes === null) {
-    return false;
-  }
-
-  return unlockCodes.includes(code);
-}
-
-function markCodeUsed(code) {
-  let unlockCodes = getContext('unlockCodes');
-
-  if (unlockCodes === null) {
-    unlockCodes = [];
-  }
-
-  setContext({ unlockCodes: [...unlockCodes, code] });
-}
-
-function getItem(itemKey) {
-  const items = getContext('items');
-
-  return items[itemKey];
-}
-
 class UnlocksTab extends React.Component {
-  validateCode(code) {
+  // Resolves { success, message } for AsyncInputBox. The server decides whether
+  // the code is valid and whether this account has used it (see common/unlocks).
+  async validateCode(code) {
     const { t } = this.props;
-    return new Promise(resolve => {
-      if (isCodeUsed(code)) {
-        return resolve({ success: false, message: t('ui.unlocks.alreadyUsed') });
+    const result = await redeemCode(code);
+
+    switch (result.outcome) {
+      case OUTCOME.REDEEMED: {
+        const item = (getContext('items') || {})[result.itemKey];
+        if (!result.installed || !item) {
+          return { success: true, message: t('ui.unlocks.itemUnavailable') };
+        }
+        return {
+          success: true,
+          message: t('ui.unlocks.redeemed', { item: item.displayName }),
+        };
       }
-
-      Firestore.collection('unlockCodes')
-        .where('codeValue', '==', code)
-        .get()
-        .then(({ docs }) => {
-          if (docs.length === 0) {
-            // Code is not registered in Firebase
-            return resolve({
-              success: false,
-              message: t('ui.unlocks.invalid'),
-            });
-          }
-
-          if (docs.length > 1) {
-            console.warn(
-              `More than one unlock code in Firebase matches this code, "${code}".`
-            );
-          }
-
-          const [unlockCodeDoc] = docs;
-          const response = unlockCodeDoc.data();
-
-          addItems([response.unlockItemName]);
-          markCodeUsed(response.codeValue);
-
-          ga.event(
-            'Promotions',
-            'Unlock Code Redeemed',
-            response.codeValue,
-            null,
-            'Settings > Unlocks',
-            '/menu/settings'
-          );
-
-          const redeemedReward = getItem(response.unlockItemName).displayName;
-
-          return resolve({
-            success: true,
-            message: t('ui.unlocks.redeemed', { item: redeemedReward }),
-          });
-        });
-    });
+      // The item was granted again if the local copy had lost it.
+      case OUTCOME.ALREADY_REDEEMED:
+        return { success: false, message: t('ui.unlocks.alreadyUsed') };
+      case OUTCOME.INVALID:
+        return { success: false, message: t('ui.unlocks.invalid') };
+      case OUTCOME.LOGIN_REQUIRED:
+        return { success: false, message: t('ui.unlocks.loginRequired') };
+      default:
+        return { success: false, message: t('ui.unlocks.networkError') };
+    }
   }
 
   render() {

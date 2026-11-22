@@ -33,7 +33,7 @@ Issue #185 で用意した、OSS Supabase のローカルスタックと DB マ�
 | パス | 内容 |
 | --- | --- |
 | `supabase/config.toml` | `supabase init` で生成した設定。`project_id` と `[functions.health]` だけを調整した |
-| `supabase/migrations/` | マイグレーション。`20261122071325_initial_privileges.sql` は権限の初期設定のみ、`20261122084915_cloud_saves.sql` はクラウドセーブ（[cloud-save.md](cloud-save.md)）、`20261122095342_groups_and_contributions.sql` はチーム・オペレーションと貢献集計（[teams-operations.md](teams-operations.md)）、`20261122101839_mission_catalog.sql` はミッションカタログ（[mission-catalog.md](mission-catalog.md)） |
+| `supabase/migrations/` | マイグレーション。`20261122071325_initial_privileges.sql` は権限の初期設定のみ、`20261122084915_cloud_saves.sql` はクラウドセーブ（[cloud-save.md](cloud-save.md)）、`20261122095342_groups_and_contributions.sql` はチーム・オペレーションと貢献集計（[teams-operations.md](teams-operations.md)）、`20261122101839_mission_catalog.sql` はミッションカタログ（[mission-catalog.md](mission-catalog.md)）、`20261122111442_unlock_codes_and_tree_plantings.sql` は解除コードと植樹進捗（[unlocks-and-trees.md](unlocks-and-trees.md)） |
 | `supabase/seed.sql` | 合成シード。`db reset` のたびに同じ内容を投入する |
 | `supabase/functions/health/` | JWT 検証を有効にした最小の Edge Function |
 | `supabase/tests/database/` | pgTAP テスト |
@@ -77,6 +77,6 @@ Issue #185 で用意した、OSS Supabase のローカルスタックと DB マ�
 
 - Tauri の CSP `connect-src` の変更は不要である。Supabase への通信は Rust 側（`src-tauri/src/auth/`、`src-tauri/src/cloud_save/`）が行い、レンダラーは直接通信しない。
 - GitHub / Google などの OAuth プロバイダー、`site_url`、リダイレクト許可リストは #186 で設定する。現在の `[auth]` は生成時の既定値のまま（匿名サインインは無効、メールサインアップは有効で確認なし）で、スモーク検証のために維持している。
-- クラウドセーブ（`cloud_saves`）は [cloud-save.md](cloud-save.md)（#187）。チーム・オペレーションの参加と貢献集計は [teams-operations.md](teams-operations.md)（#188）。ミッションカタログの公開は [mission-catalog.md](mission-catalog.md)（#192）。実績などの製品スキーマは各 Issue が担当する。
+- クラウドセーブ（`cloud_saves`）は [cloud-save.md](cloud-save.md)（#187）。チーム・オペレーションの参加と貢献集計は [teams-operations.md](teams-operations.md)（#188）。ミッションカタログの公開は [mission-catalog.md](mission-catalog.md)（#192）。解除コードと植樹進捗は [unlocks-and-trees.md](unlocks-and-trees.md)（#191）。実績などの製品スキーマは各 Issue が担当する。
 
 検証の記録は [verification.md](verification.md) を参照。

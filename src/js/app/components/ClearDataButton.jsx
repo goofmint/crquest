@@ -9,6 +9,7 @@ import config from '../config/config';
 import { describeSchema } from '../common/context/schema';
 import { reportFailure } from '../common/reportFailure';
 import { stopCloudSync, resumeCloudSync, resetCloudSync } from '../common/cloudSave';
+import { clearTreePlantingPending, resumeTreePlanting } from '../common/treePlanting';
 import {
   suppressPersistence,
   resumePersistence,
@@ -96,6 +97,8 @@ class ClearDataButton extends React.Component {
     try {
       await flushPendingSaves();
       await clearStoreValues();
+      // Pending tree plantings belong to the erased progress.
+      await clearTreePlantingPending();
       // Delete saved user code (a missing path is a no-op, as with the former
       // synchronous remove)
       await removeAsync(config.codeStoragePath);
@@ -103,6 +106,9 @@ class ClearDataButton extends React.Component {
       resumePersistence();
       resumeCloudSync().catch(resumeError =>
         console.error('Could not resume the cloud sync', resumeError)
+      );
+      resumeTreePlanting().catch(resumeError =>
+        console.error('Could not resume the tree planting sync', resumeError)
       );
       await reportFailure(this.props.t('ui.clearData.error'), error);
       throw error;
@@ -116,6 +122,9 @@ class ClearDataButton extends React.Component {
       await resetCloudSync();
     } catch (error) {
       resumePersistence();
+      resumeTreePlanting().catch(resumeError =>
+        console.error('Could not resume the tree planting sync', resumeError)
+      );
       await reportFailure(this.props.t('ui.clearData.cloudError'), error);
       throw error;
     }

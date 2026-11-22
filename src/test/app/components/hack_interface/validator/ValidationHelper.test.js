@@ -30,6 +30,9 @@ vi.mock('../../../../../js/app/common/codeRunnerWorker', async importOriginal =>
   evaluateInWorker: vi.fn(),
   pullVarsInWorker: vi.fn(),
 }));
+vi.mock('../../../../../js/app/common/treePlanting', () => ({
+  recordTreePlanting: vi.fn(),
+}));
 vi.mock('../../../../../js/app/common/analytics', () => ({
   __esModule: true,
   default: { analyticsId: 'test-id' },
@@ -50,6 +53,7 @@ vi.mock('../../../../../js/app/common/context', () => ({
 }));
 
 import ValidationHelper from '../../../../../js/app/components/hack_interface/validator/ValidationHelper';
+import { recordTreePlanting } from '../../../../../js/app/common/treePlanting';
 import * as platformFs from '../../../../../js/app/platform/fs';
 import * as platformExec from '../../../../../js/app/platform/exec';
 import * as platformPaths from '../../../../../js/app/platform/paths';
@@ -412,5 +416,34 @@ describe('evaluateInUserCodeLocalScope', () => {
       mocks
     );
     expect(evaluateInWorker.mock.calls[0][0].mocks).toBe(mocks);
+  });
+});
+
+describe('recordTreePlanting', () => {
+  test('records the planting of the level and objective that the validator runs for', async () => {
+    recordTreePlanting.mockResolvedValue('recorded');
+    const helper = new ValidationHelper(
+      { context: {}, env: {}, validationFields: {} },
+      vi.fn(),
+      { levelName: 'fog_owl' },
+      {},
+      'owl_plant_tree1'
+    );
+    await expect(helper.recordTreePlanting()).resolves.toBe('recorded');
+    expect(recordTreePlanting).toHaveBeenCalledWith({ missionId: 'fog_owl', targetId: 'owl_plant_tree1' });
+  });
+
+  test('an objective that was already complete records nothing new', async () => {
+    const helper = new ValidationHelper(
+      { context: {}, env: {}, validationFields: {} },
+      vi.fn(),
+      { levelName: 'fog_owl' },
+      {},
+      'owl_plant_tree1',
+      true
+    );
+    recordTreePlanting.mockClear();
+    await expect(helper.recordTreePlanting()).resolves.toBe('already_recorded');
+    expect(recordTreePlanting).not.toHaveBeenCalled();
   });
 });

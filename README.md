@@ -77,6 +77,8 @@ Optional GitHub / Google sign-in (Settings > Account; the game works without it 
 
 Cloud save (sync and transfer of the local save for signed-in players; the cloud save is self-reported and never a source for rankings or team scores) is described in `docs/supabase/cloud-save.md` (Japanese). Its checks against the local stack: `npm run supabase:test` (pgTAP) and `cargo test --test cloud_save_local_supabase -- --ignored` (same environment variables as the auth test).
 
+Item unlock codes and tree planting records (server-side matching per account; local progress never depends on the server) are described in `docs/supabase/unlocks-and-trees.md` (Japanese). Their checks against the local stack: `npm run supabase:test` and `cargo test --test unlocks_trees_local_supabase -- --ignored`.
+
 ### Tests
 
 ```

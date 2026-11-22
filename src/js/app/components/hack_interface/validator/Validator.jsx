@@ -176,12 +176,18 @@ class Validator extends React.Component {
         this.processValidationFeedback(err, feedback);
       };
 
+      // Whether the objective was complete before this validation (completing it
+      // now is decided after the validator ran, in processValidationFeedback).
+      const alreadyCompleted = this.props.hackObject.complete === true;
+
       // Set up validation helper
       const helper = new ValidationHelper(
         validationContext,
         validationCallback,
         this.props.hackObject.level,
-        messages
+        messages,
+        this.props.hackObject.objectiveName,
+        alreadyCompleted
       );
 
       // Attempt configured validation

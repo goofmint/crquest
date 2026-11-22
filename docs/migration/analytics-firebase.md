@@ -25,3 +25,10 @@
 - 使用中の機能: アンロックコード (`UnlocksTab.jsx`、`unlockCodes`)、ライブイベント (`Validator.jsx`、`liveEvents` / `liveEventAchievements`)、ユーザーデータの同期 (`context/sync.js`)。いずれも実行時に Firestore を呼ぶ。
 - `firebase-admin` (ルートの dependencies) は `tasks/shared/firebase.js` が使い、`tasks/create_release.js` と `tasks/sync_missions/index.js` が読み込む。リリースとミッション同期のスクリプトなので残す。
 - Firestore のプロジェクト (`twilioquest-prod` / `twilioquest-dev`) が今も稼働しているかは、リポジトリからは確認できない。稼働していない場合、アンロックコードやライブイベントは失敗する。それは従来からの挙動で、この変更では変えていない。サービスの停止が確認できた場合は、別チケットで機能ごと除去するのが適切である。
+
+## 解除コードと植樹送信の Firebase 依存を外した (#191)
+
+- アイテムの解除コード（`UnlocksTab.jsx`）は、Firestore の `unlockCodes` を照会しなくなった。Supabase の `redeem_unlock_code` で、ログイン中のユーザーごとにサーバーで照合して付与する。
+- 植樹の進捗の 3 経路（Fog Owl と Developer Fundamentals の目標の `validator.js`、Earth Day の `events/trees.js`）は、`https://twilioquest-prod.firebaseapp.com/quest/tracking/trees` へ POST しなくなった。`helper.recordTreePlanting()` / `world.recordTreePlanting()` が、Supabase の `record_tree_planting` で記録する。
+- これにより、解除コードと植樹送信に Firebase への依存は残っていない。残る Firestore の利用は、ライブイベント（`Validator.jsx`）とユーザーデータの同期（`context/sync.js`）。
+- 挙動の変化: 植樹の目標の完了は通信結果に左右されない（以前は Firebase の応答で決まっていた）。方針と制約は [docs/supabase/unlocks-and-trees.md](../supabase/unlocks-and-trees.md)。

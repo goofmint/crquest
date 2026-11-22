@@ -355,6 +355,8 @@
     "allow-auth-cancel-login",
     "allow-auth-logout",
     "allow-cloud-save-fetch",
-    "allow-cloud-save-upload"
+    "allow-cloud-save-upload",
+    "allow-unlock-code-redeem",
+    "allow-tree-planting-record"
   ]
 }

@@ -16,6 +16,7 @@ vi.mock('../../../js/app/common/context', () => ({
   flushPendingSaves: vi.fn(),
 }));
 vi.mock('../../../js/app/common/cloudSave', () => ({ stopCloudSync: vi.fn(), resumeCloudSync: vi.fn(), resetCloudSync: vi.fn() }));
+vi.mock('../../../js/app/common/treePlanting', () => ({ clearTreePlantingPending: vi.fn(), resumeTreePlanting: vi.fn() }));
 vi.mock('../../../js/app/platform/dialog', () => ({ showConfirm: vi.fn(), showAlert: vi.fn() }));
 vi.mock('../../../js/app/config/config', () => ({
   __esModule: true,
@@ -26,6 +27,7 @@ vi.mock('../../../js/app/common/context/schema', () => ({
 }));
 
 import { stopCloudSync, resumeCloudSync, resetCloudSync } from '../../../js/app/common/cloudSave';
+import { clearTreePlantingPending, resumeTreePlanting } from '../../../js/app/common/treePlanting';
 import { removeAsync as remove } from '../../../js/app/platform/fs';
 import db from '../../../js/app/common/database';
 import { hasValueAsync as hasValue, deleteValueAsync as deleteValue } from '../../../js/app/platform/store';
@@ -40,6 +42,8 @@ beforeEach(() => {
   flushPendingSaves.mockResolvedValue(undefined);
   remove.mockResolvedValue(undefined);
   resetCloudSync.mockResolvedValue(undefined);
+  clearTreePlantingPending.mockResolvedValue(undefined);
+  resumeTreePlanting.mockResolvedValue(undefined);
   stopCloudSync.mockResolvedValue(undefined);
   resumeCloudSync.mockResolvedValue(undefined);
   hasValue.mockResolvedValue(true);
@@ -67,6 +71,7 @@ describe('ClearDataButton.clearUserData', () => {
     await makeInstance().clearUserData();
     expect(showConfirm).toHaveBeenCalledTimes(1);
     expect(deleteValue).not.toHaveBeenCalled();
+    expect(clearTreePlantingPending).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
     expect(db.delete).not.toHaveBeenCalled();
   });
@@ -94,6 +99,7 @@ describe('ClearDataButton.clearUserData', () => {
     expect(showConfirm).toHaveBeenCalledTimes(2);
     expect(deleteValue).toHaveBeenCalledTimes(1);
     expect(deleteValue).toHaveBeenCalledWith('a');
+    expect(clearTreePlantingPending).toHaveBeenCalledTimes(1);
     expect(remove).toHaveBeenCalledWith('/code');
     expect(db.delete).toHaveBeenCalledTimes(1);
   });
@@ -136,6 +142,8 @@ describe('ClearDataButton.clearUserData', () => {
     await expect(makeInstance().clearUserData()).rejects.toBe(failure);
     expect(showAlert).toHaveBeenCalledTimes(1);
     expect(resumePersistence).toHaveBeenCalledTimes(1);
+    expect(clearTreePlantingPending).toHaveBeenCalledTimes(1);
+    expect(resumeTreePlanting).toHaveBeenCalledTimes(1);
     expect(db.delete).not.toHaveBeenCalled();
   });
 
@@ -145,6 +153,7 @@ describe('ClearDataButton.clearUserData', () => {
     await expect(makeInstance().clearUserData()).rejects.toThrow('disk full');
     expect(resetCloudSync).not.toHaveBeenCalled();
     expect(resumeCloudSync).toHaveBeenCalledTimes(1);
+    expect(resumeTreePlanting).toHaveBeenCalledTimes(1);
   });
 
   test('ignores a second click while the dialogs are open', async () => {

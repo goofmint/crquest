@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-tree-planting-record"
+description = "Enables the tree_planting_record command without any pre-configured scope."
+commands.allow = ["tree_planting_record"]
+
+[[permission]]
+identifier = "deny-tree-planting-record"
+description = "Denies the tree_planting_record command without any pre-configured scope."
+commands.deny = ["tree_planting_record"]

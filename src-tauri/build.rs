@@ -21,6 +21,8 @@ fn main() {
             "auth_logout",
             "cloud_save_fetch",
             "cloud_save_upload",
+            "unlock_code_redeem",
+            "tree_planting_record",
         ]),
     ))
     .expect("failed to run tauri-build");
