@@ -84,7 +84,7 @@ async function getMissionInfo(extensionPath, missionDir, missionFolder) {
 
   if (folderNames) {
     // This mission has objectives
-    populateObjectives({ folderNames, objectivesDirPath, levelInfo });
+    await populateObjectives({ folderNames, objectivesDirPath, levelInfo });
   }
 
   levelInfo.maps = [];

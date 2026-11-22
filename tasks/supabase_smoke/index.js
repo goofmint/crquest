@@ -3,11 +3,9 @@
 // 外部 OAuth の資格情報、.env、Firebase には接続しない。
 // キー、トークン、status の出力はログに出さない。
 
-const { spawnSync } = require('child_process');
 const crypto = require('crypto');
-const path = require('path');
 
-const repoRoot = path.resolve(__dirname, '..', '..');
+const { readLocalStatus } = require('../shared/supabaseLocal');
 
 function fail(step, detail) {
   console.error(`[smoke] FAIL ${step}: ${detail}`);
@@ -19,19 +17,10 @@ function ok(step) {
 }
 
 function readStatus() {
-  const result = spawnSync('npx', ['supabase', 'status', '-o', 'json'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    // Windows の npx は npx.cmd のため shell 経由でのみ起動できる。引数は固定値。
-    shell: process.platform === 'win32',
-  });
-  if (result.status !== 0) {
-    fail('status', 'supabase status が失敗した。`npm run supabase:start` を実行したか確認する');
-  }
   try {
-    return JSON.parse(result.stdout.slice(result.stdout.indexOf('{')));
+    return readLocalStatus();
   } catch (error) {
-    return fail('status', 'supabase status の JSON を解析できない');
+    return fail('status', error.message);
   }
 }
 
