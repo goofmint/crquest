@@ -51,6 +51,7 @@ npm test
 npm run check:platform
 npm run check:firebase
 npm run supabase:start
+npm run build:tauri              # Rust の統合テストのコンパイルに tauri-dist が必要
 npm run supabase:integration     # db reset、pgTAP、スモーク、Rust の統合テスト（Docker が必要）
 npm run supabase:stop
 ```
@@ -161,8 +162,8 @@ TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY=<publishable key> \
 2. 履歴だけでなく実際の DB の状態も確認する（ダッシュボードの Table Editor / SQL Editor で、失敗したマイグレーションが作るはずのテーブル・関数・権限が存在しないか）。トランザクション外で実行される文（`CREATE INDEX CONCURRENTLY` など）や手作業の SQL により一部だけ反映されていた場合は、その変更を解消してから再実行する。
 3. 原因を修正する。**適用済みのマイグレーションファイルは書き換えない**。新しい（より新しいタイムスタンプの）マイグレーションで修正する。まだどの環境にも適用されていないファイルだけは直してよい。
 4. 失敗の原因が既存データ（制約違反など）にある場合は、本番のデータ状態を調べ、原因に応じて修正内容を判断する。修正前にバックアップ（Database > Backups）の存在と影響範囲を確認し、まずステージングで同じ手順を試す。
-5. ローカルで `npm run supabase:integration` を通し、ステージングで dry-run からやり直す。
-6. 履歴と実際の状態がずれたとき（失敗したバージョンが履歴上は適用済みになっている、手作業で SQL を実行した、など）は、実際の状態に合わせて `npx supabase migration repair <version> --status reverted --remote=<ref>`（未適用に戻す）または `--status applied` で履歴を合わせ、その後に再実行する。実行前に `<ref>` が修復対象の環境の project ref と一致すること（GitHub Environment の `SUPABASE_PROJECT_REF`、ダッシュボードの URL）を確認する。
+5. 履歴と実際の状態がずれたとき（失敗したバージョンが履歴上は適用済みになっている、手作業で SQL を実行した、など）は、実際の状態に合わせて `npx supabase migration repair <version> --status reverted --remote=<ref>`（未適用に戻す）または `--status applied` で履歴を合わせる。実行前に `<ref>` が修復対象の環境の project ref と一致すること（GitHub Environment の `SUPABASE_PROJECT_REF`、ダッシュボードの URL）を確認する。
+6. ローカルで `npm run build:tauri` と `npm run supabase:integration` を通し、ステージングで dry-run からやり直す。dry-run が履歴の不整合で失敗した場合は、手順 5 の履歴修復を行ってから dry-run を再実行する。
 7. データを壊す変更を本番に適用する前は、ダッシュボードのバックアップ（Database > Backups）の存在を確認する。リストアは Supabase のバックアップ機能で行い、このリポジトリのツールは破壊的な巻き戻しを提供しない。
 8. Edge Function のデプロイだけが失敗した場合は、マイグレーションは適用済みである。原因を直して同じワークフローを再実行する（マイグレーションは差分がなければ何もしない）。
 
