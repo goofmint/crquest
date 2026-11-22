@@ -195,3 +195,7 @@ git grep -n -E "loadMusic|loadSfx|loadItemsFromDisk|InteractionTextService|sfExi
 - ビルド生成物 (`public/index.js`, `public/app/` など): `.gitignore` で除外されており、追跡されていないため検索していない。
 - 実行時の挙動: 本書は静的な調査である。アプリの起動 (`npm start`) は行っていない。呼び出し連鎖はソースを読んで追跡したものであり、実行して確認したものではない。
 - fs-jetpack 2.2.2 のソースは、このワークツリーに依存が未インストールだったため、`unpkg.com` から取得して読んだ。`public/package-lock.json` が示すバージョンと一致することを `package.json` の `"version": "2.2.2"` で確認した。
+
+## 追記: ミッション同期コマンドの移行 (Issue #192)
+
+`npm run sync:missions` は Supabase へのカタログ公開に切り替わった（`-- --target local|remote` が必須。[docs/supabase/mission-catalog.md](../supabase/mission-catalog.md)）。従来の Firestore 版（`tasks/sync_missions/index.js`、内容は変更なし）は `npm run sync:missions:firestore` で実行する。

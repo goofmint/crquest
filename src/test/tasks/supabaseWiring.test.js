@@ -106,4 +106,24 @@ describe('supabase local stack wiring (no Docker required)', () => {
       }
     });
   });
+
+  describe('mission catalog (docs/supabase/mission-catalog.md)', () => {
+    it('lists the remote publish variables in the env template, empty', () => {
+      const template = fs.readFileSync(path.join(repoRoot, '.env.supabase.template'), 'utf8');
+      for (const name of ['TERMINALQUEST_CATALOG_SUPABASE_URL', 'TERMINALQUEST_CATALOG_SUPABASE_SECRET_KEY']) {
+        expect(template).toMatch(new RegExp(`^${name}=$`, 'm'));
+      }
+    });
+
+    it('points sync:missions at Supabase and keeps the Firestore version', () => {
+      const { scripts } = readJson('package.json');
+      expect(scripts['sync:missions']).toBe('node tasks/sync_missions/supabase.js');
+      expect(scripts['sync:missions:firestore']).toBe('node tasks/sync_missions/index.js');
+    });
+
+    it('does not expose catalog_private through the API', () => {
+      const config = fs.readFileSync(path.join(repoRoot, 'supabase', 'config.toml'), 'utf8');
+      expect(config).toMatch(/^schemas = \["public", "graphql_public"\]$/m);
+    });
+  });
 });
