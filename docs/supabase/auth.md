@@ -13,7 +13,7 @@ Issue #186 の実装。TerminalQuest（Tauri）に、任意の GitHub / Google �
   - アクセストークンはメモリだけに置く。
   - 資格情報ストアが使えない場合は、セッションをその実行中のメモリにだけ置き、Account 画面に通知する（平文の代替保存はしない）。
 - `tauri-plugin-deep-link` は、受け取った URL を `deep-link://new-url` イベントとして全 webview にも送る（無効にする設定はなく、`core:default` が `listen` を許可している）。そのため、ページのスクリプトはコールバック URL（`code` を含む）を見られる。ただし `code` は PKCE の検証コードがないと交換できず、検証コードは Rust の外に出ない。この前提を崩さないこと（検証コードをレンダラーに渡さない）。
-- レンダラーに渡すのは秘密情報を含まない状態だけ（`state`、`provider`、`displayName`、`offline`、`persistence`、`errorCode`）。トークン、検証コード、`code`、ユーザー ID は、レンダラー、`setContext`、`env`、`config.json`、ログ、エラーメッセージに入れない。トークンを読み出すコマンドはない。ローカルの GUID と Supabase のユーザー ID は結び付けない（#187 で決める）。
+- アプリが `auth://status-changed` でレンダラーに渡す認証状態は、秘密情報を含まない項目だけ（`state`、`provider`、`displayName`、`offline`、`persistence`、`errorCode`）。トークン、検証コード、`code`、ユーザー ID は、この認証状態、`setContext`、`env`、`config.json`、ログ、エラーメッセージに入れない（前項のとおり、プラグインの `deep-link://new-url` イベントでは `code` を含むコールバック URL が webview に見える）。トークンを読み出すコマンドはない。ローカルの GUID と Supabase のユーザー ID は結び付けない（#187 で決める）。
 - 状態: `restoring`（起動時、バックグラウンド）、`signed_out`、`pending`、`signed_in`、`expired`、`error`、`unconfigured`。
   - 起動時にリフレッシュトークンで更新する。ネットワーク障害なら、トークンを保持したまま `signed_in`（`offline: true`）とし、1 分後に再試行する。サーバーに拒否された場合は、保存したセッションを消して `expired` にする。
   - アクセストークンの期限の約 1 分前に更新する。ローテーションされた新しいリフレッシュトークンは、保存してから通知する。
