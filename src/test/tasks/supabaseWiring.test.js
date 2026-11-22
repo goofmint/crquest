@@ -76,4 +76,34 @@ describe('supabase local stack wiring (no Docker required)', () => {
     const config = fs.readFileSync(path.join(repoRoot, 'supabase', 'config.toml'), 'utf8');
     expect(config).toMatch(/\[functions\.health\][^[]*verify_jwt = true/);
   });
+
+  describe('auth (docs/supabase/auth.md)', () => {
+    const config = () => fs.readFileSync(path.join(repoRoot, 'supabase', 'config.toml'), 'utf8').replace(/\r\n/g, '\n');
+
+    it('allows only the TerminalQuest callback as a redirect URL', () => {
+      expect(config()).toMatch(/^additional_redirect_urls = \["terminalquest:\/\/auth\/callback\?attempt=\*"\]$/m);
+    });
+
+    it.each(['github', 'google'])('enables %s with credentials from env() only', provider => {
+      const section = config().match(new RegExp(`\\[auth\\.external\\.${provider}\\]\\n([^\\[]*)`))[1];
+      expect(section).toMatch(/^enabled = true$/m);
+      const name = provider.toUpperCase();
+      expect(section).toContain(`client_id = "env(SUPABASE_AUTH_EXTERNAL_${name}_CLIENT_ID)"`);
+      expect(section).toContain(`secret = "env(SUPABASE_AUTH_EXTERNAL_${name}_SECRET)"`);
+    });
+
+    it('lists the OAuth and build-time variables in the env template, empty', () => {
+      const template = fs.readFileSync(path.join(repoRoot, '.env.supabase.template'), 'utf8');
+      for (const name of [
+        'SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID',
+        'SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET',
+        'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
+        'SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET',
+        'TERMINALQUEST_SUPABASE_URL',
+        'TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY',
+      ]) {
+        expect(template).toMatch(new RegExp(`^${name}=$`, 'm'));
+      }
+    });
+  });
 });

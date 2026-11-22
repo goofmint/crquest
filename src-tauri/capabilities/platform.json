@@ -349,6 +349,10 @@
     "allow-open-devtools",
     "allow-toggle-devtools",
     "allow-enable-help-menu",
-    "allow-set-shell-texts"
+    "allow-set-shell-texts",
+    "allow-auth-status",
+    "allow-auth-start-login",
+    "allow-auth-cancel-login",
+    "allow-auth-logout"
   ]
 }

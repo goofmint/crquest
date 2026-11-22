@@ -1,3 +1,4 @@
+pub mod auth;
 mod bundled_scope;
 #[cfg(test)]
 mod capability_scope;
@@ -125,7 +126,22 @@ fn context() -> tauri::Context {
 }
 
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // First: a second launch (also the one the OS starts for a terminalquest://
+    // callback while the app runs) is forwarded to this instance. With the
+    // `deep-link` feature the URL reaches the deep-link plugin's handler.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        if let Some(window) = app.get_webview_window(close::MAIN_WINDOW_LABEL) {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }));
+    builder
+        // After single-instance. The renderer is not granted any deep-link
+        // permission, so callback URLs only reach the Rust auth module.
+        .plugin(tauri_plugin_deep_link::init())
         .manage(close::CloseConfirmation::default())
         .setup(|app| {
             // The quit menu first (macOS): the Help items are added to its menu.
@@ -136,6 +152,7 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 quit,
             )?);
+            auth::setup(app)?;
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -172,7 +189,11 @@ pub fn run() {
             open_devtools,
             toggle_devtools,
             help_menu::enable_help_menu,
-            help_menu::set_shell_texts
+            help_menu::set_shell_texts,
+            auth::auth_status,
+            auth::auth_start_login,
+            auth::auth_cancel_login,
+            auth::auth_logout
         ])
         .run(context())
         .expect("error while running TerminalQuest");

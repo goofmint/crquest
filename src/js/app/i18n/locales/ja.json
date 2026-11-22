@@ -34,7 +34,45 @@
       "Teams": "チーム",
       "Operations": "作戦",
       "Unlocks": "アンロック",
-      "Credits": "クレジット"
+      "Credits": "クレジット",
+      "Account": "アカウント"
+    },
+    "account": {
+      "title": "アカウント",
+      "intro": "ログインは任意です。アカウントがなくても、ネットワークに接続していなくても、ゲームは遊べます。",
+      "unconfigured": "このビルドではログインを利用できません。",
+      "restoring": "ログイン状態を確認しています…",
+      "signedOut": "ログインしていません。",
+      "loginGithub": "GitHub でログイン",
+      "loginGoogle": "Google でログイン",
+      "pending": "ブラウザーでログインを続けてください。",
+      "cancel": "キャンセル",
+      "signedIn": "{{provider}} でログイン中",
+      "signedInAs": "{{provider}} で {{name}} としてログイン中",
+      "logout": "ログアウト",
+      "offline": "オフラインです。ログインは保たれ、ゲームも遊べます。オンラインに戻ると接続を更新します。",
+      "persistenceUnavailable": "このコンピューターにログイン情報を保存できません（OS の資格情報ストアを利用できません）。再起動後は、もう一度ログインが必要です。",
+      "expired": "ログインの有効期限が切れました。",
+      "signInAgain": "もう一度ログイン",
+      "retry": "再試行",
+      "working": "お待ちください…",
+      "providers": {
+        "github": "GitHub",
+        "google": "Google"
+      },
+      "errors": {
+        "provider_denied": "ログインがキャンセルされたか、許可されませんでした。",
+        "provider_error": "ログインプロバイダーがエラーを返しました。",
+        "login_timed_out": "ログインに時間がかかりすぎたため、タイムアウトしました。",
+        "network": "ログインサービスに接続できません。接続を確認してください。",
+        "session_expired": "ログインの有効期限が切れました。",
+        "exchange_failed": "ログインを完了できませんでした。",
+        "browser_open_failed": "ブラウザーを開けませんでした。",
+        "keyring_unavailable": "このコンピューターにログイン情報を保存できません。",
+        "unknown": "ログインで問題が発生しました。",
+        "logout_incomplete": "ログアウトしましたが、保存されたログイン情報をこのコンピューターから削除できませんでした。再起動後に復活する可能性があります。"
+      },
+      "statusLoadFailed": "ログイン状態を確認できませんでした。"
     }
   }
 }
