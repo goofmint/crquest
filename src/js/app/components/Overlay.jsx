@@ -81,7 +81,7 @@ export default class Overlay extends Component {
           );
         }
 
-        if (this.state.displayFsmState === 'hiding') {
+        if (this.state.displayFsm.currentState === 'hiding') {
           // Keep only the latest; the current overlay finishes hiding first.
           this.pendingShow = { componentKey, componentProps };
           return;

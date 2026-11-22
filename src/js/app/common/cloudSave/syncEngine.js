@@ -522,6 +522,8 @@ export class CloudSyncEngine {
             restoreInProgress: null,
           });
         } catch (error) {
+          // A superseded run or generation must not touch the current state.
+          if (this.uploadRun !== run || !this.current(generation)) return;
           // The server has the save; only the record of it is missing. Retry
           // that alone, and do not upload again from the stale `dirty` before
           // it is stored.
@@ -531,6 +533,7 @@ export class CloudSyncEngine {
           this.scheduleRetry(() => this.guard(generation, () => this.retryRecord(generation, account)));
           return;
         }
+        if (this.uploadRun !== run || !this.current(generation)) return;
         if (this.pendingBind === account) this.pendingBind = null;
         this.retryCount = 0;
         this.clearRetry();
@@ -550,6 +553,7 @@ export class CloudSyncEngine {
       await this.save({});
     } catch (error) {
       console.error('Cloud sync: could not record the accepted revision', error);
+      if (!this.current(generation) || this.account !== account) return;
       this.scheduleRetry(() => this.guard(generation, () => this.retryRecord(generation, account)));
       return;
     }
