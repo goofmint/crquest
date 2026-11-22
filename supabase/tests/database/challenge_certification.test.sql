@@ -2,7 +2,7 @@
 -- 実カタログの有無に依存しないよう、専用のミッション certtest とその検証定義をフィクスチャとして投入する。
 -- CLI はファイルをトランザクションで包まないため、BEGIN / ROLLBACK を明示する。
 BEGIN;
-SELECT plan(54);
+SELECT plan(55);
 
 -- フィクスチャ (postgres)
 INSERT INTO public.missions (id, extension, title, description, is_mission, sort_order)
@@ -12,11 +12,13 @@ INSERT INTO public.mission_objectives (mission_id, id, title, description, xp, s
   ('certtest', 'exact', 'Exact', 'd', 50, 1, NULL),
   ('certtest', 'sum', 'Sum', 'd', 70, 2, NULL),
   ('certtest', 'retired', 'Retired', 'd', 10, 3, now()),
-  ('certtest', 'nodef', 'No definition', 'd', 10, 4, NULL);
+  ('certtest', 'nodef', 'No definition', 'd', 10, 4, NULL),
+  ('certtest', 'padded', 'Padded', 'd', 20, 6, NULL);
 INSERT INTO catalog_private.objective_verification_definitions (mission_id, objective_id, definition_version, definition) VALUES
   ('certtest', 'words', 1, '{"method":"text_answer","normalization":"trim_lower","expected":{"words":"jah vuh skrept"},"ttl_seconds":600}'),
   ('certtest', 'exact', 1, '{"method":"text_answer","normalization":"trim","expected":{"a":"dogs","b":"hockey"}}'),
   ('certtest', 'sum', 1, '{"method":"result_vector","case_count":2,"ttl_seconds":600,"cases":[{"input":[1,2,3],"expected":6},{"input":[10,20],"expected":30},{"input":[-1,1,5],"expected":5}]}'),
+  ('certtest', 'padded', 1, '{"method":"text_answer","normalization":"trim_lower","expected":{"a":"  Padded Answer \t"}}'),
   ('certtest', 'retired', 1, '{"method":"text_answer","normalization":"trim","expected":{"x":"y"}}');
 
 CREATE TEMP TABLE ch (name text PRIMARY KEY, id uuid);
@@ -232,6 +234,11 @@ SELECT results_eq(
 SELECT results_eq(
   $$SELECT status, points_awarded FROM public.submit_certification_challenge((SELECT id FROM ch WHERE name = 'vt2'), '{"a":"\u000bdogs\u000b","b":"\u000bhockey"}')$$,
   $$VALUES ('certified'::text, 50)$$, 'trim: 垂直タブは除去されて正解になる');
+-- 期待値にも同じ正規化を適用する (前後に空白のある期待値)
+INSERT INTO ch SELECT 'pad1', challenge_id FROM public.issue_certification_challenge('certtest', 'padded');
+SELECT results_eq(
+  $$SELECT status, points_awarded FROM public.submit_certification_challenge((SELECT id FROM ch WHERE name = 'pad1'), '{"a":"padded answer"}')$$,
+  $$VALUES ('certified'::text, 20)$$, '前後に空白のある期待値も、正規化した提出値と一致する');
 SELECT set_config('request.jwt.claims',
   '{"sub": "00000000-0000-4000-8000-000000000001", "role": "authenticated"}', true);
 RESET ROLE;

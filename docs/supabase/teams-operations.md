@@ -73,7 +73,8 @@ PostgREST では業務エラーは HTTP 400 とメッセージで返る。クラ
 npm run supabase:start
 npm run supabase:reset
 npm run supabase:test   # supabase/tests/database/groups_and_contributions.test.sql
-npm run supabase:smoke  # 実 JWT の 2 ユーザーで RPC を確認（シードの合成グループ SMOKETEAM1 を使う）
+npm run sync:missions -- --target local   # カタログと検証定義を先に発行する（スモークの認定検証が使う）
+npm run supabase:smoke  # 実 JWT の 2 ユーザーで RPC を確認（実行ごとに service_role で作る専用グループを使う）
 ```
 
 pgTAP は有効／無効コード、正規化、重複加入、離脱・再加入、他ユーザー操作の拒否、直接アクセスの拒否、未認証の拒否、集計（加入前／所属中／離脱後／離脱中、複数メンバー、台帳の一意制約）、関数属性と権限を検証する。台帳へのデータ投入は集計テストのためだけに `postgres` で行う。

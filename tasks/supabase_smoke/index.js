@@ -160,10 +160,9 @@ async function checkCertification(apiUrl, key, tokenA, tokenB) {
 }
 
 // チーム・オペレーションの RPC を実 JWT で検証する (シードの合成グループを使う)。
-async function checkGroups(apiUrl, key, tokenA) {
+async function checkGroups(apiUrl, key, tokenA, teamCode) {
   const tokenB = await signUp(apiUrl, key, 'groups signup (2nd user)');
   const call = (step, token, name, args) => rpc(step, apiUrl, key, token, name, args);
-  const teamCode = 'SMOKETEAM1';
 
   const noToken = await call('groups rpc without token', null, 'list_my_groups', {});
   if (noToken.status !== 401 && noToken.status !== 403) {
@@ -191,7 +190,7 @@ async function checkGroups(apiUrl, key, tokenA) {
   expectError('get_group_contribution by non-member', await call('get_group_contribution by non-member', tokenB, 'get_group_contribution', { p_group_id: groupId }), 'not_member');
 
   // 所属中に認定した達成が 0 以外の貢献点として集計される
-  // 他の実行や既存の達成 (SMOKETEAM1 の他メンバー) を除くため、提出前の値との差分で比較する
+  // この実行専用のグループなので、同時に走る別のスモークの影響を受けない。念のため提出前の値との差分で比較する
   const before = await call('get_group_contribution (baseline)', tokenA, 'get_group_contribution', { p_group_id: groupId });
   if (before.status !== 200 || !before.json || !before.json[0]) fail('get_group_contribution (baseline)', `HTTP ${before.status}`);
   const baseline = Number(before.json[0].total_points);
@@ -255,7 +254,26 @@ async function main() {
   if (!json || json.ok !== true) fail('functions with token', '応答の内容が不正');
   ok('functions with token -> 200');
 
-  await checkGroups(apiUrl, key, body.access_token);
+  // 実行ごとに専用のグループを service_role で作る (共有の SMOKETEAM1 を使うと、同時実行で貢献点が混ざる)
+  const serviceKey = status.SECRET_KEY || status.SERVICE_ROLE_KEY;
+  if (!serviceKey) fail('status', 'service_role のキーを取得できない');
+  const teamCode = `SMOKE${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+  const created = await request('create per-run group', `${apiUrl}/rest/v1/groups`, {
+    method: 'POST',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify({ kind: 'team', display_name: 'Smoke Team (per run)', join_code: teamCode }),
+  });
+  if (created.status !== 201) fail('create per-run group', `HTTP ${created.status}`);
+  const runGroupId = (await created.json())[0].id;
+  ok('create per-run group');
+
+  await checkGroups(apiUrl, key, body.access_token, teamCode);
+
+  // 後始末 (所属履歴は CASCADE。台帳は使い捨てユーザーのもの)
+  await fetch(`${apiUrl}/rest/v1/groups?id=eq.${runGroupId}`, {
+    method: 'DELETE',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+  }).catch(() => {});
 
   console.log('[smoke] all checks passed');
 }

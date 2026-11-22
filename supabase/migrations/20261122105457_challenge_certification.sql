@@ -246,7 +246,8 @@ BEGIN
     END IF;
     FOR k, v IN SELECT * FROM jsonb_each(p_expected) LOOP
       a := catalog_private.js_trim(p_result ->> k);
-      b := v #>> '{}';
+      -- 期待値にも同じ正規化を適用する (前後に空白のある期待値も提出値と比較できる)
+      b := catalog_private.js_trim(v #>> '{}');
       IF p_normalization = 'trim_lower' THEN
         a := pg_catalog.lower(a);
         b := pg_catalog.lower(b);
@@ -421,7 +422,9 @@ BEGIN
   FROM public.mission_objectives o
   JOIN public.missions m ON m.id = o.mission_id
   WHERE o.mission_id = v_ch.mission_id AND o.id = v_ch.objective_id
-    AND o.retired_at IS NULL AND m.retired_at IS NULL;
+    AND o.retired_at IS NULL AND m.retired_at IS NULL
+  -- 台帳への記録までロックを保持し、同時に退役された目標を認定しない
+  FOR SHARE OF o, m;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'objective_not_certifiable' USING ERRCODE = 'P0001';
   END IF;
