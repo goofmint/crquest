@@ -149,7 +149,7 @@ TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY=<publishable key> \
 
 ## サーバー用シークレット
 
-- 現在の `health` 関数はシークレットを使わない。関数が必要とするシークレットは `supabase secrets set --env-file <未コミットのファイル>` で環境ごとに設定する（`SUPABASE_URL` などの組み込み変数は設定不要）。
+- 現在の `health` 関数はシークレットを使わない。関数が必要とするシークレットは `npx supabase secrets set --env-file <未コミットのファイル> --remote=<ref>` で環境ごとに設定する（`<ref>` は対象環境の project ref。`SUPABASE_URL` などの組み込み変数は設定不要）。
 - secret キーは `sync:*` の運用タスクだけが使う。クライアントのビルドやワークフローの `deploy` ジョブには渡さない。
 - OAuth プロバイダーのクライアントシークレットはダッシュボードに入力する。リポジトリや Actions には置かない。
 
@@ -157,12 +157,14 @@ TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY=<publishable key> \
 
 `db push` は 1 つのマイグレーションを 1 トランザクションで適用するため、失敗したマイグレーションは途中まで反映されない。それより前に成功したものは適用済みのまま残る。
 
-1. ワークフローのログ、または `npx supabase migration list --remote` で、どこまで適用されたかを確認する。
-2. 原因を修正する。**適用済みのマイグレーションファイルは書き換えない**。新しい（より新しいタイムスタンプの）マイグレーションで修正する。まだどの環境にも適用されていないファイルだけは直してよい。
-3. ローカルで `npm run supabase:integration` を通し、ステージングで dry-run からやり直す。
-4. 履歴と実際の状態がずれたとき（手作業で SQL を実行した、など）は `npx supabase migration repair <version> --status applied|reverted --remote` で履歴を合わせる。実行前に対象の環境にリンクされていることを確認する。
-5. データを壊す変更を本番に適用する前は、ダッシュボードのバックアップ（Database > Backups）の存在を確認する。リストアは Supabase のバックアップ機能で行い、このリポジトリのツールは破壊的な巻き戻しを提供しない。
-6. Edge Function のデプロイだけが失敗した場合は、マイグレーションは適用済みである。原因を直して同じワークフローを再実行する（マイグレーションは差分がなければ何もしない）。
+1. ワークフローのログ、または `npx supabase migration list --remote=<ref>` で、履歴上どこまで適用されたかを確認する（`<ref>` は対象環境の project ref）。
+2. 履歴だけでなく実際の DB の状態も確認する（ダッシュボードの Table Editor / SQL Editor で、失敗したマイグレーションが作るはずのテーブル・関数・権限が存在しないか）。トランザクション外で実行される文（`CREATE INDEX CONCURRENTLY` など）や手作業の SQL により一部だけ反映されていた場合は、その変更を解消してから再実行する。
+3. 原因を修正する。**適用済みのマイグレーションファイルは書き換えない**。新しい（より新しいタイムスタンプの）マイグレーションで修正する。まだどの環境にも適用されていないファイルだけは直してよい。
+4. 失敗の原因が既存データ（制約違反など）にある場合は、本番のデータ状態を調べ、原因に応じて修正内容を判断する。修正前にバックアップ（Database > Backups）の存在と影響範囲を確認し、まずステージングで同じ手順を試す。
+5. ローカルで `npm run supabase:integration` を通し、ステージングで dry-run からやり直す。
+6. 履歴と実際の状態がずれたとき（失敗したバージョンが履歴上は適用済みになっている、手作業で SQL を実行した、など）は、実際の状態に合わせて `npx supabase migration repair <version> --status reverted --remote=<ref>`（未適用に戻す）または `--status applied` で履歴を合わせ、その後に再実行する。実行前に `<ref>` が修復対象の環境の project ref と一致すること（GitHub Environment の `SUPABASE_PROJECT_REF`、ダッシュボードの URL）を確認する。
+7. データを壊す変更を本番に適用する前は、ダッシュボードのバックアップ（Database > Backups）の存在を確認する。リストアは Supabase のバックアップ機能で行い、このリポジトリのツールは破壊的な巻き戻しを提供しない。
+8. Edge Function のデプロイだけが失敗した場合は、マイグレーションは適用済みである。原因を直して同じワークフローを再実行する（マイグレーションは差分がなければ何もしない）。
 
 ## 範囲外・未検証
 

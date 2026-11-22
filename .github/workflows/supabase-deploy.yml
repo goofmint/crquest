@@ -57,6 +57,8 @@ jobs:
       - run: npm run check:firebase
       - name: Start local Supabase
         run: npm run supabase:start
+      - name: Build the frontend (tauri-dist is required to compile the Rust integration tests)
+        run: npm run build:tauri
       - name: Integration tests against the local stack
         run: npm run supabase:integration
       - name: Stop local Supabase
