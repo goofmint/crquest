@@ -15,3 +15,10 @@ VALUES
   ('00000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated',
    'synthetic-player-3@example.test', '{"display_name": "Synthetic Player 3"}', now(), now())
 ON CONFLICT (id) DO NOTHING;
+
+-- チーム・オペレーション (Issue #188): smoke 検証用の合成グループ。参加コードは公開してよい固定値。
+INSERT INTO public.groups (id, kind, display_name, join_code)
+VALUES
+  ('00000000-0000-4000-8000-0000000000a1', 'team', 'Synthetic Team', 'SMOKETEAM1'),
+  ('00000000-0000-4000-8000-0000000000b1', 'operation', 'Synthetic Operation', 'SMOKEOPS01')
+ON CONFLICT (id) DO NOTHING;
