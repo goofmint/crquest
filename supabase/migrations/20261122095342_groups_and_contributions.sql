@@ -39,6 +39,9 @@ CREATE UNIQUE INDEX group_memberships_active_key
   ON public.group_memberships (group_id, user_id) WHERE left_at IS NULL;
 CREATE INDEX group_memberships_user_period_idx
   ON public.group_memberships (user_id, joined_at, left_at);
+-- get_group_contribution がグループ単位で所属履歴を引くためのインデックス
+CREATE INDEX group_memberships_group_history_idx
+  ON public.group_memberships (group_id, user_id, joined_at, left_at);
 
 COMMENT ON TABLE public.group_memberships IS
   'Membership history. A row is never deleted on leave (left_at is set) so contributions earned while a member are kept.';
@@ -50,7 +53,8 @@ CREATE TABLE public.certified_achievements (
   mission_id text NOT NULL,
   objective_id text NOT NULL,
   points integer NOT NULL,
-  certified_at timestamptz NOT NULL DEFAULT now(),
+  -- 所属期間と同じく INSERT 時点の実時刻。認定処理が明示設定する場合も clock_timestamp() を使う
+  certified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   CONSTRAINT certified_achievements_points_nonnegative CHECK (points >= 0),
   CONSTRAINT certified_achievements_once UNIQUE (user_id, mission_id, objective_id)
 );
