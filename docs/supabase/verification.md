@@ -48,3 +48,16 @@ Issue #185 の実装を、ローカルの Docker 上で検証した記録。`sup
 | `npm run check:platform` | 違反なし |
 
 未検証: HTTP 経由の集計は、台帳へクライアントが書けないため 0 点の確認のみ。集計の中身は pgTAP で検証した。参加コードの総当たり対策（RPC 単位の試行回数制限）は未実装。
+
+## 認定 API（Issue #189）の検証記録
+
+ローカルの Docker 上で検証した。キーとトークンは記録していない。手順と契約は [certification.md](certification.md)。
+
+| コマンド | 結果 |
+| --- | --- |
+| `npm run supabase:reset` | マイグレーション 5 本とシードを適用して成功 |
+| `npm run supabase:test` | `challenge_certification.test.sql` 52 件を含む全ファイル成功 |
+| `npm run sync:missions -- --target local`（2 回） | 初回: 検証定義 inserted=3、2 回目: unchanged=3 |
+| `npm run supabase:smoke` | 実 JWT で、権限、正解、不正解、再送、同時提出（同一チャレンジ、同一目標の別チャレンジ）、グループの 0 以外の貢献点を確認 |
+
+未検証: 期限切れは pgTAP のみ（待機が必要なため HTTP では確認しない）。チャレンジの発行回数の上限と期限切れ行の削除は未実装。クライアント（Rust / `Validator.jsx`）への組み込みは範囲外。

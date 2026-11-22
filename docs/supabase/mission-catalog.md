@@ -8,10 +8,10 @@
 | :--- | :--- | :--- | :--- |
 | 公開フィールド（ミッション） | `public.missions` | 誰でも（`anon` / `authenticated` の SELECT） | `service_role` の `publish_mission_catalog` のみ |
 | 公開フィールド（目標・XP） | `public.mission_objectives` | 同上 | 同上 |
-| 認定用の検証定義 | `catalog_private.objective_verification_definitions`（**API 非公開**） | サーバー側（`service_role`、DB 接続） | #189 が投入する。sync は書き込まない |
+| 認定用の検証定義 | `catalog_private.objective_verification_definitions`（**API 非公開**） | サーバー側（`service_role`、DB 接続） | `service_role` 専用の `publish_verification_definitions` が投入する（#189。`sync:missions` がカタログの後に呼ぶ。詳細は [certification.md](certification.md)） |
 
 - `catalog_private` は `supabase/config.toml` の `[api].schemas` に含めない（意図的）。`anon` / `authenticated` には USAGE がなく、PostgREST からは見えない。
-- 検証定義は `(mission_id, objective_id)` を主キーに、`mission_objectives` へ外部キーを張る。`definition_version`（正の整数）と `definition`（JSON オブジェクト）を持つ。形式の詳細とアクセス関数は #189 が決める。
+- 検証定義は `(mission_id, objective_id)` を主キーに、`mission_objectives` へ外部キーを張る。`definition_version`（正の整数）と `definition`（JSON オブジェクト）を持つ。形式は [certification.md](certification.md) に記載する。
 - 公開フィールド: ミッションは `id`（レベルのディレクトリ名）、`extension`、`title`、`description`、`is_mission`、`sort_order`。目標は `mission_id`、`id`（目標名）、`title`、`description`、`xp`、`sort_order`。どちらも `retired_at` を持つ。
 
 ## 発行しないもの

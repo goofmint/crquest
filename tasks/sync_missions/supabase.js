@@ -8,7 +8,12 @@ const { getBundledExtensionPaths } = require('../utils/bundledExtensions');
 const { readLevels } = require('../utils/readLevels');
 const { buildCatalog } = require('./catalog');
 const { resolveTarget, TargetError } = require('./target');
+const fs = require('fs');
 const path = require('path');
+
+const VERIFICATION_DEFINITIONS_PATH = path.join(
+  __dirname, '..', '..', 'supabase', 'verification', 'definitions.json'
+);
 
 async function loadCatalog(extensionPaths = getBundledExtensionPaths()) {
   const sources = await Promise.all(
@@ -20,17 +25,26 @@ async function loadCatalog(extensionPaths = getBundledExtensionPaths()) {
   return buildCatalog(sources);
 }
 
-async function publishCatalog(target, catalog, fetchImpl = fetch) {
+// サーバー専用の検証定義 (supabase/verification/definitions.json)。クライアント配布物 (objective.json など) からは作らない。
+function loadVerificationDefinitions(file = VERIFICATION_DEFINITIONS_PATH) {
+  const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!parsed || !Array.isArray(parsed.definitions)) {
+    throw new Error(`${path.basename(file)}: definitions は配列でなければならない`);
+  }
+  return { definitions: parsed.definitions };
+}
+
+async function callRpc(target, name, args, fetchImpl, label) {
   let response;
   try {
-    response = await fetchImpl(`${target.url}/rest/v1/rpc/publish_mission_catalog`, {
+    response = await fetchImpl(`${target.url}/rest/v1/rpc/${name}`, {
       method: 'POST',
       headers: {
         apikey: target.key,
         Authorization: `Bearer ${target.key}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ catalog }),
+      body: JSON.stringify(args),
     });
   } catch (error) {
     throw new Error(
@@ -46,9 +60,23 @@ async function publishCatalog(target, catalog, fetchImpl = fetch) {
     } catch (error) {
       // 本文が JSON でない場合はステータスだけを示す
     }
-    throw new Error(`カタログの発行に失敗した: HTTP ${response.status} ${detail}`.trim());
+    throw new Error(`${label}に失敗した: HTTP ${response.status} ${detail}`.trim());
   }
   return response.json();
+}
+
+function publishCatalog(target, catalog, fetchImpl = fetch) {
+  return callRpc(target, 'publish_mission_catalog', { catalog }, fetchImpl, 'カタログの発行');
+}
+
+function publishVerificationDefinitions(target, definitions, fetchImpl = fetch) {
+  return callRpc(
+    target,
+    'publish_verification_definitions',
+    { p_definitions: definitions },
+    fetchImpl,
+    '検証定義の発行'
+  );
 }
 
 function summarize(counts) {
@@ -68,11 +96,24 @@ async function run(argv = process.argv.slice(2)) {
 
   console.log(`missions:   ${summarize(result.missions)}`);
   console.log(`objectives: ${summarize(result.objectives)}`);
+
+  // 検証定義はカタログ (目標の存在) に依存するため、カタログの後に発行する
+  const definitions = loadVerificationDefinitions();
+  const defResult = await publishVerificationDefinitions(target, definitions);
+  console.log(
+    `verification definitions: inserted=${defResult.inserted} updated=${defResult.updated} unchanged=${defResult.unchanged} deleted=${defResult.deleted}`
+  );
   console.log(chalk.green.bold('Done'));
   return result;
 }
 
-module.exports = { loadCatalog, publishCatalog, run };
+module.exports = {
+  loadCatalog,
+  publishCatalog,
+  loadVerificationDefinitions,
+  publishVerificationDefinitions,
+  run,
+};
 
 if (require.main === module) {
   run().catch(error => {
