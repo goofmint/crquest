@@ -1,13 +1,16 @@
 const store = {};
 vi.mock('../../../js/app/common/context', () => ({
   getContext: vi.fn(key => store[key]),
-  setContext: vi.fn(update => Object.assign(store, update)),
+  updateContext: vi.fn(compute => {
+    const update = compute(store);
+    if (update && Object.keys(update).length) Object.assign(store, update);
+  }),
 }));
 vi.mock('../../../js/app/platform/auth', () => ({ getAuthStatus: vi.fn() }));
 vi.mock('../../../js/app/platform/unlocks', () => ({ redeemUnlockCode: vi.fn() }));
 
 import { redeemCode, grantUnlockedItem, OUTCOME } from '../../../js/app/common/unlocks';
-import { setContext } from '../../../js/app/common/context';
+import { updateContext } from '../../../js/app/common/context';
 import { getAuthStatus } from '../../../js/app/platform/auth';
 import { redeemUnlockCode } from '../../../js/app/platform/unlocks';
 
@@ -30,7 +33,7 @@ describe('redeemCode', () => {
       installed: true,
     });
     expect(redeemUnlockCode).toHaveBeenCalledWith('acct', 'CODE');
-    expect(setContext).toHaveBeenCalledTimes(1);
+    expect(updateContext).toHaveBeenCalledTimes(1);
     expect(store.inventory).toEqual(['tshirt', 'wand']);
     expect(store.unlockCodes).toEqual(['CODE']);
   });
@@ -38,7 +41,7 @@ describe('redeemCode', () => {
   test('an invalid code grants nothing', async () => {
     redeemUnlockCode.mockResolvedValue({ account: 'acct', status: 'invalid_code', itemKey: null });
     await expect(redeemCode('NOPE')).resolves.toEqual({ outcome: OUTCOME.INVALID });
-    expect(setContext).not.toHaveBeenCalled();
+    expect(updateContext).not.toHaveBeenCalled();
   });
 
   test('a resend does not add the item twice, and repairs a lost one', async () => {
@@ -47,7 +50,8 @@ describe('redeemCode', () => {
     store.inventory = ['tshirt', 'wand'];
     store.unlockCodes = ['CODE'];
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.ALREADY_REDEEMED);
-    expect(setContext).not.toHaveBeenCalled();
+    // The update computes to nothing: the state is unchanged.
+    expect(updateContext.mock.results).toHaveLength(1);
     expect(store.inventory).toEqual(['tshirt', 'wand']);
     // The item was lost (e.g. a restore of an older save) while the code is still listed.
     store.inventory = ['tshirt'];
@@ -73,13 +77,13 @@ describe('redeemCode', () => {
     getAuthStatus.mockResolvedValue(status);
     await expect(redeemCode('CODE')).resolves.toEqual({ outcome: OUTCOME.LOGIN_REQUIRED });
     expect(redeemUnlockCode).not.toHaveBeenCalled();
-    expect(setContext).not.toHaveBeenCalled();
+    expect(updateContext).not.toHaveBeenCalled();
   });
 
   test.each(['offline', 'server', 'unauthorized', 'rejected'])('%s grants nothing and can be retried', async code => {
     redeemUnlockCode.mockRejectedValueOnce(rejection(code));
     await expect(redeemCode('CODE')).resolves.toEqual({ outcome: OUTCOME.UNAVAILABLE });
-    expect(setContext).not.toHaveBeenCalled();
+    expect(updateContext).not.toHaveBeenCalled();
     redeemUnlockCode.mockResolvedValueOnce({ account: 'acct', status: 'redeemed', itemKey: 'wand' });
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.REDEEMED);
   });
@@ -92,7 +96,7 @@ describe('redeemCode', () => {
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.LOGIN_REQUIRED);
     getAuthStatus.mockResolvedValueOnce(signedIn).mockRejectedValueOnce(new Error('boom'));
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.UNAVAILABLE);
-    expect(setContext).not.toHaveBeenCalled();
+    expect(updateContext).not.toHaveBeenCalled();
   });
 
   test('a changed sign-in asks to sign in again', async () => {
@@ -109,7 +113,7 @@ describe('redeemCode', () => {
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.UNAVAILABLE);
     redeemUnlockCode.mockResolvedValueOnce({ account: 'acct', status: 'surprise' });
     expect((await redeemCode('CODE')).outcome).toBe(OUTCOME.UNAVAILABLE);
-    expect(setContext).not.toHaveBeenCalled();
+    expect(updateContext).not.toHaveBeenCalled();
   });
 
   test('an item that is not installed is still recorded, without reading its name', async () => {

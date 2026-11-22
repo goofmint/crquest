@@ -1,6 +1,6 @@
 import levelLoader from './levelLoader';
 import audioManager from './audio';
-import { setContext, getContext, emitter } from './context';
+import { setContext, getContext, updateContext, emitter } from './context';
 import { staticFilePath } from './fs_utils';
 import TiledService from './tiled';
 import analytics from './analytics';
@@ -369,19 +369,20 @@ class World {
   };
 
   grantItems = (grantedItems = []) => {
-    const inventory = getContext('inventory');
-    const newItems = grantedItems.filter(
-      grantedItem => !inventory.includes(grantedItem)
-    );
+    updateContext(state => {
+      const inventory = state.inventory;
+      const newItems = grantedItems.filter(
+        grantedItem => !inventory.includes(grantedItem)
+      );
 
-    setContext({ inventory: [...inventory, ...newItems] });
+      return newItems.length > 0 ? { inventory: [...inventory, ...newItems] } : null;
+    });
   };
 
   removeItems = (removedItems = []) => {
-    const inventory = getContext('inventory');
-    const newInventory = inventory.filter(item => !removedItems.includes(item));
-
-    setContext({ inventory: newInventory });
+    updateContext(state => ({
+      inventory: state.inventory.filter(item => !removedItems.includes(item)),
+    }));
   };
 }
 

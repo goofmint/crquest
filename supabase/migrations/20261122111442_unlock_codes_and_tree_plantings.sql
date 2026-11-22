@@ -15,13 +15,14 @@
 -- ===== 解除コード =====
 
 CREATE TABLE catalog_private.unlock_codes (
-  -- 前後の空白を除去した値。大文字と小文字は区別する (レガシーのコードを統合しないため)。
+  -- 前後の空白 (ASCII と Unicode の空白。JS の trim() と Rust の trim() が除去するものの和集合) を除去した値。
+  -- 大文字と小文字は区別する (レガシーのコードを統合しないため)。
   code text PRIMARY KEY,
   item_key text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   retired_at timestamptz,
   CONSTRAINT unlock_codes_code_normalized CHECK (
-    code = btrim(code, E' \t\r\n') AND char_length(code) BETWEEN 1 AND 128
+    code !~ '^[\t\n\v\f\r \u0085   -     　﻿]|[\t\n\v\f\r \u0085   -     　﻿]$' AND char_length(code) BETWEEN 1 AND 128
   ),
   CONSTRAINT unlock_codes_item_key_valid CHECK (char_length(item_key) BETWEEN 1 AND 128)
 );
@@ -60,7 +61,8 @@ SET search_path = ''
 AS $$
 DECLARE
   v_uid uuid := auth.uid();
-  v_code text := btrim(coalesce(p_code, ''), E' \t\r\n');
+  -- 前後の空白は JS / Rust の trim() と同じ集合を除去する (publish_unlock_codes の拒否規則と同じ)
+  v_code text := pg_catalog.regexp_replace(coalesce(p_code, ''), '^[\t\n\v\f\r \u0085   -     　﻿]+|[\t\n\v\f\r \u0085   -     　﻿]+$', '', 'g');
   v_item_key text;
   v_redeemed_at timestamptz;
 BEGIN
@@ -142,7 +144,7 @@ BEGIN
     END IF;
     v_code := e ->> 'code';
     v_item := e ->> 'item_key';
-    IF v_code <> btrim(v_code, E' \t\r\n') OR char_length(v_code) NOT BETWEEN 1 AND 128 THEN
+    IF v_code ~ '^[\t\n\v\f\r \u0085   -     　﻿]|[\t\n\v\f\r \u0085   -     　﻿]$' OR char_length(v_code) NOT BETWEEN 1 AND 128 THEN
       RAISE EXCEPTION 'invalid code entry (code must be 1-128 chars without surrounding whitespace)'
         USING ERRCODE = '22023';
     END IF;

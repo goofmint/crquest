@@ -36,6 +36,10 @@ describe('validateMapping', () => {
     expect(validateMapping(entries, ITEMS)).toEqual({ codes: entries });
   });
 
+  it('accepts whitespace inside a code', () => {
+    expect(validateMapping([{ code: 'A\u00A0B C', item_key: 'wand' }], ITEMS).codes).toHaveLength(1);
+  });
+
   it('counts the code length in Unicode code points', () => {
     const ok = '😀'.repeat(128);
     expect(validateMapping([{ code: ok, item_key: 'wand' }], ITEMS).codes).toHaveLength(1);
@@ -87,6 +91,11 @@ describe('validateMapping', () => {
     [{ code: '', item_key: 'wand' }],
     [{ code: ' A', item_key: 'wand' }],
     [{ code: 'A\n', item_key: 'wand' }],
+    [{ code: '\u00A0A', item_key: 'wand' }],
+    [{ code: 'A\u3000', item_key: 'wand' }],
+    [{ code: '\uFEFFA', item_key: 'wand' }],
+    [{ code: 'A\u2003', item_key: 'wand' }],
+    [{ code: '\u0085A', item_key: 'wand' }],
     [{ code: 'x'.repeat(129), item_key: 'wand' }],
     [{ code: 'A' }],
     [{ code: 1, item_key: 'wand' }],

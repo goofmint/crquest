@@ -2,7 +2,7 @@
 -- コードは supabase/seed.sql の合成データ (TQ-TEST-*) を使う。
 -- CLI はファイルをトランザクションで包まないため、BEGIN / ROLLBACK を明示する。
 BEGIN;
-SELECT plan(38);
+SELECT plan(42);
 
 -- 構造と権限
 SELECT ok(
@@ -70,6 +70,11 @@ SELECT is(
   (SELECT public.redeem_unlock_code('  TQ-TEST-TSHIRT ' || E'\n') ->> 'status'),
   'redeemed',
   '前後の空白は除去して照合する'
+);
+SELECT is(
+  (SELECT public.redeem_unlock_code(E'\u00A0\u3000TQ-TEST-TSHIRT\uFEFF\u2003') ->> 'status'),
+  'already_redeemed',
+  'Unicode の空白 (NBSP、全角、BOM、em space) も前後から除去して照合する'
 );
 SELECT is(
   (SELECT public.redeem_unlock_code('tq-test-wand') ->> 'status'),
@@ -148,6 +153,18 @@ SELECT throws_ok(
 SELECT throws_ok(
   $$SELECT public.publish_unlock_codes('{"codes":[{"code":"A"}]}'::jsonb)$$,
   '22023', NULL, 'item_key の無い項目は拒否'
+);
+SELECT throws_ok(
+  format('SELECT public.publish_unlock_codes(%L::jsonb)', json_build_object('codes', json_build_array(json_build_object('code', E'\u00A0A', 'item_key', 'x')))::text),
+  '22023', NULL, '前後に NBSP があるコードは拒否'
+);
+SELECT throws_ok(
+  format('SELECT public.publish_unlock_codes(%L::jsonb)', json_build_object('codes', json_build_array(json_build_object('code', E'A\u3000', 'item_key', 'x')))::text),
+  '22023', NULL, '前後に全角空白があるコードは拒否'
+);
+SELECT throws_ok(
+  format('SELECT public.publish_unlock_codes(%L::jsonb)', json_build_object('codes', json_build_array(json_build_object('code', E'\uFEFFA', 'item_key', 'x')))::text),
+  '22023', NULL, '前後に BOM があるコードは拒否'
 );
 SELECT is(
   (SELECT public.publish_unlock_codes('{"codes":[{"code":"TQ-TEST-WAND","item_key":"wand"},{"code":"TQ-TEST-NEW","item_key":"tshirt"}]}'::jsonb)),

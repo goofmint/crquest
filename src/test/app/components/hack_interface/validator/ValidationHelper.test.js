@@ -432,4 +432,18 @@ describe('recordTreePlanting', () => {
     await expect(helper.recordTreePlanting()).resolves.toBe('recorded');
     expect(recordTreePlanting).toHaveBeenCalledWith({ missionId: 'fog_owl', targetId: 'owl_plant_tree1' });
   });
+
+  test('an objective that was already complete records nothing new', async () => {
+    const helper = new ValidationHelper(
+      { context: {}, env: {}, validationFields: {} },
+      vi.fn(),
+      { levelName: 'fog_owl' },
+      {},
+      'owl_plant_tree1',
+      true
+    );
+    recordTreePlanting.mockClear();
+    await expect(helper.recordTreePlanting()).resolves.toBe('already_recorded');
+    expect(recordTreePlanting).not.toHaveBeenCalled();
+  });
 });

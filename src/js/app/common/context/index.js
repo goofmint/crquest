@@ -157,35 +157,66 @@ export function setContext(newContext) {
   );
 
   // Merge new properties into the state of the Context component
-  contextRef.current.setState(validatedNewContext, () => {
-    // Once state change has been committed, emit events: one for all changes
-    // together and one each per individual key. Also, save any necessary
-    // fields to disk.
-    emitter.emit('contextUpdate', validatedNewContext);
-    Object.entries(validatedNewContext).forEach(([key, value]) => {
-      emitter.emit(`contextUpdate:${key}`, value);
-      if (getSavedFields().includes(key)) {
-        if (persistenceSuppressed) {
-          console.warn(`Not saving "${key}": the game data is being erased`);
-        } else {
-          // Not awaited: the event order of the loop stays as before.
-          enqueueSave(() => setValueAsync(
-            key,
-            key === 'settings' && pendingLanguage
-              ? { ...value, language: pendingLanguage }
-              : value
-          )).catch(error =>
-            reportFailure(t('errors.saveField', { key }), error)
-          );
-        }
-      }
-    });
+  contextRef.current.setState(validatedNewContext, () => afterCommit(validatedNewContext));
+}
 
-    if (localChangeListener && !persistenceSuppressed) {
-      localChangeListener(Object.keys(validatedNewContext).filter(key => getSavedFields().includes(key)));
+// Once a state change has been committed: emit events (one for all changes
+// together and one each per individual key) and save the necessary fields to disk.
+function afterCommit(validatedNewContext) {
+  emitter.emit('contextUpdate', validatedNewContext);
+  Object.entries(validatedNewContext).forEach(([key, value]) => {
+    emitter.emit(`contextUpdate:${key}`, value);
+    if (getSavedFields().includes(key)) {
+      if (persistenceSuppressed) {
+        console.warn(`Not saving "${key}": the game data is being erased`);
+      } else {
+        // Not awaited: the event order of the loop stays as before.
+        enqueueSave(() => setValueAsync(
+          key,
+          key === 'settings' && pendingLanguage
+            ? { ...value, language: pendingLanguage }
+            : value
+        )).catch(error =>
+          reportFailure(t('errors.saveField', { key }), error)
+        );
+      }
     }
   });
 
+  if (localChangeListener && !persistenceSuppressed) {
+    localChangeListener(Object.keys(validatedNewContext).filter(key => getSavedFields().includes(key)));
+  }
+}
+
+/**
+ * Like setContext, but the update is computed from the latest state at the time
+ * React commits it: `compute(state)` returns an object of key-value pairs to
+ * merge (or null for no change). Several calls in one batch therefore build on
+ * each other instead of overwriting one another, which a getContext + setContext
+ * pair cannot guarantee (getContext reads the last committed state).
+ * `compute` must not have side effects: React may call it more than once.
+ */
+export function updateContext(compute) {
+  let validated = null;
+  contextRef.current.setState(
+    state => {
+      validated = null;
+      const update = compute(state);
+      if (!update || Object.keys(update).length === 0) {
+        return null;
+      }
+      const results = validateContextUpdate(update);
+      if (!results.every(result => result.valid)) {
+        console.warn('Skipping context update: context updates did not match schema.', update);
+        return null;
+      }
+      validated = reduceEntries(results.map(({ key, update: value }) => [key, value]));
+      return validated;
+    },
+    () => {
+      if (validated) afterCommit(validated);
+    }
+  );
 }
 
 window.setContext = setContext;

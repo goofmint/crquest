@@ -49,7 +49,7 @@ const validatorFs = Object.freeze({
 });
 
 export default class ValidationHelper {
-  constructor(validationContext, callback, level, messages = {}, objectiveName) {
+  constructor(validationContext, callback, level, messages = {}, objectiveName, alreadyCompleted = false) {
     // Instance variables
     this.validationCallback = callback;
     this.validationFields = {};
@@ -61,6 +61,9 @@ export default class ValidationHelper {
     this.world = new World(level);
     this.levelName = level ? level.levelName : undefined;
     this.objectiveName = objectiveName;
+    // Whether the objective was complete when this validation started (not
+    // the completion that this validation may cause).
+    this.alreadyCompleted = alreadyCompleted === true;
     this.fs = validatorFs;
     // Operating system the game runs on (Node's platform names, e.g.
     // 'win32', 'darwin', 'linux'), for validators that branch per OS.
@@ -100,10 +103,17 @@ export default class ValidationHelper {
    * this validator runs for (the content does not name them); the server
    * checks them against its allow-list. This is a convenience, not a security
    * boundary: validators run in the webview (docs/supabase/unlocks-and-trees.md).
+   * When the objective was already complete at the start of this validation,
+   * nothing is recorded and the result is 'already_recorded'.
    *
    * @returns {Promise<'recorded'|'already_recorded'|'pending'|'signed_out'|'unsupported'>}
    */
   recordTreePlanting() {
+    // A repeat of a completed objective creates no new online record (a pending
+    // record from the first planting is resent by the queue on its own).
+    if (this.alreadyCompleted) {
+      return Promise.resolve('already_recorded');
+    }
     return recordTreePlanting({ missionId: this.levelName, targetId: this.objectiveName });
   }
 

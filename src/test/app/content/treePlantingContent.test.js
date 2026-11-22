@@ -99,8 +99,8 @@ describe('Earth Day tree interaction', () => {
     expect(calls.indexOf('setState')).toBeLessThan(calls.indexOf('recordTreePlanting'));
   });
 
-  it('keeps the state and the notification when the recording fails', async () => {
-    const { world, stored } = makeWorld({ recordTreePlanting: vi.fn().mockRejectedValue(new Error('offline')) });
+  it('keeps the state and the notification when the recording does not succeed (pending)', async () => {
+    const { world, stored } = makeWorld({ recordTreePlanting: vi.fn().mockResolvedValue(RESULTS[2]) });
     await handleTreeInteraction(interact(), world);
     expect(stored.earthdayTrees).toEqual({ devskills_tree1: true });
     expect(world.showNotification).toHaveBeenCalledTimes(1);

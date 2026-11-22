@@ -88,6 +88,10 @@ export class TreePlantingService {
     this.retryTimer = null;
     this.retryCount = 0;
     this.persistChain = Promise.resolve();
+    // True while the latest queue state could not be stored; a later resend
+    // (after the load completed) saves it again.
+    this.persistDirty = false;
+    this.persistSeq = 0;
     this.unlistenAuth = null;
     this.epoch = 0;
   }
@@ -176,17 +180,29 @@ export class TreePlantingService {
   persist() {
     if (!this.loadedOk) return this.persistChain;
     const snapshot = this.getPending();
+    const seq = (this.persistSeq += 1);
+    const epoch = this.epoch;
+    this.persistDirty = true;
     this.persistChain = this.persistChain
       .then(() => this.deps.store.save(snapshot))
-      .catch(error => console.error('Tree planting: could not store the pending list', error));
+      .then(() => {
+        if (seq === this.persistSeq && epoch === this.epoch) this.persistDirty = false;
+      })
+      .catch(error => {
+        console.error('Tree planting: could not store the pending list', error);
+        // Saved again by the next resend.
+        if (epoch === this.epoch) this.scheduleRetry();
+      });
     return this.persistChain;
   }
 
-  async currentAccount() {
+  async currentAccount(epoch = this.epoch) {
     if (!this.accountKnown) {
       try {
         const events = this.authEvents;
         const status = await this.deps.auth.getStatus();
+        // A response that arrives after clear() is stale: it must not restore the auth state.
+        if (epoch !== this.epoch) return null;
         if (events === this.authEvents) this.handleStatus(status);
       } catch (error) {
         return null;
@@ -204,7 +220,8 @@ export class TreePlantingService {
       if (typeof missionId !== 'string' || !missionId || typeof targetId !== 'string' || !targetId) {
         return RESULT.UNSUPPORTED;
       }
-      const account = await this.currentAccount();
+      const account = await this.currentAccount(epoch);
+      if (epoch !== this.epoch) return RESULT.UNSUPPORTED;
       if (!account) return RESULT.SIGNED_OUT;
       try {
         const answer = await this.withTimeout(this.deps.api.record(account, missionId, targetId));
@@ -270,6 +287,8 @@ export class TreePlantingService {
           await this.load();
           // The stored queue could not be read: try again later.
           if (!this.loadedOk) this.scheduleRetry();
+          // The last save failed: save the current queue again (never before the load).
+          else if (this.persistDirty) this.persist();
           await this.flushOnce();
         } while (this.flushAgain);
       } catch (error) {
@@ -309,7 +328,7 @@ export class TreePlantingService {
     }
     // Keep the timer while something for this account is still queued (including
     // plantings queued during this resend).
-    if (!this.pending.some(entry => entry.account === account)) {
+    if (!this.persistDirty && !this.pending.some(entry => entry.account === account)) {
       this.retryCount = 0;
       this.clearRetry();
     }
@@ -353,6 +372,8 @@ export class TreePlantingService {
     this.pending = [];
     this.loading = null;
     this.loadedOk = true;
+    this.persistDirty = false;
+    this.persistSeq += 1;
     this.account = null;
     this.accountKnown = false;
     await this.persistChain;

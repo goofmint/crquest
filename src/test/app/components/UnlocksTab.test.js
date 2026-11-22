@@ -4,7 +4,10 @@ import { render, act, fireEvent, screen } from '@testing-library/react';
 const store = {};
 vi.mock('../../../js/app/common/context', () => ({
   getContext: vi.fn(key => store[key]),
-  setContext: vi.fn(update => Object.assign(store, update)),
+  updateContext: vi.fn(compute => {
+    const update = compute(store);
+    if (update && Object.keys(update).length) Object.assign(store, update);
+  }),
 }));
 vi.mock('../../../js/app/platform/auth', () => ({ getAuthStatus: vi.fn() }));
 vi.mock('../../../js/app/platform/unlocks', () => ({ redeemUnlockCode: vi.fn() }));

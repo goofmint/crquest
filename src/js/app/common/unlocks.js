@@ -17,7 +17,7 @@
  */
 import { getAuthStatus } from '../platform/auth';
 import { redeemUnlockCode } from '../platform/unlocks';
-import { getContext, setContext } from './context';
+import { getContext, updateContext } from './context';
 
 export const OUTCOME = Object.freeze({
   REDEEMED: 'redeemed',
@@ -28,22 +28,24 @@ export const OUTCOME = Object.freeze({
 });
 
 /**
- * Adds the item to the inventory and the code to the used list in one
- * `setContext`, reading the latest context. Safe to repeat.
+ * Adds the item to the inventory and the code to the used list in one context
+ * update. The lists are merged into the latest state when the update is
+ * committed (`updateContext`), so a concurrent inventory change is not lost.
+ * Safe to repeat.
  */
 export function grantUnlockedItem(code, itemKey) {
-  const inventory = getContext('inventory') || [];
-  const unlockCodes = getContext('unlockCodes') || [];
-  const update = {};
-  if (!inventory.includes(itemKey)) {
-    update.inventory = [...inventory, itemKey];
-  }
-  if (!unlockCodes.includes(code)) {
-    update.unlockCodes = [...unlockCodes, code];
-  }
-  if (Object.keys(update).length > 0) {
-    setContext(update);
-  }
+  updateContext(state => {
+    const inventory = state.inventory || [];
+    const unlockCodes = state.unlockCodes || [];
+    const update = {};
+    if (!inventory.includes(itemKey)) {
+      update.inventory = [...inventory, itemKey];
+    }
+    if (!unlockCodes.includes(code)) {
+      update.unlockCodes = [...unlockCodes, code];
+    }
+    return update;
+  });
 }
 
 function isInstalled(itemKey) {

@@ -318,6 +318,45 @@ describe('stored queue and Clear Data races', () => {
     expect(service.getPending()).toEqual([]);
   });
 
+  test('an auth status that arrives after clear() is stale and sends nothing', async () => {
+    const { service, deps } = setup();
+    let answer;
+    deps.auth.getStatus.mockReturnValue(new Promise(resolve => { answer = resolve; }));
+    const result = service.record(target);
+    await flush();
+    await service.clear();
+    answer(signedIn('A'));
+    await expect(result).resolves.toBe(RESULT.UNSUPPORTED);
+    expect(deps.api.record).not.toHaveBeenCalled();
+    expect(service.account).toBeNull();
+    expect(service.accountKnown).toBe(false);
+  });
+
+  test('a failed save is retried by the next resend, with the current queue', async () => {
+    const { service, deps, saved } = setup();
+    deps.api.record.mockRejectedValue(rejection('offline'));
+    deps.store.save.mockRejectedValueOnce(new Error('disk full'));
+    await service.record(target);
+    await flush();
+    expect(saved).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1000);
+    await flush();
+    expect(saved.at(-1)).toEqual([{ account: 'A', ...target }]);
+    service.clear();
+  });
+
+  test('nothing is saved before the load completed, even when a save failed earlier', async () => {
+    const { service, deps, saved } = setup();
+    deps.store.load.mockRejectedValue(new Error('disk'));
+    deps.api.record.mockRejectedValue(rejection('offline'));
+    await service.record(target);
+    await vi.advanceTimersByTimeAsync(5000);
+    await flush();
+    expect(deps.store.save).not.toHaveBeenCalled();
+    expect(saved).toEqual([]);
+    service.clear();
+  });
+
   test('resuming after clear() follows the sign-in again without restoring the queue', async () => {
     const { service, deps, emit } = setup({ stored: [{ account: 'A', ...target }] });
     await service.start();

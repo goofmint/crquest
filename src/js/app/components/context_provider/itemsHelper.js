@@ -1,4 +1,4 @@
-import { getContext, setContext } from '../../common/context';
+import { getContext, setContext, updateContext } from '../../common/context';
 import { reduceEntries } from '../../common/utils';
 import { isDev } from '../../platform/env';
 
@@ -9,9 +9,13 @@ export function getItemFromKey(itemKey) {
 }
 
 export function addItems(items = []) {
-  const inventory = getContext('inventory');
-  const newItems = items.filter(item => !inventory.includes(item));
-  setContext({ inventory: [...inventory, ...newItems] });
+  // Merged into the latest inventory when committed, so that two grants in one
+  // batch (or with another inventory change) do not overwrite each other.
+  updateContext(state => {
+    const inventory = state.inventory;
+    const newItems = items.filter(item => !inventory.includes(item));
+    return newItems.length > 0 ? { inventory: [...inventory, ...newItems] } : null;
+  });
 }
 
 if (isDev()) {

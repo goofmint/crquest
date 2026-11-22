@@ -1,13 +1,14 @@
 // 運用者が用意した「解除コード → アイテム」の対応表を検証する (純粋関数)。
 // 入力: {"codes": [{"code": "...", "item_key": "..."}]} (配列だけでも可)。
 // コードは秘匿情報なので、エラーメッセージには値を出さず、項目の番号だけを示す。
-// 規則はサーバー (publish_unlock_codes) と同じ: コードは前後に空白がなく 1〜128 文字、大文字と小文字は区別する。
+// 規則はサーバー (publish_unlock_codes) と同じ: コードは前後に (Unicode を含む) 空白がなく 1〜128 文字、大文字と小文字は区別する。
 
 const fs = require('fs');
 const path = require('path');
 
 const MAX_LENGTH = 128;
-const WHITESPACE = /^[ \t\r\n]|[ \t\r\n]$/;
+// 前後の空白 (ASCII と Unicode): JS の trim() と Rust の trim() が除去するものの和集合。サーバー (publish_unlock_codes) の拒否規則と同じ。
+const WHITESPACE = /^[\t\n\v\f\r \u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]|[\t\n\v\f\r \u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]$/;
 
 class MappingError extends Error {
   constructor(problems) {
