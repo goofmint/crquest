@@ -28,6 +28,8 @@
     "supabase:smoke": "node tasks/supabase_smoke/index.js",
     "supabase:catalog-check": "node tasks/supabase_catalog_check/index.js",
     "supabase:integration": "node tasks/supabase_integration/index.js",
+    "deploy:supabase": "node tasks/supabase_deploy/index.js",
+    "deploy:supabase:verify": "node tasks/supabase_deploy/verify.js",
     "clean": "node tasks/clean_build_output.js",
     "build": "npm run build:tauri",
     "build:js:tauri": "vite build --mode tauri",
