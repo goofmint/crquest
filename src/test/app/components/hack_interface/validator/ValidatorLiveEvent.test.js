@@ -1,11 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 
-const firestoreCollection = vi.fn();
-vi.mock('../../../../../js/app/common/firebase', () => ({
-  Firestore: { collection: (...args) => firestoreCollection(...args) },
-  default: {},
-}));
 vi.mock('../../../../../js/app/platform/dialog', () => ({
   showDirectoryDialog: vi.fn(),
   showConfirm: vi.fn(),
@@ -32,11 +27,10 @@ vi.mock('../../../../../js/app/common/context', () => ({
 import { context, setContext, emitter } from '../../../../../js/app/common/context';
 import Validator from '../../../../../js/app/components/hack_interface/validator/Validator';
 
-// #190: the client no longer reports achievements to Firestore or judges the
+// #190: the client does not report achievements anywhere or judge the
 // event period. The server scores achievements that it certified itself.
 describe('Validator completion and live events', () => {
-  test('completing an objective with a legacy liveEvent writes nothing to Firestore and keeps the local flow', () => {
-    window.firebase = { firestore: vi.fn(() => ({})) };
+  test('completing an objective with a legacy liveEvent writes nothing and keeps the local flow', () => {
     const markAsComplete = vi.fn();
     const hackObject = { complete: false, level: { levelName: 'l' }, objectiveName: 'o', markAsComplete };
     const objective = { title: 'T', show_ide: false, validation_fields: [], rewards: { xp: 5, items: [] } };
@@ -65,8 +59,6 @@ describe('Validator completion and live events', () => {
     );
     expect(emitter.emit).toHaveBeenCalledWith('levelLifecycle', { name: 'objectiveCompleted', objective: 'o' });
     // The legacy liveEvent is neither written to nor disconnected by the client.
-    expect(firestoreCollection).not.toHaveBeenCalled();
-    expect(window.firebase.firestore).not.toHaveBeenCalled();
     expect(setContext).not.toHaveBeenCalledWith({ liveEvent: null });
   });
 });

@@ -23,6 +23,24 @@ class JoinTeamView extends React.Component {
 }
 
 class CurrentTeamView extends React.Component {
+  state = { message: null, leaving: false };
+
+  leave = async team => {
+    if (this.state.leaving) {
+      return;
+    }
+    this.setState({ leaving: true, message: null });
+    const result = await disconnectTeam(team);
+    if (this._unmounted) {
+      return;
+    }
+    this.setState({ leaving: false, message: result.success ? null : result.message });
+  };
+
+  componentWillUnmount() {
+    this._unmounted = true;
+  }
+
   render() {
     const { t } = this.props;
     const teams = getJoinedTeams();
@@ -37,7 +55,7 @@ class CurrentTeamView extends React.Component {
               <h5 className="mv2">{team.displayName}</h5>
               <div className={`mb3 red`}>
                 <span className={`pb1 bb b--red pointer`}
-                    onClick={() => disconnectTeam(team)}>
+                    onClick={() => this.leave(team)}>
                   {t('ui.teams.leave')}
                 </span>
               </div>
@@ -46,6 +64,7 @@ class CurrentTeamView extends React.Component {
           ) : (
           <p>{t('ui.teams.empty')}</p>
         )}
+        {this.state.message && <p className="red">{this.state.message}</p>}
       </>
     );
   }

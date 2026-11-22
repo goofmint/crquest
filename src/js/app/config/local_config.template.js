@@ -5,7 +5,6 @@ const config = {
   initialLevelName: 'programmable_sms',
   initialPlayerEntry: 'player_entry2',
   drawDebug: false, // show debug rendering info for Phaser
-  apiBaseUrl: 'https://www.dev.twilio.com/quest/',
 };
 
 module.exports = config;

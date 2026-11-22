@@ -72,7 +72,7 @@ PostgREST では業務エラーは HTTP 400 とメッセージで返る。クラ
 ## スコープ外
 
 - リアルタイム協力プレイ。
-- クライアント接続。Rust コマンドによる RPC 呼び出しと、`teams.js` / `operations.js` / オンボーディングの Firebase 参加コード照合の置き換えは別 Issue で行う（cloud_save と同じく、認証セッションを使う Rust コマンド経由とし、JS にトークンを渡さない）。このため旧参加フローは変更していない。
+- クライアント接続は #193 で実装した（Rust の `group_join` / `group_leave` / `group_list`、`teams.js` / `operations.js`、オンボーディング）。サインアウト・オフライン時の動作は [firebase-removal.md](firebase-removal.md) を参照。
 - ローカル GUID と Supabase ユーザーの対応（#187）。旧 API の所属データの移行。
 - 利用者によるグループ作成。
 

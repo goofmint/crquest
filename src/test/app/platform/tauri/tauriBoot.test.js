@@ -123,6 +123,13 @@ describe('Tauri build boot (--mode tauri) in a jsdom window without Node globals
     expect(result.title, JSON.stringify(result, null, 2)).toBe(true);
     // The complete record of console.error, not the tail kept for diagnosis
     expect(result.errors).toEqual([]);
+    // Normal offline play contacts nobody: no fetch, XHR, WebSocket or beacon
+    // (so nothing goes to a Firebase host either; #193), and the app calls none
+    // of the commands that talk to the server
+    expect(result.networkAttempts).toEqual([]);
+    expect(
+      result.ipcCalls.filter(call => /^(cloud_save_|group_|unlock_code_|tree_planting_|live_events_)/.test(call))
+    ).toEqual([]);
     // The Help menu is enabled only after its listener is installed (#141)
     const listen = result.ipcCalls.indexOf('plugin:event|listen');
     const enable = result.ipcCalls.indexOf('enable_help_menu');

@@ -36,9 +36,6 @@
           "http://ipc.localhost",
           "asset:",
           "http://asset.localhost",
-          "https://firestore.googleapis.com",
-          "https://twilioquest-prod.firebaseapp.com",
-          "https://twilioquest-dev.firebaseapp.com",
           "https://www.youtube.com"
         ],
         "frame-src": ["https://www.youtube.com"]

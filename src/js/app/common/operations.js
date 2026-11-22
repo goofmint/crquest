@@ -1,44 +1,26 @@
-import config from '../config/config';
+/**
+ * Operation membership for the settings screens and the onboarding. The server is
+ * the authority; see ./groupMembership for the join / leave rules, including
+ * what happens when signed out or offline.
+ */
 import { t } from '../i18n';
-import {
-  getContext,
-  setContext
-} from './context';
+import { getContext } from './context';
+import { OUTCOME, isJoined, joinByCode, leaveGroupEntry } from './groupMembership';
 
+const KIND = 'operation';
 
-async function getOperationFromBackend(joinCode) {
-  try {
-    const response = await fetch(config.apiBaseUrl + `api/v1/operations/joinCode/${joinCode}`);
-
-    if (response.status === 404) {
-      return {
-        success: false,
-        message: t('ui.operations.missing'),
-      };
-    }
-
-    const operation = await response.json();
-
-    if (operation.errors) {
-      console.error(operation.errors);
-      
-      return {
-        success: false,
-        message: t('ui.membership.requestError'),
-      };
-    }
-
-    return {
-      success: true,
-      operation
-    };
-  } catch (err) {
-    console.error(err);
-    
-    return {
-      success: false,
-      message: t('ui.membership.requestError'),
-    };
+function messageFor(outcome, name) {
+  switch (outcome) {
+    case OUTCOME.JOINED:
+      return t('ui.membership.joined', { name });
+    case OUTCOME.ALREADY_JOINED:
+      return t('ui.operations.already');
+    case OUTCOME.INVALID_CODE:
+      return t('ui.operations.missing');
+    case OUTCOME.LOGIN_REQUIRED:
+      return t('ui.membership.loginRequired');
+    default:
+      return t('ui.membership.networkError');
   }
 }
 
@@ -53,86 +35,35 @@ function getJoinedOperations() {
 }
 
 function isOperationAlreadyJoined(joinCode) {
-  const operations = getContext('operations');
-
-  return operations.joined.some(operation => operation.joinCode === joinCode);
+  return isJoined(KIND, joinCode);
 }
 
-function connectOperation(operation) {
-  const operations = getContext('operations');
+async function disconnectOperation(operation) {
+  const result = await leaveGroupEntry(KIND, operation);
+  if (result.outcome === OUTCOME.LEFT || result.outcome === OUTCOME.REMOVED_LOCALLY) {
+    return { success: true };
+  }
+  return {
+    success: false,
+    message:
+      result.outcome === OUTCOME.LOGIN_REQUIRED
+        ? t('ui.membership.leaveLoginRequired')
+        : t('ui.membership.leaveFailed'),
+  };
+}
 
-  const newOperation = {
-    id: operation.id,
-    joinCode: operation.data.joinCode,
-    displayName: operation.data.displayName
+async function joinOperation(code) {
+  const joinCode = String(code ?? '').trim();
+  if (joinCode === '') {
+    return {
+      success: false,
+      message: t('ui.membership.codeRequired'),
+    };
   }
 
-  setContext({
-    operations: {
-      ...operations,
-      joined: [
-        ...operations.joined,
-        newOperation
-      ]
-    }
-  });
+  const result = await joinByCode(KIND, joinCode);
+  const success = result.outcome === OUTCOME.JOINED;
+  return { success, message: messageFor(result.outcome, result.displayName) };
 }
 
-function disconnectOperation(operation) {
-  const operations = getContext('operations');
-
-  // Filter out operation being disconnected
-  const joined = operations.joined.filter(joinedOperation => joinedOperation.id !== operation.id);
-
-  setContext({
-    operations: {
-      ...operations,
-      joined
-    }
-  })
-}
-
-function joinOperation(id) {
-  return new Promise(async resolve => {
-    if (id === '') {
-      return resolve({
-        success: false,
-        message: t('ui.membership.codeRequired'),
-      });
-    }
-
-    if (isOperationAlreadyJoined(id)) {
-      return resolve({
-        success: false,
-        message: t('ui.operations.already'),
-      });
-    }
-
-    const operationResult = await getOperationFromBackend(id);
-
-    if (!operationResult.success) {
-      return resolve({
-        success: operationResult.success,
-        message: operationResult.message
-      });
-    }
-
-    const { operation } = operationResult;
-
-    connectOperation(operation);
-
-    return resolve({
-      success: true,
-      message: t('ui.membership.joined', { name: operation.data.displayName }),
-    });
-  });
-}
-
-
-export {
-  getJoinedOperations,
-  isOperationAlreadyJoined,
-  connectOperation,
-  disconnectOperation,
-  joinOperation
-}
+export { getJoinedOperations, isOperationAlreadyJoined, disconnectOperation, joinOperation };

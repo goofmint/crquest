@@ -227,8 +227,8 @@ const tauriOutput = {
   }
 
   // index.js is an ES module (see build.rolldownOptions), so the page loads it
-  // with type="module". The other scripts (ace, phaser,
-  // firebase) stay classic scripts and run first, as before.
+  // with type="module". The other scripts (ace, phaser)
+  // stay classic scripts and run first, as before.
   function moduleScriptHtml() {
     const html = fs.readFileSync(htmlSource, 'utf8');
     const classic = '<script src="index.js"></script>';
