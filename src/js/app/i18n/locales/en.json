@@ -35,7 +35,8 @@
       "Operations": "Operations",
       "Unlocks": "Unlocks",
       "Credits": "Credits",
-      "Account": "Account"
+      "Account": "Account",
+      "LiveEvents": "Live Events"
     },
     "account": {
       "title": "Account",
@@ -82,6 +83,66 @@
         "error": "Syncing your save failed. It is kept on this computer and will be retried.",
         "choosing": "Choose which save to use.",
         "unsupported": "Update the app to sync your save."
+      }
+    },
+    "liveEvents": {
+      "title": "Live Events",
+      "intro": "Join a live event and compete on the public rankings. Scores come from achievements that the server has certified during the event.",
+      "loading": "Loading…",
+      "retry": "Try again",
+      "none": "There are no live events right now.",
+      "event": "Event",
+      "phase": {
+        "upcoming": "Not started yet.",
+        "active": "In progress.",
+        "ended": "Ended."
+      },
+      "period": "{{start}} to {{end}}",
+      "participation": "Your participation",
+      "publicNotice": "Only the display name you enter below, your rank, your score and your number of achievements are shown to everyone. Your save, email address and sign-in details are never shown. Achievements count from the moment you join. If you hide yourself, you are not listed, but your achievements still count toward your team.",
+      "signInRequired": "Sign in on the Account tab to join. You can still read the rankings.",
+      "displayName": "Public display name",
+      "showInRanking": "Show me in the individual ranking",
+      "join": "Join",
+      "save": "Save",
+      "working": "Please wait…",
+      "status": "You are ranked {{rank}} with {{score}} points.",
+      "statusHidden": "You are not listed in the ranking. Your score is {{score}} points.",
+      "notice": {
+        "joined": "You joined the event.",
+        "updated": "Your settings were saved."
+      },
+      "rankings": "Rankings",
+      "view": {
+        "individual": "Players",
+        "team": "Teams"
+      },
+      "empty": "There are no entries yet.",
+      "columns": {
+        "rank": "Rank",
+        "player": "Player",
+        "team": "Team",
+        "score": "Score",
+        "achievements": "Achievements",
+        "contributors": "Contributors"
+      },
+      "previous": "Previous",
+      "next": "Next",
+      "pageRange": "{{from}}-{{to}} of {{total}}",
+      "errors": {
+        "signed_out": "Sign in to do this.",
+        "account_changed": "Another account is signed in now. Check the Account tab and try again.",
+        "offline": "Could not reach the server. Check your connection.",
+        "server": "The server is busy. Try again later.",
+        "unauthorized": "Your sign-in was not accepted. Sign in again.",
+        "rejected": "The server did not accept the request.",
+        "event_not_found": "This event is not available.",
+        "event_closed": "This event has ended and no longer accepts participants.",
+        "not_eligible": "You are not eligible for this event.",
+        "invalid_display_name": "Enter a display name of 1 to 32 characters without control characters.",
+        "already_participant": "You have already joined this event.",
+        "not_participant": "You have not joined this event.",
+        "unknown": "Something went wrong with live events."
       }
     }
   },

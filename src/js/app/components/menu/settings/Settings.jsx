@@ -15,6 +15,7 @@ import AudioTab from './AudioTab';
 import UnlocksTab from './UnlocksTab';
 import Credits from './Credits';
 import AccountSettings from './AccountSettings';
+import LiveEventsSettings from './LiveEventsSettings';
 import Extensions from './Extensions';
 import { getGamePackageVersion } from '../../../platform/paths';
 import { showConfirm } from '../../../platform/dialog';
@@ -29,6 +30,7 @@ const SUBNAV_SECTIONS = [
   'Operations',
   'Unlocks',
   'Account',
+  'LiveEvents',
   'Credits',
 ];
 
@@ -265,6 +267,14 @@ export default class Settings extends React.Component {
             {this.props.subnav === 'Audio' && <AudioTab />}
 
             {this.props.subnav === 'Account' && <AccountSettings />}
+
+            {this.props.subnav === 'LiveEvents' && (
+              <LiveEventsSettings
+                name={this.props.name}
+                onFocus={this.onFocus.bind(this)}
+                onBlur={this.onBlur.bind(this)}
+              />
+            )}
 
             {this.props.subnav === 'Credits' && <Credits />}
 

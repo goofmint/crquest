@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-live-events-ranking"
+description = "Enables the live_events_ranking command without any pre-configured scope."
+commands.allow = ["live_events_ranking"]
+
+[[permission]]
+identifier = "deny-live-events-ranking"
+description = "Denies the live_events_ranking command without any pre-configured scope."
+commands.deny = ["live_events_ranking"]

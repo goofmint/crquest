@@ -94,3 +94,19 @@
   animation-duration: 200ms;
   animation-name: shake;
 }
+
+.LiveEventsRanking {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 48rem;
+
+  th,
+  td {
+    padding: 0.25rem 0.75rem;
+    text-align: left;
+  }
+
+  thead th {
+    border-bottom: 1px solid currentColor;
+  }
+}

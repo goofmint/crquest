@@ -35,12 +35,17 @@ async function request(step, url, options) {
   }
 }
 
+// この実行で作ったユーザーのメールアドレス。公開 RPC の応答に含まれてはならない。
+const knownPrivateValues = [];
+
 async function signUp(apiUrl, key, step) {
+  const email = `smoke-${crypto.randomUUID()}@example.test`;
+  knownPrivateValues.push(email);
   const response = await request(step, `${apiUrl}/auth/v1/signup`, {
     method: 'POST',
     headers: { apikey: key, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: `smoke-${crypto.randomUUID()}@example.test`,
+      email,
       password: crypto.randomBytes(16).toString('hex'),
     }),
   });
@@ -160,7 +165,7 @@ async function checkCertification(apiUrl, key, tokenA, tokenB) {
 }
 
 // チーム・オペレーションの RPC を実 JWT で検証する (シードの合成グループを使う)。
-async function checkGroups(apiUrl, key, tokenA, teamCode) {
+async function checkGroups(apiUrl, key, tokenA, teamCode, event) {
   const tokenB = await signUp(apiUrl, key, 'groups signup (2nd user)');
   const call = (step, token, name, args) => rpc(step, apiUrl, key, token, name, args);
 
@@ -189,6 +194,9 @@ async function checkGroups(apiUrl, key, tokenA, teamCode) {
   expectError('leave_group by another user', await call('leave_group by another user', tokenB, 'leave_group', { p_group_id: groupId }), 'not_member');
   expectError('get_group_contribution by non-member', await call('get_group_contribution by non-member', tokenB, 'get_group_contribution', { p_group_id: groupId }), 'not_member');
 
+  // ライブイベント: 認定の前に参加しておく (計上は参加後の認定から)。B は表示しない参加者
+  await checkLiveEventsBefore(apiUrl, key, tokenA, tokenB, event);
+
   // 所属中に認定した達成が 0 以外の貢献点として集計される
   // この実行専用のグループなので、同時に走る別のスモークの影響を受けない。念のため提出前の値との差分で比較する
   const before = await call('get_group_contribution (baseline)', tokenA, 'get_group_contribution', { p_group_id: groupId });
@@ -202,6 +210,8 @@ async function checkGroups(apiUrl, key, tokenA, teamCode) {
   }
   ok('get_group_contribution (member)');
 
+  await checkLiveEventsAfter(apiUrl, key, tokenA, tokenB, event, certifiedTotal);
+
   const left = await call('leave_group', tokenA, 'leave_group', { p_group_id: groupId });
   if (left.status >= 400) fail('leave_group', `HTTP ${left.status}`);
   ok('leave_group (self)');
@@ -211,6 +221,100 @@ async function checkGroups(apiUrl, key, tokenA, teamCode) {
   });
   if (direct.status < 400) fail('groups direct table access', `HTTP ${direct.status} (期待: 拒否)`);
   ok('groups direct table access -> denied');
+}
+
+// 公開しない項目 (内部 ID、グループ ID、参加コード、メール、セーブ) が応答に含まれないこと。
+const PRIVATE_KEY_PATTERN = /user_id|group_id|join_code|email|save|token|required_group/i;
+function expectPublicOnly(step, json) {
+  const keys = [];
+  for (const row of Array.isArray(json) ? json : []) keys.push(...Object.keys(row));
+  if (keys.some(k => PRIVATE_KEY_PATTERN.test(k))) fail(step, `非公開の列が含まれている: ${keys.join(',')}`);
+  const text = JSON.stringify(json).toLowerCase();
+  if (knownPrivateValues.some(value => text.includes(value.toLowerCase()))) fail(step, '利用者のメールアドレスが含まれている');
+}
+
+// ライブイベントを実 JWT / PostgREST で検証する (イベントは service_role が実行ごとに作る)。
+// 認定の前に参加し (計上は参加後の認定から)、認定後にスコアと順位が台帳の加点と一致することを確認する。
+async function checkLiveEventsBefore(apiUrl, key, tokenA, tokenB, event) {
+  const call = (step, token, name, args) => rpc(step, apiUrl, key, token, name, args);
+  const id = event.id;
+
+  const list = await call('list_live_events (anon)', null, 'list_live_events', {});
+  if (list.status !== 200 || !list.json.some(e => e.event_id === id && e.phase === 'active' && e.is_open === true)) {
+    fail('list_live_events (anon)', `HTTP ${list.status}`);
+  }
+  if (list.json.some(e => e.event_id === event.draftId)) fail('list_live_events (anon)', '下書きのイベントが含まれている');
+  expectPublicOnly('list_live_events (anon)', list.json);
+  ok('list_live_events (anon) -> published only, public columns only');
+
+  const anonJoin = await call('join_live_event (anon)', null, 'join_live_event', { p_event_id: id, p_display_name: 'Anon', p_show_in_ranking: true });
+  if (anonJoin.status !== 401 && anonJoin.status !== 403) fail('join_live_event (anon)', `HTTP ${anonJoin.status} (期待値 401/403)`);
+  ok('join_live_event (anon) -> denied');
+
+  const join = (step, token, eventId, name, show) =>
+    call(step, token, 'join_live_event', { p_event_id: eventId, p_display_name: name, p_show_in_ranking: show });
+  expectError('join draft event', await join('join draft event', tokenA, event.draftId, 'A', true), 'event_not_found');
+  expectError('join closed event', await join('join closed event', tokenA, event.endedId, 'A', true), 'event_closed');
+  expectError('join with invalid name', await join('join with invalid name', tokenA, id, '   ', true), 'invalid_display_name');
+
+  const joinA = await join('join_live_event (A)', tokenA, id, event.nameA, true);
+  if (joinA.status !== 200 || joinA.json.length !== 1) fail('join_live_event (A)', `HTTP ${joinA.status} ${(joinA.json && joinA.json.message) || ''}`);
+  expectError('join twice', await join('join twice', tokenA, id, event.nameA, true), 'already_participant');
+  const joinB = await join('join_live_event (B, hidden)', tokenB, id, event.nameB, false);
+  if (joinB.status !== 200) fail('join_live_event (B, hidden)', `HTTP ${joinB.status}`);
+  ok('join_live_event (visible and hidden participants)');
+
+  const direct = await request('live event direct table access', `${apiUrl}/rest/v1/live_event_participants?select=*`, {
+    headers: { apikey: key, Authorization: `Bearer ${tokenA}` },
+  });
+  if (direct.status < 400) fail('live event direct table access', `HTTP ${direct.status} (期待: 拒否)`);
+  ok('live_event_participants direct table access -> denied');
+
+  const before = await call('get_live_event_ranking (before)', null, 'get_live_event_ranking', { p_event_id: id });
+  const mine = (before.json || []).find(r => r.display_name === event.nameA);
+  if (before.status !== 200 || !mine || Number(mine.score) !== 0) fail('get_live_event_ranking (before)', `HTTP ${before.status}`);
+  if (before.json.some(r => r.display_name === event.nameB)) fail('get_live_event_ranking (before)', '非表示の参加者が含まれている');
+  expectPublicOnly('get_live_event_ranking (before)', before.json);
+  ok('get_live_event_ranking (anon): visible participant at 0, hidden excluded, public columns only');
+}
+
+async function checkLiveEventsAfter(apiUrl, key, tokenA, tokenB, event, certifiedTotal) {
+  const call = (step, token, name, args) => rpc(step, apiUrl, key, token, name, args);
+  const id = event.id;
+
+  const ranking = await call('get_live_event_ranking (after)', null, 'get_live_event_ranking', { p_event_id: id });
+  const mine = (ranking.json || []).find(r => r.display_name === event.nameA);
+  if (ranking.status !== 200 || !mine || Number(mine.score) !== certifiedTotal || Number(mine.rank) !== 1 || Number(mine.achievement_count) < 1) {
+    fail('get_live_event_ranking (after)', `HTTP ${ranking.status} score=${mine && mine.score} (期待: ${certifiedTotal})`);
+  }
+  if (ranking.json.some(r => r.display_name === event.nameB)) fail('get_live_event_ranking (after)', '非表示の参加者が含まれている');
+  ok('get_live_event_ranking (anon): certified points counted for the participant');
+
+  const status = await call('get_my_live_event_status (A)', tokenA, 'get_my_live_event_status', { p_event_id: id });
+  if (status.status !== 200 || !status.json[0] || status.json[0].joined !== true || Number(status.json[0].score) !== certifiedTotal) {
+    fail('get_my_live_event_status (A)', `HTTP ${status.status}`);
+  }
+  const hidden = await call('get_my_live_event_status (B)', tokenB, 'get_my_live_event_status', { p_event_id: id });
+  if (hidden.status !== 200 || !hidden.json[0] || hidden.json[0].rank !== null || Number(hidden.json[0].score) !== 0) {
+    fail('get_my_live_event_status (B)', `HTTP ${hidden.status} (非表示の参加者に順位を返してはならない)`);
+  }
+  ok('get_my_live_event_status: own score, no rank for a hidden participant');
+
+  const teams = await call('get_live_event_team_ranking', null, 'get_live_event_team_ranking', { p_event_id: id });
+  const team = (teams.json || []).find(r => r.display_name === event.teamName);
+  if (teams.status !== 200 || !team || Number(team.score) !== certifiedTotal || Number(team.contributor_count) !== 1) {
+    fail('get_live_event_team_ranking', `HTTP ${teams.status} (期待: ${event.teamName} が ${certifiedTotal} 点)`);
+  }
+  expectPublicOnly('get_live_event_team_ranking', teams.json);
+  ok('get_live_event_team_ranking (anon): team score equals certified points, public columns only');
+
+  // 二重提出: 認定済みの目標は再発行できず、スコアは増えない
+  const again = await call('re-issue certified objective', tokenA, 'issue_certification_challenge', { p_mission_id: 'challenge-questions', p_objective_id: 'ducktypium-chest' });
+  expectError('re-issue certified objective', again, 'already_certified');
+  const recount = await call('get_live_event_ranking (recount)', null, 'get_live_event_ranking', { p_event_id: id });
+  const same = (recount.json || []).find(r => r.display_name === event.nameA);
+  if (!same || Number(same.score) !== certifiedTotal) fail('get_live_event_ranking (recount)', 'スコアが変わった');
+  ok('score unchanged after a duplicate attempt');
 }
 
 async function main() {
@@ -228,6 +332,7 @@ async function main() {
   ok('auth health');
 
   const email = `smoke-${crypto.randomUUID()}@example.test`;
+  knownPrivateValues.push(email);
   const password = crypto.randomBytes(16).toString('hex');
   const signup = await request('auth signup', `${apiUrl}/auth/v1/signup`, {
     method: 'POST',
@@ -261,15 +366,44 @@ async function main() {
   const created = await request('create per-run group', `${apiUrl}/rest/v1/groups`, {
     method: 'POST',
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-    body: JSON.stringify({ kind: 'team', display_name: 'Smoke Team (per run)', join_code: teamCode }),
+    body: JSON.stringify({ kind: 'team', display_name: `Smoke Team ${teamCode}`, join_code: teamCode }),
   });
   if (created.status !== 201) fail('create per-run group', `HTTP ${created.status}`);
   const runGroupId = (await created.json())[0].id;
   ok('create per-run group');
 
-  await checkGroups(apiUrl, key, body.access_token, teamCode);
+  // 実行ごとに専用のライブイベント (開催中・下書き・終了済み) を service_role で作る
+  const runTag = crypto.randomBytes(4).toString('hex');
+  const hour = 3600 * 1000;
+  const createEvent = async (title, status, startsAt, endsAt) => {
+    const response = await request('create per-run live event', `${apiUrl}/rest/v1/live_events`, {
+      method: 'POST',
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ title: `${title} ${runTag}`, status, starts_at: new Date(startsAt).toISOString(), ends_at: new Date(endsAt).toISOString() }),
+    });
+    if (response.status !== 201) fail('create per-run live event', `HTTP ${response.status}`);
+    return (await response.json())[0].id;
+  };
+  const now = Date.now();
+  const event = {
+    id: await createEvent('Smoke Event', 'published', now - hour, now + 24 * hour),
+    draftId: await createEvent('Smoke Draft', 'draft', now - hour, now + 24 * hour),
+    endedId: await createEvent('Smoke Ended', 'published', now - 48 * hour, now - 24 * hour),
+    nameA: `Smoke A ${runTag}`,
+    nameB: `Smoke B ${runTag}`,
+    teamName: `Smoke Team ${teamCode}`,
+  };
+  ok('create per-run live events');
 
-  // 後始末 (所属履歴は CASCADE。台帳は使い捨てユーザーのもの)
+  await checkGroups(apiUrl, key, body.access_token, teamCode, event);
+
+  // 後始末 (所属履歴・参加記録は CASCADE。台帳は使い捨てユーザーのもの)
+  for (const eventId of [event.id, event.draftId, event.endedId]) {
+    await fetch(`${apiUrl}/rest/v1/live_events?id=eq.${eventId}`, {
+      method: 'DELETE',
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    }).catch(() => {});
+  }
   await fetch(`${apiUrl}/rest/v1/groups?id=eq.${runGroupId}`, {
     method: 'DELETE',
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
