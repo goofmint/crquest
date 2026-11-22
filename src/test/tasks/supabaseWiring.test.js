@@ -55,7 +55,7 @@ describe('supabase local stack wiring (no Docker required)', () => {
   describe('.env.supabase.template', () => {
     const lines = fs
       .readFileSync(path.join(repoRoot, '.env.supabase.template'), 'utf8')
-      .split('\n')
+      .split(/\r?\n/)
       .filter(line => line.trim() && !line.trim().startsWith('#'));
 
     it('contains variables with empty values only', () => {
