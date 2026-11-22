@@ -102,7 +102,8 @@
       "unsupported": "The cloud save was written by a newer version of TerminalQuest. Update the app to sync it. Your local save is not affected.",
       "invalid": "The cloud save could not be read, so it was not applied. Your local save is not affected.",
       "restoreFailed": "The cloud save could not be applied to this computer. Sign in again to retry. Your game keeps running with its current data.",
-      "tooLarge": "Your save is too large to sync. Your local save is not affected."
+      "tooLarge": "Your save is too large to sync. Your local save is not affected.",
+      "logoutFailed": "Could not sign out of your account. It will be retried; you can also sign out in Settings > Account. Nothing was uploaded or changed."
     }
   }
 }

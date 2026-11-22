@@ -246,6 +246,33 @@ async fn run_scenario(http: &reqwest::Client, config: &AuthConfig, alice: &User,
         (4, json!(1))
     );
 
+    // --- 3b. A save that is small as compact JSON but over the limit as the
+    // database measures it (the jsonb text form adds a space after each comma)
+    // passes the pre-send check and is still reported as too large.
+    let many: Vec<u8> = vec![0; 720_000];
+    let compact = serde_json::to_vec(&json!({ "n": many })).unwrap().len();
+    assert!(
+        compact < 2 * 1024 * 1024,
+        "{compact} must pass the pre-send check"
+    );
+    assert_eq!(
+        alice_2_cloud
+            .upload(&alice_account, &json!({ "n": many }), 1)
+            .await
+            .unwrap_err(),
+        CloudError::TooLarge
+    );
+    assert_eq!(
+        alice_2_cloud
+            .fetch(&alice_account)
+            .await
+            .unwrap()
+            .unwrap()
+            .revision,
+        4,
+        "the refused save changed nothing"
+    );
+
     // --- 4. The connection is lost: a clear error, and nothing changed.
     let dead = CloudSave::new(
         Arc::clone(&alice_1),

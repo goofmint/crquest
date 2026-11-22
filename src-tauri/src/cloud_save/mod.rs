@@ -64,6 +64,7 @@ impl From<RemoteError> for CloudError {
             RemoteError::Network => CloudError::Offline,
             RemoteError::Server => CloudError::Server,
             RemoteError::Unauthorized => CloudError::Unauthorized,
+            RemoteError::TooLarge => CloudError::TooLarge,
             RemoteError::Rejected => CloudError::Rejected,
         }
     }
@@ -331,6 +332,7 @@ mod tests {
             (RemoteError::Server, CloudError::Server),
             (RemoteError::Unauthorized, CloudError::Unauthorized),
             (RemoteError::Rejected, CloudError::Rejected),
+            (RemoteError::TooLarge, CloudError::TooLarge),
         ] {
             *remote.fail.lock().unwrap() = Some(failure);
             assert_eq!(svc.fetch("acct-a").await.unwrap_err(), code);

@@ -643,3 +643,142 @@ describe('review fixes', () => {
     expect(h.calls).toEqual([`fetch:${A}`]);
   });
 });
+
+describe('second review fixes', () => {
+  test('a start that was stopped before the auth subscription resolved unsubscribes it at once', async () => {
+    const h = harness({ context: playedContext() });
+    let resolveSubscribe;
+    const staleUnlisten = vi.fn();
+    const liveUnlisten = vi.fn();
+    h.deps.auth.onChange
+      .mockImplementationOnce(() => new Promise(resolve => { resolveSubscribe = resolve; }))
+      .mockImplementationOnce(async () => liveUnlisten);
+    h.authStatus = signedIn(A);
+    const first = h.engine.start();
+    await settle();
+    await h.engine.stop();
+    const second = h.engine.start();
+    await settle();
+    resolveSubscribe(staleUnlisten);
+    await Promise.all([first, second]);
+    expect(staleUnlisten).toHaveBeenCalledTimes(1);
+    expect(liveUnlisten).not.toHaveBeenCalled();
+    expect(h.engine.unlistenAuth).toBe(liveUnlisten);
+    // the stale run applied no status of its own: only the live start synced once
+    expect(h.calls.filter(c => c === `fetch:${A}`)).toHaveLength(1);
+  });
+
+  test('an auth status without an account shows signed out even when no account was set', async () => {
+    const h = harness();
+    await h.engine.start();
+    h.engine.status = STATUS.SYNCED; // a stale status
+    h.authListener({ state: 'expired', account: null });
+    expect(h.engine.getStatus()).toBe(STATUS.SIGNED_OUT);
+  });
+
+  test('declining the confirmation: a failed sign-out is reported and retried, never shown as signed out', async () => {
+    const h = harness({ context: playedContext(), state: { boundAccount: A, ackRevision: 3 } });
+    h.confirm = false;
+    h.deps.auth.logout.mockRejectedValueOnce(new Error('network'));
+    await h.signIn(B);
+    expect(h.engine.getStatus()).toBe(STATUS.ERROR);
+    expect(h.deps.ui.notify).toHaveBeenCalledWith('logoutFailed');
+    expect(h.deps.state.save).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(h.deps.auth.logout).toHaveBeenCalledTimes(2);
+    // the status becomes signed out only through the auth status
+    expect(h.engine.getStatus()).toBe(STATUS.ERROR);
+    await h.signOut();
+    expect(h.engine.getStatus()).toBe(STATUS.SIGNED_OUT);
+  });
+
+  test('cancelling the choice does not show signed out before the sign-out happened', async () => {
+    const h = harness({ context: playedContext(), cloud: cloudRow(A) });
+    h.choice = 'cancel';
+    h.deps.auth.logout.mockRejectedValue(new Error('network'));
+    await h.signIn(A);
+    expect(h.engine.getStatus()).toBe(STATUS.ERROR);
+  });
+
+  test('local changes while the sync state loads are applied to the loaded state', async () => {
+    const h = harness({ context: playedContext(), state: { boundAccount: A, ackRevision: 2, dirty: false } });
+    let release;
+    h.deps.state.load.mockImplementation(
+      () => new Promise(resolve => { release = () => resolve({ ...h.stored }); })
+    );
+    h.authStatus = signedIn(A);
+    h.cloud = cloudRow(A, { revision: 2 });
+    h.revision = 2;
+    const starting = h.engine.start();
+    await settle();
+    h.engine.notifyLocalChange();
+    expect(h.deps.state.save).not.toHaveBeenCalled(); // the loading state is not written
+    release();
+    await starting;
+    await settle();
+    expect(h.stored).toMatchObject({ boundAccount: A, ackRevision: 3, dirty: false }); // dirty -> uploaded
+    expect(h.calls).toEqual([`fetch:${A}`, `upload:${A}`]);
+  });
+
+  test('a restore superseded after its write re-reads the store, unless the engine was stopped', async () => {
+    const h = harness({ cloud: cloudRow(A) });
+    let finishApply;
+    h.deps.local.applySaved.mockImplementation(() => new Promise(resolve => { finishApply = resolve; }));
+    await h.signIn(A);
+    await h.signOut();
+    finishApply();
+    await settle();
+    expect(h.deps.reload).toHaveBeenCalledTimes(1);
+    expect(h.stored.boundAccount).toBeNull();
+  });
+
+  test('a first upload approved while a restore was running starts when that restore ends', async () => {
+    const h = harness({ context: playedContext() });
+    h.deps.api.fetch.mockImplementation(async account => (account === A ? cloudRow(A) : null));
+    let failApply;
+    h.deps.local.applySaved.mockImplementation(() => new Promise((_, reject) => { failApply = reject; }));
+    h.context = emptyContext(); // A: empty local, so A's cloud save is restored
+    await h.signIn(A);
+    h.context = playedContext();
+    await h.signIn(B); // B has no cloud save: its first upload is approved but must wait
+    expect(h.calls).not.toContain(`upload:${B}`);
+    failApply(new Error('late'));
+    await settle();
+    expect(h.calls).toContain(`upload:${B}`);
+    expect(h.stored.boundAccount).toBe(B);
+  });
+
+  test('when the accepted revision cannot be stored, only that is retried; no new upload from the stale state', async () => {
+    const h = harness({ context: playedContext() });
+    await h.signIn(A);
+    h.calls.length = 0;
+    h.deps.state.save.mockResolvedValueOnce().mockRejectedValueOnce(new Error('disk')); // 1st: the dirty flag, 2nd: the accepted revision
+    h.engine.notifyLocalChange();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(h.calls).toEqual([`upload:${A}`]);
+    expect(h.engine.getStatus()).toBe(STATUS.ERROR);
+    h.engine.notifyLocalChange(); // a change meanwhile
+    await vi.advanceTimersByTimeAsync(500);
+    expect(h.calls).toEqual([`upload:${A}`]); // no second upload yet
+    await vi.advanceTimersByTimeAsync(1000); // the record retry
+    expect(h.stored.ackRevision).toBe(h.revision);
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(h.calls.filter(c => c.startsWith('upload')).length).toBeGreaterThanOrEqual(1);
+    expect(h.engine.getStatus()).toBe(STATUS.SYNCED);
+  });
+
+  test('a successful upload leaves no stale retry timer', async () => {
+    const h = harness({ context: playedContext() });
+    await h.signIn(A);
+    h.uploadError = code('offline');
+    h.engine.notifyLocalChange();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(h.engine.retryTimer).not.toBeNull();
+    h.uploadError = null;
+    h.engine.notifyLocalChange();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(h.engine.getStatus()).toBe(STATUS.SYNCED);
+    expect(h.engine.retryTimer).toBeNull();
+    expect(h.engine.retryFn).toBeNull();
+  });
+});

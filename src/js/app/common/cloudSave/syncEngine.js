@@ -81,6 +81,11 @@ export class CloudSyncEngine {
     this.pendingBind = null;
     this.restoreRun = null;
     this.applying = null;
+    this.startId = 0;
+    this.loading = false;
+    this.pendingChange = false;
+    // The accepted revision that could not be stored yet: { generation, account }.
+    this.recordPending = null;
     this.persistChain = Promise.resolve();
     this.unlistenAuth = null;
   }
@@ -101,17 +106,42 @@ export class CloudSyncEngine {
     if (this.started) return;
     this.started = true;
     this.stopped = false;
+    this.startId += 1;
+    const id = this.startId;
+    const alive = () => id === this.startId && !this.stopped;
+    this.loading = true;
+    this.pendingChange = false;
     try {
-      this.state = { ...EMPTY_SYNC_STATE, ...(await this.deps.state.load()) };
+      const loaded = { ...EMPTY_SYNC_STATE, ...(await this.deps.state.load()) };
+      if (!alive()) return;
+      this.state = loaded;
     } catch (error) {
       // Without the state the engine cannot tell whose save this is: stay off.
       console.error('Cloud sync: could not read the sync state', error);
-      this.stopped = true;
+      if (alive()) {
+        this.loading = false;
+        this.stopped = true;
+      }
       return;
     }
+    // Local changes made while the state was loading apply to the loaded state.
+    this.loading = false;
+    if (this.pendingChange) {
+      this.pendingChange = false;
+      this.state = { ...this.state, dirty: true };
+      this.persist();
+    }
     try {
-      this.unlistenAuth = await this.deps.auth.onChange(status => this.handleAuth(status));
-      this.handleAuth(await this.deps.auth.getStatus());
+      const unlisten = await this.deps.auth.onChange(status => this.handleAuth(status));
+      if (!alive()) {
+        // Stopped (or restarted) meanwhile: this subscription is not wanted.
+        unlisten();
+        return;
+      }
+      this.unlistenAuth = unlisten;
+      const status = await this.deps.auth.getStatus();
+      if (!alive()) return;
+      this.handleAuth(status);
     } catch (error) {
       console.error('Cloud sync: could not follow the sign-in status', error);
     }
@@ -121,6 +151,11 @@ export class CloudSyncEngine {
   notifyLocalChange() {
     if (this.stopped || !this.started) return;
     this.mutations += 1;
+    if (this.loading) {
+      // The sync state is not loaded yet: remember, and apply it after the load.
+      this.pendingChange = true;
+      return;
+    }
     if (this.restoring) return;
     if (!this.state.dirty) {
       this.state = { ...this.state, dirty: true };
@@ -144,6 +179,9 @@ export class CloudSyncEngine {
   async stop() {
     this.stopped = true;
     this.started = false;
+    this.startId += 1;
+    this.loading = false;
+    this.recordPending = null;
     this.generation += 1;
     this.account = null;
     this.pendingBind = null;
@@ -169,7 +207,10 @@ export class CloudSyncEngine {
     const account = status && status.state === 'signed_in' && status.account ? status.account : null;
     if (account !== this.account) {
       this.switchAccount(account);
-    } else if (account && !status.offline && this.status === STATUS.OFFLINE) {
+    } else if (!account) {
+      // Already without an account: the engine status still follows the sign-in.
+      this.setStatus(STATUS.SIGNED_OUT);
+    } else if (!status.offline && this.status === STATUS.OFFLINE) {
       this.retryNow();
     }
   }
@@ -179,6 +220,7 @@ export class CloudSyncEngine {
     this.clearTimers();
     this.uploadRun = null;
     this.pendingBind = null;
+    this.recordPending = null;
     this.rerun = false;
     this.retryCount = 0;
     this.reconciled = false;
@@ -261,8 +303,7 @@ export class CloudSyncEngine {
         const confirmed = await this.ask(generation, () => this.deps.ui.confirmUpload());
         if (!this.current(generation)) return;
         if (!confirmed) {
-          await this.deps.auth.logout().catch(() => {});
-          return;
+          return this.signOut(generation);
         }
       }
       return this.uploadAndBind(generation);
@@ -285,8 +326,24 @@ export class CloudSyncEngine {
       return this.uploadAndBind(generation);
     }
     // Cancelled: nothing is written on either side, and the account is left.
-    this.setStatus(STATUS.SIGNED_OUT);
-    await this.deps.auth.logout().catch(() => {});
+    return this.signOut(generation);
+  }
+
+  /**
+   * Leaves the account. "Signed out" is shown only when the auth status says
+   * so; if signing out fails the player is told and it is retried (nothing is
+   * written meanwhile).
+   */
+  async signOut(generation) {
+    try {
+      await this.deps.auth.logout();
+    } catch (error) {
+      console.error('Cloud sync: could not sign out', error);
+      if (!this.current(generation)) return;
+      this.setStatus(STATUS.ERROR);
+      this.deps.ui.notify('logoutFailed');
+      this.scheduleRetry(() => this.guard(generation, () => this.signOut(generation)));
+    }
   }
 
   async ask(generation, question) {
@@ -318,6 +375,12 @@ export class CloudSyncEngine {
       if (this.restoreRun === run) {
         this.restoreRun = null;
         this.restoring = false;
+        // A first upload that was approved while this restore ran starts now;
+        // it does not wait for a local change.
+        if (this.account !== null && this.pendingBind === this.account && this.reconciled) {
+          const current = this.generation;
+          this.guard(current, () => this.flush(current, { bind: true }));
+        }
       }
     };
     try {
@@ -357,8 +420,18 @@ export class CloudSyncEngine {
       return;
     }
     // The sign-in changed or the engine was stopped while the store was being
-    // written: no binding, no reload. The marker (already stored) stays.
-    if (!live()) return finish();
+    // written: no binding. The marker (already stored) stays, so that the
+    // restore is repeated at the next sign-in.
+    if (!live()) {
+      // The store now differs from the game in memory, and persistence is still
+      // suppressed (applySavedFields): re-read the store like a normal restore
+      // does. Not when stopped: Clear Data owns the store then, and the page
+      // reloads at its end.
+      const reload = !this.stopped;
+      finish();
+      if (reload) this.deps.reload();
+      return;
+    }
     try {
       await this.save({
         boundAccount: account,
@@ -411,6 +484,8 @@ export class CloudSyncEngine {
    */
   async flush(generation, { bind = false } = {}) {
     if (!this.current(generation) || !this.reconciled || this.restoring || this.unsupported) return;
+    // The last accepted revision is not stored yet: only that is retried.
+    if (this.recordPending) return;
     if (!bind && !this.canSync(generation)) return;
     if (this.uploadRun) {
       this.rerun = true;
@@ -439,14 +514,26 @@ export class CloudSyncEngine {
         }
         const unchanged = this.mutations === startedAt;
         bind = false;
-        await this.save({
-          boundAccount: account,
-          ackRevision: accepted.revision,
-          dirty: !unchanged,
-          restoreInProgress: null,
-        });
+        try {
+          await this.save({
+            boundAccount: account,
+            ackRevision: accepted.revision,
+            dirty: !unchanged,
+            restoreInProgress: null,
+          });
+        } catch (error) {
+          // The server has the save; only the record of it is missing. Retry
+          // that alone, and do not upload again from the stale `dirty` before
+          // it is stored.
+          console.error('Cloud sync: could not record the accepted revision', error);
+          this.recordPending = { generation, account };
+          this.setStatus(STATUS.ERROR);
+          this.scheduleRetry(() => this.guard(generation, () => this.retryRecord(generation, account)));
+          return;
+        }
         if (this.pendingBind === account) this.pendingBind = null;
         this.retryCount = 0;
+        this.clearRetry();
         again = !unchanged || this.rerun;
       } while (again && this.uploadRun === run && this.current(generation));
       if (this.uploadRun === run && this.current(generation)) {
@@ -455,6 +542,23 @@ export class CloudSyncEngine {
     } finally {
       if (this.uploadRun === run) this.uploadRun = null;
     }
+  }
+
+  async retryRecord(generation, account) {
+    if (!this.current(generation) || this.account !== account || !this.recordPending) return;
+    try {
+      await this.save({});
+    } catch (error) {
+      console.error('Cloud sync: could not record the accepted revision', error);
+      this.scheduleRetry(() => this.guard(generation, () => this.retryRecord(generation, account)));
+      return;
+    }
+    if (!this.current(generation) || this.account !== account) return;
+    this.recordPending = null;
+    this.retryCount = 0;
+    this.clearRetry();
+    this.setStatus(STATUS.SYNCED);
+    if (this.state.dirty) this.scheduleUpload();
   }
 
   // ----- failures and retries -----

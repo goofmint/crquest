@@ -21,6 +21,10 @@ pub enum RemoteError {
     Server,
     /// 401 / 403: the token was not accepted.
     Unauthorized,
+    /// The database refused the size (`cloud_saves_data_size`): it measures the
+    /// text form of the jsonb, which is a little longer than the compact JSON
+    /// that the pre-send check measures.
+    TooLarge,
     /// Any other refusal (a constraint, a malformed answer).
     Rejected,
 }
@@ -82,6 +86,15 @@ pub fn classify(status: u16) -> RemoteError {
     }
 }
 
+/// Like `classify`, but a 400 that names the size constraint is `TooLarge`.
+/// Only the constraint name is looked for; the body is never kept or shown.
+pub fn classify_failure(status: u16, body: &[u8]) -> RemoteError {
+    if status == 400 && String::from_utf8_lossy(body).contains("cloud_saves_data_size") {
+        return RemoteError::TooLarge;
+    }
+    classify(status)
+}
+
 pub fn parse_rows(bytes: &[u8]) -> Result<Option<RemoteRow>, RemoteError> {
     let rows: Vec<RemoteRow> = serde_json::from_slice(bytes).map_err(|_| RemoteError::Rejected)?;
     Ok(rows.into_iter().next())
@@ -135,8 +148,10 @@ impl CloudRemote for HttpRemote {
             .send()
             .await
             .map_err(|_| RemoteError::Network)?;
-        if !response.status().is_success() {
-            return Err(classify(response.status().as_u16()));
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.bytes().await.unwrap_or_default();
+            return Err(classify_failure(status.as_u16(), &body));
         }
         let bytes = response.bytes().await.map_err(|_| RemoteError::Network)?;
         parse_accepted(&bytes)
@@ -155,6 +170,20 @@ mod tests {
         assert_eq!(classify(503), RemoteError::Server);
         assert_eq!(classify(400), RemoteError::Rejected);
         assert_eq!(classify(404), RemoteError::Rejected);
+    }
+
+    #[test]
+    fn a_size_constraint_violation_is_too_large() {
+        let body = br#"{"code":"23514","message":"new row for relation \"cloud_saves\" violates check constraint \"cloud_saves_data_size\""}"#;
+        assert_eq!(classify_failure(400, body), RemoteError::TooLarge);
+        assert_eq!(
+            classify_failure(
+                400,
+                br#"{"message":"violates check constraint \"cloud_saves_data_is_object\""}"#
+            ),
+            RemoteError::Rejected
+        );
+        assert_eq!(classify_failure(500, body), RemoteError::Server);
     }
 
     #[test]
