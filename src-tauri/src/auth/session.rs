@@ -3,6 +3,7 @@
 //! logging out. The status that the renderer sees is a separate, secret-free
 //! value that can be read without waiting for that lock.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -55,6 +56,9 @@ pub enum ErrorCode {
     /// Logged out, but the stored session could neither be removed nor
     /// overwritten: it may come back at the next launch.
     LogoutIncomplete,
+    /// A cancelled / finished login attempt could neither be removed from the
+    /// credential store nor overwritten: it may come back after a restart.
+    CancelIncomplete,
 }
 
 /// Written over the stored session when it cannot be deleted. It does not
@@ -80,6 +84,11 @@ struct Inner {
     pending: Option<PendingAttempt>,
     timer_gen: u64,
     persistence_unavailable: bool,
+    /// Nonces of attempts that were cancelled, consumed or replaced in this
+    /// run: never loaded from the store again, even if deleting them failed.
+    dead_nonces: HashSet<String>,
+    /// Nonce that the expiry timer was already scheduled for.
+    timer_nonce: Option<String>,
 }
 
 pub struct AuthManager<S: SecretStore, C: AuthApi> {
@@ -125,6 +134,8 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
                 pending: None,
                 timer_gen: 0,
                 persistence_unavailable: false,
+                dead_nonces: HashSet::new(),
+                timer_nonce: None,
             }),
             view: std::sync::Mutex::new(AuthStatus {
                 state,
@@ -195,16 +206,28 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
         }
     }
 
-    fn forget_pending(&self, inner: &mut Inner) {
-        inner.pending = None;
-        let _ = self.store.delete(Slot::Pending);
+    /// Drops the pending attempt. Returns false when the stored copy could
+    /// neither be deleted nor overwritten with a tombstone (it may come back
+    /// after a restart); in this run it is never loaded again.
+    fn forget_pending(&self, inner: &mut Inner) -> bool {
+        if let Some(p) = inner.pending.take() {
+            inner.dead_nonces.insert(p.nonce);
+        }
+        self.store.delete(Slot::Pending).is_ok()
+            || self.store.save(Slot::Pending, TOMBSTONE).is_ok()
     }
 
-    fn load_pending(&self, inner: &mut Inner) {
+    /// Loads a stored attempt (if none is in memory) and makes sure its expiry
+    /// timer runs, whichever path got here first.
+    fn load_pending(self: &Arc<Self>, inner: &mut Inner) {
         match self.store.load(Slot::Pending) {
             Ok(Some(json)) => match serde_json::from_str::<PendingAttempt>(&json) {
+                Ok(p) if inner.dead_nonces.contains(&p.nonce) => {
+                    let _ = self.store.delete(Slot::Pending);
+                }
                 Ok(p) if self.now() <= p.created_at.saturating_add(PENDING_TTL_SECS) => {
-                    inner.pending = Some(p)
+                    self.schedule_pending_timeout(inner, &p);
+                    inner.pending = Some(p);
                 }
                 _ => {
                     let _ = self.store.delete(Slot::Pending);
@@ -228,9 +251,6 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
         }
         if inner.pending.is_none() {
             self.load_pending(&mut inner);
-            if let Some(p) = inner.pending.clone() {
-                self.schedule_pending_timeout(&p);
-            }
         }
         match self.store.load(Slot::Session) {
             Ok(Some(json)) => {
@@ -319,7 +339,11 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
         });
     }
 
-    fn schedule_pending_timeout(self: &Arc<Self>, pending: &PendingAttempt) {
+    fn schedule_pending_timeout(self: &Arc<Self>, inner: &mut Inner, pending: &PendingAttempt) {
+        if inner.timer_nonce.as_deref() == Some(pending.nonce.as_str()) {
+            return;
+        }
+        inner.timer_nonce = Some(pending.nonce.clone());
         let remaining = pending
             .created_at
             .saturating_add(PENDING_TTL_SECS)
@@ -365,9 +389,12 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
             &attempt.nonce,
         );
         // A new attempt replaces (invalidates) the old nonce.
+        if let Some(old) = inner.pending.take() {
+            inner.dead_nonces.insert(old.nonce);
+        }
         inner.pending = Some(attempt.clone());
         self.persist(&mut inner, Slot::Pending, &attempt);
-        self.schedule_pending_timeout(&attempt);
+        self.schedule_pending_timeout(&mut inner, &attempt);
         if !(self.open)(&url) {
             self.forget_pending(&mut inner);
             self.publish(
@@ -385,9 +412,10 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
     pub async fn cancel_login(self: &Arc<Self>) -> AuthStatus {
         let mut inner = self.inner.lock().await;
         if inner.pending.is_some() {
-            self.forget_pending(&mut inner);
+            let cleared = self.forget_pending(&mut inner);
             if inner.session.is_none() {
-                self.publish(&inner, State::SignedOut, false, None);
+                let code = (!cleared).then_some(ErrorCode::CancelIncomplete);
+                self.publish(&inner, State::SignedOut, false, code);
             }
         }
         self.status()
@@ -406,11 +434,11 @@ impl<S: SecretStore, C: AuthApi> AuthManager<S, C> {
                 .map(|(t, _)| t);
             inner.session = None;
             inner.timer_gen += 1;
-            self.forget_pending(&mut inner);
+            let pending_cleared = self.forget_pending(&mut inner);
+            let session_cleared = self.store.delete(Slot::Session).is_ok()
+                || self.store.save(Slot::Session, TOMBSTONE).is_ok();
             let mut error_code = None;
-            if self.store.delete(Slot::Session).is_err()
-                && self.store.save(Slot::Session, TOMBSTONE).is_err()
-            {
+            if !pending_cleared || !session_cleared {
                 // The refresh token may stay in the credential store. The
                 // server-side revocation below is then the only protection.
                 error_code = Some(ErrorCode::LogoutIncomplete);
@@ -903,6 +931,92 @@ mod tests {
         assert_eq!(status.error_code, Some(ErrorCode::LogoutIncomplete));
         // the server session is still revoked on a best-effort basis
         assert_eq!(f.api.logouts.lock().unwrap().as_slice(), ["ACCESS-1"]);
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_attempt_whose_delete_failed_cannot_be_completed() {
+        let f = fixture();
+        f.manager.start_login(Provider::Github).await.unwrap();
+        let nonce = opened_nonce(&f);
+        f.store.set_failing_delete(true);
+        // overwritten with a tombstone: no notice needed
+        let status = f.manager.cancel_login().await;
+        assert_eq!(status.state, State::SignedOut);
+        assert_eq!(status.error_code, None);
+        f.api
+            .exchanges
+            .lock()
+            .unwrap()
+            .push_back(Ok(tokens("A", "R")));
+        f.manager.handle_callback(&callback_url(&nonce)).await;
+        assert_eq!(f.manager.status().state, State::SignedOut);
+        assert_eq!(f.api.exchanges.lock().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn an_attempt_that_cannot_be_cleared_is_reported_and_stays_dead_in_this_run() {
+        let f = fixture();
+        f.manager.start_login(Provider::Github).await.unwrap();
+        let nonce = opened_nonce(&f);
+        f.store.set_failing(true);
+        let status = f.manager.cancel_login().await;
+        assert_eq!(status.error_code, Some(ErrorCode::CancelIncomplete));
+        // the store works again and still holds the old attempt
+        f.store.set_failing(false);
+        assert!(f.store.contains(Slot::Pending));
+        f.api
+            .exchanges
+            .lock()
+            .unwrap()
+            .push_back(Ok(tokens("A", "R")));
+        f.manager.handle_callback(&callback_url(&nonce)).await;
+        assert_eq!(f.manager.status().state, State::SignedOut);
+        assert_eq!(f.api.exchanges.lock().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn logout_cancels_a_pending_attempt_even_if_its_delete_fails() {
+        let f = fixture();
+        f.manager.start_login(Provider::Github).await.unwrap();
+        let nonce = opened_nonce(&f);
+        f.store.set_failing_delete(true);
+        assert_eq!(f.manager.logout().await.state, State::SignedOut);
+        f.api
+            .exchanges
+            .lock()
+            .unwrap()
+            .push_back(Ok(tokens("A", "R")));
+        f.manager.handle_callback(&callback_url(&nonce)).await;
+        assert_eq!(f.manager.status().state, State::SignedOut);
+    }
+
+    #[tokio::test]
+    async fn a_stored_attempt_loaded_by_a_callback_gets_its_expiry_timer() {
+        let f = fixture();
+        f.manager.start_login(Provider::Github).await.unwrap();
+        let nonce = opened_nonce(&f);
+        // "restart": the callback arrives before restore() ran
+        let restarted = Arc::new(
+            AuthManager::new(
+                Some(AuthConfig::resolve(None, Some("k"), true).unwrap()),
+                f.store.clone(),
+                f.api.clone(),
+                |_| {},
+                |_| true,
+            )
+            .with_clock({
+                let c = f.clock.clone();
+                move || c.load(Ordering::SeqCst)
+            }),
+        );
+        restarted
+            .handle_callback(&format!(
+                "terminalquest://auth/callback?attempt={nonce}&error=access_denied"
+            ))
+            .await;
+        // consumed; but a loaded-and-kept attempt records its timer nonce
+        let g = restarted.inner.lock().await;
+        assert_eq!(g.timer_nonce.as_deref(), Some(nonce.as_str()));
     }
 
     #[tokio::test]

@@ -108,7 +108,10 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // builds and AppImage (which has no installer).
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     if cfg!(debug_assertions) || std::env::var_os("APPIMAGE").is_some() {
-        app.deep_link().register_all()?;
+        // Not fatal: the game must start. Only the scheme registration is lost.
+        if app.deep_link().register_all().is_err() {
+            eprintln!("auth: could not register the terminalquest:// scheme");
+        }
     }
 
     let emit_handle = app.handle().clone();

@@ -70,7 +70,8 @@
         "browser_open_failed": "Could not open your browser.",
         "keyring_unavailable": "Your sign-in cannot be saved on this computer.",
         "unknown": "Something went wrong with sign-in.",
-        "logout_incomplete": "You were signed out, but the saved sign-in could not be removed from this computer. It may come back after a restart."
+        "logout_incomplete": "You were signed out, but the saved sign-in could not be removed from this computer. It may come back after a restart.",
+        "cancel_incomplete": "The login attempt was cancelled, but its saved data could not be removed from this computer. It may come back after a restart."
       },
       "statusLoadFailed": "Could not check your sign-in."
     }

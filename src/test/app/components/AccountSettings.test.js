@@ -203,4 +203,30 @@ describe('AccountSettings', () => {
     await mount(status({ state: 'signed_out', errorCode: 'logout_incomplete' }));
     expect(screen.getByRole('alert')).toHaveTextContent('could not be removed');
   });
+
+  test('reads the status only after the subscription is registered', async () => {
+    let ready;
+    onAuthStatusChange.mockReturnValue(new Promise(r => { ready = r; }));
+    getAuthStatus.mockResolvedValue(status({ state: 'signed_out' }));
+    render(<AccountSettings />);
+    await act(flush);
+    expect(getAuthStatus).not.toHaveBeenCalled();
+    await act(async () => ready(unlisten));
+    expect(getAuthStatus).toHaveBeenCalledOnce();
+  });
+
+  test('a fetched status does not overwrite a newer event', async () => {
+    let resolveStatus;
+    getAuthStatus.mockReturnValue(new Promise(r => { resolveStatus = r; }));
+    render(<AccountSettings />);
+    await act(flush);
+    await emit(status({ state: 'signed_in', provider: 'github', displayName: 'Octo' }));
+    await act(async () => resolveStatus(status({ state: 'signed_out' })));
+    expect(screen.getByText('Signed in with GitHub as Octo')).toBeInTheDocument();
+  });
+
+  test('a cancel that could not be cleared is reported', async () => {
+    await mount(status({ state: 'signed_out', errorCode: 'cancel_incomplete' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('could not be removed');
+  });
 });

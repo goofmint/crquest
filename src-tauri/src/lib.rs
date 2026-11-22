@@ -139,8 +139,12 @@ pub fn run() {
         }
     }));
     builder
-        // After single-instance. The renderer is not granted any deep-link
-        // permission, so callback URLs only reach the Rust auth module.
+        // After single-instance. The renderer is not granted the deep-link
+        // commands. The plugin does `app.emit("deep-link://new-url", ..)` to
+        // every webview, though, and `core:default` allows `listen`, so page
+        // scripts could see the callback URL. That is tolerated on purpose: the
+        // `code` is useless without the PKCE verifier, which never leaves Rust
+        // (docs/supabase/auth.md).
         .plugin(tauri_plugin_deep_link::init())
         .manage(close::CloseConfirmation::default())
         .setup(|app| {

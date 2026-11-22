@@ -13,6 +13,7 @@ const ERROR_CODES = [
   'browser_open_failed',
   'keyring_unavailable',
   'logout_incomplete',
+  'cancel_incomplete',
 ];
 
 function errorMessage(code) {
@@ -32,6 +33,8 @@ export default function AccountSettings() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [lastProvider, setLastProvider] = useState(null);
   const mounted = useRef(true);
+  // Set once an event arrived: a status fetched earlier must not overwrite it.
+  const eventSeen = useRef(false);
 
   // Initial read of the status. A failure here (nothing to show yet) is not
   // a command error: it gets its own message and a retry.
@@ -39,11 +42,11 @@ export default function AccountSettings() {
     setLoadFailed(false);
     getAuthStatus().then(
       next => {
-        if (mounted.current) setStatus(next);
+        if (mounted.current && !eventSeen.current) setStatus(next);
       },
       error => {
         console.error('Could not read the sign-in status', error);
-        if (mounted.current) setLoadFailed(true);
+        if (mounted.current && !eventSeen.current) setLoadFailed(true);
       }
     );
   }, []);
@@ -51,9 +54,12 @@ export default function AccountSettings() {
   useEffect(() => {
     mounted.current = true;
     let unlisten = null;
-    loadStatus();
+    eventSeen.current = false;
+    // Subscribe first, read the status once the subscription is registered:
+    // nothing that changes in between is missed.
     onAuthStatusChange(next => {
       if (mounted.current) {
+        eventSeen.current = true;
         setStatus(next);
         setLoadFailed(false);
         setCommandError(null);
@@ -61,10 +67,17 @@ export default function AccountSettings() {
     }).then(
       stop => {
         // Unmounted before the subscription was ready: stop it right away.
-        if (mounted.current) unlisten = stop;
-        else stop();
+        if (mounted.current) {
+          unlisten = stop;
+          loadStatus();
+        } else {
+          stop();
+        }
       },
-      error => console.error('Could not subscribe to sign-in changes', error)
+      error => {
+        console.error('Could not subscribe to sign-in changes', error);
+        if (mounted.current) loadStatus();
+      }
     );
     return () => {
       mounted.current = false;
