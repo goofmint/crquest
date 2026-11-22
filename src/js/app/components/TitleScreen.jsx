@@ -8,6 +8,7 @@ import { getContext, setContext } from '../common/context';
 
 const CINEMATIC_PAGE = './cinematic';
 const CINEMATIC_PAGE_TITLE = 'Mission Cinematic Cinematic';
+const TITLE_MUSIC = 'overture_b';
 
 class TitleScreen extends React.Component {
   static propTypes = {
@@ -47,10 +48,11 @@ class TitleScreen extends React.Component {
       isInitialGameLaunch: !getContext('hasSeenCinematic'),
     });
 
-    audioManager.music.play('overture_b');
+    audioManager.music.play(TITLE_MUSIC);
   }
 
   componentWillUnmount() {
+    audioManager.music.stop(TITLE_MUSIC);
     sharedListener.unregister_combo(this.spaceListener);
     sharedListener.unregister_combo(this.escapeListener);
   }
@@ -79,7 +81,7 @@ class TitleScreen extends React.Component {
   }
 
   hideCinematic() {
-    audioManager.music.play('overture_b');
+    audioManager.music.play(TITLE_MUSIC);
     this.setState({ cinematicShowing: false });
   }
 

@@ -88,12 +88,9 @@ class TrackPlayer {
       return;
     }
 
-    // remove track from currently playing
-    const index = this.currentlyPlayingTracks.indexOf(trackName);
-    this.currentlyPlayingTracks = [
-      ...this.currentlyPlayingTracks.slice(0, index),
-      ...this.currentlyPlayingTracks.slice(index + 1),
-    ];
+    this.currentlyPlayingTracks = this.currentlyPlayingTracks.filter(
+      playingTrack => playingTrack !== trackName
+    );
     this.tracks[trackName].stop();
   }
 

@@ -1,4 +1,5 @@
 import audioManager from '../../../js/app/common/audio/index';
+import TrackPlayer from '../../../js/app/common/audio/TrackPlayer';
 import { listAsync } from '../../../js/app/platform/fs';
 import { getValueAsync, setValueAsync } from '../../../js/app/platform/store';
 import { showAlert } from '../../../js/app/platform/dialog';
@@ -23,6 +24,24 @@ const players = [
   ['loadSfx', 'sfx', '/static/levels/common/sfx'],
   ['loadMusic', 'music', '/static/levels/common/music'],
 ];
+
+it('stops a fading track without changing which other tracks are playing', () => {
+  const player = new TrackPlayer({ muted: false });
+  const overture = { fadeOut: vi.fn(), stop: vi.fn() };
+  player.tracks.overture = overture;
+  player.tracks.level = { fadeIn: vi.fn(), stop: vi.fn() };
+  player.tracks.ambient = { fadeIn: vi.fn(), stop: vi.fn() };
+  player.currentlyPlayingTracks = ['overture'];
+
+  player.fadeOutAll();
+  player.fadeIn('level');
+  player.fadeIn('ambient');
+  player.stop('overture');
+
+  expect(overture.stop).toHaveBeenCalledOnce();
+  expect(player.currentlyPlayingTracks).toEqual(['level', 'ambient']);
+  expect(player.tracks.level.stop).not.toHaveBeenCalled();
+});
 
 describe.each(players)('AudioManager.%s', (method, key, dirPath) => {
   let player;

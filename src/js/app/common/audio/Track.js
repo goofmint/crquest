@@ -49,6 +49,7 @@ class Track {
   }
 
   stop() {
+    this.fadingState = 'none';
     this.track.stop();
     this.currentlyPlayingSprite = undefined;
   }
