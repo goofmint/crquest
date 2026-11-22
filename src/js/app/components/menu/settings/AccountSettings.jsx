@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getAuthStatus, startLogin, cancelLogin, logout, onAuthStatusChange } from '../../../platform/auth';
+import { getSyncStatus, subscribeSyncStatus } from '../../../common/cloudSave/statusStore';
 import { t } from '../../../i18n';
 
+const SYNC_STATUSES = ['synced', 'syncing', 'offline', 'error', 'choosing', 'unsupported'];
 const PROVIDERS = ['github', 'google'];
 const ERROR_CODES = [
   'provider_denied',
@@ -32,6 +34,7 @@ export default function AccountSettings() {
   const [commandError, setCommandError] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [lastProvider, setLastProvider] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(getSyncStatus());
   const mounted = useRef(true);
   // Set once an event arrived: a status fetched earlier must not overwrite it.
   const eventSeen = useRef(false);
@@ -49,6 +52,13 @@ export default function AccountSettings() {
         if (mounted.current && !eventSeen.current) setLoadFailed(true);
       }
     );
+  }, []);
+
+  useEffect(() => {
+    // Subscribe first, then read: a change in between is not missed.
+    const unsubscribe = subscribeSyncStatus(setSyncStatus);
+    setSyncStatus(getSyncStatus());
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -155,6 +165,11 @@ export default function AccountSettings() {
             : t('settings.account.signedIn', { provider: providerName })}
         </p>
         {status.offline && <p>{t('settings.account.offline')}</p>}
+        {SYNC_STATUSES.includes(syncStatus) && (
+          <p>
+            {t('settings.account.sync.title')}: {t(`settings.account.sync.${syncStatus}`)}
+          </p>
+        )}
         <button type="button" className="pa2 mr2 mv1 pointer" disabled={busy} onClick={() => run(logout)}>
           {t('settings.account.logout')}
         </button>

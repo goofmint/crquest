@@ -4,7 +4,7 @@ import { build } from 'vite';
 
 const root = path.resolve(__dirname, '../../../../..');
 const platformDir = path.join(root, 'src/js/app/platform');
-const MODULES = ['paths', 'dialog', 'store', 'fs', 'shell', 'exec', 'devtools', 'menu', 'env', 'init', 'assets', 'conversationTemplate', 'auth'];
+const MODULES = ['paths', 'dialog', 'store', 'fs', 'shell', 'exec', 'devtools', 'menu', 'env', 'init', 'assets', 'conversationTemplate', 'auth', 'cloudSave'];
 
 // Comments (the first lines of each thin module explain why it exists) do not
 // count; what is left must be exactly the re-export of the Tauri module.

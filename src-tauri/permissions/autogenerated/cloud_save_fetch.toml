@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cloud-save-fetch"
+description = "Enables the cloud_save_fetch command without any pre-configured scope."
+commands.allow = ["cloud_save_fetch"]
+
+[[permission]]
+identifier = "deny-cloud-save-fetch"
+description = "Denies the cloud_save_fetch command without any pre-configured scope."
+commands.deny = ["cloud_save_fetch"]

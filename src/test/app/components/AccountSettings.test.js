@@ -10,6 +10,7 @@ vi.mock('../../../js/app/platform/auth', () => ({
 }));
 
 import AccountSettings from '../../../js/app/components/menu/settings/AccountSettings';
+import { setSyncStatus } from '../../../js/app/common/cloudSave/statusStore';
 import { getAuthStatus, startLogin, cancelLogin, logout, onAuthStatusChange } from '../../../js/app/platform/auth';
 
 const base = { provider: null, displayName: null, offline: false, persistence: 'keyring', errorCode: null };
@@ -82,6 +83,18 @@ describe('AccountSettings', () => {
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Sign out' })));
     expect(logout).toHaveBeenCalledOnce();
     expect(screen.getByRole('button', { name: 'Sign in with GitHub' })).toBeInTheDocument();
+  });
+
+  test('signed in: shows the cloud save status and follows its changes', async () => {
+    await mount(status({ state: 'signed_in', provider: 'github' }));
+    act(() => setSyncStatus('syncing'));
+    expect(screen.getByText(/Syncing your save/)).toBeInTheDocument();
+    act(() => setSyncStatus('offline'));
+    expect(screen.getByText(/kept on this computer and will sync/)).toBeInTheDocument();
+    act(() => setSyncStatus('synced'));
+    expect(screen.getByText(/Your save is synced/)).toBeInTheDocument();
+    act(() => setSyncStatus('signed_out'));
+    expect(screen.queryByText(/Cloud save:/)).not.toBeInTheDocument();
   });
 
   test('signed in without a name shows only the provider', async () => {

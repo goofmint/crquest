@@ -38,13 +38,13 @@ function getContextSchema() {
       showTitle: yup.boolean(),
       hasSeenCinematic: yup.boolean().meta({
         saveToDisk: true,
+        cloudSave: true,
       }),
       showOnboarding: yup.boolean(),
       showMissionComputer: yup.boolean(),
       systemInfo: yup
         .object()
         .meta({
-          syncToBackend: false,
           saveToDisk: false,
         })
         .shape({
@@ -54,8 +54,8 @@ function getContextSchema() {
       completedObjectives: yup
         .object()
         .meta({
-          syncToBackend: true,
           saveToDisk: true,
+          cloudSave: true,
         })
         .map({
           keySchema: yup.string().isObjectiveKey(),
@@ -71,12 +71,13 @@ function getContextSchema() {
       contextInitialized: yup.boolean().default(false),
       questStatus: yup.object().meta({
         saveToDisk: true,
+        cloudSave: true,
       }),
       customAvatar: yup
         .object()
         .meta({
-          syncToBackend: true,
           saveToDisk: true,
+          cloudSave: true,
         })
         .shape({
           sc: yup.number().default(0),
@@ -115,10 +116,12 @@ function getContextSchema() {
         .array()
         .meta({
           saveToDisk: true,
+          cloudSave: true,
         })
         .of(yup.string().isItemKey()),
       levelState: yup.object().meta({
         saveToDisk: true,
+        cloudSave: true,
       }), // TODO: 7/14/20
       liveEvent: yup
         .object()
@@ -128,12 +131,13 @@ function getContextSchema() {
         .nullable(),
       loadout: yup.object().meta({
         saveToDisk: true,
-        syncToBackend: true,
+        cloudSave: true,
       }), // TODO: 7/14/20
       migrations: yup
         .object()
         .meta({
           saveToDisk: true,
+          cloudSave: true,
         })
         .map({
           keySchema: yup.string(),
@@ -143,7 +147,7 @@ function getContextSchema() {
         .object()
         .meta({
           saveToDisk: true,
-          syncToBackend: true,
+          cloudSave: true,
         })
         .shape({
           avatar: yup
@@ -159,8 +163,8 @@ function getContextSchema() {
       teams: yup
         .object()
         .meta({
-          syncToBackend: true,
           saveToDisk: true,
+          cloudSave: true,
         })
         .shape({
           joined: yup.array().of(
@@ -174,8 +178,8 @@ function getContextSchema() {
       operations: yup
         .object()
         .meta({
-          syncToBackend: true,
           saveToDisk: true,
+          cloudSave: true,
         })
         .shape({
           joined: yup.array().of(
@@ -191,13 +195,13 @@ function getContextSchema() {
         .of(yup.string())
         .meta({
           saveToDisk: true,
+          cloudSave: true,
         })
         .nullable(),
       user: yup
         .object()
         .meta({
           persistOnClearProgess: true,
-          syncToBackend: true,
           saveToDisk: true,
         })
         .shape({
@@ -209,6 +213,7 @@ function getContextSchema() {
         .number()
         .meta({
           saveToDisk: true,
+          cloudSave: true,
         })
         .required()
         .min(0)

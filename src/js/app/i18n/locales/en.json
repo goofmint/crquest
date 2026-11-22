@@ -22,8 +22,8 @@
     "name": "Name",
     "avatar": "Avatar",
     "teams": "Adventure Teams",
-    "teamsDescription": "If you were given an adventure team join code, type it in to send your achievements and XP to the leaderboard.",
-    "operationsDescription": "If you were given an operation join code, type it in to send your achievements and XP to the leaderboard.",
+    "teamsDescription": "If you were given an adventure team join code, type it in to join the team. When you are signed in, your achievements and XP are saved to your cloud save. They are not used for rankings or team scores.",
+    "operationsDescription": "If you were given an operation join code, type it in to join the operation. When you are signed in, your achievements and XP are saved to your cloud save. They are not used for rankings or team scores.",
     "joinCode": "Join Code",
     "saved": "All changes saved.",
     "tabs": {
@@ -73,7 +73,36 @@
         "logout_incomplete": "You were signed out, but the saved sign-in could not be removed from this computer. It may come back after a restart.",
         "cancel_incomplete": "The login attempt was cancelled, but its saved data could not be removed from this computer. It may come back after a restart."
       },
-      "statusLoadFailed": "Could not check your sign-in."
+      "statusLoadFailed": "Could not check your sign-in.",
+      "sync": {
+        "title": "Cloud save",
+        "synced": "Your save is synced.",
+        "syncing": "Syncing your save…",
+        "offline": "Could not reach the server. Your save is kept on this computer and will sync when you are back online.",
+        "error": "Syncing your save failed. It is kept on this computer and will be retried.",
+        "choosing": "Choose which save to use.",
+        "unsupported": "Update the app to sync your save."
+      }
+    }
+  },
+  "cloudSave": {
+    "choice": {
+      "title": "Which save do you want to use?",
+      "intro": "This computer and your account both have a save. Choose the one to keep; the other one is overwritten.",
+      "localHeading": "This computer",
+      "cloudHeading": "Cloud save",
+      "summary": "{{xp}} XP, {{objectives}} objectives completed",
+      "updatedAt": "Last saved: {{date}}",
+      "useCloud": "Use the cloud save",
+      "useLocal": "Use this computer's save",
+      "cancel": "Cancel and sign out"
+    },
+    "confirmUpload": "The save on this computer was used with a different account. Upload it to the account you just signed in with? Choose Cancel to sign out without uploading.",
+    "notice": {
+      "unsupported": "The cloud save was written by a newer version of TerminalQuest. Update the app to sync it. Your local save is not affected.",
+      "invalid": "The cloud save could not be read, so it was not applied. Your local save is not affected.",
+      "restoreFailed": "The cloud save could not be applied to this computer. Sign in again to retry. Your game keeps running with its current data.",
+      "tooLarge": "Your save is too large to sync. Your local save is not affected."
     }
   }
 }

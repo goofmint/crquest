@@ -15,6 +15,7 @@ import levelLoader from '../../common/levelLoader';
 import localizeQuestStatus from './localizeQuestStatus';
 import analytics from '../../common/analytics';
 import { syncBundledAssets } from '../../common/assetLoader';
+import { startCloudSync } from '../../common/cloudSave';
 import { reduceEntries } from '../../common/context/schema';
 import { getLanguage, isSupportedLanguage, t } from '../../i18n';
 
@@ -267,6 +268,10 @@ export default class ContextProvider extends React.Component {
       // This is where initialization logic dependent on context state
       // should live.
       syncBundledAssets();
+      // Optional and in the background: the game never waits for the cloud.
+      startCloudSync().catch(error =>
+        console.error('Could not start the cloud sync', error)
+      );
     }
   }
 

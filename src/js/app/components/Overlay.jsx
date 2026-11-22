@@ -4,6 +4,7 @@ import NavMap from './nav_map/components/NavMap';
 import FogOwlFlying from './FogOwlFlying';
 import IFrameOverlay from './IFrameOverlay';
 import DevFundamentalsElevator from './DevFundamentalsElevator';
+import CloudSaveChoice from './CloudSaveChoice';
 import FSM from './game/entities/FSM';
 
 const Center = ({ children }) => {
@@ -40,6 +41,7 @@ export default class Overlay extends Component {
       fogOwlFlying: FogOwlFlying,
       devFundamentalsElevator: DevFundamentalsElevator,
       iframe: IFrameOverlay,
+      cloudSaveChoice: CloudSaveChoice,
     },
   };
 
