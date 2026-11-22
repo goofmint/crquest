@@ -6,8 +6,8 @@ mod close;
 pub mod cloud_save;
 mod exec;
 mod help_menu;
-pub mod rewards;
 pub mod live_events;
+pub mod rewards;
 
 use std::collections::HashMap;
 use tauri::ipc::CommandScope;
