@@ -23,6 +23,12 @@ fn main() {
             "cloud_save_upload",
             "unlock_code_redeem",
             "tree_planting_record",
+            "live_events_list",
+            "live_events_ranking",
+            "live_events_team_ranking",
+            "live_events_join",
+            "live_events_update",
+            "live_events_status",
         ]),
     ))
     .expect("failed to run tauri-build");

@@ -6,14 +6,9 @@ import { keypress } from 'keypress.js';
 import ga from '../../../common/analytics';
 import gameEvents from '../../../common/gameEvents';
 import { context, setContext, emitter } from '../../../common/context';
-import { Firestore } from '../../../common/firebase';
-import {
-  addItems,
-  populateLoadoutWithItems,
-} from '../../context_provider/itemsHelper';
+import { addItems } from '../../context_provider/itemsHelper';
 import Button from '../../Button';
 import ValidationHelper from './ValidationHelper';
-import levelLoader from '../../../common/levelLoader';
 import { readContentMessages, requireFromExtension } from '../../../common/assetLoader';
 import { isComposingKeypress } from '../../../common/isComposingKeypress';
 import { renderValidationMarkdown } from '../../../common/renderMarkdown';
@@ -75,7 +70,6 @@ class Validator extends React.Component {
       statusReadout: complete ? STATUS.CLEAR : STATUS.LOCKED,
       copiedObjectiveDebugInfo: false,
     });
-    this.store = firebase.firestore();
     window.completeCurrentObjective = () => {
       if (!this.props.hackObject.complete) {
         this.completeObjective();
@@ -272,63 +266,9 @@ class Validator extends React.Component {
       objective: this.props.hackObject.objectiveName,
     });
 
-    // Send objective completion to live event, if it exists
-    if (this.context.liveEvent) {
-      const { liveEvent } = this.context;
-
-      Firestore.collection('liveEvents')
-        .doc(liveEvent.id)
-        .get()
-        .then(async doc => {
-          if (doc.exists) {
-            const now = Date.now();
-            const oneDay = 24 * 60 * 60 * 1000;
-            const start = doc.data().startDate
-              ? doc.data().startDate.seconds * 1000
-              : null;
-            const end = doc.data().endDate
-              ? doc.data().endDate.seconds * 1000
-              : null;
-
-            // Only send achievement if the event has a start time in the
-            // past and an end time in the future (with a one day buffer on
-            // each side). Regard missing start or end times as valid.
-            if (
-              (!start || start - oneDay < now) &&
-              (!end || end + oneDay > now)
-            ) {
-              const missionData = await levelLoader.getFullMissionData(
-                this.props.hackObject.level
-              );
-
-              Firestore.collection('liveEventAchievements')
-                .doc(
-                  `${liveEvent.guid}.${this.props.hackObject.level.levelName}.${this.props.hackObject.objectiveName}`
-                )
-                .set({
-                  mission: this.props.hackObject.level.levelName,
-                  objective: this.props.hackObject.objectiveName,
-                  missionDisplayName: missionData.levelProperties.title,
-                  objectiveDisplayName: this.props.objective.title,
-                  xp: this.props.objective.rewards.xp,
-                  event: liveEvent.id,
-                  guid: liveEvent.guid,
-                  customAvatar: this.context.customAvatar,
-                  loadout: populateLoadoutWithItems(this.context.loadout),
-                  avatar: this.context.settings.avatar,
-                  player: this.context.settings.name,
-                  createdAt: new Date(),
-                });
-            } else {
-              // If the event's times aren't valid, disconnect from it.
-              setContext({ liveEvent: null });
-            }
-          } else {
-            // If the event doesn't exist, disconnect from it.
-            setContext({ liveEvent: null });
-          }
-        });
-    }
+    // Live event scoring is not done here: the server scores achievements that
+    // it has certified itself (docs/supabase/live-events.md). The client no
+    // longer reports achievements or judges the event period.
 
     gameEvents.logMissionObjectiveCompletion(
       {

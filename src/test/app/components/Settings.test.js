@@ -31,6 +31,9 @@ vi.mock('../../../js/app/components/menu/settings/AudioTab', () => ({ default: (
 vi.mock('../../../js/app/components/menu/settings/UnlocksTab', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/menu/settings/Credits', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/menu/settings/AccountSettings', () => ({ default: () => <div>account panel</div> }));
+vi.mock('../../../js/app/components/menu/settings/LiveEventsSettings', () => ({
+  default: ({ name }) => <div>live events panel for {name}</div>,
+}));
 vi.mock('../../../js/app/components/menu/settings/Extensions', () => ({ default: () => null }));
 
 import Settings from '../../../js/app/components/menu/settings/Settings';
@@ -159,5 +162,22 @@ describe('Settings account tab', () => {
     expect(screen.queryByText('account panel')).toBeNull();
     rerender(<Settings subnav="Account" name="Player" />);
     expect(screen.getByText('account panel')).toBeInTheDocument();
+  });
+});
+
+describe('Settings live events tab', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getGamePackageVersion.mockResolvedValue('1.2.3');
+  });
+
+  test('lists the Live Events tab and shows its panel with the player name only when selected', async () => {
+    const { rerender } = render(<Settings subnav="User" name="Player" />);
+    await act(flush);
+    fireEvent.click(screen.getByRole('button', { name: 'Live Events' }));
+    expect(setContext).toHaveBeenCalledWith({ currentMenu: { name: 'settings', subnav: 'LiveEvents' } });
+    expect(screen.queryByText(/live events panel/)).toBeNull();
+    rerender(<Settings subnav="LiveEvents" name="Player" />);
+    expect(screen.getByText('live events panel for Player')).toBeInTheDocument();
   });
 });

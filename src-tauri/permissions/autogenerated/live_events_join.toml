@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-live-events-join"
+description = "Enables the live_events_join command without any pre-configured scope."
+commands.allow = ["live_events_join"]
+
+[[permission]]
+identifier = "deny-live-events-join"
+description = "Denies the live_events_join command without any pre-configured scope."
+commands.deny = ["live_events_join"]

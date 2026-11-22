@@ -357,6 +357,12 @@
     "allow-cloud-save-fetch",
     "allow-cloud-save-upload",
     "allow-unlock-code-redeem",
-    "allow-tree-planting-record"
+    "allow-tree-planting-record",
+    "allow-live-events-list",
+    "allow-live-events-ranking",
+    "allow-live-events-team-ranking",
+    "allow-live-events-join",
+    "allow-live-events-update",
+    "allow-live-events-status"
   ]
 }

@@ -7,6 +7,7 @@ pub mod cloud_save;
 mod exec;
 mod help_menu;
 pub mod rewards;
+pub mod live_events;
 
 use std::collections::HashMap;
 use tauri::ipc::CommandScope;
@@ -161,6 +162,7 @@ pub fn run() {
             auth::setup(app)?;
             cloud_save::setup(app)?;
             rewards::setup(app)?;
+            live_events::setup(app)?;
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -205,7 +207,13 @@ pub fn run() {
             cloud_save::cloud_save_fetch,
             cloud_save::cloud_save_upload,
             rewards::unlock_code_redeem,
-            rewards::tree_planting_record
+            rewards::tree_planting_record,
+            live_events::live_events_list,
+            live_events::live_events_ranking,
+            live_events::live_events_team_ranking,
+            live_events::live_events_join,
+            live_events::live_events_update,
+            live_events::live_events_status
         ])
         .run(context())
         .expect("error while running TerminalQuest");

@@ -123,6 +123,9 @@ function getContextSchema() {
         saveToDisk: true,
         cloudSave: true,
       }), // TODO: 7/14/20
+      // Legacy (the Firebase live event the player connected to). Kept so that old
+      // saves still load; nothing reads it for scoring any more. Live events are
+      // joined and scored on the server (docs/supabase/live-events.md).
       liveEvent: yup
         .object()
         .meta({

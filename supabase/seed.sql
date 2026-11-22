@@ -34,3 +34,11 @@ VALUES
   -- 同梱カタログに無いアイテム (クライアントの欠落時の処理を検証する)
   ('TQ-TEST-MISSING-ITEM', 'synthetic_item_not_installed', NULL)
 ON CONFLICT (code) DO NOTHING;
+
+-- ライブイベント (Issue #190): 開発用の公開中イベント。期間は固定値 (db reset のたびに同じ内容)。
+-- 参加資格の制限なし。スモーク検証は実行ごとに専用イベントを service_role で作る。
+INSERT INTO public.live_events (id, title, starts_at, ends_at, status)
+VALUES
+  ('00000000-0000-4000-8000-0000000000e1', 'Synthetic Live Event',
+   '2026-01-01T00:00:00Z', '2099-01-01T00:00:00Z', 'published')
+ON CONFLICT (id) DO NOTHING;

@@ -6,19 +6,12 @@ vi.mock('../../../../../js/app/platform/dialog', () => ({
   showConfirm: vi.fn(),
   showAlert: vi.fn(),
 }));
-vi.mock('../../../../../js/app/common/firebase', () => ({
-  Firestore: { collection: vi.fn() },
-  default: {},
-}));
-
-vi.mock('../../../../../js/app/common/levelLoader', () => ({ __esModule: true, default: {} }));
 vi.mock('../../../../../js/app/common/assetLoader', () => ({ requireFromExtension: vi.fn() }));
 vi.mock('../../../../../js/app/common/world', () => ({ __esModule: true, default: vi.fn() }));
 vi.mock('../../../../../js/app/common/analytics', () => ({ __esModule: true, default: {} }));
 vi.mock('../../../../../js/app/common/gameEvents', () => ({ __esModule: true, default: {} }));
 vi.mock('../../../../../js/app/components/context_provider/itemsHelper', () => ({
   addItems: vi.fn(),
-  populateLoadoutWithItems: vi.fn(),
 }));
 vi.mock('../../../../../js/app/components/hack_interface/validator/ValidationHelper', () => ({
   __esModule: true,
@@ -61,7 +54,6 @@ const pathInput = container => container.querySelector('input[placeholder="/User
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.firebase = { firestore: vi.fn(() => ({})) };
 });
 
 describe('Validator directory field', () => {
