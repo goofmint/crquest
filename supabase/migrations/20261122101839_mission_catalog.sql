@@ -193,7 +193,7 @@ BEGIN
            (o.value ->> 'id') AS id,
            (o.value ->> 'title') AS title,
            (o.value ->> 'description') AS description,
-           (o.value ->> 'xp')::integer AS xp,
+           (o.value ->> 'xp')::numeric::integer AS xp,
            (o.ordinality - 1)::integer AS sort_order
     FROM jsonb_array_elements(catalog -> 'missions') AS m (value),
          LATERAL jsonb_array_elements(m.value -> 'objectives') WITH ORDINALITY AS o (value, ordinality)

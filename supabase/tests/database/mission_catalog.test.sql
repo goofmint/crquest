@@ -1,7 +1,7 @@
 -- mission catalog (Issue #192): 一般ロールは読むだけ、書き込みは service_role の RPC のみ。
 -- CLI はファイルをトランザクションで包まないため、BEGIN / ROLLBACK を明示する。
 BEGIN;
-SELECT plan(38);
+SELECT plan(40);
 
 -- 構造と権限
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid = 'public.missions'::regclass), 'missions: RLS が有効');
@@ -142,6 +142,15 @@ SELECT is(
   (SELECT public.publish_mission_catalog((SELECT c FROM tq_cat))),
   '{"missions":{"inserted":0,"updated":0,"unchanged":2,"retired":0},"objectives":{"inserted":0,"updated":0,"unchanged":2,"retired":0}}'::jsonb,
   '形が不正な入力の後もカタログは変わらず、objectives: [] は有効');
+
+-- 100.0 のような小数表記の整数も受け付ける
+SELECT is(
+  (SELECT public.publish_mission_catalog(jsonb_set((SELECT c FROM tq_cat), '{missions,0,objectives,0,xp}', '100.0'))),
+  '{"missions":{"inserted":0,"updated":0,"unchanged":2,"retired":0},"objectives":{"inserted":0,"updated":0,"unchanged":2,"retired":0}}'::jsonb,
+  'xp: 100.0 は 100 として扱われる');
+SELECT throws_ok(
+  $$SELECT public.publish_mission_catalog(jsonb_set((SELECT c FROM tq_cat), '{missions,0,objectives,0,xp}', '100.5'))$$,
+  '22023', NULL, 'xp: 小数は 22023');
 
 SELECT finish();
 ROLLBACK;

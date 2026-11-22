@@ -70,6 +70,18 @@ describe('buildCatalog', () => {
     ).toThrow(/"a".*e1.*e2/);
   });
 
+  it.each(['x', { x: 1 }, null, 5])('rejects a non-array objectives manifest %p', value => {
+    const l = level('a', { objectives: value });
+    expect(() => buildCatalog([{ extensionName: 'e', levels: [l] }])).toThrow(/e\/levels\/a.*配列/);
+  });
+
+  it('accepts an empty or missing objectives manifest', () => {
+    const empty = level('a', { objectives: [] });
+    const missing = level('b', { objectives: undefined });
+    const { missions } = buildCatalog([{ extensionName: 'e', levels: [empty, missing] }]);
+    expect(missions.map(m => m.objectives)).toEqual([[], []]);
+  });
+
   it('rejects duplicate objectives in the manifest', () => {
     const l = level('a', {}, [objective('x')]);
     l.objectives = ['x', 'x'];

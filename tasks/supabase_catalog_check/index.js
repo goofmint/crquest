@@ -108,6 +108,7 @@ async function main() {
   await expectDenied(apiUrl, 'publishable key', publishableKey, null);
 
   let userId;
+  let failure;
   try {
     const email = `catalog-check-${crypto.randomUUID()}@example.test`;
     const password = crypto.randomBytes(16).toString('hex');
@@ -129,13 +130,28 @@ async function main() {
     if (!accessToken) fail('sign in', 'access_token がない');
 
     await expectDenied(apiUrl, 'authenticated user', publishableKey, accessToken);
-  } finally {
-    if (userId) {
-      await fetch(`${apiUrl}/auth/v1/admin/users/${userId}`, {
+  } catch (error) {
+    failure = error;
+  }
+
+  // 使い捨てユーザーの削除。検証の失敗は保持したまま、削除の失敗も併せて報告する。
+  let cleanupFailure;
+  if (userId) {
+    try {
+      const deleted = await fetch(`${apiUrl}/auth/v1/admin/users/${userId}`, {
         method: 'DELETE',
         headers: headers(serviceKey, serviceKey),
-      }).catch(() => {});
+      });
+      if (!deleted.ok) cleanupFailure = `HTTP ${deleted.status}`;
+    } catch (error) {
+      cleanupFailure = error.cause ? error.cause.code : error.message;
     }
+  }
+  if (failure || cleanupFailure) {
+    const parts = [];
+    if (failure) parts.push(failure instanceof CheckError ? failure.message : `unexpected: ${failure.message}`);
+    if (cleanupFailure) parts.push(`cleanup: 使い捨てユーザーを削除できない (${cleanupFailure})`);
+    throw new CheckError(parts.join(' / '));
   }
 
   const after = await snapshot(apiUrl, serviceKey);

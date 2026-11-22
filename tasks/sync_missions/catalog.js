@@ -52,7 +52,11 @@ function buildCatalog(sources) {
       }
       owners.set(id, extensionName);
 
-      const manifest = Array.isArray(level.objectives) ? level.objectives : [];
+      if (level.objectives !== undefined && !Array.isArray(level.objectives)) {
+        throw new Error(`${levelWhere}: level.json の objectives は配列でなければならない`);
+      }
+      // 空配列は正当 (既存の目標を退役させる)。未指定も空として扱う。
+      const manifest = level.objectives ?? [];
       const byName = new Map(
         (level.missionData?.objectives ?? []).map(objective => [
           objective.objectiveName,
