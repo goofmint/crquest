@@ -30,6 +30,7 @@ vi.mock('../../../js/app/components/menu/settings/Operations', () => ({
 vi.mock('../../../js/app/components/menu/settings/AudioTab', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/menu/settings/UnlocksTab', () => ({ default: () => null }));
 vi.mock('../../../js/app/components/menu/settings/Credits', () => ({ default: () => null }));
+vi.mock('../../../js/app/components/menu/settings/AccountSettings', () => ({ default: () => <div>account panel</div> }));
 vi.mock('../../../js/app/components/menu/settings/Extensions', () => ({ default: () => null }));
 
 import Settings from '../../../js/app/components/menu/settings/Settings';
@@ -141,5 +142,22 @@ describe('Settings language selector', () => {
     } finally {
       error.mockRestore();
     }
+  });
+});
+
+describe('Settings account tab', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getGamePackageVersion.mockResolvedValue('1.2.3');
+  });
+
+  test('lists the Account tab and shows its panel only when selected', async () => {
+    const { rerender } = render(<Settings subnav="User" name="Player" />);
+    await act(flush);
+    fireEvent.click(screen.getByRole('button', { name: 'Account' }));
+    expect(setContext).toHaveBeenCalledWith({ currentMenu: { name: 'settings', subnav: 'Account' } });
+    expect(screen.queryByText('account panel')).toBeNull();
+    rerender(<Settings subnav="Account" name="Player" />);
+    expect(screen.getByText('account panel')).toBeInTheDocument();
   });
 });

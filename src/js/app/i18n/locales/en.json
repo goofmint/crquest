@@ -34,7 +34,46 @@
       "Teams": "Teams",
       "Operations": "Operations",
       "Unlocks": "Unlocks",
-      "Credits": "Credits"
+      "Credits": "Credits",
+      "Account": "Account"
+    },
+    "account": {
+      "title": "Account",
+      "intro": "Signing in is optional. The game works without an account and without a network connection.",
+      "unconfigured": "Sign-in is not available in this build.",
+      "restoring": "Checking your sign-in…",
+      "signedOut": "You are not signed in.",
+      "loginGithub": "Sign in with GitHub",
+      "loginGoogle": "Sign in with Google",
+      "pending": "Continue in your browser to finish signing in.",
+      "cancel": "Cancel",
+      "signedIn": "Signed in with {{provider}}",
+      "signedInAs": "Signed in with {{provider}} as {{name}}",
+      "logout": "Sign out",
+      "offline": "You are offline. You stay signed in and the game keeps working; the connection will be refreshed when you are back online.",
+      "persistenceUnavailable": "Your sign-in cannot be saved on this computer (the system credential store is unavailable). You will need to sign in again after restarting.",
+      "expired": "Your sign-in expired.",
+      "signInAgain": "Sign in again",
+      "retry": "Try again",
+      "working": "Please wait…",
+      "providers": {
+        "github": "GitHub",
+        "google": "Google"
+      },
+      "errors": {
+        "provider_denied": "Sign-in was cancelled or not allowed.",
+        "provider_error": "The sign-in provider reported an error.",
+        "login_timed_out": "Sign-in took too long and timed out.",
+        "network": "Could not reach the sign-in service. Check your connection.",
+        "session_expired": "Your sign-in expired.",
+        "exchange_failed": "Sign-in could not be completed.",
+        "browser_open_failed": "Could not open your browser.",
+        "keyring_unavailable": "Your sign-in cannot be saved on this computer.",
+        "unknown": "Something went wrong with sign-in.",
+        "logout_incomplete": "You were signed out, but the saved sign-in could not be removed from this computer. It may come back after a restart.",
+        "cancel_incomplete": "The login attempt was cancelled, but its saved data could not be removed from this computer. It may come back after a restart."
+      },
+      "statusLoadFailed": "Could not check your sign-in."
     }
   }
 }

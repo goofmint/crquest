@@ -17,17 +17,29 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-deep-link = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-os = "2"
 tauri-plugin-persisted-scope = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-store = "2"
+base64 = "0.22"
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust", "vendored"] }
+rand = "0.9"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["time", "sync"] }
+url = "2"
+
+[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 [target."cfg(unix)".dependencies]
 libc = "0.2"
 
 [dev-dependencies]
 glob = "0.3"
-serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt", "time", "sync"] }
 tauri = { version = "2", features = ["protocol-asset", "test"] }

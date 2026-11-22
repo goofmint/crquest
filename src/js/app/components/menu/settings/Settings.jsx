@@ -14,6 +14,7 @@ import { setContext, getContext, flushPendingSaves, saveLanguagePreference } fro
 import AudioTab from './AudioTab';
 import UnlocksTab from './UnlocksTab';
 import Credits from './Credits';
+import AccountSettings from './AccountSettings';
 import Extensions from './Extensions';
 import { getGamePackageVersion } from '../../../platform/paths';
 import { showConfirm } from '../../../platform/dialog';
@@ -27,6 +28,7 @@ const SUBNAV_SECTIONS = [
   'Teams',
   'Operations',
   'Unlocks',
+  'Account',
   'Credits',
 ];
 
@@ -261,6 +263,8 @@ export default class Settings extends React.Component {
             )}
 
             {this.props.subnav === 'Audio' && <AudioTab />}
+
+            {this.props.subnav === 'Account' && <AccountSettings />}
 
             {this.props.subnav === 'Credits' && <Credits />}
 

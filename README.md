@@ -73,6 +73,8 @@ The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions`
 
 `docs/supabase/local-development.md` (Japanese) describes the local open-source Supabase stack (Postgres, Auth, Edge Functions) managed by a pinned Supabase CLI and Docker: `npm run supabase:start`, `supabase:reset`, `supabase:test`, `supabase:smoke`, `supabase:stop`. It also says where client keys and server-only credentials may live. Supabase is not needed to build, test or run the app.
 
+Optional GitHub / Google sign-in (Settings > Account; the game works without it and offline) is described in `docs/supabase/auth.md` (Japanese): the build-time settings (`TERMINALQUEST_SUPABASE_URL`, `TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY`), the manual OAuth round trip, and the per-OS check of the `terminalquest://` callback on installed packages. The integration test against the local Auth (`cargo test --test auth_local_supabase -- --ignored`, from `src-tauri/`, with the local keys in the environment; it is not an OAuth round trip) is run as documented there.
+
 ### Tests
 
 ```
@@ -87,7 +89,7 @@ The Rust side has its own checks, run from `src-tauri/` (`cargo fmt --check`, `c
 
 ### Verifying the Tauri build by hand
 
-The automated tests cannot start the Tauri window, so changes that touch the Tauri build need a manual check: run `npm start` and confirm that the title screen appears, a new game starts, the keys move the player, the Help menu works, the avatar is shown, a conversation plays, and the DevTools console shows no Content Security Policy violations. The step-by-step checklists are in `docs/migration/tauri-runtime.md` (section 6 for the milestones, and the W12 manual checks for the CSP and the distribution build); follow them instead of copying them here.
+The automated tests cannot start the Tauri window, so changes that touch the Tauri build need a manual check: run `npm start` and confirm that the title screen appears, a new game starts, the keys move the player, the Help menu works, the avatar is shown, a conversation plays, and the DevTools console shows no Content Security Policy violations. The step-by-step checklists are in `docs/migration/tauri-runtime.md` (section 6 for the milestones, and the W12 manual checks for the CSP and the distribution build); follow them instead of copying them here. Changes to sign-in also need the manual checks in `docs/supabase/auth.md`: the OAuth round trip with real GitHub / Google credentials, the callback on each installed package (macOS `.app` and DMG, Windows NSIS and MSI, Linux DEB, RPM and AppImage), and starting and playing signed out and offline.
 
 ## License
 
