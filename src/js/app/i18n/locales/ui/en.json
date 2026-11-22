@@ -210,7 +210,11 @@
       "joining": "Joining...",
       "requestError": "Something went wrong!",
       "codeRequired": "You need to enter a code!",
-      "joined": "Joined: \"{{name}}\"!"
+      "joined": "Joined: \"{{name}}\"!",
+      "loginRequired": "Sign in (Settings > Account) to join.",
+      "networkError": "Could not reach the server. Check your connection and try again.",
+      "leaveLoginRequired": "Sign in (Settings > Account) to leave. Your membership is kept on the server until you do.",
+      "leaveFailed": "Could not leave. Check your connection and try again."
     },
     "teams": {
       "current": "Current Team(s)",

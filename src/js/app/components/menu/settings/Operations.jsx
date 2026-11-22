@@ -24,6 +24,24 @@ class JoinOperationView extends React.Component {
 }
 
 class CurrentOperationView extends React.Component {
+  state = { message: null, leaving: false };
+
+  leave = async operation => {
+    if (this.state.leaving) {
+      return;
+    }
+    this.setState({ leaving: true, message: null });
+    const result = await disconnectOperation(operation);
+    if (this._unmounted) {
+      return;
+    }
+    this.setState({ leaving: false, message: result.success ? null : result.message });
+  };
+
+  componentWillUnmount() {
+    this._unmounted = true;
+  }
+
   render() {
     const { t } = this.props;
     const operations = getJoinedOperations();
@@ -38,7 +56,7 @@ class CurrentOperationView extends React.Component {
               <h5 className="mv2">{operation.displayName}</h5>
               <div className={`mb3 red`}>
                 <span className={`pb1 bb b--red pointer`} 
-                  onClick={() => disconnectOperation(operation)}>
+                  onClick={() => this.leave(operation)}>
                     {t('ui.operations.leave')}
                 </span>
               </div>
@@ -47,6 +65,7 @@ class CurrentOperationView extends React.Component {
           ) : (
           <p>{t('ui.operations.empty')}</p>
         )}
+        {this.state.message && <p className="red">{this.state.message}</p>}
       </>
     );
   }

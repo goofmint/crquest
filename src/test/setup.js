@@ -12,12 +12,6 @@ HTMLCanvasElement.prototype.getContext = () => null;
   path.resolve(
     __dirname, '..', '..', 'public', 'lib', 'phaser-2.13.2.min.js'
   ),
-  path.resolve(
-    __dirname, '..', '..', 'public', 'lib', 'firebase', 'firebase-app.js'
-  ),
-  path.resolve(
-    __dirname, '..', '..', 'public', 'lib', 'firebase', 'firebase-firestore.js'
-  ),
 ].forEach(path => {
   const code = jetpack.read(path);
   window.eval(code);

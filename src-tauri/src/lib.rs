@@ -5,6 +5,7 @@ mod capability_scope;
 mod close;
 pub mod cloud_save;
 mod exec;
+pub mod groups;
 mod help_menu;
 pub mod live_events;
 pub mod rewards;
@@ -162,6 +163,7 @@ pub fn run() {
             auth::setup(app)?;
             cloud_save::setup(app)?;
             rewards::setup(app)?;
+            groups::setup(app)?;
             live_events::setup(app)?;
             Ok(())
         })
@@ -208,6 +210,9 @@ pub fn run() {
             cloud_save::cloud_save_upload,
             rewards::unlock_code_redeem,
             rewards::tree_planting_record,
+            groups::group_join,
+            groups::group_leave,
+            groups::group_list,
             live_events::live_events_list,
             live_events::live_events_ranking,
             live_events::live_events_team_ranking,

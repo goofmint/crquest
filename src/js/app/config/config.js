@@ -6,9 +6,6 @@ import { getAppDataPath, getUserDataPath } from '../platform/paths';
 
 const appDataPath = path.resolve(getAppDataPath(), 'TerminalQuest');
 const userDataPath = path.resolve(getUserDataPath());
-const PRODUCTION_API_BASE_URL =
-  'https://twilioquest-prod.firebaseapp.com/quest/';
-const DEV_API_BASE_URL = 'https://twilioquest-dev.firebaseapp.com/quest/';
 const saveFileName = 'config.json';
 
 // Default configuration
@@ -23,7 +20,6 @@ let config = {
   appDataPath,
   codeStoragePath: path.join(appDataPath, 'QuestIDE'),
   codeStorageFileName: 'user_code.js',
-  apiBaseUrl: PRODUCTION_API_BASE_URL,
   bundledExtensionModules,
   vendoredExtensionModules,
   userDataPath,
@@ -39,10 +35,6 @@ if (isDev()) {
   } catch (e) {
     console.log('Error loading local config:');
     console.log(e);
-  }
-
-  if (config.apiBaseUrl === PRODUCTION_API_BASE_URL) {
-    config.apiBaseUrl = DEV_API_BASE_URL;
   }
 }
 

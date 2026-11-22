@@ -67,11 +67,11 @@ Code signing, notarization and publishing are not automated: nothing is uploaded
 
 ### Scripts under `tasks/`
 
-The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions` needs the Firebase variables in `.env.template`; `npm run generateVoiceOvers` needs AWS credentials that the default AWS provider chain can find (Amazon Polly, region `us-east-1`).
+The scripts in `tasks/` are CommonJS and run on Node 26. `npm run sync:missions -- --target local|remote` publishes the mission catalog to Supabase (the remote target needs the variables in `.env.supabase.template`; see `docs/supabase/mission-catalog.md`); `npm run generateVoiceOvers` needs AWS credentials that the default AWS provider chain can find (Amazon Polly, region `us-east-1`).
 
 ### Local Supabase (optional)
 
-`docs/supabase/local-development.md` (Japanese) describes the local open-source Supabase stack (Postgres, Auth, Edge Functions) managed by a pinned Supabase CLI and Docker: `npm run supabase:start`, `supabase:reset`, `supabase:test`, `supabase:smoke`, `supabase:stop`. It also says where client keys and server-only credentials may live. Supabase is not needed to build, test or run the app.
+`docs/supabase/local-development.md` (Japanese) describes the local open-source Supabase stack (Postgres, Auth, Edge Functions) managed by a pinned Supabase CLI and Docker: `npm run supabase:start`, `supabase:reset`, `supabase:test`, `supabase:smoke`, `supabase:integration` (all integration tests in one go; see `docs/supabase/firebase-removal.md`), `supabase:stop`. It also says where client keys and server-only credentials may live. Supabase is not needed to build, test or run the app.
 
 Optional GitHub / Google sign-in (Settings > Account; the game works without it and offline) is described in `docs/supabase/auth.md` (Japanese): the build-time settings (`TERMINALQUEST_SUPABASE_URL`, `TERMINALQUEST_SUPABASE_PUBLISHABLE_KEY`), the manual OAuth round trip, and the per-OS check of the `terminalquest://` callback on installed packages. The integration test against the local Auth (`cargo test --test auth_local_supabase -- --ignored`, from `src-tauri/`, with the local keys in the environment; it is not an OAuth round trip) is run as documented there.
 

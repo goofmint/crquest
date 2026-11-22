@@ -1,7 +1,6 @@
 // 同梱ミッション・目標・報酬 XP を Supabase のカタログへ一括 upsert する。
 //   npm run sync:missions -- --target local|remote
 // 書き込みは service_role だけが実行できる RPC (publish_mission_catalog) 1 回。
-// Firestore 版は tasks/sync_missions/index.js (sync:missions:firestore)。
 
 const chalk = require('chalk').default;
 const { getBundledExtensionPaths } = require('../utils/bundledExtensions');

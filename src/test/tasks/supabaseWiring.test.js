@@ -115,10 +115,10 @@ describe('supabase local stack wiring (no Docker required)', () => {
       }
     });
 
-    it('points sync:missions at Supabase and keeps the Firestore version', () => {
+    it('points sync:missions at Supabase and has no Firestore version', () => {
       const { scripts } = readJson('package.json');
       expect(scripts['sync:missions']).toBe('node tasks/sync_missions/supabase.js');
-      expect(scripts['sync:missions:firestore']).toBe('node tasks/sync_missions/index.js');
+      expect(scripts['sync:missions:firestore']).toBeUndefined();
     });
 
     it('does not expose catalog_private through the API', () => {

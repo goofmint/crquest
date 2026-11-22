@@ -15,7 +15,7 @@
 // - IndexedDB: fake-indexeddb (jsdom has none, a webview does);
 // - fetch: any call is rejected (the game makes none at startup);
 // - canvas (`getContext` returns null) and jsdom's layout-less rendering.
-// The classic scripts of index.html (firebase, ace, Phaser) are the real files.
+// The classic scripts of index.html (ace, Phaser) are the real files.
 // Everything else (all app code, React, styled-components, ejs, pug, ...) is the
 // real bundle.
 import fs from 'node:fs';
@@ -27,8 +27,6 @@ import { IDBKeyRange, indexedDB } from 'fake-indexeddb';
 
 const repoRoot = path.resolve(path.dirname(toPath(import.meta.url)), '..', '..', '..');
 const CLASSIC_SCRIPTS = [
-  'lib/firebase/firebase-app.js',
-  'lib/firebase/firebase-firestore.js',
   'lib/ace/ace.js',
   'lib/phaser-2.13.2.min.js',
 ];
@@ -41,6 +39,9 @@ const logs = [];
 // EVERY console.error of the page (logs is only the tail, for diagnosis)
 const errors = [];
 const ipcCalls = [];
+// Every outgoing network attempt of the page (fetch, XMLHttpRequest, WebSocket,
+// sendBeacon, EventSource): normal offline play makes none (#193).
+const networkAttempts = [];
 let shellLabels;
 
 const APP_DATA = '/mock/config';
@@ -247,7 +248,27 @@ function createWindow() {
   window.TextEncoder = TextEncoder;
   window.TextDecoder = TextDecoder;
   window.fetch = async (url, options) => {
+    networkAttempts.push(`fetch ${url}`);
     throw new Error(`boot test: unexpected fetch ${options?.method ?? 'GET'} ${url}`);
+  };
+  const XhrOpen = window.XMLHttpRequest && window.XMLHttpRequest.prototype.open;
+  if (XhrOpen) {
+    window.XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+      networkAttempts.push(`xhr ${url}`);
+      return XhrOpen.call(this, method, url, ...rest);
+    };
+  }
+  for (const name of ['WebSocket', 'EventSource']) {
+    const Original = window[name];
+    window[name] = function (url, ...rest) {
+      networkAttempts.push(`${name} ${url}`);
+      throw new Error(`boot test: unexpected ${name} ${url}`);
+    };
+    window[name].original = Original;
+  }
+  window.navigator.sendBeacon = url => {
+    networkAttempts.push(`sendBeacon ${url}`);
+    return false;
   };
   // The classic scripts of index.html that run before index.js (real ones)
   CLASSIC_SCRIPTS.forEach(script => {
@@ -337,6 +358,7 @@ async function main() {
     logs: logs.slice(-40),
     errors,
     ipcCalls,
+    networkAttempts,
     shellLabels,
     leaked,
   }, () => process.exit(0));

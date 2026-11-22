@@ -40,9 +40,6 @@ describe('tasks dependencies (CommonJS scripts on updated packages)', () => {
       assert.strictEqual(typeof require('command-line-args'), 'function');
       assert.strictEqual(typeof require('date-fns').format, 'function');
       assert.strictEqual(typeof require('date-fns').formatRelative, 'function');
-      assert.strictEqual(typeof require('firebase-admin/app').initializeApp, 'function');
-      assert.strictEqual(typeof require('firebase-admin/app').cert, 'function');
-      assert.strictEqual(typeof require('firebase-admin/firestore').getFirestore, 'function');
       assert.strictEqual(typeof require('@aws-sdk/client-polly').PollyClient, 'function');
       assert.strictEqual(
         typeof require('@aws-sdk/client-polly').SynthesizeSpeechCommand,
@@ -103,34 +100,5 @@ describe('tasks/utils/withActionsErrorReporting', () => {
 
     expect(result.stdout).toContain('::error::boom');
     expect(result.status).toBe(1);
-  });
-});
-
-describe('tasks/shared/firebase', () => {
-  it('fails with the names of the missing variables, without reading a real .env', () => {
-    const firebase = path.join(tasksDir, 'shared', 'firebase.js');
-    const result = runNode(
-      `require(${JSON.stringify(firebase)});`,
-      makeTempDir()
-    );
-
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain('FIREBASE_ADMIN_SA_JSON');
-    expect(result.stderr).toContain('FIREBASE_DATABASE_URL');
-  });
-
-  it('only names the variable that is missing', () => {
-    const firebase = path.join(tasksDir, 'shared', 'firebase.js');
-    const result = runNode(
-      `require(${JSON.stringify(firebase)});`,
-      makeTempDir(),
-      { FIREBASE_DATABASE_URL: 'https://example.invalid' }
-    );
-
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain('FIREBASE_ADMIN_SA_JSON');
-    expect(result.stderr).not.toContain(
-      'Missing environment variables: FIREBASE_ADMIN_SA_JSON, FIREBASE_DATABASE_URL'
-    );
   });
 });

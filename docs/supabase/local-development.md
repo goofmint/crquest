@@ -22,6 +22,7 @@ Issue #185 で用意した、OSS Supabase のローカルスタックと DB マ�
 | 停止（データは保持） | `npm run supabase:stop` |
 | 停止してデータも削除（完全な初期化） | `npx supabase stop --no-backup` |
 
+- 統合テストを一括で実行するには `npm run supabase:integration`（reset、pgTAP、カタログ発行、スモーク、Rust の統合テスト）。詳細は [firebase-removal.md](firebase-removal.md)。
 - 空の環境からは `npm ci` → `npm run supabase:start` → `npm run supabase:reset` → `npm run supabase:test` → `npm run supabase:smoke` の順に実行する。
 - `supabase:reset` はローカル専用で、`--remote` や `--linked` を付けない。ホスト側のプロジェクトを対象にしてはいけない。
 - Edge Functions は `supabase start` が `supabase/functions/` の関数を自動で提供する。`health` 関数は `http://127.0.0.1:54321/functions/v1/health` で呼べる。ホットリロードしながら開発する場合や、`supabase/functions/.env` を読み込ませたい場合は `npm run supabase:functions` を別ターミナルで実行する。

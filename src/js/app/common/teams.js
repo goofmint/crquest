@@ -1,44 +1,26 @@
-import config from '../config/config';
+/**
+ * Team membership for the settings screens and the onboarding. The server is
+ * the authority; see ./groupMembership for the join / leave rules, including
+ * what happens when signed out or offline.
+ */
 import { t } from '../i18n';
-import {
-  getContext,
-  setContext
-} from './context';
+import { getContext } from './context';
+import { OUTCOME, isJoined, joinByCode, leaveGroupEntry } from './groupMembership';
 
+const KIND = 'team';
 
-async function getTeamFromBackend(joinCode) {
-  try {
-    const response = await fetch(config.apiBaseUrl + `api/v1/teams/joinCode/${joinCode}`);
-  
-    if (response.status === 404) {
-      return {
-        success: false,
-        message: t('ui.teams.missing'),
-      };
-    }
-    
-    const team = await response.json();
-
-    if (team.errors) {
-      console.error(team.errors);
-
-      return {
-        success: false,
-        message: t('ui.membership.requestError'),
-      };
-    }
-
-    return {
-      success: true,
-      team
-    };
-  } catch (err) {
-    console.error(err);
-
-    return {
-      success: false,
-      message: t('ui.membership.requestError'),
-    };
+function messageFor(outcome, name) {
+  switch (outcome) {
+    case OUTCOME.JOINED:
+      return t('ui.membership.joined', { name });
+    case OUTCOME.ALREADY_JOINED:
+      return t('ui.teams.already');
+    case OUTCOME.INVALID_CODE:
+      return t('ui.teams.missing');
+    case OUTCOME.LOGIN_REQUIRED:
+      return t('ui.membership.loginRequired');
+    default:
+      return t('ui.membership.networkError');
   }
 }
 
@@ -53,86 +35,35 @@ function getJoinedTeams() {
 }
 
 function isTeamAlreadyJoined(joinCode) {
-  const teams = getContext('teams');
-
-  return teams.joined.some(team => team.joinCode === joinCode);
+  return isJoined(KIND, joinCode);
 }
 
-function connectTeam(team) {
-  const teams = getContext('teams');
+async function disconnectTeam(team) {
+  const result = await leaveGroupEntry(KIND, team);
+  if (result.outcome === OUTCOME.LEFT || result.outcome === OUTCOME.REMOVED_LOCALLY) {
+    return { success: true };
+  }
+  return {
+    success: false,
+    message:
+      result.outcome === OUTCOME.LOGIN_REQUIRED
+        ? t('ui.membership.leaveLoginRequired')
+        : t('ui.membership.leaveFailed'),
+  };
+}
 
-  const newTeam = {
-    id: team.id,
-    joinCode: team.data.joinCode,
-    displayName: team.data.displayName
+async function joinTeam(code) {
+  const joinCode = String(code ?? '').trim();
+  if (joinCode === '') {
+    return {
+      success: false,
+      message: t('ui.membership.codeRequired'),
+    };
   }
 
-  setContext({
-    teams: {
-      ...teams,
-      joined: [
-        ...teams.joined,
-        newTeam
-      ]
-    }
-  });
+  const result = await joinByCode(KIND, joinCode);
+  const success = result.outcome === OUTCOME.JOINED;
+  return { success, message: messageFor(result.outcome, result.displayName) };
 }
 
-function disconnectTeam(team) {
-  const teams = getContext('teams');
-
-  // Filter out team being disconnected
-  const joined = teams.joined.filter(joinedTeam => joinedTeam.id !== team.id);
-
-  setContext({
-    teams: {
-      ...teams,
-      joined
-    }
-  })
-}
-
-function joinTeam(id) {
-  return new Promise(async resolve => {
-    if (id === '') {
-      return resolve({
-        success: false,
-        message: t('ui.membership.codeRequired'),
-      });
-    }
-
-    if (isTeamAlreadyJoined(id)) {
-      return resolve({
-        success: false,
-        message: t('ui.teams.already'),
-      });
-    }
-
-    const teamResult = await getTeamFromBackend(id);
-
-    if (!teamResult.success) {
-      return resolve({
-        success: teamResult.success,
-        message: teamResult.message
-      });
-    }
-
-    const { team } = teamResult;
-
-    connectTeam(team);
-
-    return resolve({
-      success: true,
-      message: t('ui.membership.joined', { name: team.data.displayName }),
-    });
-  });
-}
-
-
-export {
-  getJoinedTeams,
-  isTeamAlreadyJoined,
-  connectTeam,
-  disconnectTeam,
-  joinTeam
-}
+export { getJoinedTeams, isTeamAlreadyJoined, disconnectTeam, joinTeam };
