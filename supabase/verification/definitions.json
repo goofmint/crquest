@@ -1,0 +1,48 @@
+{
+  "$comment": "認定用の検証定義 (Issue #189)。サーバー専用で、クライアントには配布しない。npm run sync:missions がカタログ発行後に publish_verification_definitions で投入する。加点値は含めない (public.mission_objectives.xp が唯一の情報源)。形式は supabase/migrations/*_challenge_certification.sql と docs/supabase/certification.md を参照。",
+  "definitions": [
+    {
+      "mission_id": "challenge-questions",
+      "objective_id": "ducktypium-chest",
+      "version": 1,
+      "definition": {
+        "method": "text_answer",
+        "normalization": "trim_lower",
+        "expected": { "words": "jah vuh skrept" },
+        "ttl_seconds": 600
+      }
+    },
+    {
+      "mission_id": "javascript",
+      "objective_id": "array2D",
+      "version": 1,
+      "definition": {
+        "method": "text_answer",
+        "normalization": "trim",
+        "expected": { "answer1": "dogs", "answer2": "hockey" },
+        "ttl_seconds": 600
+      }
+    },
+    {
+      "mission_id": "challenge-questions",
+      "objective_id": "sum-array",
+      "version": 1,
+      "definition": {
+        "method": "result_vector",
+        "case_count": 4,
+        "cases": [
+          { "input": [1, 2, 3], "expected": 6 },
+          { "input": [-1, 0, 1], "expected": 0 },
+          { "input": [1.2, 2.3, 4], "expected": 7.5 },
+          { "input": [1, 1, 2, 3, 5, 8, 13], "expected": 33 },
+          { "input": [], "expected": 0 },
+          { "input": [3], "expected": 3 },
+          { "input": [10, 20, 30, 40], "expected": 100 },
+          { "input": [-5, -7], "expected": -12 },
+          { "input": [100, -1, 2, 7, 9], "expected": 117 }
+        ],
+        "ttl_seconds": 600
+      }
+    }
+  ]
+}

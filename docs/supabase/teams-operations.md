@@ -51,7 +51,7 @@ PostgREST では業務エラーは HTTP 400 とメッセージで返る。クラ
 
 ## 認定達成台帳の書き込み契約
 
-- `authenticated` / `anon` は台帳に書き込めない（権限なし）。書き込み主体（service role または権限を制限した関数）は #189 が決める。
+- `authenticated` / `anon` は台帳に書き込めない（権限なし）。書き込み主体は認定 RPC `submit_certification_challenge`（SECURITY DEFINER、#189。[certification.md](certification.md)）だけで、`ON CONFLICT` により 1 目標 1 回しか加点されない。
 - `(user_id, mission_id, objective_id)` は一意で、同じ達成の二重計上を防ぐ。書き込み側は冪等に扱える。
 - `points` は認定時点の値で、後から再計算しない。目標の設定が変わっても集計値は変わらない。
 
@@ -65,7 +65,7 @@ PostgREST では業務エラーは HTTP 400 とメッセージで返る。クラ
 - リアルタイム協力プレイ。
 - クライアント接続。Rust コマンドによる RPC 呼び出しと、`teams.js` / `operations.js` / オンボーディングの Firebase 参加コード照合の置き換えは別 Issue で行う（cloud_save と同じく、認証セッションを使う Rust コマンド経由とし、JS にトークンを渡さない）。このため旧参加フローは変更していない。
 - ローカル GUID と Supabase ユーザーの対応（#187）。旧 API の所属データの移行。
-- 利用者によるグループ作成。認定処理（#189）。
+- 利用者によるグループ作成。
 
 ## ローカルでの検証
 
@@ -73,7 +73,8 @@ PostgREST では業務エラーは HTTP 400 とメッセージで返る。クラ
 npm run supabase:start
 npm run supabase:reset
 npm run supabase:test   # supabase/tests/database/groups_and_contributions.test.sql
-npm run supabase:smoke  # 実 JWT の 2 ユーザーで RPC を確認（シードの合成グループ SMOKETEAM1 を使う）
+npm run sync:missions -- --target local   # カタログと検証定義を先に発行する（スモークの認定検証が使う）
+npm run supabase:smoke  # 実 JWT の 2 ユーザーで RPC を確認（実行ごとに service_role で作る専用グループを使う）
 ```
 
 pgTAP は有効／無効コード、正規化、重複加入、離脱・再加入、他ユーザー操作の拒否、直接アクセスの拒否、未認証の拒否、集計（加入前／所属中／離脱後／離脱中、複数メンバー、台帳の一意制約）、関数属性と権限を検証する。台帳へのデータ投入は集計テストのためだけに `postgres` で行う。
