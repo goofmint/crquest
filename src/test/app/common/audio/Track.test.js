@@ -135,6 +135,12 @@ describe('Track fading', () => {
     expect(track.fadingState).toBe('inToOut');
     expect(howl.fadeFrom).toBe(0.3);
 
+    // The cap is restored before the interrupted fade in is delivered.
+    const fadesBefore = howl.count('fade');
+    track.setMaxVolume(1.0);
+    expect(track.fadingState).toBe('inToOut');
+    expect(howl.count('fade')).toBe(fadesBefore);
+
     howl.flushEvents(); // interrupted fade in
     expect(track.fadingState).toBe('out');
     track.setMaxVolume(1.0);
