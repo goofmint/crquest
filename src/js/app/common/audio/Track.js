@@ -88,10 +88,11 @@ class Track {
    * so this solution instead must track the global state and determine when to stop a track instead.
    */
   onFade() {
-    // In Howler.js, a track can only have a single fade running at one time. When a new fade is
-    // started (or track volume is set), the previous fade is called. That triggers this event handler.
-    // Because of this, when we're transitioning from one fade to another we need to handle
-    // these as different states.
+    // In Howler.js (2.2.4), a track can only have a single fade running at one time. When a new
+    // fade is started (or track volume is set), the previous fade is interrupted and also emits
+    // a `fade` event. Listeners run asynchronously (setTimeout 0), so by the time this handler
+    // runs the state may already have been changed by the caller. Because of this, when we're
+    // transitioning from one fade to another we need to handle these as different states.
     switch (this.fadingState) {
       case 'out':
         this.fadingState = 'none';
@@ -106,6 +107,9 @@ class Track {
       case 'outToIn':
         this.fadingState = 'in';
         break;
+      case 'toEffective':
+        this.fadingState = 'none';
+        break;
       default:
         break;
     }
@@ -118,6 +122,13 @@ class Track {
   }
 
   fadeToEffective() {
+    // A track that is fading out must keep doing so; overwriting the state would
+    // prevent onFade() from stopping it. maxVolume is already updated, so the
+    // next play() uses the new cap.
+    if (this.fadingState === 'out' || this.fadingState === 'inToOut') {
+      return;
+    }
+
     this.fadingState = 'toEffective';
 
     this.track.fade(
